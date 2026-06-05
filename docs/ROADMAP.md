@@ -11,7 +11,7 @@
 - [ ] **Phase 4** — CLI scaffolding & `init` wizard
 - [ ] **Phase 5** — JD extraction & `track`
 - [ ] **Phase 6** — Cover letter & Q&A
-- [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership)
+- [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro)
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
@@ -57,14 +57,17 @@
 - `core/logger.ts` — pino factory, redaction paths, TTY vs JSON, child loggers
 - `core/debug.ts` — `debug` wrapper, namespace `jho:*`
 - `core/fs.ts` — `atomicWrite(path, content)`, `withBackup(path, fn)`
-- `core/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction
+- `core/locks.ts` — `acquireLock(target, fn)` via `proper-lockfile` (5 retries, 50–500ms backoff, stale-lock detection). Lock granularity: app folder for per-app ops, profile for rebuild, campaign root for global ops. See PLAN §7 "Concurrency / file locks".
+- `core/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction, `SLUG_PATTERN`, `validateSlug(slug)`
+- `core/paths.ts` (extended) — `findSlugFromCwd(cwd, appliedDir)` for CLI slug inference
+- `core/config.ts` (extended) — `webServer.{port, host}` placeholder in the zod schema (default `127.0.0.1:7331`); unused by CLI/MCP in v1, ready for a future web client. See PLAN §20.
 - `core/frontmatter.ts` — `readFrontmatter(path)`, `writeFrontmatter(path, fm, body)` preserving custom fields
 - `core/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
 - Tests for each module (~80% coverage on these)
 
 **Deliverable**: `jho root` prints campaign root. `jho config show` prints redacted config. `jho ownership` prints the table. `jho --help` works.
 
-**Commit**: `feat(core): paths, config, logger, slug, frontmatter, markers`
+**Commit**: `feat(core): paths, config, logger, locks, slug, frontmatter, markers`
 
 ---
 
@@ -75,14 +78,16 @@
 - `core/llm.ts` — OpenAI-compatible client
 - `core/cv.ts` — PDF (pdf-parse), DOCX (mammoth), MD/TXT readers
 - `core/github.ts` — REST API client for user + repos
-- `core/profile.ts` — orchestrates CV + GitHub → LLM → `profile.md`
-- `prompts/profile-build.md`
+- `core/profile.ts` — orchestrates CV + GitHub → LLM → `profile.md` (including the `## Target roles` section)
+- `core/target-roles.ts` — parse/validate/update the `## Target roles` section in `profile.md`
+- `prompts/profile-build.md` — must include a "generate 2-4 target roles" section with priority, level, domain, stack, comp floor, notes
 - `knowledge-base/local/{cv,github}/` for raw text caching
+- `evals/profile-build/{target-roles-cases.ts, expected-target-roles/}` — golden fixtures for the target-roles output
 - Tests with nock + msw
 
-**Deliverable**: `buildProfile({ cvPath, githubUser })` returns generated `profile.md` content. CLI not yet wired.
+**Deliverable**: `buildProfile({ cvPath, githubUser })` returns generated `profile.md` content (including `## Target roles`). CLI not yet wired.
 
-**Commit**: `feat(profile): CV parsing, GitHub fetch, LLM-backed profile builder`
+**Commit**: `feat(profile): CV parsing, GitHub fetch, LLM-backed profile builder, target roles`
 
 ---
 
@@ -91,16 +96,20 @@
 **Scope**:
 
 - `src/cli/index.ts` — commander setup, command registration
-- One file per command (init, config, root, profile, track, list, show, cover-letter, answer, interview, ownership, doctor, repair, help, mcp)
+- One file per command (init, config, root, profile, track, list, show, cover-letter, answer, interview, retro, ownership, doctor, repair, help, mcp)
 - Hand-written `--help` for each
 - Stub commands error with "not implemented yet (planned: phase X)"
 - Real commands: `init`, `config`, `root`, `profile show`, `ownership`, `help`
 - `src/cli/spinner.ts` — ora wrapper
-- `jho init` wizard with `@clack/prompts`
+- `jho init` wizard with `@clack/prompts`:
+  - Campaign root → CV path → GitHub user (+token) → LLM baseUrl/key/model → calendar provider
+  - Runs profile build (phase 3) → writes `profile.md`
+  - **Reviews the generated `## Target roles` list** — user can accept all / edit one / add / delete / open in editor
+  - Writes `config.json` and `outlook-tokens.json` if needed
 
-**Deliverable**: `jho init` works end-to-end on a fresh machine. All other commands are visible in `--help` with full docs, even if they error.
+**Deliverable**: `jho init` works end-to-end on a fresh machine. User has a profile with a reviewed list of target roles. All other commands are visible in `--help` with full docs, even if they error.
 
-**Commit**: `feat(cli): command surface with full --help, init wizard`
+**Commit**: `feat(cli): command surface with full --help, init wizard with target-roles review`
 
 ---
 
@@ -109,16 +118,21 @@
 **Scope**:
 
 - `core/jobs.ts` — `extractJdFromUrl`, `extractJdFromText`, `extractJobId`, `fetchWithFallback`
+- `core/jobs.ts` (extended) — `suggestTargetRole(jd, profile)` — returns the slug of the best-matching target role from the profile's `## Target roles` section
 - `core/tracker.ts` (initial) — `createApplication`, `writeMeta`, `writeJd`, `listApplications`, `findBySlug`
 - `core/slug.ts` (extended) — build full slug from JD + jobId
-- `core/frontmatter.ts` (extended) — meta.md frontmatter schema with zod
-- `jho track` (full), `jho list` (basic)
-- `applied/.index.json` builder
+- `core/frontmatter.ts` (extended) — meta.md frontmatter schema with zod, including optional `targetRole` field
+- `jho track` (full) — extracts JD, suggests a `targetRole`, prompts user to confirm/override, writes `meta.md` with `targetRole: <slug>` set
+- `jho list` (basic) — supports `--role <slug>` filter
+- `applied/.index.json` builder (includes `targetRole`)
+- `core/tracker.ts` (extended) — `meta.md` status enum: `applied | interview | offer | rejected | withdrawn | abandoned | ghosted` (the LLM distinguishes `withdrawn` from `abandoned` based on user input; see PLAN §4 status semantics table)
+- `core/stats.ts` (initial) — pure read of `applied/.index.json` + `meta.md` frontmatter; counts by status / target role / site; funnel; this-month delta; no LLM
+- `jho stats` (basic) — `--role <slug>`, `--since <date|7d|30d|90d>`, `--json`; pretty TTY table by default. See PLAN §8.
 - Tests
 
-**Deliverable**: `jho track https://au.seek.com/job/12345` creates a folder with `meta.md` + `jd.md`. `jho list` shows it.
+**Deliverable**: `jho track https://au.seek.com/job/12345` creates a folder with `meta.md` + `jd.md`, suggests a target role from the profile, and writes `targetRole` to frontmatter. `jho list --role <slug>` filters. `jho stats` prints a campaign snapshot.
 
-**Commit**: `feat(jobs+tracker): URL fetch, JD extract, application creation, list`
+**Commit**: `feat(jobs+tracker): URL fetch, JD extract, application creation, list, target-role, stats`
 
 ---
 
@@ -146,14 +160,33 @@
 - `core/qa.ts` — append-only writer
 - `core/doctor.ts` — campaign diagnostics
 - `core/repair.ts` — rebuilds frontmatter, indexes, counters
+- `core/retro.ts` — `startRetro`, `appendRetro`, `showRetro`, `aggregateRetros`
+- `core/learning-plan.ts` — LLM call to generate a learning plan from a list of weak topics
+- `prompts/learning-plan.md` — prompt template
+- `applied/<slug>/retro.md` (new file type, append-only per H2)
+- `core/prep.ts` — `generatePrep({ jd, profile, targetRole, days })` returning a zod-validated structured plan; `formatPrep(plan)` → markdown; `writePrep(slug, plan)` (atomic + `.toolhash`); `readPrep(slug)`; `appendTopic(slug, topic)`
+- `prompts/prep.md` — prompt template; cross-references `retro.md` weak topics and `aggregate_retros` output for the same target role (read-only seed)
+- `applied/<slug>/prep.md` (new file type; regenerable on `--update`, appends user-added topics on `--add`; same `.toolhash` conflict detection as `cover-letter.md`)
 - `jho show <slug>` with file-ownership footer
 - `jho interview` subcommands
+- `jho retro <slug>` (interactive: ask for weak topics, generate plan, write to retro.md)
+- `jho retro <slug> --show`
+- `jho retro <slug> --interview <n>` (associate with a specific interview)
+- `jho retro <slug> --append` (add more weak topics to an existing retro)
+- `jho retro --aggregate` (recurring weak topics across all apps)
+- `jho prepare <slug>` (generate or show prep plan; slug inferred from cwd)
+- `jho prepare <slug> --update` (regenerate from current JD + profile; prompts on user-edit conflict)
+- `jho prepare <slug> --add "<topic>"` (append a manual topic)
+- `jho prepare <url>` and `jho prepare --text "..."` (ad-hoc: print to stdout, don't save)
+- `jho prepare --days <n>` (default 7), `--json`
 - `jho doctor`, `jho repair`, `jho ownership`
+- `evals/learning-plan/{cases.ts, rubric.md}` — qualitative evals
+- `evals/prep/{cases.ts, expected/<jd-slug>/expected.json, rubric.md}` — checks depth distribution, materials are real URLs, timeline sums, strengths/concerns reference profile
 - Tests
 
-**Deliverable**: Full CLI tracker workflow. Real job-hunting campaign usable from CLI only.
+**Deliverable**: Full CLI tracker workflow including post-mortem retro for failed interviews with LLM-generated learning plans, cross-app aggregation, and pre-interview prep plans generated from JD + profile. Real job-hunting campaign usable from CLI only.
 
-**Commit**: `feat(tracker): interviews, doctor, repair, ownership table`
+**Commit**: `feat(tracker): interviews, doctor, repair, ownership, retro, prep`
 
 ---
 
@@ -162,7 +195,7 @@
 **Scope**:
 
 - `src/mcp/server.ts` — `@modelcontextprotocol/sdk` server, stdio transport
-- All tools wired to `core/`
+- All tools wired to `core/`, including `get_stats { role?, since?, includeNotes? }` (mirrors `jho stats` from Phase 5)
 - Resources and prompts
 - `bin/jho-mcp` shebang complete
 - `examples/mcp-clients/{claude-desktop,cursor,continue}.json`
@@ -209,3 +242,28 @@
 **Deliverable**: Public, glama-listed, fully documented.
 
 **Commit**: `docs: README, help topics, examples, glama-ready`
+
+---
+
+## Phase 11+ — Optional future work (not in v1)
+
+These items are explicitly **out of scope for v1** but the design leaves room for them. Captured here so they don't get re-litigated from scratch.
+
+### Web client (`jho web`)
+
+Local-only web UI bound to `127.0.0.1:7331` (per `config.json → webServer`). Reads and writes the same campaign root as the CLI. See PLAN §20 for the full rationale and the 5 forward-looking items (file locks and `webServer` config are already in v1; the other three — watcher, HTTP MCP transport, job runner — are deferred).
+
+Sketch only:
+
+- `src/web/` — Hono (or similar) HTTP server, server-renders markdown
+- `core/watcher.ts` — chokidar-based, emits `file-changed` for live UI updates
+- Optional SQLite cache for fast listing (does not change on-disk format)
+- Auth: out of scope for v1 web client (loopback-only)
+
+Not started, not committed, no timeline. Pick up only if/when the CLI/MCP UX is no longer enough.
+
+### Other deferred items
+
+- Multi-user / auth (local-first stays)
+- Cloud / hosted web (privacy posture)
+- Calendar provider for Google Calendar (only ICS + Microsoft Graph in v1)

@@ -50,43 +50,52 @@ jho init                # wizard: build profile from CV + GitHub
 jho config show|path    # show global config (secrets redacted)
 jho root                # print campaign root
 jho profile show|rebuild
-jho track <url>         # record a new application (or update by slug)
-jho list                # list all applications
-jho show <slug>         # show one application
-jho cover-letter <slug> # generate a tailored cover letter
-jho answer <slug> "..." # tailor an answer (text or screenshot)
-jho interview <slug> {add,list,mark,notes}
+jho track <url>         # record a new application (or update by slug); suggests target role
+jho list [--role <slug>] # list all applications (filter by target role)
+jho show [<slug>]       # slug is optional; inferred from cwd if omitted
+jho cover-letter [<slug>] # generate a tailored cover letter
+jho answer [<slug>] "..." # tailor an answer (text or screenshot)
+jho interview [<slug>] {add,list,mark,notes}
+jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile)
+jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan
+jho retro --aggregate   # recurring weak topics across all apps
 jho ownership           # what you can/can't edit
 jho doctor              # diagnose the campaign
 jho repair              # attempt auto-repair
+jho stats               # campaign snapshot: counts by status / role / site, funnel, this-month delta
 jho help [<cmd>|<topic>]
 jho mcp                 # start MCP server
 ```
 
+**Slug inference**: every command that accepts a `<slug>` also accepts the implicit form — omit the slug and run from inside the application folder. The slug is inferred from the cwd by matching the folder basename against `^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$` and walking up to the first match under `appliedDir`. CLI-only convenience; MCP tool calls always pass an explicit slug. If neither explicit slug nor cwd inference yields a slug, exit with an error and the hint: `pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`.
+
 ## MCP tools (planned)
 
-`init`, `extract_jd`, `cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `schedule_interview`, `read_profile`, `update_profile`, `get_root`, `update_config`, `ownership`, `doctor`, `repair`.
+`init`, `extract_jd`, `cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `schedule_interview`, `post_mortem`, `show_retro`, `append_retro`, `aggregate_retros`, `prepare`, `read_profile`, `update_profile`, `get_root`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`.
 
 ## Resources (planned)
 
-`profile://current`, `applied://list`, `applied://<slug>`, `applied://<slug>/interviews`.
+`profile://current`, `applied://list`, `applied://<slug>`, `applied://<slug>/interviews`, `applied://<slug>/retro`, `applied://<slug>/prep`.
 
 ## File ownership model
 
 **The one rule**: _If a comment at the top of the file says `jho:...`, the boundary is right there. If not, the file is yours._
 
-| File                                   | Tool writes                     | Edit freely?             | Tool behavior on your edit             |
-| -------------------------------------- | ------------------------------- | ------------------------ | -------------------------------------- |
-| `meta.md` frontmatter                  | yes (rebuild from JD + state)   | yes (add custom fields)  | round-tripped, custom fields preserved |
-| `meta.md` body                         | never                           | yes                      | preserved verbatim                     |
-| `jd.md` (above `jho:start:fetched-jd`) | yes (on re-track)               | no (tool-managed region) | overwritten                            |
-| `jd.md` (below `jho:end:fetched-jd`)   | never                           | yes                      | preserved on re-track                  |
-| `cover-letter.md`                      | on regenerate                   | yes                      | prompts on next regenerate             |
-| `qa.md`                                | appends only                    | yes                      | prior entries untouched                |
-| `interviews.md`                        | appends, `Status:` line updates | yes (except `Status:`)   | mark status via `jho interview mark`   |
-| `notes.md`                             | never                           | yes                      | never touched                          |
-| `.index.json`                          | on read / staleness             | no (internal cache)      | regenerated                            |
-| `.counters.json`                       | on slug collision               | no (internal cache)      | regenerated                            |
+| File                                   | Tool writes                                                     | Edit freely?                   | Tool behavior on your edit                                 |
+| -------------------------------------- | --------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------- |
+| `meta.md` frontmatter                  | yes (rebuild from JD + state)                                   | yes (add custom fields)        | round-tripped, custom fields preserved                     |
+| `meta.md` body                         | never                                                           | yes                            | preserved verbatim                                         |
+| `jd.md` (above `jho:start:fetched-jd`) | yes (on re-track)                                               | no (tool-managed region)       | overwritten                                                |
+| `jd.md` (below `jho:end:fetched-jd`)   | never                                                           | yes                            | preserved on re-track                                      |
+| `cover-letter.md`                      | on regenerate                                                   | yes                            | prompts on next regenerate                                 |
+| `qa.md`                                | appends only                                                    | yes                            | prior entries untouched                                    |
+| `interviews.md`                        | appends, `Status:` line updates                                 | yes (except `Status:`)         | mark status via `jho interview mark`                       |
+| `retro.md`                             | appends new H2 sections                                         | yes (checklists, notes)        | prior retros untouched                                     |
+| `prep.md`                              | regenerates on `--update`; appends user-added topics on `--add` | yes                            | prompts on overwrite; user edits preserved unless accepted |
+| `profile.md` `## Target roles`         | suggests on `jho init`/`profile rebuild`                        | yes (titles, fields, priority) | prompts before overwrite; user edits preserved             |
+| `notes.md`                             | never                                                           | yes                            | never touched                                              |
+| `.index.json`                          | on read / staleness                                             | no (internal cache)            | regenerated                                                |
+| `.counters.json`                       | on slug collision                                               | no (internal cache)            | regenerated                                                |
 
 Each tool-managed file has a `.toolhash` sidecar. If the file's current hash differs from the sidecar, the tool refuses silent overwrite and shows a diff.
 
@@ -123,6 +132,7 @@ When interacting via MCP:
 - `companySlug` = lowercased, alphanumeric + hyphens.
 - `jobId` = extracted from URL when present (Seek trailing numeric, LinkedIn `/view/<id>`, Indeed `jk=`).
 - `-{n}` = integer suffix on collision; counter at `applied/.counters.json`.
+- Recognized as a slug by matching `^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$` (used for cwd inference in CLI; see "Slug inference" above).
 
 ## Current phase
 
@@ -166,3 +176,12 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 ### CI
 
 - The CI matrix in `.github/workflows/ci.yml` runs on `ubuntu-latest`, `windows-latest`, and `macos-latest`. Any new dependency or pattern must work on all three.
+
+## Forward-looking (in v1 for future-proofing)
+
+Two items are added in v1 specifically to keep a future local web client cheap to build. They are **unused by the CLI and MCP server** today but exist now so adding `jho web` later is a config fill-in, not a schema migration.
+
+- **File locks** — `core/locks.ts` wraps `proper-lockfile` and is called implicitly by every write in `core/fs.ts`. Lock granularity: the application folder (`applied/<slug>/`) for per-app ops, `profile.md` for rebuilds, the campaign root for global ops. Defaults: 5 retries, 50–500ms backoff, stale-lock detection. The `.toolhash` sidecar still handles user-induced conflicts; locks handle process-induced races.
+- **`config.json → webServer.{port, host}`** — placeholder, default `127.0.0.1:7331`. Schema is forward-compatible; no consumer reads it in v1.
+
+Deferred to a hypothetical Phase 11+ (web client work): `core/watcher.ts` (chokidar), HTTP+SSE MCP transport, `core/jobs.ts` for long-running LLM ops. See `docs/PLAN.md` §20 for the full rationale and `docs/ROADMAP.md` Phase 11+ for the sketch.

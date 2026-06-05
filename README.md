@@ -6,17 +6,21 @@ A local-first CLI and MCP server for running a job-hunting campaign.
 
 ## What it does
 
-1. **Builds your profile** from a CV (PDF / DOCX / Markdown) and your GitHub repos.
-2. **Generates tailored cover letters** from job-description URLs (Seek, LinkedIn, Indeed, others).
-3. **Tailors answers** to application questions — given as text or as a screenshot.
-4. **Tracks every application** in a structured folder per role, with the full interview pipeline.
-5. **Schedules interviews** to your calendar (ICS by default; Microsoft Outlook opt-in).
+1. **Builds your profile** from a CV (PDF / DOCX / Markdown) and your GitHub repos — including a structured list of target roles (level, domain, stack, comp floor, priority) you can refine.
+2. **Suggests the best-matching target role** for every new job description, so the cover letter and Q&A know which version of "you" to emphasize.
+3. **Generates tailored cover letters** from job-description URLs (Seek, LinkedIn, Indeed, others).
+4. **Tailors answers** to application questions — given as text or as a screenshot.
+5. **Tracks every application** in a structured folder per role, with the full interview pipeline.
+6. After a failed interview, **captures your weak topics and generates a personal learning plan** for each, then aggregates recurring weak areas across applications.
+7. **Schedules interviews** to your calendar (ICS by default; Microsoft Outlook opt-in).
 
 ## Privacy
 
 > **Your data stays local.** `job-hunting-organizer` reads your CV from a path you configure, fetches job descriptions from URLs you provide, and calls the LLM endpoint _you_ configure. Nothing is sent to the tool author or to any third party. With a local model (Ollama, OpenCode, LM Studio) the LLM call stays on your machine. The tool has zero telemetry, zero analytics, and zero outbound calls except those you explicitly configure.
 
 All user data lives under one external directory, default `~/job-hunting-organizer/` (override with `$JHO_ROOT`). Nothing user-specific is committed to this repo.
+
+The data layout (folder-per-application, markdown + JSON, no DB) leaves room for an optional local web client in the future. The CLI and MCP server are the v1 surfaces; see `docs/PLAN.md` §20 for the forward-looking design notes.
 
 ## Install
 
@@ -39,10 +43,12 @@ Runs unchanged on Linux, macOS, and Windows.
 ## Quickstart (once Phase 4 is shipped)
 
 ```sh
-# 1. Initialize your campaign (wizard builds your profile from CV + GitHub)
+# 1. Initialize your campaign (wizard builds your profile from CV + GitHub,
+#    then reviews the suggested target roles with you)
 jho init
 
 # 2. Record an application from a job URL
+#    (suggests a target role from your profile; you confirm or override)
 jho track https://au.seek.com.au/job/12345
 
 # 3. Generate a tailored cover letter
@@ -54,7 +60,29 @@ jho answer 2026-Jun-03-SE-Nuage-Technology-Group-12345 "Why this company?"
 # 5. Track interview stages
 jho interview 2026-Jun-03-SE-Nuage-Technology-Group-12345 add \
   --when "2026-06-10 10:00" --type hr --duration 30
+
+# 5b. Before the interview: get a prep plan (tech stack, depth-tagged topics, timeline)
+jho prepare 2026-Jun-03-SE-Nuage-Technology-Group-12345 --days 7
+#   ... write prep.md to the app folder; regenerate with --update, append with --add
+
+# 6. After a rejection: jot down weak topics, get a learning plan
+jho retro 2026-Jun-03-SE-Nuage-Technology-Group-12345
+#  ... answer "what topics did you struggle with?" ...
+
+# 7. See recurring weak topics across all interviews
+jho retro --aggregate
+
+# 8. Get a snapshot of the campaign (counts, funnel, this-month delta)
+jho stats
 ```
+
+> **Tip**: you can omit the slug and just `cd` into the application folder — `jho show`, `jho cover-letter`, `jho answer`, `jho interview ...`, `jho prepare`, and `jho retro` all infer the slug from the current directory.
+>
+> ```sh
+> cd ~/job-hunting-organizer/applied/2026-Jun-03-SE-Nuage-Technology-Group-12345
+> jho show              # same as passing the slug explicitly
+> jho retro             # works from any subfolder too
+> ```
 
 ## As an MCP server
 
