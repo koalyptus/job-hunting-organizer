@@ -1,0 +1,60 @@
+{
+  "name": "job-hunting-organizer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first CLI and MCP server for running a job-hunting campaign: profile from CV + GitHub, tailored cover letters, application Q&A, interview tracking, and calendar integration.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "jho": "bin/jho",
+    "jho-mcp": "bin/jho-mcp"
+  },
+  "mcp": {
+    "transport": "stdio",
+    "command": "jho-mcp",
+    "tools": []
+  },
+  "files": [
+    "bin",
+    "dist",
+    "prompts",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx watch src/cli/index.ts",
+    "mcp:dev": "tsx watch src/mcp/server.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "job-search",
+    "career",
+    "cover-letter",
+    "application-tracking",
+    "cli"
+  ],
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.16.0",
+    "vitest": "^2.1.8"
+  }
+}
