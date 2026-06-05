@@ -19,6 +19,8 @@ This document is for AI agents (Claude, Cursor, etc.) using the `job-hunting-org
 │   ├── cli/            # CLI commands
 │   ├── mcp/            # MCP server
 │   └── core/           # shared business logic (no I/O boundaries)
+│       ├── types.ts    # shared interfaces and type aliases (consumed via `import type`)
+│       └── tests/      # colocated vitest suite (Jest `__tests__` convention)
 ├── prompts/            # versioned LLM prompt templates
 ├── evals/              # lightweight eval suite (not in CI)
 ├── docs/
@@ -156,7 +158,8 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 ### File operations
 
-- Atomic writes (`tmp + rename`) work on POSIX. On Windows, `rename` fails if the target exists — `core/fs.ts` must use `fs.copyFile` + `unlink` (or `proper-lockfile`) instead.
+- All writes go through `core/fs.ts` `atomicWrite` (write to a sibling `*.tmp` with a unique suffix, `copyFile` over the target, `rm` the tmp). The same code path runs on all OSes; no platform branching.
+- Concurrent writers are prevented by `core/locks.ts` (`proper-lockfile`) on the application folder / profile / campaign root as appropriate.
 - `chmod` is a no-op on Windows. Attempt it and ignore `ENOSYS` / `EPERM`. (Relevant for `outlook-tokens.json` mode 0600 in Phase 9.)
 - Use `fs.promises`. Never shell out to `cp`, `mv`, `rm`, `mkdir`.
 
