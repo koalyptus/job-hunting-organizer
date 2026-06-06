@@ -13,8 +13,6 @@ export function enableFromEnv(): void {
   const env = process.env['DEBUG'];
   if (env !== undefined && env !== '') {
     createDebug.enable(env);
-  } else {
-    createDebug.enable(`${NAMESPACE}:*`);
   }
 }
 

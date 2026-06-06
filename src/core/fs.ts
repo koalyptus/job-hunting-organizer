@@ -26,8 +26,7 @@ export async function atomicWrite(
 
   const tmp = generateTempName(resolved);
   await writeFile(tmp, content, { encoding, mode });
-  await copyFile(tmp, resolved);
-  await rm(tmp, { force: true });
+  await rename(tmp, resolved);
 }
 
 export async function pathExists(target: string): Promise<boolean> {

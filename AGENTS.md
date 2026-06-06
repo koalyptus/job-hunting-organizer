@@ -183,7 +183,7 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 ### File operations
 
-- All writes go through `core/fs.ts` `atomicWrite` (write to a sibling `*.tmp` with a unique suffix, `copyFile` over the target, `rm` the tmp). The same code path runs on all OSes; no platform branching.
+- All writes go through `core/fs.ts` `atomicWrite` (write to a sibling `*.tmp` with a unique suffix, then `fs.rename` over the target). The same code path runs on all OSes; no platform branching. `rename` is atomic on POSIX and on modern Windows (Node ≥ 14).
 - Concurrent writers are prevented by `core/locks.ts` (`proper-lockfile`) on the application folder / profile / campaign root as appropriate.
 - `chmod` is a no-op on Windows. Attempt it and ignore `ENOSYS` / `EPERM`. (Relevant for `outlook-tokens.json` mode 0600 in Phase 9.)
 - Use `fs.promises`. Never shell out to `cp`, `mv`, `rm`, `mkdir`.

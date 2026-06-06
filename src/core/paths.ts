@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { delimiter, isAbsolute, relative, resolve, sep, win32 } from 'node:path';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathExists } from './fs.js';
 
 // Defaults below are fallbacks used when config.json does not override them.
@@ -61,12 +62,11 @@ export async function findConfigPath(root: string): Promise<string | null> {
 
 export async function ensureRoot(root: string): Promise<void> {
   if (!(await pathExists(root))) {
-    const { mkdir } = await import('node:fs/promises');
     await mkdir(root, { recursive: true });
   }
 }
 
-function isUnder(child: string, parent: string): boolean {
+export function isUnder(child: string, parent: string): boolean {
   const rel = relative(parent, child);
   if (rel === '') {
     return true;
@@ -127,5 +127,3 @@ export function findCampaignFromCwd(cwd: string, globalRoot: string): string | n
   const first = rel.split(sep)[0];
   return first ?? null;
 }
-
-export { isAbsolute, resolve, sep, win32, delimiter };

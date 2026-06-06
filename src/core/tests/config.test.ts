@@ -6,7 +6,7 @@ import {
   updateGlobalConfig,
   updateCampaignConfig,
   clearConfigCache,
-} from './config.js';
+} from '../config.js';
 import { resolve } from 'node:path';
 import { mkdtemp } from 'node:fs/promises';
 import { homedir } from 'node:os';

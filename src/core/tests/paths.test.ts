@@ -10,6 +10,7 @@ import {
   SLUG_PATTERN,
   findCampaignFromCwd,
   findSlugFromCwd,
+  isUnder,
   isWindows,
   resolveAppliedDir,
   resolveCampaignRoot,
@@ -160,5 +161,31 @@ describe('findCampaignFromCwd', () => {
     } finally {
       await rm(empty, { recursive: true, force: true });
     }
+  });
+});
+
+describe('isUnder', () => {
+  it('returns true for the same path', () => {
+    expect(isUnder('/a/b', '/a/b')).toBe(true);
+  });
+
+  it('returns true for a direct child', () => {
+    expect(isUnder('/a/b/c', '/a/b')).toBe(true);
+  });
+
+  it('returns true for a deep descendant', () => {
+    expect(isUnder('/a/b/c/d/e/f', '/a/b')).toBe(true);
+  });
+
+  it('returns false for a sibling', () => {
+    expect(isUnder('/a/c', '/a/b')).toBe(false);
+  });
+
+  it('returns false for a parent', () => {
+    expect(isUnder('/a', '/a/b')).toBe(false);
+  });
+
+  it('returns false for a distant cousin', () => {
+    expect(isUnder('/x/y', '/a/b')).toBe(false);
   });
 });

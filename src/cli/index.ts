@@ -8,17 +8,11 @@ function printHelp(): void {
   out.write(`jho ${VERSION} — local-first CLI for running a job-hunting campaign
 
 Usage:
-  jho [--version] [--help] [-v | --verbose] [-q | --quiet] [--no-color]
-      [--log-file <path>] [--campaign <name>] <command> [args]
+  jho [--version] [--help] <command> [args]
 
-Global options:
+Options:
   --version              Print version and exit
   --help                 Print this help and exit
-  -v, --verbose          Increase log verbosity
-  -q, --quiet            Decrease log verbosity
-  --no-color             Disable coloured output
-  --log-file <path>      Write logs to <path> in addition to stderr
-  --campaign <name>      Target a specific campaign (default: inferred from cwd, else "default")
 
 Global root (override via env var only):
   $JHO_ROOT              Override the global data root (default: ~/job-hunting-organizer/)
@@ -45,8 +39,8 @@ Commands (planned for v1):
   help [<cmd>|<topic>]   Show help for a command or topic
   mcp                    Start the MCP server
 
-Phase 2 ships only \`jho root\`. All other commands will surface
-"not implemented yet (planned: phase N)" until their phase lands.
+Per-command global flags (--campaign, --verbose, --quiet, --no-color, --log-file)
+are planned for Phase 2c. Phase 2a ships only \`jho root\` and the help above.
 `);
 }
 

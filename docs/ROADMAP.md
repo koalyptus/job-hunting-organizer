@@ -50,9 +50,9 @@
 
 ## Phase 2 — Core infrastructure (no LLM, no network)
 
-**Scope**:
+**Scope** (split into 2a/2b for incremental delivery — see below):
 
-- `core/paths.ts` — resolves `$JHO_ROOT`, finds global `config.json`, resolves campaign root, finds `findSlugFromCwd` and `findCampaignFromCwd`
+- `core/paths.ts` — resolves `$JHO_ROOT`, finds global `config.json`, resolves campaign root, `findSlugFromCwd` and `findCampaignFromCwd`
 - `core/config.ts` — zod schemas (global + per-campaign), read/write both, redact secrets, `updateConfig(partial)` merge
 - `core/config.schema.ts` — Zod schemas split out (single-responsibility: validation rules in their own module)
 - `core/logger.ts` — pino factory, redaction paths, TTY vs JSON, child loggers
@@ -64,9 +64,41 @@
 - `core/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
 - Tests for each module (~80% coverage on these)
 
-**Deliverable**: `jho root` prints the inferred (or global) root. `jho config show` prints redacted merged config. `jho ownership` prints the table. `jho --help` works. Two-level config (global + per-campaign) is loaded and merged correctly.
+### Phase 2a — Foundation (delivered in PR #2)
 
-**Commit**: `feat(core): paths, config, logger, locks, slug, frontmatter, markers`
+Sub-phase covering the lowest-risk modules first. Smaller, easier to review, unblocks Phase 2c (CLI surface) without waiting on the more opinionated modules (frontmatter, markers, slug).
+
+**Delivered**:
+
+- `core/paths.ts` — `$JHO_ROOT`, global root, campaign root, slug & campaign cwd inference
+- `core/config.ts` + `core/config.schema.ts` — zod schemas, global + per-campaign config load/merge/update
+- `core/logger.ts` — pino factory, redaction, TTY/JSON output, file output
+- `core/debug.ts` — `jho:*` namespace helper
+- `core/fs.ts` — `atomicWrite` (writeFile → rename), `pathExists`, `withBackup`
+- `core/locks.ts` — proper-lockfile wrapper
+- `core/package.ts` — package version / root resolution
+- `src/cli/index.ts` — `jho --version`, `jho --help`, `jho root [--global]`
+- Tests: 63/63 passing, ~88% line coverage on `core/`
+
+**Deliverable**: `jho root` prints the inferred (or global) root. `jho --help` works. Two-level config is loaded and merged correctly.
+
+**Commit**: `feat(core): paths, config, logger, locks, package, root command`
+
+### Phase 2b — Schema-driven IO (planned)
+
+Picks up the more opinionated modules that build on 2a. Unblocks Phase 5 (JD extraction) and Phase 6 (cover letter / Q&A).
+
+**Scope**:
+
+- `core/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction, `SLUG_PATTERN`, `validateSlug(slug)`
+- `core/frontmatter.ts` — `readFrontmatter(path)`, `writeFrontmatter(path, fm, body)` preserving custom fields
+- `core/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
+- `jho config show` — prints redacted merged config for the inferred campaign
+- `jho ownership` — prints the per-file ownership table
+
+**Deliverable**: Phase 5+ can build on top of these. `jho track` writes frontmatter and uses markers for the JD region. `jho cover-letter` writes a `<!-- jho:cover-letter -->`-marked file.
+
+**Commit**: `feat(core): slug, frontmatter, markers, config show, ownership`
 
 ---
 
