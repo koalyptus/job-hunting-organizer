@@ -1,0 +1,65 @@
+import { describe, expect, it } from 'vitest';
+import { OWNERSHIP_ROWS, renderOwnership } from '../ownership.js';
+
+describe('OWNERSHIP_ROWS', () => {
+  it('has no duplicate file entries', () => {
+    const seen = new Set<string>();
+    for (const row of OWNERSHIP_ROWS) {
+      expect(seen.has(row.file)).toBe(false);
+      seen.add(row.file);
+    }
+  });
+
+  it('covers the planned application files', () => {
+    const files = OWNERSHIP_ROWS.map((r) => r.file);
+    expect(files).toContain('meta.md (frontmatter)');
+    expect(files).toContain('meta.md (body)');
+    expect(files).toContain('jd.md (above jho:start:fetched-jd)');
+    expect(files).toContain('jd.md (below jho:end:fetched-jd)');
+    expect(files).toContain('cover-letter.md');
+    expect(files).toContain('qa.md');
+    expect(files).toContain('interviews.md');
+    expect(files).toContain('retro.md');
+    expect(files).toContain('prep.md');
+    expect(files).toContain('notes.md');
+  });
+});
+
+describe('renderOwnership', () => {
+  it('produces a console table (cli-table3) by default', () => {
+    const out = renderOwnership({ configPath: '/tmp/cfg.json' });
+    // Headers and rows are present. We use a short substring for the long
+    // `jd.md (above ...)` cell because cli-table3 word-wraps it.
+    expect(out).toContain('File');
+    expect(out).toContain('Tool writes');
+    expect(out).toContain('Edit freely?');
+    expect(out).toContain('On your edit');
+    expect(out).toContain('meta.md (frontmatter)');
+    expect(out).toContain('jd.md (above');
+    // cli-table3 uses Unicode box-drawing characters.
+    expect(out).toMatch(/[┌┐└┘├┤┬┴┼─]/);
+  });
+
+  it('wraps long cell content to keep the table width sane', () => {
+    const out = renderOwnership({ configPath: '/tmp/cfg.json' });
+    // Total line length should not exceed the configured column widths
+    // (30 + 26 + 20 + 36 = 112 cells) plus borders/padding. We give some
+    // slack and just assert the output is bounded.
+    const lines = out.split('\n').filter((l) => l.length > 0);
+    const maxLen = Math.max(...lines.map((l) => l.length));
+    expect(maxLen).toBeLessThan(140);
+  });
+
+  it('produces a markdown table with --markdown', () => {
+    const out = renderOwnership({ markdown: true, configPath: '/tmp/cfg.json' });
+    expect(out).toMatch(/^# File ownership/);
+    expect(out).toContain('| File');
+    expect(out).toMatch(/\| --- \| --- \|/);
+    expect(out).toContain('| meta.md (frontmatter)');
+  });
+
+  it('includes the config path in the header', () => {
+    const out = renderOwnership({ configPath: '/path/to/config.json' });
+    expect(out).toContain('/path/to/config.json');
+  });
+});

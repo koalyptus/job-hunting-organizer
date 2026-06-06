@@ -84,3 +84,21 @@ export interface CampaignConfig {
     dir: string;
   };
 }
+
+// Slug inputs (used by `core/slug.ts`).
+// See PLAN §4 "Slug convention" for the full pattern.
+export interface SlugBuildInput {
+  /** Job title (e.g., "Senior Software Engineer"). First 2-3 words become roleAbbr. */
+  title?: string | undefined;
+  /** Company name (e.g., "Nuage Technology Group"). Lowercased + sanitized. */
+  company?: string | undefined;
+  /** Job URL. Used to extract a site-specific job ID (Seek, LinkedIn, Indeed). */
+  url?: string | undefined;
+  /** Application date. ISO string or Date. Defaults to today (UTC). */
+  appliedOn?: string | Date | undefined;
+}
+
+export interface SlugOptions {
+  /** Reserved for future use (e.g., locale-specific date formatting). */
+  readonly locale?: string;
+}

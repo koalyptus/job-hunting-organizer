@@ -45,7 +45,9 @@
     "cli"
   ],
   "dependencies": {
+    "cli-table3": "^0.6.5",
     "debug": "^4.4.1",
+    "js-yaml": "^4.2.0",
     "pino": "^9.5.0",
     "pino-pretty": "^11.3.0",
     "proper-lockfile": "^4.1.2",
@@ -54,6 +56,7 @@
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@types/debug": "^4.1.13",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.10.0",
     "@types/proper-lockfile": "^4.1.4",
     "@vitest/coverage-v8": "^2.1.8",

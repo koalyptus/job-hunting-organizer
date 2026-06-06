@@ -3,6 +3,11 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathExists } from './fs.js';
+import { SLUG_PATTERN } from './slug.js';
+
+// Re-exported for callers that previously imported it from paths.ts.
+// The canonical home is `./slug.js`; new code should import from there.
+export { SLUG_PATTERN };
 
 // Defaults below are fallbacks used when config.json does not override them.
 // In Phase 2b, core/config.ts loads the zod-validated config and resolvePaths()
@@ -16,8 +21,6 @@ export const DEFAULT_APPLIED_DIRNAME = 'applied';
 export const DEFAULT_PROFILE_FILENAME = 'profile.md';
 export const DEFAULT_KNOWLEDGE_BASE_DIRNAME = 'knowledge-base';
 export const DEFAULT_CAMPAIGNS_DIRNAME = 'campaigns';
-
-export const SLUG_PATTERN = /^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$/;
 
 export function isWindows(): boolean {
   return process.platform === 'win32';
