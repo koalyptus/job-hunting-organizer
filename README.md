@@ -18,7 +18,7 @@ A local-first CLI and MCP server for running a job-hunting campaign.
 
 > **Your data stays local.** `job-hunting-organizer` reads your CV from a path you configure, fetches job descriptions from URLs you provide, and calls the LLM endpoint _you_ configure. Nothing is sent to the tool author or to any third party. With a local model (Ollama, OpenCode, LM Studio) the LLM call stays on your machine. The tool has zero telemetry, zero analytics, and zero outbound calls except those you explicitly configure.
 
-All user data lives under one external directory, default `~/job-hunting-organizer/` (override with `$JHO_ROOT`). Nothing user-specific is committed to this repo.
+All user data lives outside the repo under a **global root** (default `~/job-hunting-organizer/`, override with `$JHO_ROOT`). The global root holds settings shared across campaigns (LLM endpoint, GitHub token, calendar). Each **campaign** is its own subdirectory at `<global-root>/campaigns/<name>/` with its own `profile.md`, `applied/`, and `knowledge-base/`. Nothing user-specific is committed to this repo. You can run multiple independent campaigns by creating more under `campaigns/`.
 
 The data layout (folder-per-application, markdown + JSON, no DB) leaves room for an optional local web client in the future. The CLI and MCP server are the v1 surfaces; see `docs/PLAN.md` §20 for the forward-looking design notes.
 
@@ -83,6 +83,16 @@ jho stats
 > jho show              # same as passing the slug explicitly
 > jho retro             # works from any subfolder too
 > ```
+>
+> **Multiple campaigns**: each one lives at `<global-root>/campaigns/<name>/`. Create them with `jho init <name>` (omit the name to use the `default` campaign). All commands accept `--campaign <name>` to target a specific one; otherwise the campaign is inferred from your cwd.
+>
+> ```sh
+> jho init freelance
+> jho --campaign freelance track https://au.seek.com.au/job/12345
+> jho --campaign ft-jobs stats
+> ```
+>
+> **Renaming a campaign**: the folder name is the only thing that identifies a campaign — nothing on disk references it elsewhere, so `jho rename-campaign <old> <new>` (or just `jho rename-campaign <new>` from inside the campaign folder) is enough. It validates the new name, takes a lock, and logs the move. You can also just `mv` the folder directly; the tool will pick up the new name on the next call.
 
 ## As an MCP server
 

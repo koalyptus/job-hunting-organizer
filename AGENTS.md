@@ -8,7 +8,29 @@ This document is for AI agents (Claude, Cursor, etc.) using the `job-hunting-org
 - **Language**: TypeScript (strict, ESM, Node ≥ 20)
 - **Package layout**: single package (not monorepo)
 - **LLM**: generic OpenAI-compatible client (Ollama, OpenCode, LM Studio, OpenAI, etc.)
-- **Data location**: external `~/job-hunting-organizer/` (or `$JHO_ROOT`); never inside the repo
+- **Data location**: external global root `~/job-hunting-organizer/` (or `$JHO_ROOT`); never inside the repo. Campaigns live under `<global>/campaigns/<name>/`. See [Data layout](#data-layout-two-level-global-root--campaigns).
+- **Campaign selection**: per-command `--campaign <name>`, or cwd-inferred when run from inside `<global>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
+
+## Data layout (two-level: global root + campaigns)
+
+```
+~/job-hunting-organizer/                       # global root (override with $JHO_ROOT)
+├── config.json                                # global: LLM, GitHub, calendar, logging
+├── .locks/                                    # proper-lockfile sidecars
+└── campaigns/
+    ├── default/                               # default campaign (auto-created on first `jho init`)
+    │   ├── config.json                        # per-campaign: profile path, applied dir, KB dir
+    │   ├── profile.md                         # candidate profile, target roles
+    │   ├── applied/                           # folder per application
+    │   │   └── YYYY-MMM-DD-role-co-jobid/
+    │   └── knowledge-base/
+    └── freelance/                             # second campaign (created via `jho init freelance`)
+        └── ...
+```
+
+The global root is fixed; campaigns are subfolders. Power users can relocate the **global** root via `$JHO_ROOT` (no CLI flag for it by design — matches `git`, `VS Code`, `ssh` config location conventions). Campaign selection: `jho --campaign <name> ...` (explicit) or cwd-inferred from `<global>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
+
+**Renaming a campaign**: the folder name is the only thing that identifies a campaign; nothing on disk references it elsewhere. `jho rename-campaign <old> <new>` is the validated path (validates `<new>`, takes a `proper-lockfile` lock, atomic `fs.rename`, logs the move). Bare `mv` on `<global>/campaigns/<old>/` is also supported as an escape hatch — the tool will pick up the new name on the next call.
 
 ## Repo structure
 
@@ -48,9 +70,10 @@ npm run eval         # lightweight LLM eval suite (manual)
 ## CLI commands (planned)
 
 ```
-jho init                # wizard: build profile from CV + GitHub
-jho config show|path    # show global config (secrets redacted)
-jho root                # print campaign root
+jho init [<name>]       # wizard: build profile from CV + GitHub; creates a new campaign
+jho config show|path [--global]  # show merged (or global-only) config; secrets redacted
+jho root                # print the inferred campaign root (or global root with --global)
+jho rename-campaign [<old>] <new>  # rename a campaign folder (or `mv` the folder directly)
 jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
 jho list [--role <slug>] # list all applications (filter by target role)
@@ -71,9 +94,11 @@ jho mcp                 # start MCP server
 
 **Slug inference**: every command that accepts a `<slug>` also accepts the implicit form — omit the slug and run from inside the application folder. The slug is inferred from the cwd by matching the folder basename against `^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$` and walking up to the first match under `appliedDir`. CLI-only convenience; MCP tool calls always pass an explicit slug. If neither explicit slug nor cwd inference yields a slug, exit with an error and the hint: `pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`.
 
+**Campaign inference**: every command that targets a campaign accepts `--campaign <name>` (explicit) or infers the campaign from the cwd by walking up to a folder named `campaigns` and using the directory below it. The default is `default`. CLI-only convenience; MCP tool calls always pass an explicit campaign name. If neither an explicit `--campaign` flag nor cwd inference yields a campaign, the `default` campaign is used.
+
 ## MCP tools (planned)
 
-`init`, `extract_jd`, `cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `schedule_interview`, `post_mortem`, `show_retro`, `append_retro`, `aggregate_retros`, `prepare`, `read_profile`, `update_profile`, `get_root`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`.
+`init`, `extract_jd`, `cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `schedule_interview`, `post_mortem`, `show_retro`, `append_retro`, `aggregate_retros`, `prepare`, `read_profile`, `update_profile`, `get_root`, `get_campaign`, `list_campaigns`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`.
 
 ## Resources (planned)
 
@@ -182,9 +207,10 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 ## Forward-looking (in v1 for future-proofing)
 
-Two items are added in v1 specifically to keep a future local web client cheap to build. They are **unused by the CLI and MCP server** today but exist now so adding `jho web` later is a config fill-in, not a schema migration.
+One item is added in v1 specifically to keep a future local web client cheap to build. It is **unused by the CLI and MCP server** today but exists now so adding `jho web` later is a fill-in, not a schema migration.
 
 - **File locks** — `core/locks.ts` wraps `proper-lockfile` and is called implicitly by every write in `core/fs.ts`. Lock granularity: the application folder (`applied/<slug>/`) for per-app ops, `profile.md` for rebuilds, the campaign root for global ops. Defaults: 5 retries, 50–500ms backoff, stale-lock detection. The `.toolhash` sidecar still handles user-induced conflicts; locks handle process-induced races.
-- **`config.json → webServer.{port, host}`** — placeholder, default `127.0.0.1:7331`. Schema is forward-compatible; no consumer reads it in v1.
 
-Deferred to a hypothetical Phase 11+ (web client work): `core/watcher.ts` (chokidar), HTTP+SSE MCP transport, `core/jobs.ts` for long-running LLM ops. See `docs/PLAN.md` §20 for the full rationale and `docs/ROADMAP.md` Phase 11+ for the sketch.
+> The `webServer.{port, host}` placeholder in `config.json` was removed: the schema is now minimal, and a web server can add its own port/host config when it lands. See `docs/PLAN.md` §20 for the full rationale and `docs/ROADMAP.md` Phase 11+ for the sketch.
+
+Deferred to a hypothetical Phase 11+ (web client work): `core/watcher.ts` (chokidar), HTTP+SSE MCP transport, `core/jobs.ts` for long-running LLM ops.

@@ -14,9 +14,7 @@ export const DEFAULT_CONFIG_FILENAME = 'config.json';
 export const DEFAULT_APPLIED_DIRNAME = 'applied';
 export const DEFAULT_PROFILE_FILENAME = 'profile.md';
 export const DEFAULT_KNOWLEDGE_BASE_DIRNAME = 'knowledge-base';
-export const DEFAULT_LOG_FILE = '';
-export const DEFAULT_WEB_SERVER_PORT = 7331;
-export const DEFAULT_WEB_SERVER_HOST = '127.0.0.1';
+export const DEFAULT_CAMPAIGNS_DIRNAME = 'campaigns';
 
 export const SLUG_PATTERN = /^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$/;
 
@@ -24,15 +22,17 @@ export function isWindows(): boolean {
   return process.platform === 'win32';
 }
 
-export function resolveRoot(override?: string): string {
-  if (override !== undefined && override !== '') {
-    return resolve(override);
-  }
+export function resolveGlobalRoot(): string {
   const envRoot = process.env['JHO_ROOT'];
   if (envRoot !== undefined && envRoot !== '') {
     return resolve(envRoot);
   }
   return resolve(homedir(), DEFAULT_ROOT_DIRNAME);
+}
+
+export function resolveCampaignRoot(campaignName: string = 'default'): string {
+  const globalRoot = resolveGlobalRoot();
+  return resolve(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, campaignName);
 }
 
 export function resolveConfigPath(root: string): string {
@@ -100,6 +100,32 @@ export function findSlugFromCwd(cwd: string, appliedDir: string): string | null 
     }
   }
   return null;
+}
+
+// Walk up from `cwd` looking for `<globalRoot>/campaigns/<name>`.
+// If found, return the campaign name. Used by `jho --campaign <name>` cwd
+// inference: if the user runs a command from inside
+// `<global>/campaigns/freelance/...`, the campaign is `freelance`.
+// Returns `null` if no campaigns ancestor is found in the path.
+export function findCampaignFromCwd(cwd: string, globalRoot: string): string | null {
+  if (!existsSync(globalRoot)) {
+    return null;
+  }
+  const campaignsRoot = resolve(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME);
+  if (!existsSync(campaignsRoot)) {
+    return null;
+  }
+  if (!isUnder(cwd, campaignsRoot)) {
+    return null;
+  }
+
+  const normalizedCwd = resolve(cwd);
+  const rel = relative(campaignsRoot, normalizedCwd);
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+    return null;
+  }
+  const first = rel.split(sep)[0];
+  return first ?? null;
 }
 
 export { isAbsolute, resolve, sep, win32, delimiter };

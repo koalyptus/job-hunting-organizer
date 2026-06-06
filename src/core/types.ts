@@ -31,3 +31,56 @@ export interface LoggerConfig {
   readonly redactPaths: readonly string[];
   readonly correlationId?: string | undefined;
 }
+
+export interface GlobalConfig {
+  version: number;
+  root: string;
+  llm: {
+    baseUrl: string;
+    apiKey: string;
+    model: string;
+  };
+  profile: {
+    path: string;
+  };
+  cv: {
+    path: string;
+  };
+  github: {
+    user: string;
+    token: string;
+    repos: string[];
+  };
+  applied: {
+    dir: string;
+  };
+  knowledgeBase: {
+    dir: string;
+  };
+  calendar: {
+    defaultProvider: string;
+    outlook: {
+      tenantId: string;
+      clientId: string;
+      clientSecret: string;
+    };
+  };
+  logging: {
+    level: LogLevel;
+    file: string;
+    redactPaths: string[];
+  };
+}
+
+export interface CampaignConfig {
+  version: number;
+  profile: {
+    path: string;
+  };
+  applied: {
+    dir: string;
+  };
+  knowledgeBase: {
+    dir: string;
+  };
+}

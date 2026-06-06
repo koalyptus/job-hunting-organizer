@@ -4,14 +4,17 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import {
   DEFAULT_APPLIED_DIRNAME,
+  DEFAULT_CAMPAIGNS_DIRNAME,
   DEFAULT_CONFIG_FILENAME,
   DEFAULT_ROOT_DIRNAME,
   SLUG_PATTERN,
+  findCampaignFromCwd,
   findSlugFromCwd,
   isWindows,
   resolveAppliedDir,
+  resolveCampaignRoot,
   resolveConfigPath,
-  resolveRoot,
+  resolveGlobalRoot,
 } from '../paths.js';
 
 describe('isWindows', () => {
@@ -21,7 +24,7 @@ describe('isWindows', () => {
   });
 });
 
-describe('resolveRoot', () => {
+describe('resolveGlobalRoot', () => {
   const originalEnv = process.env['JHO_ROOT'];
 
   afterEach(() => {
@@ -32,25 +35,33 @@ describe('resolveRoot', () => {
     }
   });
 
-  it('returns the override when provided', () => {
-    expect(resolveRoot('/tmp/custom-root')).toBe(resolve('/tmp/custom-root'));
-  });
-
-  it('uses $JHO_ROOT when set and no override', () => {
+  it('uses $JHO_ROOT when set', () => {
     process.env['JHO_ROOT'] = '/tmp/from-env';
-    expect(resolveRoot()).toBe(resolve('/tmp/from-env'));
+    expect(resolveGlobalRoot()).toBe(resolve('/tmp/from-env'));
   });
 
   it('ignores empty $JHO_ROOT', () => {
     process.env['JHO_ROOT'] = '';
-    const result = resolveRoot();
+    const result = resolveGlobalRoot();
     expect(result.endsWith(DEFAULT_ROOT_DIRNAME)).toBe(true);
   });
 
-  it('falls back to $HOME/job-hunting-organizer when no override and no env', () => {
+  it('falls back to $HOME/job-hunting-organizer when no env', () => {
     delete process.env['JHO_ROOT'];
-    const result = resolveRoot();
+    const result = resolveGlobalRoot();
     expect(result.endsWith(sep + DEFAULT_ROOT_DIRNAME)).toBe(true);
+  });
+});
+
+describe('resolveCampaignRoot', () => {
+  it('joins <global>/campaigns/<name>', () => {
+    const result = resolveCampaignRoot('freelance');
+    expect(result.endsWith(join(DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'))).toBe(true);
+  });
+
+  it('defaults to the "default" campaign', () => {
+    const result = resolveCampaignRoot();
+    expect(result.endsWith(join(DEFAULT_CAMPAIGNS_DIRNAME, 'default'))).toBe(true);
   });
 });
 
@@ -112,5 +123,42 @@ describe('findSlugFromCwd', () => {
     const inner = join(workDir, 'applied', 'loose-folder', 'sub');
     await mkdir(inner, { recursive: true });
     expect(findSlugFromCwd(inner, join(workDir, 'applied'))).toBeNull();
+  });
+});
+
+describe('findCampaignFromCwd', () => {
+  let globalRoot: string;
+
+  beforeEach(async () => {
+    globalRoot = await mkdtemp(join(tmpdir(), 'jho-campaigns-'));
+    await mkdir(join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'), { recursive: true });
+    await mkdir(join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'ft-jobs'), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(globalRoot, { recursive: true, force: true });
+  });
+
+  it('returns null when cwd is outside the campaigns dir', () => {
+    expect(findCampaignFromCwd(tmpdir(), globalRoot)).toBeNull();
+  });
+
+  it('returns the campaign name when cwd is the campaign folder', () => {
+    const cwd = join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance');
+    expect(findCampaignFromCwd(cwd, globalRoot)).toBe('freelance');
+  });
+
+  it('returns the campaign name when cwd is a subfolder of the campaign', () => {
+    const cwd = join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance', 'applied', 'notes');
+    expect(findCampaignFromCwd(cwd, globalRoot)).toBe('freelance');
+  });
+
+  it('returns null when no campaigns/ folder exists under the global root', async () => {
+    const empty = await mkdtemp(join(tmpdir(), 'jho-empty-'));
+    try {
+      expect(findCampaignFromCwd(empty, empty)).toBeNull();
+    } finally {
+      await rm(empty, { recursive: true, force: true });
+    }
   });
 });
