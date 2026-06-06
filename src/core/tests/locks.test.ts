@@ -38,15 +38,24 @@ describe('acquireLock', () => {
 
   it('serializes concurrent access to the same target', async () => {
     const order: number[] = [];
+    let aInLock: (() => void) | undefined;
+    const aHasLock = new Promise<void>((r) => {
+      aInLock = r;
+    });
+
     const a = acquireLock(
       target,
       async () => {
         order.push(1);
+        aInLock?.();
         await new Promise((r) => setTimeout(r, 50));
         order.push(2);
       },
       { retries: 10, minTimeout: 10, maxTimeout: 50 },
     );
+
+    await aHasLock;
+
     const b = acquireLock(
       target,
       async () => {
@@ -54,6 +63,7 @@ describe('acquireLock', () => {
       },
       { retries: 10, minTimeout: 10, maxTimeout: 50 },
     );
+
     await Promise.all([a, b]);
     expect(order).toEqual([1, 2, 3]);
   });
