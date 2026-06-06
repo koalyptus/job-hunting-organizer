@@ -1,15 +1,28 @@
 import Table from 'cli-table3';
 import { resolveGlobalRoot, DEFAULT_CONFIG_FILENAME } from './paths.js';
 
+/**
+ * One row in the ownership table: a file or file region plus the rules
+ * that govern how the tool and the user interact with it.
+ */
 export interface OwnershipRow {
+  /** File or file region (e.g. `'jd.md (above jho:start:fetched-jd)'`). */
   readonly file: string;
+  /** Whether and when the tool writes this region. */
   readonly toolWrites: string;
+  /** Whether the user is free to edit it (and any caveats). */
   readonly editFreely: string;
+  /** What happens to user edits when the tool next writes. */
   readonly onYourEdit: string;
 }
 
 // Static ownership table from AGENTS.md. Kept in code (not a doc) so that
 // `jho ownership` always shows the same rules the tool actually enforces.
+/**
+ * The full ownership table, in display order. Each entry corresponds
+ * to a row shown by `jho ownership` / `jho ownership --markdown`.
+ * Source of truth: `AGENTS.md` "File ownership model" table.
+ */
 export const OWNERSHIP_ROWS: readonly OwnershipRow[] = [
   {
     file: 'meta.md (frontmatter)',
@@ -91,11 +104,27 @@ export const OWNERSHIP_ROWS: readonly OwnershipRow[] = [
   },
 ];
 
+/**
+ * Options for {@link renderOwnership}.
+ */
 export interface RenderOwnershipOptions {
+  /** When `true`, emit a markdown table instead of the console table. */
   readonly markdown?: boolean;
+  /**
+   * Override the path shown in the header (default: the resolved global
+   * `config.json`). Useful for tests.
+   */
   readonly configPath?: string;
 }
 
+/**
+ * Render the ownership table for `jho ownership`. Default output is a
+ * `cli-table3` console table sized to fit a 120-char terminal with
+ * word-wrapping enabled. With `{ markdown: true }` the output is a
+ * markdown table suitable for pasting into `AGENTS.md` or a PR.
+ * @param options - Format and display overrides.
+ * @returns The full rendered output, including a header comment.
+ */
 export function renderOwnership(options: RenderOwnershipOptions = {}): string {
   const useMd = options.markdown === true;
   const configPath = options.configPath ?? resolveGlobalRoot() + '/' + DEFAULT_CONFIG_FILENAME;
@@ -111,12 +140,23 @@ Global config: ${configPath}
   );
 }
 
+/** Column headers for the ownership table (shared by both renderers). */
 const COLUMNS: readonly string[] = ['File', 'Tool writes', 'Edit freely?', 'On your edit'];
 
-// Default column widths, sized to fit comfortably in a 120-char terminal.
-// Content longer than the column width wraps to the next line (wordWrap: true).
+/**
+ * Default column widths, sized to fit comfortably in a 120-char terminal.
+ * Content longer than the column width wraps to the next line (via
+ * `cli-table3`'s `wordWrap: true`).
+ */
 const DEFAULT_COL_WIDTHS: readonly number[] = [30, 26, 20, 36];
 
+/**
+ * Render the ownership table as a `cli-table3` console table.
+ * `head: []` and `border: []` disable ANSI styling so the output is
+ * safe to pipe or redirect.
+ * @param rows - The rows to render.
+ * @returns The rendered table followed by a single newline.
+ */
 function formatConsoleTable(rows: readonly OwnershipRow[]): string {
   const table = new Table({
     head: [...COLUMNS],
@@ -130,6 +170,13 @@ function formatConsoleTable(rows: readonly OwnershipRow[]): string {
   return `${table.toString()}\n`;
 }
 
+/**
+ * Render the ownership table as a GitHub-flavoured markdown table.
+ * Column widths are computed from the widest cell; the separator line
+ * uses three dashes per column (width is irrelevant in markdown).
+ * @param rows - The rows to render.
+ * @returns The rendered markdown table followed by a single newline.
+ */
 function formatMarkdownTable(rows: readonly OwnershipRow[]): string {
   const widths = [
     Math.max(COLUMNS[0]?.length ?? 0, ...rows.map((r) => r.file.length)),

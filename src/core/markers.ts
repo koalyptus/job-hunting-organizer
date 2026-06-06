@@ -12,16 +12,40 @@
 // Single-line "section" markers (`<!-- jho:meta — ... -->`) are informational
 // only; they are matched by a different regex and do not denote a region.
 
+/**
+ * The set of region names the tool currently emits. Used by
+ * {@link isKnownRegionName} to validate input and by `jho ownership`
+ * to enumerate tool-managed regions. Add new names here when you
+ * introduce a new tool-managed file.
+ */
 export const REGION_MARKER_NAMES = ['fetched-jd', 'tool-output', 'cover-letter'] as const;
 
+/** A known region name. */
 export type RegionName = (typeof REGION_MARKER_NAMES)[number];
 
+/**
+ * Matches a region start marker line. Group 1 is the region name.
+ * Allows trailing whitespace.
+ */
 const START_LINE_RE = /^<!-- jho:start:([a-z0-9-]+) -->\s*$/;
+
+/**
+ * Matches a region end marker line. Group 1 is the region name.
+ */
 const END_LINE_RE = /^<!-- jho:end:([a-z0-9-]+) -->\s*$/;
+
+/**
+ * Matches a single-line "section" marker like `<!-- jho:meta — ... -->`.
+ * Group 1 is the section name; the remainder is free-form text.
+ */
 const SECTION_LINE_RE = /^<!-- jho:([a-z0-9-]+) [^>]+-->\s*$/;
 
+/**
+ * A parsed region: a tool-managed block of content bounded by paired
+ * `jho:start:<name>` / `jho:end:<name>` markers.
+ */
 export interface Region {
-  /** Region name (e.g., 'fetched-jd'). */
+  /** Region name (e.g., `'fetched-jd'`). */
   name: string;
   /** 1-based line number of the start marker. */
   startLine: number;
@@ -31,6 +55,10 @@ export interface Region {
   content: string;
 }
 
+/**
+ * Thrown when a document contains malformed marker regions (mismatched
+ * start/end names, end without start, or unclosed start markers).
+ */
 export class MarkerError extends Error {
   constructor(message: string) {
     super(message);
@@ -38,10 +66,24 @@ export class MarkerError extends Error {
   }
 }
 
+/**
+ * Type guard that narrows a string to {@link RegionName} if it is a
+ * known region name from {@link REGION_MARKER_NAMES}.
+ * @param name - The string to test.
+ * @returns `true` if `name` is a known region name.
+ */
 export function isKnownRegionName(name: string): name is RegionName {
   return (REGION_MARKER_NAMES as readonly string[]).includes(name);
 }
 
+/**
+ * Parse all well-formed regions in a document. Regions are returned in
+ * document order.
+ * @param content - The full file content.
+ * @returns The parsed regions.
+ * @throws {MarkerError} If a start has no matching end, an end has no
+ *   matching start, or the names on a pair of markers disagree.
+ */
 export function parseRegions(content: string): Region[] {
   const lines = content.split(/\r?\n/);
   const regions: Region[] = [];
@@ -86,18 +128,42 @@ export function parseRegions(content: string): Region[] {
   return regions;
 }
 
+/**
+ * Find a single region by name.
+ * @param content - The full file content.
+ * @param name - The region name to look for.
+ * @returns The matching region, or `null` if absent.
+ */
 export function findRegion(content: string, name: string): Region | null {
   return parseRegions(content).find((r) => r.name === name) ?? null;
 }
 
+/**
+ * Options for {@link replaceRegion}.
+ */
 export interface ReplaceRegionOptions {
   /**
-   * If true and the region does not exist, append a new region to the end
-   * of the file. If false (default), throw a `MarkerError`.
+   * If `true` and the region does not exist, append a new region to the
+   * end of the file. If `false` (default), throw a `MarkerError`.
    */
   createIfMissing?: boolean;
 }
 
+/**
+ * Replace the content inside a named region while preserving everything
+ * before and after. If the region is absent and `createIfMissing` is
+ * set, a new region is appended. Otherwise a `MarkerError` is thrown.
+ *
+ * A trailing newline on `newContent` is consumed so the closing marker
+ * lines up with the start marker.
+ * @param content - The full file content.
+ * @param name - The region name to replace.
+ * @param newContent - The new body of the region. May be empty.
+ * @param options - Behaviour when the region is absent.
+ * @returns The rewritten file content.
+ * @throws {MarkerError} If the region is missing and `createIfMissing`
+ *   is not set, or if the region has a start with no matching end.
+ */
 export function replaceRegion(
   content: string,
   name: string,
@@ -114,7 +180,6 @@ export function replaceRegion(
     }
     throw new MarkerError(`region not found: ${name}`);
   }
-  // Find the matching END marker after this START.
   const endIdx = lines.findIndex(
     (l, idx) => idx > startIdx && END_LINE_RE.test(l) && l.includes(`:${name} -->`),
   );
@@ -122,7 +187,6 @@ export function replaceRegion(
     throw new MarkerError(`region '${name}' has start but no end marker`);
   }
   const newLines = newContent === '' ? [] : newContent.split(/\r?\n/);
-  // Drop the trailing empty line that came from `newContent.endsWith('\n')`.
   if (newContent.endsWith('\n') && newLines[newLines.length - 1] === '') {
     newLines.pop();
   }
@@ -130,8 +194,14 @@ export function replaceRegion(
   return out.join('\n');
 }
 
-// Match single-line "section" markers like `<!-- jho:meta — ... -->`.
-// These are informational only — used by `jho ownership` to label files.
+/**
+ * Find a single-line "section" marker by name. Section markers are
+ * informational (e.g. `<!-- jho:meta — frontmatter is tool-managed -->`)
+ * and do not delimit a region. Used by `jho ownership` to label files.
+ * @param content - The full file content.
+ * @param name - The section name to look for.
+ * @returns The matched line and its 1-based line number, or `null`.
+ */
 export function findSectionMarker(
   content: string,
   name: string,

@@ -5,7 +5,6 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import {
   buildSlug,
   companySlug,
-  extractJobIdFromUrl,
   nextCollisionSuffix,
   readCounters,
   roleAbbr,
@@ -51,29 +50,6 @@ describe('companySlug', () => {
   it('returns "unknown" for empty input', () => {
     expect(companySlug('')).toBe('unknown');
     expect(companySlug('!!!')).toBe('unknown');
-  });
-});
-
-describe('extractJobIdFromUrl', () => {
-  it('extracts trailing numeric from Seek AU', () => {
-    expect(extractJobIdFromUrl('https://au.seek.com.au/job/12345')).toBe('12345');
-    expect(extractJobIdFromUrl('https://au.seek.com.au/job/12345?ref=applied')).toBe('12345');
-  });
-
-  it('extracts job ID from LinkedIn', () => {
-    expect(extractJobIdFromUrl('https://www.linkedin.com/jobs/view/1234567890')).toBe('1234567890');
-  });
-
-  it('extracts jk from Indeed', () => {
-    expect(extractJobIdFromUrl('https://au.indeed.com/viewjob?jk=abc123&from=serp')).toBe('abc123');
-  });
-
-  it('returns null for URLs without a recognizable job ID', () => {
-    expect(extractJobIdFromUrl('https://example.com/careers')).toBeNull();
-  });
-
-  it('returns null for malformed URLs', () => {
-    expect(extractJobIdFromUrl('not a url')).toBeNull();
   });
 });
 

@@ -1,10 +1,27 @@
 import { z } from 'zod';
 import { resolveGlobalRoot } from './paths.js';
 
-// Global config schema (applies to $JHO_ROOT/config.json)
+/**
+ * Zod schema for `<globalRoot>/config.json`. The parsed result is
+ * always fully populated — every nested object has a `.default(...)`
+ * so a missing or partial file still yields a known-good shape.
+ *
+ * Defaults are chosen for the common Ollama setup (local, no auth)
+ * because that is the lowest-friction starting point. The `profile`,
+ * `applied`, and `knowledgeBase` paths are intentionally empty at the
+ * global layer: those are owned by the campaign config and resolved
+ * relative to `<globalRoot>/campaigns/<name>/` in {@link config.ts}.
+ */
 export const GlobalConfigSchema = z.object({
+  /** Schema version. Bumped on backwards-incompatible changes. */
   version: z.number().int().min(1).default(1),
-  root: z.string().default(() => resolveGlobalRoot()), // resolved at runtime
+  /**
+   * Absolute path of the global root. Computed at parse time via
+   * {@link resolveGlobalRoot} so the value tracks `$JHO_ROOT` /
+   * `~/job-hunting-organizer/` without writing it to the file.
+   */
+  root: z.string().default(() => resolveGlobalRoot()),
+  /** OpenAI-compatible LLM endpoint settings. */
   llm: z
     .object({
       baseUrl: z.string().url().default('http://localhost:11434/v1'),
@@ -16,10 +33,10 @@ export const GlobalConfigSchema = z.object({
       apiKey: 'ollama',
       model: 'llama3.1',
     }),
+  /** Profile / CV / GitHub source paths. Empty `path` means "no value". */
   profile: z
     .object({
       path: z.string().default(() => {
-        // Will be overridden by campaign config
         return '';
       }),
     })
@@ -39,7 +56,6 @@ export const GlobalConfigSchema = z.object({
   applied: z
     .object({
       dir: z.string().default(() => {
-        // Will be overridden by campaign config
         return '';
       }),
     })
@@ -47,11 +63,11 @@ export const GlobalConfigSchema = z.object({
   knowledgeBase: z
     .object({
       dir: z.string().default(() => {
-        // Will be overridden by campaign config
         return '';
       }),
     })
     .default({ dir: '' }),
+  /** Calendar integration. ICS is the zero-config default. */
   calendar: z
     .object({
       defaultProvider: z.enum(['ics', 'outlook']).default('ics'),
@@ -67,21 +83,27 @@ export const GlobalConfigSchema = z.object({
       defaultProvider: 'ics',
       outlook: { tenantId: '', clientId: '', clientSecret: '' },
     }),
+  /**
+   * Logging knobs. `redactPaths` mirrors the secrets the logger must
+   * mask before writing to disk; the user can extend the list to
+   * cover custom secret fields without forking.
+   */
   logging: z
     .object({
       level: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
       file: z.string().default(''),
-      redactPaths: z.array(z.string()).default([
-        '*.apiKey',
-        '*.token',
-        '*.clientSecret',
-        '*.password',
-        '*.secret',
-        'config.llm.apiKey',
-        'config.github.token',
-        'config.calendar.outlook.clientSecret',
-        // content fields are redacted by default in logger
-      ]),
+      redactPaths: z
+        .array(z.string())
+        .default([
+          '*.apiKey',
+          '*.token',
+          '*.clientSecret',
+          '*.password',
+          '*.secret',
+          'config.llm.apiKey',
+          'config.github.token',
+          'config.calendar.outlook.clientSecret',
+        ]),
     })
     .default({
       level: 'info',
@@ -99,23 +121,30 @@ export const GlobalConfigSchema = z.object({
     }),
 });
 
-// Campaign config schema (applies to $JHO_ROOT/campaigns/<name>/config.json)
+/**
+ * Zod schema for `<globalRoot>/campaigns/<name>/config.json`. A
+ * strict subset of {@link GlobalConfigSchema}: only the fields a
+ * campaign is allowed to override. Missing or partial files yield a
+ * fully-defaulted object, same as the global schema.
+ */
 export const CampaignConfigSchema = z.object({
   version: z.number().int().min(1).default(1),
+  /** Overrides `global.profile.path`. */
   profile: z
     .object({
-      path: z.string().default(''), // Overrides global profile.path
+      path: z.string().default(''),
     })
     .default({ path: '' }),
+  /** Overrides `global.applied.dir`. */
   applied: z
     .object({
-      dir: z.string().default(''), // Overrides global applied.dir
+      dir: z.string().default(''),
     })
     .default({ dir: '' }),
+  /** Overrides `global.knowledgeBase.dir`. */
   knowledgeBase: z
     .object({
-      dir: z.string().default(''), // Overrides global knowledgeBase.dir
+      dir: z.string().default(''),
     })
     .default({ dir: '' }),
-  // Campaign-specific overrides for cv, github, etc. can be added here if needed
 });
