@@ -8,6 +8,7 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  prettier,
   {
     languageOptions: {
       ecmaVersion: 2023,
@@ -24,7 +25,7 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      curly: ['error', 'all'],
     },
   },
-  prettier,
 );

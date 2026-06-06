@@ -29,11 +29,11 @@
     "mcp:dev": "tsx watch src/mcp/server.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "keywords": [
     "mcp",
@@ -44,9 +44,18 @@
     "application-tracking",
     "cli"
   ],
+  "dependencies": {
+    "debug": "^4.4.1",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0",
+    "proper-lockfile": "^4.1.2",
+    "zod": "^3.23.8"
+  },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@types/debug": "^4.1.13",
     "@types/node": "^22.10.0",
+    "@types/proper-lockfile": "^4.1.4",
     "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",

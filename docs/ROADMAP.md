@@ -50,24 +50,55 @@
 
 ## Phase 2 — Core infrastructure (no LLM, no network)
 
-**Scope**:
+**Scope** (split into 2a/2b for incremental delivery — see below):
 
-- `core/paths.ts` — resolves `$JHO_ROOT`, finds `config.json`
-- `core/config.ts` — zod schema, read/write `config.json`, redact secrets, `updateConfig(partial)` merge
+- `core/paths.ts` — resolves `$JHO_ROOT`, finds global `config.json`, resolves campaign root, `findSlugFromCwd` and `findCampaignFromCwd`
+- `core/config.ts` — zod schemas (global + per-campaign), read/write both, redact secrets, `updateConfig(partial)` merge
+- `core/config.schema.ts` — Zod schemas split out (single-responsibility: validation rules in their own module)
 - `core/logger.ts` — pino factory, redaction paths, TTY vs JSON, child loggers
 - `core/debug.ts` — `debug` wrapper, namespace `jho:*`
 - `core/fs.ts` — `atomicWrite(path, content)`, `withBackup(path, fn)`
 - `core/locks.ts` — `acquireLock(target, fn)` via `proper-lockfile` (5 retries, 50–500ms backoff, stale-lock detection). Lock granularity: app folder for per-app ops, profile for rebuild, campaign root for global ops. See PLAN §7 "Concurrency / file locks".
 - `core/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction, `SLUG_PATTERN`, `validateSlug(slug)`
-- `core/paths.ts` (extended) — `findSlugFromCwd(cwd, appliedDir)` for CLI slug inference
-- `core/config.ts` (extended) — `webServer.{port, host}` placeholder in the zod schema (default `127.0.0.1:7331`); unused by CLI/MCP in v1, ready for a future web client. See PLAN §20.
 - `core/frontmatter.ts` — `readFrontmatter(path)`, `writeFrontmatter(path, fm, body)` preserving custom fields
 - `core/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
 - Tests for each module (~80% coverage on these)
 
-**Deliverable**: `jho root` prints campaign root. `jho config show` prints redacted config. `jho ownership` prints the table. `jho --help` works.
+### Phase 2a — Foundation (delivered in PR #2)
 
-**Commit**: `feat(core): paths, config, logger, locks, slug, frontmatter, markers`
+Sub-phase covering the lowest-risk modules first. Smaller, easier to review, unblocks Phase 2c (CLI surface) without waiting on the more opinionated modules (frontmatter, markers, slug).
+
+**Delivered**:
+
+- `core/paths.ts` — `$JHO_ROOT`, global root, campaign root, slug & campaign cwd inference
+- `core/config.ts` + `core/config.schema.ts` — zod schemas, global + per-campaign config load/merge/update
+- `core/logger.ts` — pino factory, redaction, TTY/JSON output, file output
+- `core/debug.ts` — `jho:*` namespace helper
+- `core/fs.ts` — `atomicWrite` (writeFile → rename), `pathExists`, `withBackup`
+- `core/locks.ts` — proper-lockfile wrapper
+- `core/package.ts` — package version / root resolution
+- `src/cli/index.ts` — `jho --version`, `jho --help`, `jho root [--global]`
+- Tests: 63/63 passing, ~88% line coverage on `core/`
+
+**Deliverable**: `jho root` prints the inferred (or global) root. `jho --help` works. Two-level config is loaded and merged correctly.
+
+**Commit**: `feat(core): paths, config, logger, locks, package, root command`
+
+### Phase 2b — Schema-driven IO (planned)
+
+Picks up the more opinionated modules that build on 2a. Unblocks Phase 5 (JD extraction) and Phase 6 (cover letter / Q&A).
+
+**Scope**:
+
+- `core/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction, `SLUG_PATTERN`, `validateSlug(slug)`
+- `core/frontmatter.ts` — `readFrontmatter(path)`, `writeFrontmatter(path, fm, body)` preserving custom fields
+- `core/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
+- `jho config show` — prints redacted merged config for the inferred campaign
+- `jho ownership` — prints the per-file ownership table
+
+**Deliverable**: Phase 5+ can build on top of these. `jho track` writes frontmatter and uses markers for the JD region. `jho cover-letter` writes a `<!-- jho:cover-letter -->`-marked file.
+
+**Commit**: `feat(core): slug, frontmatter, markers, config show, ownership`
 
 ---
 
@@ -96,20 +127,26 @@
 **Scope**:
 
 - `src/cli/index.ts` — commander setup, command registration
-- One file per command (init, config, root, profile, track, list, show, cover-letter, answer, interview, retro, ownership, doctor, repair, help, mcp)
+- One file per command (init, config, root, rename-campaign, profile, track, list, show, cover-letter, answer, interview, retro, ownership, doctor, repair, help, mcp)
 - Hand-written `--help` for each
 - Stub commands error with "not implemented yet (planned: phase X)"
-- Real commands: `init`, `config`, `root`, `profile show`, `ownership`, `help`
+- Real commands: `init`, `config`, `root`, `rename-campaign`, `profile show`, `ownership`, `help`
 - `src/cli/spinner.ts` — ora wrapper
-- `jho init` wizard with `@clack/prompts`:
-  - Campaign root → CV path → GitHub user (+token) → LLM baseUrl/key/model → calendar provider
-  - Runs profile build (phase 3) → writes `profile.md`
+- `jho init [<name>]` wizard with `@clack/prompts`:
+  - Campaign name (defaults to `default`) → CV path → GitHub user (+token) → LLM baseUrl/key/model → calendar provider
+  - Runs profile build (phase 3) → writes `profile.md` (per-campaign)
   - **Reviews the generated `## Target roles` list** — user can accept all / edit one / add / delete / open in editor
-  - Writes `config.json` and `outlook-tokens.json` if needed
+  - Writes **global** `config.json` (LLM, GitHub, calendar, logging) AND **per-campaign** `config.json` (profile/applied/knowledgeBase paths), and `outlook-tokens.json` if needed
+- `jho rename-campaign [<old>] <new>`:
+  - Validates `<new>` (no empty, no `/`, no `\\`, no `..`, no `.`, no leading `-`, no leading/trailing whitespace)
+  - Refuses if cwd is inside the campaign being renamed
+  - Takes a `proper-lockfile` lock on the campaign root
+  - Atomic `fs.rename`; logs the move with correlation id
+  - Bare `mv` on `campaigns/<name>/` is also supported as an escape hatch; this command is the validated path
 
-**Deliverable**: `jho init` works end-to-end on a fresh machine. User has a profile with a reviewed list of target roles. All other commands are visible in `--help` with full docs, even if they error.
+**Deliverable**: `jho init` works end-to-end on a fresh machine. User has a profile with a reviewed list of target roles. `jho rename-campaign` renames a campaign folder safely. All other commands are visible in `--help` with full docs, even if they error.
 
-**Commit**: `feat(cli): command surface with full --help, init wizard with target-roles review`
+**Commit**: `feat(cli): command surface with full --help, init wizard with target-roles review, rename-campaign`
 
 ---
 
@@ -251,7 +288,7 @@ These items are explicitly **out of scope for v1** but the design leaves room fo
 
 ### Web client (`jho web`)
 
-Local-only web UI bound to `127.0.0.1:7331` (per `config.json → webServer`). Reads and writes the same campaign root as the CLI. See PLAN §20 for the full rationale and the 5 forward-looking items (file locks and `webServer` config are already in v1; the other three — watcher, HTTP MCP transport, job runner — are deferred).
+Local-only web UI bound to `127.0.0.1:7331` (the port will be added back to `config.json` when this lands). Reads and writes the same campaign root as the CLI. See PLAN §20 for the full rationale and the 4 forward-looking items (file locks are already in v1; the other three — watcher, HTTP MCP transport, job runner — are deferred).
 
 Sketch only:
 

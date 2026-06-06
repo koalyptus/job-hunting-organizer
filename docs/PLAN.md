@@ -41,17 +41,39 @@ A local-first CLI + MCP server that helps run a job-hunting campaign: profile fr
 
 ## 3. Data locations
 
-| Path                                            | Purpose                                        | Git? |
-| ----------------------------------------------- | ---------------------------------------------- | ---- |
-| `~/job-hunting-organizer/config.json`           | Global settings (paths, LLM, GitHub, calendar) | no   |
-| `~/job-hunting-organizer/profile.md`            | Generated profile                              | no   |
-| `~/job-hunting-organizer/cv.<ext>`              | User's CV (path configurable)                  | no   |
-| `~/job-hunting-organizer/applied/`              | Per-application folders                        | no   |
-| `~/job-hunting-organizer/knowledge-base/local/` | Raw extracted text cache (cv, github, jobs)    | no   |
-| `~/job-hunting-organizer/outlook-tokens.json`   | MSAL tokens (mode 0600)                        | no   |
-| `$JHO_ROOT`                                     | Override of campaign root                      | n/a  |
+There is a single **global root** that holds shared settings, and one or more **campaigns** under it. Each campaign has its own profile, applied folders, and knowledge base.
 
-Resolution precedence: **CLI flag → env var → `config.json` → default `~/job-hunting-organizer/`**.
+```
+~/job-hunting-organizer/                                # global root (override with $JHO_ROOT)
+├── config.json                                         # global: LLM, GitHub, calendar, logging
+├── .locks/                                             # proper-lockfile sidecars
+└── campaigns/
+    ├── default/                                        # default campaign
+    │   ├── config.json                                 # per-campaign: profile path, applied dir, KB dir
+    │   ├── profile.md                                  # generated profile (per-campaign)
+    │   ├── cv.<ext>                                    # user's CV (path configurable)
+    │   ├── applied/                                    # per-application folders
+    │   ├── knowledge-base/local/                       # raw extracted text cache
+    │   └── outlook-tokens.json                         # MSAL tokens (mode 0600)
+    └── freelance/                                      # second campaign
+        └── ...
+```
+
+| Path                                              | Purpose                                                | Git? |
+| ------------------------------------------------- | ------------------------------------------------------ | ---- |
+| `<global>/config.json`                            | Global settings (LLM, GitHub, calendar, logging)       | no   |
+| `<global>/.locks/`                                | proper-lockfile sidecars                               | no   |
+| `<global>/campaigns/<name>/config.json`           | Per-campaign settings (profile path, applied dir, KB)  | no   |
+| `<global>/campaigns/<name>/profile.md`            | Generated profile (per-campaign)                       | no   |
+| `<global>/campaigns/<name>/cv.<ext>`              | User's CV (path configurable)                          | no   |
+| `<global>/campaigns/<name>/applied/`              | Per-application folders                                | no   |
+| `<global>/campaigns/<name>/knowledge-base/local/` | Raw extracted text cache                               | no   |
+| `<global>/campaigns/<name>/outlook-tokens.json`   | MSAL tokens (mode 0600)                                | no   |
+| `$JHO_ROOT`                                       | Override of global root (no CLI flag for it by design) | n/a  |
+
+Resolution precedence for the **global root**: **`$JHO_ROOT` env var → default `~/job-hunting-organizer/`**. There is no `--global-root` CLI flag; the env var is the only override (matches common app behavior like git, VS Code, ssh config location).
+
+Resolution precedence for the **campaign**: **explicit `--campaign <name>` flag → cwd-inferred from `<global>/campaigns/<name>/` → `default`**. MCP tool calls always pass an explicit campaign name; CLI uses cwd inference as a convenience.
 
 ---
 
@@ -466,30 +488,40 @@ identifier; the title is display-only.
 
 ---
 
-## 6. `config.json` schema
+## 6. `config.json` schema — two-level
+
+There are two config files: a **global** one at `<global-root>/config.json` (shared settings) and a **per-campaign** one at `<global-root>/campaigns/<name>/config.json` (per-campaign paths). The global config is loaded first; the campaign config is layered on top and may override the path-like fields (profile, applied, knowledgeBase).
+
+### Global config (`<global-root>/config.json`)
 
 ```json
 {
   "version": 1,
   "root": "/home/<user>/job-hunting-organizer",
   "llm": { "baseUrl": "http://localhost:11434/v1", "apiKey": "ollama", "model": "llama3.1" },
-  "profile": { "path": "/home/<user>/job-hunting-organizer/profile.md" },
-  "cv": { "path": "/home/<user>/job-hunting-organizer/cv.pdf" },
   "github": { "user": "maxgu", "token": "", "repos": [] },
-  "applied": { "dir": "/home/<user>/job-hunting-organizer/applied" },
-  "knowledgeBase": { "dir": "/home/<user>/job-hunting-organizer/knowledge-base" },
   "calendar": {
     "defaultProvider": "ics",
     "outlook": { "tenantId": "", "clientId": "", "clientSecret": "" }
   },
-  "logging": { "level": "info", "file": "", "redactPaths": [] },
-  "webServer": { "port": 7331, "host": "127.0.0.1" }
+  "logging": { "level": "info", "file": "", "redactPaths": [] }
 }
 ````
 
-`jho config show` redacts secrets. `jho config show --reveal` shows all (with confirmation).
+### Per-campaign config (`<global-root>/campaigns/<name>/config.json`)
 
-> `webServer` is a forward-looking placeholder. The CLI and MCP server do not use it. It exists now so that adding an optional local web client later does not require a `config.json` schema migration. See §20.
+```json
+{
+  "version": 1,
+  "profile": { "path": "/home/<user>/job-hunting-organizer/campaigns/freelance/profile.md" },
+  "applied": { "dir": "/home/<user>/job-hunting-organizer/campaigns/freelance/applied" },
+  "knowledgeBase": {
+    "dir": "/home/<user>/job-hunting-organizer/campaigns/freelance/knowledge-base"
+  }
+}
+```
+
+`jho config show` (with no `--campaign` flag) shows the merged config for the inferred campaign. `jho config show --global` shows the global file. `jho config show --reveal` shows secrets (with confirmation). When both files exist, the campaign's path fields win.
 
 ---
 
@@ -563,12 +595,22 @@ The tool is designed for single-user, single-process use today, but the CLI, MCP
 jho                          # top-level overview
 jho --version
 
-jho init [--root <path>] [--cv <path>] [--github <user>] [--yes]
-  # Wizard prompts: campaign root → CV path → GitHub user (+token) →
+jho init [<name>] [--cv <path>] [--github <user>] [--yes]
+  # Wizard prompts: campaign name (defaults to "default") → CV path → GitHub user (+token) →
   #   LLM baseUrl/key/model → calendar provider → runs profile build →
-  #   reviews generated ## Target roles → writes config.json + profile.md
-jho config [show|path|edit] [--reveal]
-jho root
+  #   reviews generated ## Target roles → writes global + campaign config.json + profile.md
+jho config [show|path|edit] [--reveal] [--campaign <name>] [--global]
+jho root [--global]
+jho rename-campaign [<old>] <new>
+  # Rename a campaign folder: <global>/campaigns/<old>/ → <global>/campaigns/<new>/.
+  # Implicit form: from inside the campaign folder, `jho rename-campaign <new>` infers <old>.
+  # Validates <new>: rejects empty, '/', '\\', '..', '.', leading '-', leading/trailing whitespace.
+  # Refuses if cwd is inside the campaign being renamed (no self-foot-gun).
+  # Takes a proper-lockfile lock on the campaign root for the duration.
+  # Atomic `fs.rename` on the same filesystem.
+  # Logs: old → new, duration, correlation id.
+  # Bare `mv` on the `campaigns/<name>/` folder also works — this command adds
+  # validation, a lock, and an audit log. (See decisions log.)
 
 jho profile show | rebuild [--cv <path>] [--github <user>]
 
@@ -1012,7 +1054,7 @@ Each phase is self-contained, buildable, testable. Earlier phases are smaller; p
 
 ## 18. Explicitly out of scope (v1)
 
-- Multi-user / multi-campaign mode.
+- Multi-user mode.
 - File watchers (inotify).
 - Multi-machine sync.
 - Browser extension.
@@ -1024,31 +1066,39 @@ Each phase is self-contained, buildable, testable. Earlier phases are smaller; p
 - Concurrent edit detection beyond `.toolhash`.
 - Telemetry of any kind.
 
+> **Multiple campaigns** is in scope (v1): two-level directory structure with global root + `campaigns/<name>/` subfolders, `--campaign <name>` flag with cwd inference. See §3.
+
 ---
 
 ## 19. Decisions log
 
-| Question                                           | Decision                                                                                     |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Monorepo or single package?                        | Single package.                                                                              |
-| LLM provider?                                      | Generic OpenAI-compatible via env/config.                                                    |
-| JD fetch?                                          | Generic fetch + LLM extract; `--paste`/stdin fallback.                                       |
-| Calendar?                                          | Pluggable; ICS default, Outlook opt-in.                                                      |
-| `applied/responses/`?                              | Dropped.                                                                                     |
-| `applied/` layout?                                 | Folder per application.                                                                      |
-| Slug convention?                                   | `YYYY-MMM-DD-roleAbbr-companySlug[-jobId][-n]`.                                              |
-| CV / profile location?                             | Outside repo, default `~/job-hunting-organizer/`.                                            |
-| `applied/.index.json` in git?                      | No — gitignored derived cache.                                                               |
-| `applied/.counters.json`?                          | No — gitignored derived cache.                                                               |
-| Legacy `2026-Jun-03-SE-Nuage-Technology-Group.md`? | Untouched, gitignored, not read by tool.                                                     |
-| Repo data dirs?                                    | Removed (only legacy MD remains).                                                            |
-| Global config?                                     | At campaign root: `~/job-hunting-organizer/config.json`.                                     |
-| File ownership model?                              | In-file markers + `.toolhash` sidecars + `jho ownership` + `jho doctor` + `jho show` footer. |
-| Logging?                                           | `pino` to stderr; redaction built-in; correlation ids.                                       |
-| `--help` quality?                                  | Hand-written, ≥ 3 examples per command, layered (cmd/topic).                                 |
-| Evals?                                             | Lightweight, manual, not in CI; tiered guard rails.                                          |
-| glama?                                             | `glama.json` from phase 1; full readiness by phase 8.                                        |
-| Phasing?                                           | 10 phases, manual commits at phase boundaries.                                               |
+| Question                                           | Decision                                                                                                                                                                     |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monorepo or single package?                        | Single package.                                                                                                                                                              |
+| LLM provider?                                      | Generic OpenAI-compatible via env/config.                                                                                                                                    |
+| JD fetch?                                          | Generic fetch + LLM extract; `--paste`/stdin fallback.                                                                                                                       |
+| Calendar?                                          | Pluggable; ICS default, Outlook opt-in.                                                                                                                                      |
+| `applied/responses/`?                              | Dropped.                                                                                                                                                                     |
+| `applied/` layout?                                 | Folder per application.                                                                                                                                                      |
+| Slug convention?                                   | `YYYY-MMM-DD-roleAbbr-companySlug[-jobId][-n]`.                                                                                                                              |
+| CV / profile location?                             | Outside repo, per campaign: `<global>/campaigns/<name>/cv.<ext>`.                                                                                                            |
+| `applied/.index.json` in git?                      | No — gitignored derived cache.                                                                                                                                               |
+| `applied/.counters.json`?                          | No — gitignored derived cache.                                                                                                                                               |
+| Legacy `2026-Jun-03-SE-Nuage-Technology-Group.md`? | Untouched, gitignored, not read by tool.                                                                                                                                     |
+| Repo data dirs?                                    | Removed (only legacy MD remains).                                                                                                                                            |
+| Data layout?                                       | Two-level: global root + `campaigns/<name>/`. Global root is fixed; only `$JHO_ROOT` env var relocates it (no CLI flag).                                                     |
+| Config layout?                                     | Two-level: global config at `<global>/config.json` + per-campaign config at `<global>/campaigns/<name>/config.json`. Campaign paths override global defaults.                |
+| Profile location?                                  | Per campaign: `<global>/campaigns/<name>/profile.md`.                                                                                                                        |
+| Global-root CLI flag?                              | No — `$JHO_ROOT` env var only (matches git, VS Code, ssh config location).                                                                                                   |
+| Campaign selection?                                | Explicit `--campaign <name>` flag, or cwd-inferred from inside `<global>/campaigns/<name>/`. Default: `default`.                                                             |
+| Rename a campaign?                                 | `jho rename-campaign [<old>] <new>`. Validates name, takes a lock, atomic `fs.rename`, logs the move. Bare `mv` on `campaigns/<name>/` is also supported as an escape hatch. |
+| `webServer` config block?                          | Removed. Was a placeholder for a future web client; can be added back when `jho web` lands.                                                                                  |
+| File ownership model?                              | In-file markers + `.toolhash` sidecars + `jho ownership` + `jho doctor` + `jho show` footer.                                                                                 |
+| Logging?                                           | `pino` to stderr; redaction built-in; correlation ids.                                                                                                                       |
+| `--help` quality?                                  | Hand-written, ≥ 3 examples per command, layered (cmd/topic).                                                                                                                 |
+| Evals?                                             | Lightweight, manual, not in CI; tiered guard rails.                                                                                                                          |
+| glama?                                             | `glama.json` from phase 1; full readiness by phase 8.                                                                                                                        |
+| Phasing?                                           | 10 phases, manual commits at phase boundaries.                                                                                                                               |
 
 ---
 
@@ -1066,7 +1116,7 @@ This section captures why the current design is already web-client-friendly and 
 
 ### Forward-looking items (cheaper now, big payoff later)
 
-These are the only items worth doing in v1 for web-client readiness. Two of them are baked in; three are deferred.
+These are the only items worth doing in v1 for web-client readiness. One of them is baked in; three are deferred. The fifth item originally proposed (a `webServer` placeholder in `config.json`) was removed — the schema is now minimal, and a web server can add its own port/host config when it lands.
 
 | #   | Item                                                                                             | When      | Status                                           |
 | --- | ------------------------------------------------------------------------------------------------ | --------- | ------------------------------------------------ |
@@ -1074,9 +1124,6 @@ These are the only items worth doing in v1 for web-client readiness. Two of them
 | 2   | `core/watcher.ts` — chokidar-based file-watcher with `file-changed` / `toolhash-mismatch` events | Phase 11+ | deferred                                         |
 | 3   | HTTP+SSE transport for the MCP server                                                            | Phase 11+ | deferred                                         |
 | 4   | `core/jobs.ts` — async job runner for long LLM ops with progress                                 | Phase 11+ | deferred                                         |
-| 5   | `config.json → webServer.{port,host}` placeholder                                                | Phase 2   | **baked in** (see §6, default `127.0.0.1:7331`)  |
-
-The `webServer` config block is unused by the CLI and MCP server today. It exists now so adding the web client later is a config _fill-in_, not a schema migration.
 
 ### What the design does NOT block
 
