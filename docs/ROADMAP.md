@@ -77,10 +77,10 @@ Sub-phase covering the lowest-risk modules first. Smaller, easier to review, unb
 - `core/fs.ts` — `atomicWrite` (writeFile → rename), `pathExists`, `withBackup`
 - `core/locks.ts` — proper-lockfile wrapper
 - `core/package.ts` — package version / root resolution
-- `src/cli/index.ts` — `jho --version`, `jho --help`, `jho root [--global]`
+- `src/cli/index.ts` — `jho --version`, `jho --help`, `jho config [show|path]`, `jho campaign config [show|path]`, `jho ownership`
 - Tests: 63/63 passing, ~88% line coverage on `core/`
 
-**Deliverable**: `jho root` prints the inferred (or global) root. `jho --help` works. Two-level config is loaded and merged correctly.
+**Deliverable**: `jho config show` and `jho campaign config show` print the global and campaign configs respectively. `jho --help` works. Two-level config is loaded with disjoint global / campaign key sets.
 
 **Commit**: `feat(core): paths, config, logger, locks, package, root command`
 

@@ -7,27 +7,34 @@ import { resolveDataRoot } from './paths.js';
  * so a missing or partial file still yields a known-good shape.
  *
  * Defaults are chosen for the common Ollama setup (local, no auth)
- * because that is the lowest-friction starting point. The `profile`,
- * `applied`, and `knowledgeBase` paths are intentionally empty at the
- * global layer: those are owned by the campaign config and resolved
- * relative to `<dataRoot>/campaigns/<name>/` in {@link config.ts}.
+ * because that is the lowest-friction starting point. The fields here
+ * are the ones that are genuinely *global* (shared across every
+ * campaign a user runs): the LLM endpoint, GitHub identity, calendar
+ * provider, logging, and the location of the data root itself.
  *
- * Note: the global `config.json` itself lives in the config home (see
- * `AGENTS.md` "Data layout"), which is a *separate* location from the
- * data root described by the `root` field below.
+ * Per-campaign fields (profile, CV, applied, knowledge base) belong
+ * in {@link CampaignConfigSchema} — they vary by campaign and live
+ * next to the campaign's other files in the data root.
+ *
+ * Note: this file lives in the config home (see `AGENTS.md` "Data
+ * layout"), which is a *separate* location from the data root
+ * described by the `dataRoot` field below.
  */
 export const GlobalConfigSchema = z.object({
   /** Schema version. Bumped on backwards-incompatible changes. */
   version: z.number().int().min(1).default(1),
   /**
-   * Absolute path of the campaign data root. Computed at parse time via
-   * {@link resolveDataRoot} so the value tracks `$JHO_DATA` /
-   * `~/job-hunting-organizer-data/` without writing it to the file.
+   * Absolute path of the campaign data root. Computed lazily on each
+   * parse via {@link resolveDataRoot} so the value tracks `$JHO_DATA`
+   * / `~/job-hunting-organizer-data/` without being frozen at module
+   * load time. This means tests that set `JHO_DATA` after the schema
+   * module has been imported still see the env var at parse time.
+   *
    * This describes where the user's working data lives, which is
    * distinct from the config home that holds this file.
    */
-  root: z.string().default(() => resolveDataRoot()),
-  /** OpenAI-compatible LLM endpoint settings. */
+  dataRoot: z.string().default(() => resolveDataRoot()),
+  /** OpenAI-compatible LLM endpoint settings. Shared across campaigns. */
   llm: z
     .object({
       baseUrl: z.string().url().default('http://localhost:11434/v1'),
@@ -39,19 +46,10 @@ export const GlobalConfigSchema = z.object({
       apiKey: 'ollama',
       model: 'llama3.1',
     }),
-  /** Profile / CV / GitHub source paths. Empty `path` means "no value". */
-  profile: z
-    .object({
-      path: z.string().default(() => {
-        return '';
-      }),
-    })
-    .default({ path: '' }),
-  cv: z
-    .object({
-      path: z.string().default(''),
-    })
-    .default({ path: '' }),
+  /**
+   * Optional GitHub integration for `jho campaign init` profile
+   * building. One identity, shared across campaigns.
+   */
   github: z
     .object({
       user: z.string().default(''),
@@ -59,20 +57,6 @@ export const GlobalConfigSchema = z.object({
       repos: z.array(z.string()).default([]),
     })
     .default({ user: '', token: '', repos: [] }),
-  applied: z
-    .object({
-      dir: z.string().default(() => {
-        return '';
-      }),
-    })
-    .default({ dir: '' }),
-  knowledgeBase: z
-    .object({
-      dir: z.string().default(() => {
-        return '';
-      }),
-    })
-    .default({ dir: '' }),
   /** Calendar integration. ICS is the zero-config default. */
   calendar: z
     .object({
@@ -128,26 +112,37 @@ export const GlobalConfigSchema = z.object({
 });
 
 /**
- * Zod schema for `<dataRoot>/campaigns/<name>/config.json`. A
- * strict subset of {@link GlobalConfigSchema}: only the fields a
- * campaign is allowed to override. Missing or partial files yield a
- * fully-defaulted object, same as the global schema.
+ * Zod schema for `<dataRoot>/campaigns/<name>/config.json`. Holds the
+ * fields that vary per campaign: where the profile, CV, applied
+ * directory, and knowledge base live for *this* campaign. The keys
+ * here are disjoint from {@link GlobalConfigSchema} — the global
+ * layer never sees these.
+ *
+ * Missing or partial files yield a fully-defaulted object, same as
+ * the global schema.
  */
 export const CampaignConfigSchema = z.object({
+  /** Schema version. Mirrors `GlobalConfigSchema.version` for consistency. */
   version: z.number().int().min(1).default(1),
-  /** Overrides `global.profile.path`. */
+  /** Per-campaign profile location. */
   profile: z
     .object({
       path: z.string().default(''),
     })
     .default({ path: '' }),
-  /** Overrides `global.applied.dir`. */
+  /** Per-campaign CV location. */
+  cv: z
+    .object({
+      path: z.string().default(''),
+    })
+    .default({ path: '' }),
+  /** Per-campaign applications directory. */
   applied: z
     .object({
       dir: z.string().default(''),
     })
     .default({ dir: '' }),
-  /** Overrides `global.knowledgeBase.dir`. */
+  /** Per-campaign knowledge base directory. */
   knowledgeBase: z
     .object({
       dir: z.string().default(''),

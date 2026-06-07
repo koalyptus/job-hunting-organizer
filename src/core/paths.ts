@@ -107,11 +107,27 @@ export function resolveConfigHome(): string {
 }
 
 /**
+ * Resolve the default campaign name. The `JHO_DEFAULT_CAMPAIGN`
+ * environment variable wins over the literal `'default'` so CI and
+ * scripts can target a sandbox campaign without passing `--campaign`
+ * to every invocation.
+ *
+ * Lives in `paths.ts` (not `config.ts`) so {@link resolveCampaignRoot}
+ * can use it as a default without creating a circular import —
+ * `config.ts` itself depends on `paths.ts`.
+ * @returns The campaign name to use when none is specified.
+ */
+export function getDefaultCampaignName(): string {
+  return process.env['JHO_DEFAULT_CAMPAIGN'] || 'default';
+}
+
+/**
  * Resolve the absolute path of a campaign's root directory.
- * @param campaignName - The campaign folder name. Default: `'default'`.
+ * @param campaignName - The campaign folder name. Default: the value of
+ *   `JHO_DEFAULT_CAMPAIGN`, or `'default'`.
  * @returns `<dataRoot>/campaigns/<campaignName>`.
  */
-export function resolveCampaignRoot(campaignName: string = 'default'): string {
+export function resolveCampaignRoot(campaignName: string = getDefaultCampaignName()): string {
   const dataRoot = resolveDataRoot();
   return resolve(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, campaignName);
 }

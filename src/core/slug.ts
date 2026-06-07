@@ -10,7 +10,7 @@
 
 import { formatDateUtc, parseDateOrNow, MONTH_ABBR } from './date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
-import { nextCollisionSuffix, readCounters } from './counters.js';
+import { readCollisionSuffix, readCounters } from './counters.js';
 import { extractJobIdFromUrl } from './url.js';
 import type { SlugBuildInput, SlugOptions } from './types.js';
 
@@ -68,7 +68,7 @@ export function companySlug(company: string, maxLen = 32): string {
  * Compose a full application slug from the standard components. Missing
  * inputs are filled with `'unknown'` so the output is always a valid
  * slug. The collision suffix `-N` is intentionally NOT added here — the
- * caller checks {@link nextCollisionSuffix} and appends the suffix.
+ * caller checks {@link readCollisionSuffix} and appends the suffix.
  * @param input - The slug inputs. All fields are optional.
  * @param _options - Reserved for future use. Ignored for now.
  * @returns A slug like `2026-Jun-03-senior-engineer-nuage-92448554`.
@@ -119,7 +119,7 @@ export function validateSlug(slug: string): { ok: true } | { ok: false; reason: 
 // `import { extractJobIdFromUrl, readCounters, ... } from './slug.js'`
 // if they want a one-stop shop. The canonical homes are:
 //   extractJobIdFromUrl → ./url.js
-//   readCounters, nextCollisionSuffix → ./counters.js
+//   readCounters, readCollisionSuffix → ./counters.js
 // New code should import from those modules directly.
 export { extractJobIdFromUrl };
-export { readCounters, nextCollisionSuffix };
+export { readCounters, readCollisionSuffix };

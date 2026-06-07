@@ -7,22 +7,22 @@ import { renderOwnership } from '../core/ownership.js';
 const VERSION = getPackageVersion();
 
 /**
- * Internal helper used by `jho config` and `jho campaign config`. Prints
- * a header line on stderr naming the source file, then writes the body
- * to stdout. `reveal` opts out of secret redaction; `json` switches the
- * body to a pretty-printed JSON document for `jq`.
+ * Internal helper used by `jho config` and `jho campaign config`. Writes
+ * a single "Source: <path>" line to stderr (so it shows up in `--help`
+ * style flows but never in `jho config | jq`) and the body to stdout.
+ * `reveal` opts out of secret redaction; `json` switches the body to a
+ * pretty-printed JSON document for `jq` and drops the stderr source
+ * line for pipe-friendliness.
  */
 function renderConfig(
   body: unknown,
   options: { sourcePath: string; reveal: boolean; json: boolean },
 ): number {
   const value = options.reveal ? body : redactSecrets(body as never);
-  process.stderr.write(`Source: ${options.sourcePath}\n`);
-  if (options.json) {
-    process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
-  } else {
-    process.stdout.write(`# Source: ${options.sourcePath}\n${JSON.stringify(value, null, 2)}\n`);
+  if (!options.json) {
+    process.stderr.write(`Source: ${options.sourcePath}\n`);
   }
+  process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
   return 0;
 }
 
@@ -49,7 +49,6 @@ Data locations (override via env var only):
                          No --data-root flag by design.
 
 Commands available in this build:
-  root                   Print the inferred campaign root
   config [show|path]     Show or print the path of the global config (in the config home)
   campaign config [show|path]
                          Show or print the path of the active campaign's config
@@ -121,14 +120,6 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 }
 
 /**
- * `jho root` — print the inferred campaign root (cwd-inferred or `default`).
- * No flags; per-campaign selection via `--campaign` is planned for Phase 2c.
- */
-function commandRoot(): void {
-  process.stdout.write(`${resolveCampaignRoot()}\n`);
-}
-
-/**
  * `jho config [show|path]` — show or print the path of the global config
  * (in the config home). `show` accepts `--reveal` and `--json`; `path` is
  * a one-liner intended for `$(jho config path)`.
@@ -164,7 +155,8 @@ Usage:
 
 Options:
   --reveal   Show secrets in clear text (default: redact)
-  --json     Output JSON only (default: header + pretty JSON)
+  --json     Output JSON only; suppresses the "Source:" line on stderr
+             so the JSON survives a pipe to \`jq\` cleanly
 
 The global config lives in the config home ($JHO_CONFIG_HOME, default
 ~/.job-hunting-organizer/). For the active campaign's config, use
@@ -217,7 +209,8 @@ Usage:
 
 Options:
   --reveal   Show secrets in clear text (default: redact)
-  --json     Output JSON only (default: header + pretty JSON)
+  --json     Output JSON only; suppresses the "Source:" line on stderr
+             so the JSON survives a pipe to \`jq\` cleanly
 
 The campaign config lives in <data-root>/campaigns/<name>/config.json
 ($JHO_DATA, default ~/job-hunting-organizer-data/). For the global config,
@@ -234,8 +227,9 @@ Phase 2c.)
 
 /**
  * `jho campaign <subcommand>` — dispatch campaign-scoped operations.
- * Currently wires `config`; future subcommands (`init`, `rename`, `doctor`,
- * `repair`, `stats`) slot into the same switch when they land.
+ * Currently wires `config`; future subcommands (`init`, `rename`,
+ * `doctor`, `repair`, `stats`) slot into the same switch when they
+ * land.
  */
 function commandCampaign(args: readonly string[]): number {
   const sub = args[0];
@@ -266,7 +260,7 @@ Available subcommands (planned for v1, not yet implemented):
       return 0;
     default:
       process.stderr.write(
-        `jho campaign: unknown subcommand: ${sub} (planned for v1; not yet implemented)\n`,
+        `jho campaign: unknown subcommand: ${sub}. See \`jho campaign --help\` for the full list (built and planned).\n`,
       );
       return 1;
   }
@@ -305,9 +299,6 @@ function main(argv: readonly string[]): number {
   }
 
   switch (command) {
-    case 'root':
-      commandRoot();
-      return 0;
     case 'config':
       return commandConfig(rest);
     case 'campaign':
@@ -315,7 +306,9 @@ function main(argv: readonly string[]): number {
     case 'ownership':
       return commandOwnership(rest);
     default:
-      process.stderr.write(`jho: command not implemented yet: ${command} (planned: phase 4+)\n`);
+      process.stderr.write(
+        `jho: unknown command: ${command}. See \`jho --help\` for the full list (built and planned).\n`,
+      );
       return 1;
   }
 }

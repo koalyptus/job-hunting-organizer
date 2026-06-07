@@ -23,7 +23,7 @@ The tool stores its state under **two** directories under the user's home: a sma
 ~/job-hunting-organizer-data/                  # data root (override with $JHO_DATA)
 └── campaigns/
     ├── default/                               # default campaign (auto-created on first `jho init`)
-    │   ├── config.json                        # per-campaign: profile path, applied dir, KB dir
+    │   ├── config.json                        # per-campaign: profile path, CV path, applied dir, KB dir
     │   ├── profile.md                         # candidate profile, target roles
     │   ├── applied/                           # folder per application
     │   │   └── YYYY-MMM-DD-role-co-jobid/
@@ -76,8 +76,7 @@ npm run eval         # lightweight LLM eval suite (manual)
 ```
 jho init [<name>]       # wizard: build profile from CV + GitHub; creates a new campaign
 jho config show|path    # show the global config (in the config home); secrets redacted
-jho campaign-config show|path  # show the active campaign's config (in the data root); secrets redacted
-jho root                # print the inferred campaign root
+jho campaign config show|path  # show the active campaign's config (in the data root); secrets redacted
 jho rename-campaign [<old>] <new>  # rename a campaign folder (or `mv` the folder directly)
 jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role

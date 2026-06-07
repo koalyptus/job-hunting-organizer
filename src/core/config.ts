@@ -1,8 +1,19 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { resolveConfigHome, resolveCampaignRoot, DEFAULT_CONFIG_FILENAME } from './paths.js';
+import {
+  resolveConfigHome,
+  resolveCampaignRoot,
+  getDefaultCampaignName,
+  DEFAULT_CONFIG_FILENAME,
+} from './paths.js';
 import type { GlobalConfig, CampaignConfig } from './types.js';
 import { GlobalConfigSchema, CampaignConfigSchema } from './config.schema.js';
+
+// Re-export for callers that import `getDefaultCampaignName` from
+// `./config.js`. The canonical definition lives in `./paths.ts` so
+// `resolveCampaignRoot` can use it as a default without a circular
+// import.
+export { getDefaultCampaignName };
 
 /**
  * Module-level cache for the loaded global config. Populated lazily by
@@ -94,30 +105,28 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
 
 /**
  * Load global + campaign configs and return the three views the rest
- * of the tool needs: each layer on its own plus a shallow-merged
- * object where the campaign wins on the fields it owns (`version`,
- * `profile`, `applied`, `knowledgeBase`). Other global fields pass
- * through untouched.
+ * of the tool needs: each layer on its own plus a flat-merged object.
+ *
+ * The global and campaign keys are disjoint by design — the campaign
+ * layer never overrides a global field; it only adds per-campaign
+ * paths. So the merged view is a straight spread: `global` first, then
+ * `campaign` on top. Later commands should read per-campaign fields
+ * from `merged.profile` / `merged.applied` / etc., and global fields
+ * from `merged.llm` / `merged.calendar` / etc.
  * @param campaignName - The campaign to merge on top of the global
  *   config. Defaults to `'default'`, which is also the campaign
- *   auto-created on first `jho init`.
+ *   auto-created on first `jho campaign init`.
  * @returns The two source configs and the merged view.
  */
 export function getConfig(campaignName: string = 'default'): {
   global: GlobalConfig;
   campaign: CampaignConfig;
-  merged: GlobalConfig & Partial<CampaignConfig>;
+  merged: GlobalConfig & CampaignConfig;
 } {
   const global = loadGlobalConfig();
   const campaign = loadCampaignConfig(campaignName);
 
-  const merged = {
-    ...global,
-    version: campaign.version ?? global.version,
-    profile: { ...global.profile, ...campaign.profile },
-    applied: { ...global.applied, ...campaign.applied },
-    knowledgeBase: { ...global.knowledgeBase, ...campaign.knowledgeBase },
-  } as GlobalConfig & Partial<CampaignConfig>;
+  const merged = { ...global, ...campaign } as GlobalConfig & CampaignConfig;
 
   return { global, campaign, merged };
 }
@@ -179,15 +188,4 @@ export function updateCampaignConfig(campaignName: string, update: Partial<Campa
 export function clearConfigCache(): void {
   _globalConfig = null;
   _campaignConfigCache.clear();
-}
-
-/**
- * Resolve the default campaign name. The
- * `JHO_DEFAULT_CAMPAIGN` environment variable wins over the literal
- * `'default'` so CI / scripting can target a sandbox campaign
- * without passing `--campaign` to every invocation.
- * @returns The campaign name to use when none is specified.
- */
-export function getDefaultCampaignName(): string {
-  return process.env['JHO_DEFAULT_CAMPAIGN'] || 'default';
 }

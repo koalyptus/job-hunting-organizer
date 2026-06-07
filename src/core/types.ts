@@ -76,14 +76,23 @@ export interface LoggerConfig {
 }
 
 /**
- * Global configuration (per-user, stored at the config home). Holds LLM
- * credentials, GitHub access, calendar provider, and logging defaults.
+ * Global configuration (per-user, stored at the config home). Holds the
+ * settings that are *shared across every campaign* the user runs: the
+ * LLM endpoint, GitHub identity, calendar provider, logging defaults,
+ * and the location of the data root itself.
+ *
+ * Per-campaign paths (profile, CV, applied/, knowledge base/) live in
+ * {@link CampaignConfig} — the global layer never sees them.
  */
 export interface GlobalConfig {
   /** Schema version. Bumped on breaking changes to the config shape. */
   version: number;
-  /** Absolute path to the campaign data root (e.g. `~/job-hunting-organizer-data/`). */
-  root: string;
+  /**
+   * Absolute path to the campaign data root (e.g.
+   * `~/job-hunting-organizer-data/`). Distinct from the config home
+   * where this file itself lives.
+   */
+  dataRoot: string;
   /** LLM provider settings (OpenAI-compatible). */
   llm: {
     /** Base URL of the API, e.g. `https://api.openai.com/v1`. */
@@ -93,17 +102,7 @@ export interface GlobalConfig {
     /** Model identifier, e.g. `gpt-4o-mini`. */
     model: string;
   };
-  /** Where the user profile lives. */
-  profile: {
-    /** Absolute path to `profile.md`. */
-    path: string;
-  };
-  /** The user's CV file. */
-  cv: {
-    /** Absolute path to the CV (`.pdf` / `.docx` / `.md`). */
-    path: string;
-  };
-  /** Optional GitHub integration for `jho init` profile building. */
+  /** Optional GitHub integration for `jho campaign init` profile building. */
   github: {
     /** GitHub username. */
     user: string;
@@ -111,16 +110,6 @@ export interface GlobalConfig {
     token: string;
     /** Repos to mine for projects. Empty means "all public repos". */
     repos: string[];
-  };
-  /** Where applications live. */
-  applied: {
-    /** Absolute path to the `applied/` directory. */
-    dir: string;
-  };
-  /** Where the knowledge base lives. */
-  knowledgeBase: {
-    /** Absolute path to the knowledge-base directory. */
-    dir: string;
   };
   /** Calendar integration (used by `jho interview schedule`). */
   calendar: {
@@ -148,16 +137,22 @@ export interface GlobalConfig {
 }
 
 /**
- * Per-campaign configuration (stored at the campaign root). A subset of
- * `GlobalConfig` — campaign-specific overrides for `profile`, `applied`,
- * and `knowledgeBase`.
+ * Per-campaign configuration (stored at the campaign root). Holds the
+ * paths that are unique to a single campaign: where its `profile.md`,
+ * CV, `applied/`, and knowledge base live. The keys here are disjoint
+ * from {@link GlobalConfig} — campaigns never override global fields.
  */
 export interface CampaignConfig {
-  /** Schema version. Mirrors `GlobalConfig.version` for this campaign. */
+  /** Schema version. Mirrors `GlobalConfig.version` for consistency. */
   version: number;
   /** Per-campaign profile location. */
   profile: {
     /** Absolute path to this campaign's `profile.md`. */
+    path: string;
+  };
+  /** Per-campaign CV location. */
+  cv: {
+    /** Absolute path to this campaign's CV (`.pdf` / `.docx` / `.md`). */
     path: string;
   };
   /** Per-campaign applications directory. */

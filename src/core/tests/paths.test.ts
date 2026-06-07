@@ -1,7 +1,8 @@
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
+import { existsSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import {
   DEFAULT_APPLIED_DIRNAME,
   DEFAULT_CAMPAIGNS_DIRNAME,
@@ -9,7 +10,9 @@ import {
   DEFAULT_CONFIG_HOMEDIR,
   DEFAULT_DATA_ROOT_DIRNAME,
   SLUG_PATTERN,
+  ensureRoot,
   findCampaignFromCwd,
+  findConfigPath,
   findSlugFromCwd,
   isUnder,
   isWindows,
@@ -104,6 +107,54 @@ describe('resolveConfigPath / resolveAppliedDir', () => {
 
   it("joins 'applied' to the root", () => {
     expect(resolveAppliedDir('/tmp/x')).toBe(resolve('/tmp/x', DEFAULT_APPLIED_DIRNAME));
+  });
+});
+
+describe('findConfigPath', () => {
+  let workDir: string;
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), 'jho-find-config-'));
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  it('returns the config path when the file exists', async () => {
+    const configPath = join(workDir, DEFAULT_CONFIG_FILENAME);
+    await writeFile(configPath, '{}', 'utf8');
+    expect(await findConfigPath(workDir)).toBe(configPath);
+  });
+
+  it('returns null when the file is missing', async () => {
+    expect(await findConfigPath(workDir)).toBeNull();
+  });
+});
+
+describe('ensureRoot', () => {
+  let workDir: string;
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), 'jho-ensure-'));
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  it('creates the directory if it does not exist', async () => {
+    const target = join(workDir, 'nested', 'campaign');
+    expect(existsSync(target)).toBe(false);
+    await ensureRoot(target);
+    expect(existsSync(target)).toBe(true);
+  });
+
+  it('is a no-op when the directory already exists', async () => {
+    const target = join(workDir, 'existing');
+    await mkdir(target, { recursive: true });
+    await ensureRoot(target);
+    expect(existsSync(target)).toBe(true);
   });
 });
 

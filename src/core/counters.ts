@@ -62,18 +62,22 @@ export function readCounters(appliedDir: string): Counters {
 }
 
 /**
- * Return the next integer suffix to append to `baseSlug` to avoid a
- * collision. Returns `0` if no collision has been recorded, or the
- * highest stored suffix (caller adds 1 to use it).
+ * Read the stored collision suffix for `baseSlug`. Returns the highest
+ * suffix value that has been recorded (0 if no collision has been
+ * recorded yet). The caller adds 1 to compute the next suffix to use.
  *
  * Pure read — does not modify the file. The caller is responsible for
  * writing the new counter back (see `core/fs.ts` + `core/locks.ts` for
  * the atomic write + lock dance).
+ *
+ * Named `readCollisionSuffix` (not `nextCollisionSuffix`) because it
+ * reads the *current* value, not the next one — the offset-by-one is
+ * the caller's job.
  * @param baseSlug - The base slug (without any `-N` suffix).
  * @param appliedDir - The absolute path to the campaign's `applied/` folder.
- * @returns The next suffix to use (0 means "no collision yet").
+ * @returns The highest stored suffix, or `0` if no collision yet.
  */
-export function nextCollisionSuffix(baseSlug: string, appliedDir: string): number {
+export function readCollisionSuffix(baseSlug: string, appliedDir: string): number {
   const counters = readCounters(appliedDir);
   return counters[baseSlug] ?? 0;
 }

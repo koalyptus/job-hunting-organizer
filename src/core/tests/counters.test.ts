@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { nextCollisionSuffix, readCounters } from '../counters.js';
+import { readCollisionSuffix, readCounters } from '../counters.js';
 
 let workDir: string;
 
@@ -60,9 +60,9 @@ describe('readCounters', () => {
   });
 });
 
-describe('nextCollisionSuffix', () => {
+describe('readCollisionSuffix', () => {
   it('returns 0 for an unseen base slug', () => {
-    expect(nextCollisionSuffix('2026-Jun-03-engineer-foo', workDir)).toBe(0);
+    expect(readCollisionSuffix('2026-Jun-03-engineer-foo', workDir)).toBe(0);
   });
 
   it('returns the stored suffix for a seen base slug', async () => {
@@ -71,7 +71,7 @@ describe('nextCollisionSuffix', () => {
       JSON.stringify({ '2026-Jun-03-engineer-foo': 3 }),
       'utf8',
     );
-    expect(nextCollisionSuffix('2026-Jun-03-engineer-foo', workDir)).toBe(3);
+    expect(readCollisionSuffix('2026-Jun-03-engineer-foo', workDir)).toBe(3);
   });
 
   it('does not modify the file on disk (pure read)', async () => {
@@ -80,7 +80,7 @@ describe('nextCollisionSuffix', () => {
       join(workDir, '.counters.json'),
       'utf8',
     );
-    nextCollisionSuffix('a', workDir);
+    readCollisionSuffix('a', workDir);
     const after = (await import('node:fs/promises')).readFile(
       join(workDir, '.counters.json'),
       'utf8',
