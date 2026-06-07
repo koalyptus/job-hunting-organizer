@@ -9,7 +9,6 @@ import {
   DEFAULT_CONFIG_FILENAME,
   DEFAULT_CONFIG_HOMEDIR,
   DEFAULT_DATA_ROOT_DIRNAME,
-  SLUG_PATTERN,
   ensureRoot,
   findCampaignFromCwd,
   findConfigPath,
@@ -22,6 +21,7 @@ import {
   resolveConfigPath,
   resolveDataRoot,
 } from '../paths.js';
+import { SLUG_PATTERN } from '../slug.js';
 
 describe('isWindows', () => {
   it('returns a boolean consistent with process.platform', () => {

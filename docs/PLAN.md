@@ -532,7 +532,7 @@ The two layers are *additive*, not an override cascade. `jho config` shows the g
 }
 ```
 
-`jho config show [--reveal] [--json]` shows the global file. `jho campaign config show [--reveal] [--json]` shows the campaign file. `--json` suppresses the "Source:" line on stderr so the body can be piped straight to `jq`.
+`jho config show [--reveal]` shows the global file; `jho campaign config show [--reveal]` shows the campaign file. Output is the redacted body on stdout only — the source path is available separately via `jho config path` / `jho campaign config path`. This means `jho config | jq` works without a flag.
 
 ---
 

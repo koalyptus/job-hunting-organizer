@@ -1,10 +1,10 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { dirname } from 'node:path';
 import {
   resolveConfigHome,
   resolveCampaignRoot,
+  resolveConfigPath,
   getDefaultCampaignName,
-  DEFAULT_CONFIG_FILENAME,
 } from './paths.js';
 import type { GlobalConfig, CampaignConfig } from './types.js';
 import { GlobalConfigSchema, CampaignConfigSchema } from './config.schema.js';
@@ -33,7 +33,7 @@ const _campaignConfigCache: Map<string, CampaignConfig> = new Map();
 
 /**
  * Load and validate the global config from
- * `<configHome>/<DEFAULT_CONFIG_FILENAME>`. The result is cached
+ * `<configHome>/config.json`. The result is cached
  * process-wide; call {@link clearConfigCache} to invalidate.
  *
  * On `ENOENT` the file is treated as an empty config and the schema
@@ -50,9 +50,9 @@ export function loadGlobalConfig(): GlobalConfig {
   }
 
   const configHome = resolveConfigHome();
-  const configPath = resolve(configHome, DEFAULT_CONFIG_FILENAME);
+  const configPath = resolveConfigPath(configHome);
 
-  let rawConfig: Record<string, unknown> = {};
+  let rawConfig: unknown = {};
   try {
     const configContent = readFileSync(configPath, 'utf8');
     rawConfig = JSON.parse(configContent);
@@ -70,7 +70,7 @@ export function loadGlobalConfig(): GlobalConfig {
 
 /**
  * Load and validate the campaign config for `campaignName` from
- * `<campaignRoot>/<DEFAULT_CONFIG_FILENAME>`. Cached per campaign.
+ * `<campaignRoot>/config.json`. Cached per campaign.
  * Same fallback rules as {@link loadGlobalConfig}: missing file →
  * empty object → schema defaults; other read/parse errors warn and
  * continue with defaults.
@@ -85,9 +85,9 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
   }
 
   const campaignRoot = resolveCampaignRoot(campaignName);
-  const configPath = resolve(campaignRoot, DEFAULT_CONFIG_FILENAME);
+  const configPath = resolveConfigPath(campaignRoot);
 
-  let rawConfig: Record<string, unknown> = {};
+  let rawConfig: unknown = {};
   try {
     const configContent = readFileSync(configPath, 'utf8');
     rawConfig = JSON.parse(configContent);
@@ -104,31 +104,28 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
 }
 
 /**
- * Load global + campaign configs and return the three views the rest
- * of the tool needs: each layer on its own plus a flat-merged object.
+ * Load both config layers and return them separately.
  *
  * The global and campaign keys are disjoint by design — the campaign
  * layer never overrides a global field; it only adds per-campaign
- * paths. So the merged view is a straight spread: `global` first, then
- * `campaign` on top. Later commands should read per-campaign fields
- * from `merged.profile` / `merged.applied` / etc., and global fields
- * from `merged.llm` / `merged.calendar` / etc.
- * @param campaignName - The campaign to merge on top of the global
- *   config. Defaults to `'default'`, which is also the campaign
- *   auto-created on first `jho campaign init`.
- * @returns The two source configs and the merged view.
+ * paths. Callers that need a single object can do
+ * `{ ...global, ...campaign }` themselves; the result is not exposed
+ * here because the intersection type can't be expressed without a
+ * type lie (`as` cast), and the merge is trivial enough that callers
+ * should own it.
+ * @param campaignName - The campaign to load. Defaults to `'default'`,
+ *   which is also the campaign auto-created on first
+ *   `jho campaign init`.
+ * @returns The two source configs.
  */
 export function getConfig(campaignName: string = 'default'): {
   global: GlobalConfig;
   campaign: CampaignConfig;
-  merged: GlobalConfig & CampaignConfig;
 } {
   const global = loadGlobalConfig();
   const campaign = loadCampaignConfig(campaignName);
 
-  const merged = { ...global, ...campaign } as GlobalConfig & CampaignConfig;
-
-  return { global, campaign, merged };
+  return { global, campaign };
 }
 
 /**
@@ -148,7 +145,7 @@ export function updateGlobalConfig(update: Partial<GlobalConfig>): void {
   GlobalConfigSchema.parse(updated);
 
   const globalRoot = resolveConfigHome();
-  const configPath = resolve(globalRoot, DEFAULT_CONFIG_FILENAME);
+  const configPath = resolveConfigPath(globalRoot);
 
   mkdirSync(dirname(configPath), { recursive: true });
 
@@ -170,7 +167,7 @@ export function updateCampaignConfig(campaignName: string, update: Partial<Campa
   CampaignConfigSchema.parse(updated);
 
   const campaignRoot = resolveCampaignRoot(campaignName);
-  const configPath = resolve(campaignRoot, DEFAULT_CONFIG_FILENAME);
+  const configPath = resolveConfigPath(campaignRoot);
 
   mkdirSync(dirname(configPath), { recursive: true });
 

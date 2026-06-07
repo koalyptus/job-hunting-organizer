@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { PackageJson } from './types.js';
@@ -16,6 +16,32 @@ let _packageRoot: string | undefined;
 let _packageJson: PackageJson | undefined;
 
 /**
+ * Walk up from `startDir` until a directory containing `package.json`
+ * is found. Robust to the file being at any depth in the tree and to
+ * the build output landing in a different layout (e.g. `dist/core/`
+ * vs `dist/` vs a single-file bundle).
+ *
+ * Throws if the filesystem root is reached without finding
+ * `package.json`; the caller (`getPackageJson`) catches and degrades
+ * to an empty `PackageJson`, so the tool still starts.
+ * @param startDir - Directory to start walking from (usually `__dirname`).
+ * @returns The absolute path of the directory containing `package.json`.
+ */
+export function findNearestPackageRoot(startDir: string): string {
+  let dir = startDir;
+  while (true) {
+    if (existsSync(join(dir, 'package.json'))) {
+      return dir;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      throw new Error(`package.json not found above ${startDir}`);
+    }
+    dir = parent;
+  }
+}
+
+/**
  * Resolve the absolute path of the tool's project root (the directory
  * that contains `package.json`). Derived from `import.meta.url` and
  * cached after the first call.
@@ -23,7 +49,7 @@ let _packageJson: PackageJson | undefined;
  */
 export function getPackageRoot(): string {
   if (_packageRoot === undefined) {
-    _packageRoot = join(__dirname, '..', '..');
+    _packageRoot = findNearestPackageRoot(__dirname);
   }
   return _packageRoot;
 }

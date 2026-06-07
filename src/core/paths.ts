@@ -5,10 +5,6 @@ import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathExists } from './fs.js';
 import { SLUG_PATTERN } from './slug.js';
 
-// Re-exported for callers that previously imported it from paths.ts.
-// The canonical home is `./slug.js`; new code should import from there.
-export { SLUG_PATTERN };
-
 /**
  * Default name of the campaign data root folder under the user's home
  * directory. This is where `<campaigns>/<name>/` lives — i.e. the
@@ -142,30 +138,39 @@ export function resolveConfigPath(root: string): string {
 }
 
 /**
- * Resolve the absolute path of the `applied/` directory inside a root.
- * @param root - The root directory (global or campaign).
+ * Resolve the absolute path of the `applied/` directory inside a campaign
+ * root. Applied folders are per-campaign by design — there is no global
+ * `applied/` — so the caller must pass a campaign root (from
+ * {@link resolveCampaignRoot}).
+ * @param campaignRoot - The absolute path of the campaign's root directory.
  * @returns The absolute path to the applied directory.
  */
-export function resolveAppliedDir(root: string): string {
-  return resolve(root, DEFAULT_APPLIED_DIRNAME);
+export function resolveAppliedDir(campaignRoot: string): string {
+  return resolve(campaignRoot, DEFAULT_APPLIED_DIRNAME);
 }
 
 /**
- * Resolve the absolute path of the `profile.md` file inside a root.
- * @param root - The root directory (global or campaign).
+ * Resolve the absolute path of the `profile.md` file inside a campaign
+ * root. The profile is per-campaign by design — there is no global
+ * `profile.md` — so the caller must pass a campaign root (from
+ * {@link resolveCampaignRoot}).
+ * @param campaignRoot - The absolute path of the campaign's root directory.
  * @returns The absolute path to the profile file.
  */
-export function resolveProfilePath(root: string): string {
-  return resolve(root, DEFAULT_PROFILE_FILENAME);
+export function resolveProfilePath(campaignRoot: string): string {
+  return resolve(campaignRoot, DEFAULT_PROFILE_FILENAME);
 }
 
 /**
- * Resolve the absolute path of the knowledge-base directory inside a root.
- * @param root - The root directory (global or campaign).
+ * Resolve the absolute path of the knowledge-base directory inside a
+ * campaign root. The knowledge base is per-campaign by design — there is
+ * no global `knowledge-base/` — so the caller must pass a campaign root
+ * (from {@link resolveCampaignRoot}).
+ * @param campaignRoot - The absolute path of the campaign's root directory.
  * @returns The absolute path to the knowledge-base directory.
  */
-export function resolveKnowledgeBaseDir(root: string): string {
-  return resolve(root, DEFAULT_KNOWLEDGE_BASE_DIRNAME);
+export function resolveKnowledgeBaseDir(campaignRoot: string): string {
+  return resolve(campaignRoot, DEFAULT_KNOWLEDGE_BASE_DIRNAME);
 }
 
 /**

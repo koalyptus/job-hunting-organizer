@@ -12,16 +12,19 @@
 // Single-line "section" markers (`<!-- jho:meta — ... -->`) are informational
 // only; they are matched by a different regex and do not denote a region.
 
+import type { RegionName, Region, ReplaceRegionOptions } from './types.js';
+
 /**
  * The set of region names the tool currently emits. Used by
  * {@link isKnownRegionName} to validate input and by `jho ownership`
  * to enumerate tool-managed regions. Add new names here when you
  * introduce a new tool-managed file.
+ *
+ * This is the runtime source of truth; the {@link RegionName} type
+ * alias in `core/types.ts` is a literal union of the same strings.
+ * The two are checked for parity by the test suite.
  */
 export const REGION_MARKER_NAMES = ['fetched-jd', 'tool-output', 'cover-letter'] as const;
-
-/** A known region name. */
-export type RegionName = (typeof REGION_MARKER_NAMES)[number];
 
 /**
  * Matches a region start marker line. Group 1 is the region name.
@@ -39,21 +42,6 @@ const END_LINE_RE = /^<!-- jho:end:([a-z0-9-]+) -->\s*$/;
  * Group 1 is the section name; the remainder is free-form text.
  */
 const SECTION_LINE_RE = /^<!-- jho:([a-z0-9-]+) [^>]+-->\s*$/;
-
-/**
- * A parsed region: a tool-managed block of content bounded by paired
- * `jho:start:<name>` / `jho:end:<name>` markers.
- */
-export interface Region {
-  /** Region name (e.g., `'fetched-jd'`). */
-  name: string;
-  /** 1-based line number of the start marker. */
-  startLine: number;
-  /** 1-based line number of the end marker. */
-  endLine: number;
-  /** The lines strictly between the two markers (no trailing newline). */
-  content: string;
-}
 
 /**
  * Thrown when a document contains malformed marker regions (mismatched
@@ -136,17 +124,6 @@ export function parseRegions(content: string): Region[] {
  */
 export function findRegion(content: string, name: string): Region | null {
   return parseRegions(content).find((r) => r.name === name) ?? null;
-}
-
-/**
- * Options for {@link replaceRegion}.
- */
-export interface ReplaceRegionOptions {
-  /**
-   * If `true` and the region does not exist, append a new region to the
-   * end of the file. If `false` (default), throw a `MarkerError`.
-   */
-  createIfMissing?: boolean;
 }
 
 /**

@@ -10,7 +10,6 @@
 
 import { formatDateUtc, parseDateOrNow, MONTH_ABBR } from './date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
-import { readCollisionSuffix, readCounters } from './counters.js';
 import { extractJobIdFromUrl } from './url.js';
 import type { SlugBuildInput, SlugOptions } from './types.js';
 
@@ -114,12 +113,3 @@ export function validateSlug(slug: string): { ok: true } | { ok: false; reason: 
   }
   return { ok: true };
 }
-
-// Re-export helpers from their canonical modules so callers can
-// `import { extractJobIdFromUrl, readCounters, ... } from './slug.js'`
-// if they want a one-stop shop. The canonical homes are:
-//   extractJobIdFromUrl → ./url.js
-//   readCounters, readCollisionSuffix → ./counters.js
-// New code should import from those modules directly.
-export { extractJobIdFromUrl };
-export { readCounters, readCollisionSuffix };

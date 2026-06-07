@@ -33,6 +33,3 @@ Thumbs.db
 .vite/
 .turbo/
 
-# Local data — the campaign root lives outside the repo (~/job-hunting-organizer/ by default).
-# Anything in the in-repo `applied/` is a legacy artifact and is never read by the tool.
-applied/*.md

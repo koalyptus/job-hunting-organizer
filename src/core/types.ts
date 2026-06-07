@@ -192,3 +192,116 @@ export interface SlugOptions {
   /** Reserved for future use. */
   readonly locale?: string;
 }
+
+/**
+ * Collision counters for application folder slugs. When the user applies
+ * to the same role+company on the same day (or re-applies later), a `-N`
+ * suffix is appended; the next free `N` is looked up here.
+ *
+ * The file lives at `<appliedDir>/.counters.json` and is gitignored
+ * (derived state — see AGENTS.md "applied/.counters.json" row).
+ */
+export interface Counters {
+  [baseSlug: string]: number;
+}
+
+/**
+ * Output of the hand-rolled argv parser in `cli/index.ts`. Transient —
+ * `commander` (Phase 2c) replaces both the parser and this type. Kept
+ * here so the CLI file doesn't redeclare it inline.
+ */
+export interface ParsedArgs {
+  /** The first non-flag token in argv, or `null` if none (i.e. `jho` with no args). */
+  readonly command: string | null;
+  /** Everything after the command token. */
+  readonly rest: readonly string[];
+  /** True if `--version` appeared before the command token. */
+  readonly showVersion: boolean;
+  /** True if `--help` or `-h` appeared before the command token. */
+  readonly showHelp: boolean;
+}
+
+/**
+ * A flat mapping of frontmatter keys to YAML-decoded values. Custom
+ * user fields are preserved on round-trip; see `mergeFrontmatter` in
+ * `core/frontmatter.ts`.
+ */
+export interface Frontmatter {
+  [key: string]: unknown;
+}
+
+/**
+ * The two halves of a file with a YAML frontmatter block. Returned by
+ * `parseFrontmatter` and `readFrontmatter` in `core/frontmatter.ts`.
+ */
+export interface ParsedFile {
+  /** Decoded YAML mapping, or `{}` if the file has no frontmatter. */
+  frontmatter: Frontmatter;
+  /** The body text after the closing `---` line. May be empty. */
+  body: string;
+}
+
+/**
+ * Known region names emitted by the in-file marker system (see
+ * `core/markers.ts`). Kept here as a literal union so type-level
+ * narrowing doesn't require importing the runtime
+ * `REGION_MARKER_NAMES` constant. **Must stay in sync** with that
+ * array — the two are checked at compile time by the test suite.
+ */
+export type RegionName = 'fetched-jd' | 'tool-output' | 'cover-letter';
+
+/**
+ * A parsed region: a tool-managed block of content bounded by paired
+ * `jho:start:<name>` / `jho:end:<name>` markers (see
+ * `core/markers.ts`).
+ */
+export interface Region {
+  /** Region name (e.g., `'fetched-jd'`). */
+  name: string;
+  /** 1-based line number of the start marker. */
+  startLine: number;
+  /** 1-based line number of the end marker. */
+  endLine: number;
+  /** The lines strictly between the two markers (no trailing newline). */
+  content: string;
+}
+
+/**
+ * Options for `replaceRegion` in `core/markers.ts`.
+ */
+export interface ReplaceRegionOptions {
+  /**
+   * If `true` and the region does not exist, append a new region to the
+   * end of the file. If `false` (default), throw a `MarkerError`.
+   */
+  createIfMissing?: boolean;
+}
+
+/**
+ * One row in the ownership table: a file or file region plus the rules
+ * that govern how the tool and the user interact with it. See
+ * `OWNERSHIP_ROWS` in `core/ownership.ts` for the canonical list.
+ */
+export interface OwnershipRow {
+  /** File or file region (e.g. `'jd.md (above jho:start:fetched-jd)'`). */
+  readonly file: string;
+  /** Whether and when the tool writes this region. */
+  readonly toolWrites: string;
+  /** Whether the user is free to edit it (and any caveats). */
+  readonly editFreely: string;
+  /** What happens to user edits when the tool next writes. */
+  readonly onYourEdit: string;
+}
+
+/**
+ * Options for `renderOwnership` in `core/ownership.ts`.
+ */
+export interface RenderOwnershipOptions {
+  /** When `true`, emit a markdown table instead of the console table. */
+  readonly markdown?: boolean;
+  /**
+   * Override the path shown in the header (default: the resolved global
+   * `config.json`). Useful for tests.
+   */
+  readonly configPath?: string;
+}

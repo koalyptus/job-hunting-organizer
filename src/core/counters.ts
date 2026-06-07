@@ -1,17 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-
-/**
- * Collision counters for application folder slugs. When the user applies
- * to the same role+company on the same day (or re-applies later), a `-N`
- * suffix is appended; the next free `N` is looked up here.
- *
- * The file lives at `<appliedDir>/.counters.json` and is gitignored
- * (derived state — see AGENTS.md "applied/.counters.json" row).
- */
-export interface Counters {
-  [baseSlug: string]: number;
-}
+import type { Counters } from './types.js';
 
 /**
  * Filename of the counters file inside the applied directory.
@@ -45,7 +34,7 @@ export function readCounters(appliedDir: string): Counters {
   }
   try {
     const raw = readFileSync(path, 'utf8');
-    const parsed = JSON.parse(raw) as unknown;
+    const parsed: unknown = JSON.parse(raw);
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return {};
     }

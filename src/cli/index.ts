@@ -3,25 +3,20 @@ import { resolveConfigHome, resolveCampaignRoot, resolveConfigPath } from '../co
 import { loadGlobalConfig, loadCampaignConfig } from '../core/config.js';
 import { redactSecrets } from '../core/config.view.js';
 import { renderOwnership } from '../core/ownership.js';
+import type { GlobalConfig, CampaignConfig, ParsedArgs } from '../core/types.js';
 
 const VERSION = getPackageVersion();
 
 /**
- * Internal helper used by `jho config` and `jho campaign config`. Writes
- * a single "Source: <path>" line to stderr (so it shows up in `--help`
- * style flows but never in `jho config | jq`) and the body to stdout.
- * `reveal` opts out of secret redaction; `json` switches the body to a
- * pretty-printed JSON document for `jq` and drops the stderr source
- * line for pipe-friendliness.
+ * Internal helper. Writes the redacted body to stdout only. Run
+ * `jho config path` (or `jho campaign config path`) separately if the
+ * source path is needed — keeping the two streams separate makes
+ * `jho config | jq` work cleanly with no extra flags.
+ *
+ * `reveal` opts out of secret redaction.
  */
-function renderConfig(
-  body: unknown,
-  options: { sourcePath: string; reveal: boolean; json: boolean },
-): number {
-  const value = options.reveal ? body : redactSecrets(body as never);
-  if (!options.json) {
-    process.stderr.write(`Source: ${options.sourcePath}\n`);
-  }
+function renderConfig(body: GlobalConfig | CampaignConfig, options: { reveal: boolean }): number {
+  const value = options.reveal ? body : redactSecrets(body);
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
   return 0;
 }
@@ -32,8 +27,7 @@ function renderConfig(
  * for v1 (kept in sync with `AGENTS.md` until `jho help <cmd>` lands).
  */
 function printHelp(): void {
-  const out = process.stdout;
-  out.write(`jho ${VERSION} — local-first CLI for running a job-hunting campaign
+  process.stdout.write(`jho ${VERSION} — local-first CLI for running a job-hunting campaign
 
 Usage:
   jho [--version] [--help] <command> [args]
@@ -87,13 +81,6 @@ function printVersion(): void {
   process.stdout.write(`${VERSION}\n`);
 }
 
-interface ParsedArgs {
-  readonly command: string | null;
-  readonly rest: readonly string[];
-  readonly showVersion: boolean;
-  readonly showHelp: boolean;
-}
-
 /**
  * Pull `--version` / `--help` off the front of argv and return the rest
  * as `{ command, rest }`. Intentionally minimal — once `commander` lands
@@ -121,24 +108,19 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 
 /**
  * `jho config [show|path]` — show or print the path of the global config
- * (in the config home). `show` accepts `--reveal` and `--json`; `path` is
- * a one-liner intended for `$(jho config path)`.
+ * (in the config home). `show` accepts `--reveal`; `path` is a one-liner
+ * intended for `$(jho config path)`.
  */
 function commandConfig(args: readonly string[]): number {
-  // Tolerate `jho config --json` (flags before the subcommand) by treating
-  // a flag as `show` with the rest of the args forwarded.
-  const normalized: readonly string[] =
-    args.length > 0 && (args[0] ?? '').startsWith('--') ? ['show', ...args] : args;
+  // Tolerate `jho config --reveal` (flag before the subcommand) by treating
+  // it as `show --reveal`. Other flags are passed through to the switch
+  // so `--help` / `-h` still reach their own cases.
+  const normalized: readonly string[] = args[0] === '--reveal' ? ['show', ...args] : args;
   const sub = normalized[0] ?? 'show';
   switch (sub) {
     case 'show': {
       const reveal = normalized.includes('--reveal');
-      const json = normalized.includes('--json');
-      return renderConfig(loadGlobalConfig(), {
-        sourcePath: resolveConfigPath(resolveConfigHome()),
-        reveal,
-        json,
-      });
+      return renderConfig(loadGlobalConfig(), { reveal });
     }
     case 'path': {
       process.stdout.write(`${resolveConfigPath(resolveConfigHome())}\n`);
@@ -150,17 +132,17 @@ function commandConfig(args: readonly string[]): number {
         `jho config — show or print the path of the global config
 
 Usage:
-  jho config show [--reveal] [--json]
+  jho config show [--reveal]
   jho config path
 
 Options:
   --reveal   Show secrets in clear text (default: redact)
-  --json     Output JSON only; suppresses the "Source:" line on stderr
-             so the JSON survives a pipe to \`jq\` cleanly
 
 The global config lives in the config home ($JHO_CONFIG_HOME, default
 ~/.job-hunting-organizer/). For the active campaign's config, use
-\`jho campaign config\`.
+\`jho campaign config\`. The source path is always available via
+\`jho config path\` — output is the config body on stdout only, so
+\`jho config | jq\` works without a flag.
 
 Secrets redacted by default: llm.apiKey, github.token, calendar.outlook.clientSecret.
 The redaction marker hints at the env var the user should set instead.
@@ -179,20 +161,15 @@ The redaction marker hints at the env var the user should set instead.
  * `default` campaign until `--campaign` lands in Phase 2c.
  */
 function commandCampaignConfig(args: readonly string[]): number {
-  // Tolerate `jho campaign config --json` (flags before the subcommand) by
-  // treating a flag as `show` with the rest of the args forwarded.
-  const normalized: readonly string[] =
-    args.length > 0 && (args[0] ?? '').startsWith('--') ? ['show', ...args] : args;
+  // Tolerate `jho campaign config --reveal` (flag before the subcommand) by
+  // treating it as `show --reveal`. Other flags are passed through to the
+  // switch so `--help` / `-h` still reach their own cases.
+  const normalized: readonly string[] = args[0] === '--reveal' ? ['show', ...args] : args;
   const sub = normalized[0] ?? 'show';
   switch (sub) {
     case 'show': {
       const reveal = normalized.includes('--reveal');
-      const json = normalized.includes('--json');
-      return renderConfig(loadCampaignConfig('default'), {
-        sourcePath: resolveConfigPath(resolveCampaignRoot('default')),
-        reveal,
-        json,
-      });
+      return renderConfig(loadCampaignConfig('default'), { reveal });
     }
     case 'path': {
       process.stdout.write(`${resolveConfigPath(resolveCampaignRoot('default'))}\n`);
@@ -204,18 +181,18 @@ function commandCampaignConfig(args: readonly string[]): number {
         `jho campaign config — show or print the path of the active campaign's config
 
 Usage:
-  jho campaign config show [--reveal] [--json]
+  jho campaign config show [--reveal]
   jho campaign config path
 
 Options:
   --reveal   Show secrets in clear text (default: redact)
-  --json     Output JSON only; suppresses the "Source:" line on stderr
-             so the JSON survives a pipe to \`jq\` cleanly
 
 The campaign config lives in <data-root>/campaigns/<name>/config.json
 ($JHO_DATA, default ~/job-hunting-organizer-data/). For the global config,
-use \`jho config\`. (Per-campaign selection via --campaign is planned for
-Phase 2c.)
+use \`jho config\`. The source path is always available via
+\`jho campaign config path\` — output is the config body on stdout only,
+so \`jho campaign config | jq\` works without a flag. (Per-campaign
+selection via --campaign is planned for Phase 2c.)
 `,
       );
       return 0;

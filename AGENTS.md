@@ -112,21 +112,21 @@ jho mcp                 # start MCP server
 
 **The one rule**: _If a comment at the top of the file says `jho:...`, the boundary is right there. If not, the file is yours._
 
-| File                                   | Tool writes                                                     | Edit freely?                   | Tool behavior on your edit                                 |
-| -------------------------------------- | --------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------- |
-| `meta.md` frontmatter                  | yes (rebuild from JD + state)                                   | yes (add custom fields)        | round-tripped, custom fields preserved                     |
-| `meta.md` body                         | never                                                           | yes                            | preserved verbatim                                         |
-| `jd.md` (above `jho:start:fetched-jd`) | yes (on re-track)                                               | no (tool-managed region)       | overwritten                                                |
-| `jd.md` (below `jho:end:fetched-jd`)   | never                                                           | yes                            | preserved on re-track                                      |
-| `cover-letter.md`                      | on regenerate                                                   | yes                            | prompts on next regenerate                                 |
-| `qa.md`                                | appends only                                                    | yes                            | prior entries untouched                                    |
-| `interviews.md`                        | appends, `Status:` line updates                                 | yes (except `Status:`)         | mark status via `jho interview mark`                       |
-| `retro.md`                             | appends new H2 sections                                         | yes (checklists, notes)        | prior retros untouched                                     |
-| `prep.md`                              | regenerates on `--update`; appends user-added topics on `--add` | yes                            | prompts on overwrite; user edits preserved unless accepted |
-| `profile.md` `## Target roles`         | suggests on `jho init`/`profile rebuild`                        | yes (titles, fields, priority) | prompts before overwrite; user edits preserved             |
-| `notes.md`                             | never                                                           | yes                            | never touched                                              |
-| `.index.json`                          | on read / staleness                                             | no (internal cache)            | regenerated                                                |
-| `.counters.json`                       | on slug collision                                               | no (internal cache)            | regenerated                                                |
+| File                                                | Tool writes                                                                   | Edit freely?                                        | Tool behavior on your edit                                      |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------- |
+| `meta.md` (the metadata fields at the top)          | yes (rewrites from the job ad + your current status)                          | yes (add your own key:value lines)                  | your extra fields are kept; the rest is rewritten               |
+| `meta.md` (everything below the metadata fields)    | never                                                                         | yes                                                 | kept exactly as you wrote it                                    |
+| `jd.md` (the auto-fetched job ad, at the top)       | yes (replaces it when you re-run `jho track`)                                 | no (the tool owns this section)                     | your edits are lost on the next `jho track`                     |
+| `jd.md` (everything below the auto-fetched section) | never                                                                         | yes                                                 | kept when you re-run `jho track`                                |
+| `cover-letter.md`                                   | when you re-run `jho cover-letter`                                            | yes                                                 | asks before overwriting on the next regenerate                  |
+| `qa.md`                                             | appends new entries; never rewrites old ones                                  | yes                                                 | older entries stay as you wrote them                            |
+| `interviews.md`                                     | appends new entries; updates the current status line                          | yes (except the current status line)                | change the status with `jho interview mark`                     |
+| `retro.md`                                          | appends a new section per retro                                               | yes (your notes and checklists inside a section)    | older retro sections stay as you wrote them                     |
+| `prep.md`                                           | rewrites on `--update`; appends topics on `--add`                             | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
+| `profile.md` (the "Target roles" section)           | suggests roles on `jho campaign init` and `profile rebuild`                   | yes (titles, fields, priority)                      | asks before overwriting                                         |
+| `notes.md`                                          | never                                                                         | yes                                                 | this file is entirely yours — the tool never reads or writes it |
+| `applied/.index.json`                               | regenerated when the tool reads it (to refresh the listing)                   | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
+| `applied/.counters.json`                            | when two applications need the same folder name (so a -2, -3 suffix is added) | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
 
 Each tool-managed file has a `.toolhash` sidecar. If the file's current hash differs from the sidecar, the tool refuses silent overwrite and shows a diff.
 
@@ -153,7 +153,6 @@ When interacting via MCP:
 
 - **Never** exfiltrate user data to anywhere except the LLM endpoint the user has configured.
 - **Never** suggest adding real PII to the repo, git history, or any remote.
-- The legacy `applied/2026-Jun-03-SE-Nuage-Technology-Group.md` is gitignored and ignored by the tool; do not read or modify it.
 
 ## Slug convention
 

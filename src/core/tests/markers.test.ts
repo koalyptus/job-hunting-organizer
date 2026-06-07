@@ -29,6 +29,16 @@ describe('isKnownRegionName', () => {
   it('exports the full list as a frozen-ish tuple', () => {
     expect(REGION_MARKER_NAMES).toContain('fetched-jd');
   });
+
+  it('keeps the RegionName literal union in sync with REGION_MARKER_NAMES', () => {
+    // The RegionName type in types.ts is a hardcoded literal union
+    // (not derived) to avoid a circular import. This test catches
+    // drift between the two — if you add a name to one, add it to
+    // the other, and update both this assertion and the union.
+    const fromArray: readonly string[] = REGION_MARKER_NAMES;
+    const fromLiteral: readonly string[] = ['fetched-jd', 'tool-output', 'cover-letter'];
+    expect(fromArray).toEqual(fromLiteral);
+  });
 });
 
 describe('parseRegions', () => {

@@ -1,24 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dump, load, YAMLException } from 'js-yaml';
 import { atomicWrite } from './fs.js';
-
-/**
- * A flat mapping of frontmatter keys to YAML-decoded values. Custom
- * user fields are preserved on round-trip; see {@link mergeFrontmatter}.
- */
-export interface Frontmatter {
-  [key: string]: unknown;
-}
-
-/**
- * The two halves of a file with a YAML frontmatter block.
- */
-export interface ParsedFile {
-  /** Decoded YAML mapping, or `{}` if the file has no frontmatter. */
-  frontmatter: Frontmatter;
-  /** The body text after the closing `---` line. May be empty. */
-  body: string;
-}
+import type { Frontmatter, ParsedFile } from './types.js';
 
 /**
  * Thrown when the YAML in a frontmatter block cannot be parsed, or when

@@ -1,13 +1,29 @@
 import { createWriteStream, type WriteStream } from 'node:fs';
 import { pino, type Logger, type LoggerOptions } from 'pino';
 import type { LogLevel, LoggerConfig } from './types.js';
+import { SECRET_PATHS } from './config.view.js';
 
 /**
  * Default redaction paths applied when the user config has an empty
- * `redactPaths`. Covers every secret slot the schema exposes plus the
- * content fields the user explicitly opted to keep out of logs
- * (resume text, JD text, etc.). The user can override or extend this
- * list via `logging.redactPaths` in the config.
+ * `redactPaths`. The list has two pieces:
+ *
+ * 1. **Wildcards** that catch any field whose key name suggests a
+ *    secret, at any depth. Self-maintaining: a future field called
+ *    `apiKey` (or `token`, `clientSecret`, `password`, `secret`) is
+ *    auto-redacted without touching this file.
+ * 2. **Explicit config paths** derived from {@link SECRET_PATHS}, the
+ *    same list that powers `redactSecrets`. A single source of truth
+ *    for "where do secrets live" — renaming a field in the schema
+ *    updates the redaction automatically.
+ *
+ * Application content paths (e.g. `cv.content`, `jd.content`,
+ * `coverLetter.content`, `qa.answer`) are intentionally NOT included
+ * here — they will land in Phase 3+ when the `meta.md` schema is
+ * typed, and at that point they'll be derived the same way (single
+ * source of truth, not a manually maintained list).
+ *
+ * The user can always override or extend this list via
+ * `logging.redactPaths` in the config.
  */
 const DEFAULT_REDACT_PATHS: readonly string[] = [
   '*.apiKey',
@@ -15,28 +31,20 @@ const DEFAULT_REDACT_PATHS: readonly string[] = [
   '*.clientSecret',
   '*.password',
   '*.secret',
-  'config.llm.apiKey',
-  'config.github.token',
-  'config.calendar.outlook.clientSecret',
-  'cv.content',
-  'jd.content',
-  'coverLetter.content',
-  'qa.question',
-  'qa.answer',
-  'retro.notes',
-  'prep.content',
+  ...SECRET_PATHS.map((s) => s.path.join('.')),
 ];
 
 /** The `pino` transport name used for pretty TTY output. */
 const TTY_TRANSPORT_TARGET = 'pino-pretty';
 
 /**
- * Detect whether a stream is attached to a terminal. Used to decide
- * between pretty single-line output and structured JSON.
+ * Detect whether a stream is attached to a terminal. Exported so
+ * callers (and the tests) can use the same TTY probe the logger
+ * uses internally to pick between pretty and JSON output.
  * @param stream - A `WriteStream` like `process.stderr`.
  * @returns `true` only when the stream is a real TTY.
  */
-function isInteractive(stream: NodeJS.WriteStream | undefined): boolean {
+export function isInteractive(stream: NodeJS.WriteStream | undefined): boolean {
   return Boolean(stream && (stream as NodeJS.WriteStream).isTTY);
 }
 
@@ -160,6 +168,3 @@ export function setRootLogger(logger: Logger): void {
 export function childLogger(bindings: Record<string, unknown>, base?: Logger): Logger {
   return (base ?? getRootLogger()).child(bindings);
 }
-
-/** Re-export of {@link isInteractive} for callers that want the same TTY probe. */
-export { isInteractive };

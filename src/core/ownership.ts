@@ -1,20 +1,6 @@
 import Table from 'cli-table3';
 import { resolveConfigHome, DEFAULT_CONFIG_FILENAME } from './paths.js';
-
-/**
- * One row in the ownership table: a file or file region plus the rules
- * that govern how the tool and the user interact with it.
- */
-export interface OwnershipRow {
-  /** File or file region (e.g. `'jd.md (above jho:start:fetched-jd)'`). */
-  readonly file: string;
-  /** Whether and when the tool writes this region. */
-  readonly toolWrites: string;
-  /** Whether the user is free to edit it (and any caveats). */
-  readonly editFreely: string;
-  /** What happens to user edits when the tool next writes. */
-  readonly onYourEdit: string;
-}
+import type { OwnershipRow, RenderOwnershipOptions } from './types.js';
 
 // Static ownership table from AGENTS.md. Kept in code (not a doc) so that
 // `jho ownership` always shows the same rules the tool actually enforces.
@@ -25,97 +11,84 @@ export interface OwnershipRow {
  */
 export const OWNERSHIP_ROWS: readonly OwnershipRow[] = [
   {
-    file: 'meta.md (frontmatter)',
-    toolWrites: 'yes (rebuild from JD + state)',
-    editFreely: 'yes (add custom fields)',
-    onYourEdit: 'round-tripped, custom fields preserved',
+    file: 'meta.md (the metadata fields at the top)',
+    toolWrites: 'yes (rewrites from the job ad + your current status)',
+    editFreely: 'yes (add your own key:value lines)',
+    onYourEdit: 'your extra fields are kept; the rest is rewritten',
   },
   {
-    file: 'meta.md (body)',
+    file: 'meta.md (everything below the metadata fields)',
     toolWrites: 'never',
     editFreely: 'yes',
-    onYourEdit: 'preserved verbatim',
+    onYourEdit: 'kept exactly as you wrote it',
   },
   {
-    file: 'jd.md (above jho:start:fetched-jd)',
-    toolWrites: 'yes (on re-track)',
-    editFreely: 'no (tool-managed region)',
-    onYourEdit: 'overwritten',
+    file: 'jd.md (the auto-fetched job ad, at the top)',
+    toolWrites: 'yes (replaces it when you re-run `jho track`)',
+    editFreely: 'no (the tool owns this section)',
+    onYourEdit: 'your edits are lost on the next `jho track`',
   },
   {
-    file: 'jd.md (below jho:end:fetched-jd)',
+    file: 'jd.md (everything below the auto-fetched section)',
     toolWrites: 'never',
     editFreely: 'yes',
-    onYourEdit: 'preserved on re-track',
+    onYourEdit: 'kept when you re-run `jho track`',
   },
   {
     file: 'cover-letter.md',
-    toolWrites: 'on regenerate',
+    toolWrites: 'when you re-run `jho cover-letter`',
     editFreely: 'yes',
-    onYourEdit: 'prompts on next regenerate',
+    onYourEdit: 'asks before overwriting on the next regenerate',
   },
   {
     file: 'qa.md',
-    toolWrites: 'appends only',
+    toolWrites: 'appends new entries; never rewrites old ones',
     editFreely: 'yes',
-    onYourEdit: 'prior entries untouched',
+    onYourEdit: 'older entries stay as you wrote them',
   },
   {
     file: 'interviews.md',
-    toolWrites: 'appends; updates Status: line',
-    editFreely: 'yes (except Status: line)',
-    onYourEdit: 'mark status via `jho interview mark`',
+    toolWrites: 'appends new entries; updates the current status line',
+    editFreely: 'yes (except the current status line)',
+    onYourEdit: 'change the status with `jho interview mark`',
   },
   {
     file: 'retro.md',
-    toolWrites: 'appends new H2 sections',
-    editFreely: 'yes (checklists, notes)',
-    onYourEdit: 'prior retros untouched',
+    toolWrites: 'appends a new section per retro',
+    editFreely: 'yes (your notes and checklists inside a section)',
+    onYourEdit: 'older retro sections stay as you wrote them',
   },
   {
     file: 'prep.md',
-    toolWrites: 'regenerates on --update; appends on --add',
+    toolWrites: 'rewrites on `--update`; appends topics on `--add`',
     editFreely: 'yes',
-    onYourEdit: 'prompts on overwrite; user edits preserved unless accepted',
+    onYourEdit: 'asks before overwriting; your edits are kept unless you accept',
   },
   {
-    file: 'profile.md (## Target roles)',
-    toolWrites: 'suggests on init / profile rebuild',
+    file: 'profile.md (the "Target roles" section)',
+    toolWrites: 'suggests roles on `jho campaign init` and `profile rebuild`',
     editFreely: 'yes (titles, fields, priority)',
-    onYourEdit: 'prompts before overwrite',
+    onYourEdit: 'asks before overwriting',
   },
   {
     file: 'notes.md',
     toolWrites: 'never',
     editFreely: 'yes',
-    onYourEdit: 'never touched',
+    onYourEdit: 'this file is entirely yours — the tool never reads or writes it',
   },
   {
     file: 'applied/.index.json',
-    toolWrites: 'on read / staleness',
-    editFreely: 'no (internal cache)',
-    onYourEdit: 'regenerated',
+    toolWrites: 'regenerated when the tool reads it (to refresh the listing)',
+    editFreely: 'no (the tool regenerates it; not for human editing)',
+    onYourEdit: 'your edits are lost — it is regenerated automatically',
   },
   {
     file: 'applied/.counters.json',
-    toolWrites: 'on slug collision',
-    editFreely: 'no (internal cache)',
-    onYourEdit: 'regenerated',
+    toolWrites: 'when two applications need the same folder name (so a -2, -3 suffix is added)',
+    editFreely: 'no (the tool regenerates it; not for human editing)',
+    onYourEdit: 'your edits are lost — it is regenerated automatically',
   },
 ];
-
-/**
- * Options for {@link renderOwnership}.
- */
-export interface RenderOwnershipOptions {
-  /** When `true`, emit a markdown table instead of the console table. */
-  readonly markdown?: boolean;
-  /**
-   * Override the path shown in the header (default: the resolved global
-   * `config.json`). Useful for tests.
-   */
-  readonly configPath?: string;
-}
 
 /**
  * Render the ownership table for `jho ownership`. Default output is a
