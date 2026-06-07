@@ -6,7 +6,8 @@ import {
   DEFAULT_APPLIED_DIRNAME,
   DEFAULT_CAMPAIGNS_DIRNAME,
   DEFAULT_CONFIG_FILENAME,
-  DEFAULT_ROOT_DIRNAME,
+  DEFAULT_CONFIG_HOMEDIR,
+  DEFAULT_DATA_ROOT_DIRNAME,
   SLUG_PATTERN,
   findCampaignFromCwd,
   findSlugFromCwd,
@@ -14,8 +15,9 @@ import {
   isWindows,
   resolveAppliedDir,
   resolveCampaignRoot,
+  resolveConfigHome,
   resolveConfigPath,
-  resolveGlobalRoot,
+  resolveDataRoot,
 } from '../paths.js';
 
 describe('isWindows', () => {
@@ -25,32 +27,61 @@ describe('isWindows', () => {
   });
 });
 
-describe('resolveGlobalRoot', () => {
-  const originalEnv = process.env['JHO_ROOT'];
+describe('resolveDataRoot', () => {
+  const originalEnv = process.env['JHO_DATA'];
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      delete process.env['JHO_ROOT'];
+      delete process.env['JHO_DATA'];
     } else {
-      process.env['JHO_ROOT'] = originalEnv;
+      process.env['JHO_DATA'] = originalEnv;
     }
   });
 
-  it('uses $JHO_ROOT when set', () => {
-    process.env['JHO_ROOT'] = '/tmp/from-env';
-    expect(resolveGlobalRoot()).toBe(resolve('/tmp/from-env'));
+  it('uses $JHO_DATA when set', () => {
+    process.env['JHO_DATA'] = '/tmp/from-env';
+    expect(resolveDataRoot()).toBe(resolve('/tmp/from-env'));
   });
 
-  it('ignores empty $JHO_ROOT', () => {
-    process.env['JHO_ROOT'] = '';
-    const result = resolveGlobalRoot();
-    expect(result.endsWith(DEFAULT_ROOT_DIRNAME)).toBe(true);
+  it('ignores empty $JHO_DATA', () => {
+    process.env['JHO_DATA'] = '';
+    const result = resolveDataRoot();
+    expect(result.endsWith(DEFAULT_DATA_ROOT_DIRNAME)).toBe(true);
   });
 
-  it('falls back to $HOME/job-hunting-organizer when no env', () => {
-    delete process.env['JHO_ROOT'];
-    const result = resolveGlobalRoot();
-    expect(result.endsWith(sep + DEFAULT_ROOT_DIRNAME)).toBe(true);
+  it('falls back to $HOME/job-hunting-organizer-data when no env', () => {
+    delete process.env['JHO_DATA'];
+    const result = resolveDataRoot();
+    expect(result.endsWith(sep + DEFAULT_DATA_ROOT_DIRNAME)).toBe(true);
+  });
+});
+
+describe('resolveConfigHome', () => {
+  const originalEnv = process.env['JHO_CONFIG_HOME'];
+
+  afterEach(() => {
+    if (originalEnv === undefined) {
+      delete process.env['JHO_CONFIG_HOME'];
+    } else {
+      process.env['JHO_CONFIG_HOME'] = originalEnv;
+    }
+  });
+
+  it('uses $JHO_CONFIG_HOME when set', () => {
+    process.env['JHO_CONFIG_HOME'] = '/tmp/from-env';
+    expect(resolveConfigHome()).toBe(resolve('/tmp/from-env'));
+  });
+
+  it('ignores empty $JHO_CONFIG_HOME', () => {
+    process.env['JHO_CONFIG_HOME'] = '';
+    const result = resolveConfigHome();
+    expect(result.endsWith(DEFAULT_CONFIG_HOMEDIR)).toBe(true);
+  });
+
+  it('falls back to $HOME/.job-hunting-organizer when no env', () => {
+    delete process.env['JHO_CONFIG_HOME'];
+    const result = resolveConfigHome();
+    expect(result.endsWith(sep + DEFAULT_CONFIG_HOMEDIR)).toBe(true);
   });
 });
 
@@ -128,33 +159,33 @@ describe('findSlugFromCwd', () => {
 });
 
 describe('findCampaignFromCwd', () => {
-  let globalRoot: string;
+  let dataRoot: string;
 
   beforeEach(async () => {
-    globalRoot = await mkdtemp(join(tmpdir(), 'jho-campaigns-'));
-    await mkdir(join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'), { recursive: true });
-    await mkdir(join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'ft-jobs'), { recursive: true });
+    dataRoot = await mkdtemp(join(tmpdir(), 'jho-campaigns-'));
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'), { recursive: true });
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'ft-jobs'), { recursive: true });
   });
 
   afterEach(async () => {
-    await rm(globalRoot, { recursive: true, force: true });
+    await rm(dataRoot, { recursive: true, force: true });
   });
 
   it('returns null when cwd is outside the campaigns dir', () => {
-    expect(findCampaignFromCwd(tmpdir(), globalRoot)).toBeNull();
+    expect(findCampaignFromCwd(tmpdir(), dataRoot)).toBeNull();
   });
 
   it('returns the campaign name when cwd is the campaign folder', () => {
-    const cwd = join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance');
-    expect(findCampaignFromCwd(cwd, globalRoot)).toBe('freelance');
+    const cwd = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance');
+    expect(findCampaignFromCwd(cwd, dataRoot)).toBe('freelance');
   });
 
   it('returns the campaign name when cwd is a subfolder of the campaign', () => {
-    const cwd = join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance', 'applied', 'notes');
-    expect(findCampaignFromCwd(cwd, globalRoot)).toBe('freelance');
+    const cwd = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance', 'applied', 'notes');
+    expect(findCampaignFromCwd(cwd, dataRoot)).toBe('freelance');
   });
 
-  it('returns null when no campaigns/ folder exists under the global root', async () => {
+  it('returns null when no campaigns/ folder exists under the data root', async () => {
     const empty = await mkdtemp(join(tmpdir(), 'jho-empty-'));
     try {
       expect(findCampaignFromCwd(empty, empty)).toBeNull();

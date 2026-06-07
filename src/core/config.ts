@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { resolveGlobalRoot, resolveCampaignRoot, DEFAULT_CONFIG_FILENAME } from './paths.js';
+import { resolveConfigHome, resolveCampaignRoot, DEFAULT_CONFIG_FILENAME } from './paths.js';
 import type { GlobalConfig, CampaignConfig } from './types.js';
 import { GlobalConfigSchema, CampaignConfigSchema } from './config.schema.js';
 
@@ -22,14 +22,14 @@ const _campaignConfigCache: Map<string, CampaignConfig> = new Map();
 
 /**
  * Load and validate the global config from
- * `<globalRoot>/<DEFAULT_CONFIG_FILENAME>`. The result is cached
+ * `<configHome>/<DEFAULT_CONFIG_FILENAME>`. The result is cached
  * process-wide; call {@link clearConfigCache} to invalidate.
  *
  * On `ENOENT` the file is treated as an empty config and the schema
  * defaults are applied. On any other read/parse error a one-shot
  * warning is written to stderr and an empty config is also used — the
  * tool prefers to start up with a known-good defaults shape rather
- * than crash, so individual commands can re-surfacing the problem
+ * than crash, so individual commands can re-surface the problem
  * through `jho doctor`.
  * @returns The parsed (and defaulted) global config.
  */
@@ -38,8 +38,8 @@ export function loadGlobalConfig(): GlobalConfig {
     return _globalConfig;
   }
 
-  const globalRoot = resolveGlobalRoot();
-  const configPath = resolve(globalRoot, DEFAULT_CONFIG_FILENAME);
+  const configHome = resolveConfigHome();
+  const configPath = resolve(configHome, DEFAULT_CONFIG_FILENAME);
 
   let rawConfig: Record<string, unknown> = {};
   try {
@@ -64,7 +64,7 @@ export function loadGlobalConfig(): GlobalConfig {
  * empty object → schema defaults; other read/parse errors warn and
  * continue with defaults.
  * @param campaignName - The campaign identifier (folder name under
- *   `<globalRoot>/campaigns/`).
+ *   `<dataRoot>/campaigns/`).
  * @returns The parsed campaign config.
  */
 export function loadCampaignConfig(campaignName: string): CampaignConfig {
@@ -138,7 +138,7 @@ export function updateGlobalConfig(update: Partial<GlobalConfig>): void {
   const updated = { ...current, ...update };
   GlobalConfigSchema.parse(updated);
 
-  const globalRoot = resolveGlobalRoot();
+  const globalRoot = resolveConfigHome();
   const configPath = resolve(globalRoot, DEFAULT_CONFIG_FILENAME);
 
   mkdirSync(dirname(configPath), { recursive: true });

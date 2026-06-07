@@ -1,5 +1,5 @@
 import Table from 'cli-table3';
-import { resolveGlobalRoot, DEFAULT_CONFIG_FILENAME } from './paths.js';
+import { resolveConfigHome, DEFAULT_CONFIG_FILENAME } from './paths.js';
 
 /**
  * One row in the ownership table: a file or file region plus the rules
@@ -127,7 +127,7 @@ export interface RenderOwnershipOptions {
  */
 export function renderOwnership(options: RenderOwnershipOptions = {}): string {
   const useMd = options.markdown === true;
-  const configPath = options.configPath ?? resolveGlobalRoot() + '/' + DEFAULT_CONFIG_FILENAME;
+  const configPath = options.configPath ?? resolveConfigHome() + '/' + DEFAULT_CONFIG_FILENAME;
   const header = useMd
     ? `# File ownership\n\nThe tool follows the rules below. Source of truth: \`AGENTS.md\`. Global config: \`${configPath}\`.\n\n`
     : `File ownership — the tool follows these rules. Source of truth: AGENTS.md.

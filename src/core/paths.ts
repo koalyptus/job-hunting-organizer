@@ -10,10 +10,29 @@ import { SLUG_PATTERN } from './slug.js';
 export { SLUG_PATTERN };
 
 /**
- * Default name of the global data root folder under the user's home
- * directory. Used when `$JHO_ROOT` is not set.
+ * Default name of the campaign data root folder under the user's home
+ * directory. This is where `<campaigns>/<name>/` lives — i.e. the
+ * user-authored working data (resumes, JDs, cover letters, retro notes,
+ * KB). Used when `$JHO_DATA` is not set.
+ *
+ * The `-data` suffix distinguishes this folder from the global config
+ * home (`DEFAULT_CONFIG_HOMEDIR`); the two live side by side under
+ * `<homedir>` and have clearly different roles.
  */
-export const DEFAULT_ROOT_DIRNAME = 'job-hunting-organizer';
+export const DEFAULT_DATA_ROOT_DIRNAME = 'job-hunting-organizer-data';
+
+/**
+ * Default name of the global config home folder under the user's home
+ * directory. This holds the global `config.json` (LLM creds, GitHub
+ * token, calendar provider, logging defaults) and the `proper-lockfile`
+ * `.locks/` sidecars. Used when `$JHO_CONFIG_HOME` is not set.
+ *
+ * The leading dot keeps it hidden from `ls` on Linux/macOS; on Windows
+ * the dot is preserved in the path even though Explorer ignores the
+ * "hidden = leading dot" convention. The dotted name mirrors common
+ * Unix patterns (`~/.npm/`, `~/.cargo/`, `~/.ssh/`).
+ */
+export const DEFAULT_CONFIG_HOMEDIR = '.job-hunting-organizer';
 
 /**
  * Default filename for the JSON config file at any level (global or
@@ -31,7 +50,7 @@ export const DEFAULT_PROFILE_FILENAME = 'profile.md';
 /** Default name of the per-campaign knowledge-base directory. */
 export const DEFAULT_KNOWLEDGE_BASE_DIRNAME = 'knowledge-base';
 
-/** Default name of the campaigns subdirectory inside the global root. */
+/** Default name of the campaigns subdirectory inside the data root. */
 export const DEFAULT_CAMPAIGNS_DIRNAME = 'campaigns';
 
 /**
@@ -45,30 +64,56 @@ export function isWindows(): boolean {
 }
 
 /**
- * Resolve the absolute path of the global data root. Honours the
- * `$JHO_ROOT` environment variable if set and non-empty; otherwise falls
- * back to `<homedir>/job-hunting-organizer`.
+ * Resolve the absolute path of the **campaign data root**. This is the
+ * folder that contains `campaigns/<name>/` — the user-authored working
+ * data. It is *separate* from the global config home (see
+ * {@link resolveConfigHome}).
  *
- * No `--global-root` flag is supported by design — this matches the
- * convention of `git`, VS Code, and `ssh` for config location.
- * @returns The absolute path to the global root.
+ * Honours the `$JHO_DATA` environment variable if set and non-empty;
+ * otherwise falls back to `<homedir>/job-hunting-organizer-data`.
+ *
+ * No `--data-root` CLI flag is supported by design — the env var is the
+ * only override (matches `git`, VS Code, `ssh` for location conventions).
+ * @returns The absolute path to the data root.
  */
-export function resolveGlobalRoot(): string {
-  const envRoot = process.env['JHO_ROOT'];
+export function resolveDataRoot(): string {
+  const envRoot = process.env['JHO_DATA'];
   if (envRoot !== undefined && envRoot !== '') {
     return resolve(envRoot);
   }
-  return resolve(homedir(), DEFAULT_ROOT_DIRNAME);
+  return resolve(homedir(), DEFAULT_DATA_ROOT_DIRNAME);
+}
+
+/**
+ * Resolve the absolute path of the **global config home**. This is the
+ * folder that holds the global `config.json` (LLM creds, GitHub token,
+ * calendar provider, logging defaults) and `proper-lockfile` sidecars.
+ * It is *separate* from the campaign data root (see
+ * {@link resolveDataRoot}).
+ *
+ * Honours the `$JHO_CONFIG_HOME` environment variable if set and
+ * non-empty; otherwise falls back to `<homedir>/.job-hunting-organizer`.
+ *
+ * No `--config-home` CLI flag is supported by design — the env var is
+ * the only override.
+ * @returns The absolute path to the config home.
+ */
+export function resolveConfigHome(): string {
+  const envHome = process.env['JHO_CONFIG_HOME'];
+  if (envHome !== undefined && envHome !== '') {
+    return resolve(envHome);
+  }
+  return resolve(homedir(), DEFAULT_CONFIG_HOMEDIR);
 }
 
 /**
  * Resolve the absolute path of a campaign's root directory.
  * @param campaignName - The campaign folder name. Default: `'default'`.
- * @returns `<globalRoot>/campaigns/<campaignName>`.
+ * @returns `<dataRoot>/campaigns/<campaignName>`.
  */
 export function resolveCampaignRoot(campaignName: string = 'default'): string {
-  const globalRoot = resolveGlobalRoot();
-  return resolve(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, campaignName);
+  const dataRoot = resolveDataRoot();
+  return resolve(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, campaignName);
 }
 
 /**
@@ -189,23 +234,23 @@ export function findSlugFromCwd(cwd: string, appliedDir: string): string | null 
 }
 
 /**
- * Walk up from `cwd` looking for `<globalRoot>/campaigns/<name>`.
+ * Walk up from `cwd` looking for `<dataRoot>/campaigns/<name>`.
  * If found, return the campaign name. Used by `jho --campaign <name>`
  * cwd inference: if the user runs a command from inside
- * `<global>/campaigns/freelance/...`, the campaign is `freelance`.
+ * `<dataRoot>/campaigns/freelance/...`, the campaign is `freelance`.
  *
- * Returns `null` if `globalRoot` or its `campaigns/` subdir do not
+ * Returns `null` if `dataRoot` or its `campaigns/` subdir do not
  * exist, the cwd is not under `campaigns/`, or the path resolves to
  * the `campaigns/` dir itself.
  * @param cwd - The current working directory.
- * @param globalRoot - The absolute path of the global data root.
+ * @param dataRoot - The absolute path of the campaign data root.
  * @returns The campaign folder name, or `null`.
  */
-export function findCampaignFromCwd(cwd: string, globalRoot: string): string | null {
-  if (!existsSync(globalRoot)) {
+export function findCampaignFromCwd(cwd: string, dataRoot: string): string | null {
+  if (!existsSync(dataRoot)) {
     return null;
   }
-  const campaignsRoot = resolve(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME);
+  const campaignsRoot = resolve(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME);
   if (!existsSync(campaignsRoot)) {
     return null;
   }

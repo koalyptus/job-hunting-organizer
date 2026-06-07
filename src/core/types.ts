@@ -76,13 +76,13 @@ export interface LoggerConfig {
 }
 
 /**
- * Global configuration (per-user, stored at the global root). Holds LLM
+ * Global configuration (per-user, stored at the config home). Holds LLM
  * credentials, GitHub access, calendar provider, and logging defaults.
  */
 export interface GlobalConfig {
   /** Schema version. Bumped on breaking changes to the config shape. */
   version: number;
-  /** Absolute path to the global data root (e.g. `~/job-hunting-organizer/`). */
+  /** Absolute path to the campaign data root (e.g. `~/job-hunting-organizer-data/`). */
   root: string;
   /** LLM provider settings (OpenAI-compatible). */
   llm: {

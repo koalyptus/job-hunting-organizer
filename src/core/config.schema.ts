@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { resolveGlobalRoot } from './paths.js';
+import { resolveDataRoot } from './paths.js';
 
 /**
- * Zod schema for `<globalRoot>/config.json`. The parsed result is
+ * Zod schema for `<configHome>/config.json`. The parsed result is
  * always fully populated — every nested object has a `.default(...)`
  * so a missing or partial file still yields a known-good shape.
  *
@@ -10,17 +10,23 @@ import { resolveGlobalRoot } from './paths.js';
  * because that is the lowest-friction starting point. The `profile`,
  * `applied`, and `knowledgeBase` paths are intentionally empty at the
  * global layer: those are owned by the campaign config and resolved
- * relative to `<globalRoot>/campaigns/<name>/` in {@link config.ts}.
+ * relative to `<dataRoot>/campaigns/<name>/` in {@link config.ts}.
+ *
+ * Note: the global `config.json` itself lives in the config home (see
+ * `AGENTS.md` "Data layout"), which is a *separate* location from the
+ * data root described by the `root` field below.
  */
 export const GlobalConfigSchema = z.object({
   /** Schema version. Bumped on backwards-incompatible changes. */
   version: z.number().int().min(1).default(1),
   /**
-   * Absolute path of the global root. Computed at parse time via
-   * {@link resolveGlobalRoot} so the value tracks `$JHO_ROOT` /
-   * `~/job-hunting-organizer/` without writing it to the file.
+   * Absolute path of the campaign data root. Computed at parse time via
+   * {@link resolveDataRoot} so the value tracks `$JHO_DATA` /
+   * `~/job-hunting-organizer-data/` without writing it to the file.
+   * This describes where the user's working data lives, which is
+   * distinct from the config home that holds this file.
    */
-  root: z.string().default(() => resolveGlobalRoot()),
+  root: z.string().default(() => resolveDataRoot()),
   /** OpenAI-compatible LLM endpoint settings. */
   llm: z
     .object({
@@ -122,7 +128,7 @@ export const GlobalConfigSchema = z.object({
 });
 
 /**
- * Zod schema for `<globalRoot>/campaigns/<name>/config.json`. A
+ * Zod schema for `<dataRoot>/campaigns/<name>/config.json`. A
  * strict subset of {@link GlobalConfigSchema}: only the fields a
  * campaign is allowed to override. Missing or partial files yield a
  * fully-defaulted object, same as the global schema.

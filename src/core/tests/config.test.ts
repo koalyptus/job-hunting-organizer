@@ -20,7 +20,8 @@ describe('config', () => {
     // Use a temporary directory for testing
     testHome = await mkdtemp(`${homedir()}/jho-test-`);
     process.env.HOME = testHome;
-    process.env.JHO_ROOT = undefined;
+    process.env.JHO_DATA = undefined;
+    process.env.JHO_CONFIG_HOME = undefined;
     clearConfigCache();
   });
 
@@ -37,9 +38,9 @@ describe('config', () => {
     expect(config.llm.apiKey).toBe('ollama');
   });
 
-  it('respects JHO_ROOT environment variable', () => {
-    const customRoot = resolve(testHome, 'custom-jho');
-    process.env.JHO_ROOT = customRoot;
+  it('respects JHO_DATA environment variable', () => {
+    const customRoot = resolve(testHome, 'custom-jho-data');
+    process.env.JHO_DATA = customRoot;
 
     const config = loadGlobalConfig();
     expect(config.root).toBe(customRoot);

@@ -8,15 +8,19 @@ This document is for AI agents (Claude, Cursor, etc.) using the `job-hunting-org
 - **Language**: TypeScript (strict, ESM, Node ≥ 20)
 - **Package layout**: single package (not monorepo)
 - **LLM**: generic OpenAI-compatible client (Ollama, OpenCode, LM Studio, OpenAI, etc.)
-- **Data location**: external global root `~/job-hunting-organizer/` (or `$JHO_ROOT`); never inside the repo. Campaigns live under `<global>/campaigns/<name>/`. See [Data layout](#data-layout-two-level-global-root--campaigns).
-- **Campaign selection**: per-command `--campaign <name>`, or cwd-inferred when run from inside `<global>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
+- **Data location**: two external directories under the user's home; never inside the repo. The **config home** (`~/.job-hunting-organizer/`, override with `$JHO_CONFIG_HOME`) holds the global `config.json` and `.locks/`. The **data root** (`~/job-hunting-organizer-data/`, override with `$JHO_DATA`) holds `campaigns/<name>/` and all user-authored working data. See [Data layout](#data-layout-two-level-config-home--data-root).
+- **Campaign selection**: per-command `--campaign <name>`, or cwd-inferred when run from inside `<dataRoot>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
 
-## Data layout (two-level: global root + campaigns)
+## Data layout (two-level: config home + data root)
+
+The tool stores its state under **two** directories under the user's home: a small **config home** for the global `config.json` and lock sidecars, and a separate **data root** that holds all per-campaign working data. The two live side by side and serve clearly different roles — config is small, write-rarely, and may have stricter permissions; data is large, write-often, and may sit on a different filesystem.
 
 ```
-~/job-hunting-organizer/                       # global root (override with $JHO_ROOT)
+~/job-hunting-organizer/                       # config home (override with $JHO_CONFIG_HOME)
 ├── config.json                                # global: LLM, GitHub, calendar, logging
-├── .locks/                                    # proper-lockfile sidecars
+└── .locks/                                    # proper-lockfile sidecars
+
+~/job-hunting-organizer-data/                  # data root (override with $JHO_DATA)
 └── campaigns/
     ├── default/                               # default campaign (auto-created on first `jho init`)
     │   ├── config.json                        # per-campaign: profile path, applied dir, KB dir
@@ -28,9 +32,9 @@ This document is for AI agents (Claude, Cursor, etc.) using the `job-hunting-org
         └── ...
 ```
 
-The global root is fixed; campaigns are subfolders. Power users can relocate the **global** root via `$JHO_ROOT` (no CLI flag for it by design — matches `git`, `VS Code`, `ssh` config location conventions). Campaign selection: `jho --campaign <name> ...` (explicit) or cwd-inferred from `<global>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
+The config home is fixed; the data root is fixed; campaigns are subfolders of the data root. Power users can relocate **each** independently via its env var (no CLI flags by design — matches `git`, `VS Code`, `ssh` config location conventions). Campaign selection: `jho --campaign <name> ...` (explicit) or cwd-inferred from `<dataRoot>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
 
-**Renaming a campaign**: the folder name is the only thing that identifies a campaign; nothing on disk references it elsewhere. `jho rename-campaign <old> <new>` is the validated path (validates `<new>`, takes a `proper-lockfile` lock, atomic `fs.rename`, logs the move). Bare `mv` on `<global>/campaigns/<old>/` is also supported as an escape hatch — the tool will pick up the new name on the next call.
+**Renaming a campaign**: the folder name is the only thing that identifies a campaign; nothing on disk references it elsewhere. `jho rename-campaign <old> <new>` is the validated path (validates `<new>`, takes a `proper-lockfile` lock, atomic `fs.rename`, logs the move). Bare `mv` on `<dataRoot>/campaigns/<old>/` is also supported as an escape hatch — the tool will pick up the new name on the next call.
 
 ## Repo structure
 
@@ -71,8 +75,9 @@ npm run eval         # lightweight LLM eval suite (manual)
 
 ```
 jho init [<name>]       # wizard: build profile from CV + GitHub; creates a new campaign
-jho config show|path [--global]  # show merged (or global-only) config; secrets redacted
-jho root                # print the inferred campaign root (or global root with --global)
+jho config show|path    # show the global config (in the config home); secrets redacted
+jho campaign-config show|path  # show the active campaign's config (in the data root); secrets redacted
+jho root                # print the inferred campaign root
 jho rename-campaign [<old>] <new>  # rename a campaign folder (or `mv` the folder directly)
 jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
@@ -190,7 +195,7 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 ### Environment
 
-- Use `process.env` with uppercase keys (`JHO_ROOT`, `LLM_API_KEY`, `GITHUB_TOKEN`, etc.). Windows is case-insensitive in the shell, but `process.env` lookups in JS are case-sensitive — be consistent.
+- Use `process.env` with uppercase keys (`JHO_CONFIG_HOME`, `JHO_DATA`, `LLM_API_KEY`, `GITHUB_TOKEN`, etc.). Windows is case-insensitive in the shell, but `process.env` lookups in JS are case-sensitive — be consistent.
 
 ### Line endings
 

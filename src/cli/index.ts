@@ -1,10 +1,36 @@
 import { getPackageVersion } from '../core/package.js';
-import { resolveGlobalRoot, resolveCampaignRoot } from '../core/paths.js';
-import { configShowPaths, formatPathHint, renderConfigShow } from '../core/config.view.js';
+import { resolveConfigHome, resolveCampaignRoot, resolveConfigPath } from '../core/paths.js';
+import { loadGlobalConfig, loadCampaignConfig } from '../core/config.js';
+import { redactSecrets } from '../core/config.view.js';
 import { renderOwnership } from '../core/ownership.js';
 
 const VERSION = getPackageVersion();
 
+/**
+ * Internal helper used by `jho config` and `jho campaign config`. Prints
+ * a header line on stderr naming the source file, then writes the body
+ * to stdout. `reveal` opts out of secret redaction; `json` switches the
+ * body to a pretty-printed JSON document for `jq`.
+ */
+function renderConfig(
+  body: unknown,
+  options: { sourcePath: string; reveal: boolean; json: boolean },
+): number {
+  const value = options.reveal ? body : redactSecrets(body as never);
+  process.stderr.write(`Source: ${options.sourcePath}\n`);
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+  } else {
+    process.stdout.write(`# Source: ${options.sourcePath}\n${JSON.stringify(value, null, 2)}\n`);
+  }
+  return 0;
+}
+
+/**
+ * `jho --help` / `jho` (no args) — hand-written layered help. Lists every
+ * command built in this phase (with a one-liner) and every command planned
+ * for v1 (kept in sync with `AGENTS.md` until `jho help <cmd>` lands).
+ */
 function printHelp(): void {
   const out = process.stdout;
   out.write(`jho ${VERSION} — local-first CLI for running a job-hunting campaign
@@ -16,38 +42,48 @@ Options:
   --version              Print version and exit
   --help                 Print this help and exit
 
-Global root (override via env var only):
-  $JHO_ROOT              Override the global data root (default: ~/job-hunting-organizer/)
-                         No --global-root flag by design — matches git, VS Code, ssh config conventions.
+Data locations (override via env var only):
+  $JHO_CONFIG_HOME       Override the global config home (default: ~/.job-hunting-organizer/)
+                         No --config-home flag by design — matches git, VS Code, ssh conventions.
+  $JHO_DATA              Override the campaign data root (default: ~/job-hunting-organizer-data/)
+                         No --data-root flag by design.
 
 Commands available in this build:
-  root [--global]        Print the inferred campaign root (or global root with --global)
-  config [show|path]     Show merged config; print the config path
+  root                   Print the inferred campaign root
+  config [show|path]     Show or print the path of the global config (in the config home)
+  campaign config [show|path]
+                         Show or print the path of the active campaign's config
+                         (in <data-root>/campaigns/<name>/)
   ownership              Print the file ownership table
 
 Commands planned for v1 (not yet implemented):
-  init [<name>]          Wizard: build profile from CV + GitHub; creates a new campaign
-  profile [show|rebuild] Show or rebuild the profile
-  track <url>            Record a new application
-  list                   List all applications
-  show [<slug>]          Show one application
-  cover-letter [<slug>]  Generate a tailored cover letter
-  answer [<slug>] "..."  Tailor an answer to an application question
-  interview [<slug>]     Manage interview pipeline
-  retro [<slug>]         Post-mortem for failed interviews
-  prepare [<slug>]       Pre-interview prep plan
-  doctor                 Diagnose the campaign
-  repair                 Attempt auto-repair
-  stats                  Campaign snapshot
-  rename-campaign        Rename a campaign folder
-  help [<cmd>|<topic>]   Show help for a command or topic
-  mcp                    Start the MCP server
+  campaign init [<name>]      Wizard: build profile from CV + GitHub; creates a new campaign
+  campaign rename [<old>] <new>  Rename a campaign folder (or \`mv\` the folder directly)
+  campaign doctor              Diagnose the campaign
+  campaign repair              Attempt auto-repair
+  campaign stats               Campaign snapshot
+  profile [show|rebuild]       Show or rebuild the profile
+  track <url>                  Record a new application
+  list                         List all applications
+  show [<slug>]                Show one application
+  cover-letter [<slug>]        Generate a tailored cover letter
+  answer [<slug>] "..."        Tailor an answer to an application question
+  interview [<slug>]           Manage interview pipeline
+  retro [<slug>]               Post-mortem for failed interviews
+  prepare [<slug>]             Pre-interview prep plan
+  help [<cmd>|<topic>]         Show help for a command or topic
+  mcp                          Start the MCP server
 
 Per-command global flags (--campaign, --verbose, --quiet, --no-color, --log-file)
 are planned for Phase 2c.
 `);
 }
 
+/**
+ * `jho --version` — single-line version stamp. Kept separate from `printHelp`
+ * so `jho --version | head` works (help is multi-line and intentionally
+ * human-shaped).
+ */
 function printVersion(): void {
   process.stdout.write(`${VERSION}\n`);
 }
@@ -59,6 +95,11 @@ interface ParsedArgs {
   readonly showHelp: boolean;
 }
 
+/**
+ * Pull `--version` / `--help` off the front of argv and return the rest
+ * as `{ command, rest }`. Intentionally minimal — once `commander` lands
+ * in Phase 2c this function goes away.
+ */
 function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = [...argv];
   let showVersion = false;
@@ -79,12 +120,19 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
   return { command, rest: args, showVersion, showHelp };
 }
 
-function commandRoot(args: readonly string[]): void {
-  const isGlobal = args.includes('--global');
-  const root = isGlobal ? resolveGlobalRoot() : resolveCampaignRoot();
-  process.stdout.write(`${root}\n`);
+/**
+ * `jho root` — print the inferred campaign root (cwd-inferred or `default`).
+ * No flags; per-campaign selection via `--campaign` is planned for Phase 2c.
+ */
+function commandRoot(): void {
+  process.stdout.write(`${resolveCampaignRoot()}\n`);
 }
 
+/**
+ * `jho config [show|path]` — show or print the path of the global config
+ * (in the config home). `show` accepts `--reveal` and `--json`; `path` is
+ * a one-liner intended for `$(jho config path)`.
+ */
 function commandConfig(args: readonly string[]): number {
   // Tolerate `jho config --json` (flags before the subcommand) by treating
   // a flag as `show` with the rest of the args forwarded.
@@ -93,39 +141,34 @@ function commandConfig(args: readonly string[]): number {
   const sub = normalized[0] ?? 'show';
   switch (sub) {
     case 'show': {
-      const opts = {
-        global: normalized.includes('--global'),
-        reveal: normalized.includes('--reveal'),
-        json: normalized.includes('--json'),
-      };
-      // Print the source path(s) to stderr so stdout stays clean for piping
-      // (e.g. `jho config show --json | jq`). The non-JSON renderer also
-      // embeds the path in its header comment for users who copy-paste output.
-      process.stderr.write(formatPathHint(configShowPaths(opts)));
-      process.stdout.write(renderConfigShow(opts));
-      return 0;
+      const reveal = normalized.includes('--reveal');
+      const json = normalized.includes('--json');
+      return renderConfig(loadGlobalConfig(), {
+        sourcePath: resolveConfigPath(resolveConfigHome()),
+        reveal,
+        json,
+      });
     }
     case 'path': {
-      const isGlobal = normalized.includes('--global');
-      const p = isGlobal
-        ? `${resolveGlobalRoot()}/config.json`
-        : `${resolveCampaignRoot()}/config.json`;
-      process.stdout.write(`${p}\n`);
+      process.stdout.write(`${resolveConfigPath(resolveConfigHome())}\n`);
       return 0;
     }
     case '--help':
     case '-h':
       process.stdout.write(
-        `jho config — show the merged or global config
+        `jho config — show or print the path of the global config
 
 Usage:
-  jho config show [--global] [--reveal] [--json]
-  jho config path [--global]
+  jho config show [--reveal] [--json]
+  jho config path
 
 Options:
-  --global   Show the global config only (default: merged global + active campaign)
   --reveal   Show secrets in clear text (default: redact)
   --json     Output JSON only (default: header + pretty JSON)
+
+The global config lives in the config home ($JHO_CONFIG_HOME, default
+~/.job-hunting-organizer/). For the active campaign's config, use
+\`jho campaign config\`.
 
 Secrets redacted by default: llm.apiKey, github.token, calendar.outlook.clientSecret.
 The redaction marker hints at the env var the user should set instead.
@@ -138,12 +181,113 @@ The redaction marker hints at the env var the user should set instead.
   }
 }
 
+/**
+ * `jho campaign config` — show or print the path of the active campaign's
+ * config (in the data root). Mirrors `jho config` for symmetry; uses the
+ * `default` campaign until `--campaign` lands in Phase 2c.
+ */
+function commandCampaignConfig(args: readonly string[]): number {
+  // Tolerate `jho campaign config --json` (flags before the subcommand) by
+  // treating a flag as `show` with the rest of the args forwarded.
+  const normalized: readonly string[] =
+    args.length > 0 && (args[0] ?? '').startsWith('--') ? ['show', ...args] : args;
+  const sub = normalized[0] ?? 'show';
+  switch (sub) {
+    case 'show': {
+      const reveal = normalized.includes('--reveal');
+      const json = normalized.includes('--json');
+      return renderConfig(loadCampaignConfig('default'), {
+        sourcePath: resolveConfigPath(resolveCampaignRoot('default')),
+        reveal,
+        json,
+      });
+    }
+    case 'path': {
+      process.stdout.write(`${resolveConfigPath(resolveCampaignRoot('default'))}\n`);
+      return 0;
+    }
+    case '--help':
+    case '-h':
+      process.stdout.write(
+        `jho campaign config — show or print the path of the active campaign's config
+
+Usage:
+  jho campaign config show [--reveal] [--json]
+  jho campaign config path
+
+Options:
+  --reveal   Show secrets in clear text (default: redact)
+  --json     Output JSON only (default: header + pretty JSON)
+
+The campaign config lives in <data-root>/campaigns/<name>/config.json
+($JHO_DATA, default ~/job-hunting-organizer-data/). For the global config,
+use \`jho config\`. (Per-campaign selection via --campaign is planned for
+Phase 2c.)
+`,
+      );
+      return 0;
+    default:
+      process.stderr.write(`jho campaign config: unknown subcommand: ${sub}\n`);
+      return 1;
+  }
+}
+
+/**
+ * `jho campaign <subcommand>` — dispatch campaign-scoped operations.
+ * Currently wires `config`; future subcommands (`init`, `rename`, `doctor`,
+ * `repair`, `stats`) slot into the same switch when they land.
+ */
+function commandCampaign(args: readonly string[]): number {
+  const sub = args[0];
+  switch (sub) {
+    case 'config':
+      return commandCampaignConfig(args.slice(1));
+    case '--help':
+    case '-h':
+    case undefined:
+      process.stdout.write(
+        `jho campaign — operations on a campaign
+
+Usage:
+  jho campaign config [show|path]
+  jho campaign <subcommand> [...]
+
+Available subcommands (current build):
+  config          Show or print the path of the active campaign's config
+
+Available subcommands (planned for v1, not yet implemented):
+  init [<name>]            Wizard: build profile from CV + GitHub; creates a new campaign
+  rename [<old>] <new>     Rename a campaign folder (or \`mv\` the folder directly)
+  doctor                   Diagnose the campaign
+  repair                   Attempt auto-repair
+  stats                    Campaign snapshot
+`,
+      );
+      return 0;
+    default:
+      process.stderr.write(
+        `jho campaign: unknown subcommand: ${sub} (planned for v1; not yet implemented)\n`,
+      );
+      return 1;
+  }
+}
+
+/**
+ * `jho ownership` — print the file ownership table (consumed by humans and
+ * embedded in `AGENTS.md`). `--markdown` switches to a copy-paste-ready
+ * Markdown table for docs / issues.
+ */
 function commandOwnership(args: readonly string[]): number {
   const asMarkdown = args.includes('--markdown');
   process.stdout.write(renderOwnership({ markdown: asMarkdown }));
   return 0;
 }
 
+/**
+ * Entry point: parses argv, dispatches to the right command, returns the
+ * process exit code. Stdout = command output; stderr = source-path hints
+ * and errors. Side-effecting writes only happen inside dispatched commands.
+ */
 function main(argv: readonly string[]): number {
   const { command, rest, showVersion, showHelp } = parseArgs(argv);
 
@@ -162,10 +306,12 @@ function main(argv: readonly string[]): number {
 
   switch (command) {
     case 'root':
-      commandRoot(rest);
+      commandRoot();
       return 0;
     case 'config':
       return commandConfig(rest);
+    case 'campaign':
+      return commandCampaign(rest);
     case 'ownership':
       return commandOwnership(rest);
     default:

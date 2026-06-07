@@ -52,7 +52,7 @@
 
 **Scope** (split into 2a/2b for incremental delivery — see below):
 
-- `core/paths.ts` — resolves `$JHO_ROOT`, finds global `config.json`, resolves campaign root, `findSlugFromCwd` and `findCampaignFromCwd`
+- `core/paths.ts` — resolves `$JHO_CONFIG_HOME` and `$JHO_DATA`, finds global `config.json`, resolves campaign root, `findSlugFromCwd` and `findCampaignFromCwd`
 - `core/config.ts` — zod schemas (global + per-campaign), read/write both, redact secrets, `updateConfig(partial)` merge
 - `core/config.schema.ts` — Zod schemas split out (single-responsibility: validation rules in their own module)
 - `core/logger.ts` — pino factory, redaction paths, TTY vs JSON, child loggers
@@ -70,7 +70,7 @@ Sub-phase covering the lowest-risk modules first. Smaller, easier to review, unb
 
 **Delivered**:
 
-- `core/paths.ts` — `$JHO_ROOT`, global root, campaign root, slug & campaign cwd inference
+- `core/paths.ts` — `$JHO_CONFIG_HOME` and `$JHO_DATA`, config home + data root, campaign root, slug & campaign cwd inference
 - `core/config.ts` + `core/config.schema.ts` — zod schemas, global + per-campaign config load/merge/update
 - `core/logger.ts` — pino factory, redaction, TTY/JSON output, file output
 - `core/debug.ts` — `jho:*` namespace helper
