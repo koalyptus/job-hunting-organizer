@@ -18,7 +18,7 @@ A local-first CLI and MCP server for running a job-hunting campaign.
 
 > **Your data stays local.** `job-hunting-organizer` reads your CV from a path you configure, fetches job descriptions from URLs you provide, and calls the LLM endpoint _you_ configure. Nothing is sent to the tool author or to any third party. With a local model (Ollama, OpenCode, LM Studio) the LLM call stays on your machine. The tool has zero telemetry, zero analytics, and zero outbound calls except those you explicitly configure.
 
-All user data lives outside the repo under a **global root** (default `~/job-hunting-organizer/`, override with `$JHO_ROOT`). The global root holds settings shared across campaigns (LLM endpoint, GitHub token, calendar). Each **campaign** is its own subdirectory at `<global-root>/campaigns/<name>/` with its own `profile.md`, `applied/`, and `knowledge-base/`. Nothing user-specific is committed to this repo. You can run multiple independent campaigns by creating more under `campaigns/`.
+All user data lives outside the repo under two external directories. The **config home** (default `~/.job-hunting-organizer/`, override with `$JHO_CONFIG_HOME`) holds the global `config.json` (LLM endpoint, GitHub token, calendar) and `.locks/`. The **data root** (default `~/job-hunting-organizer-data/`, override with `$JHO_DATA`) holds `campaigns/<name>/` and all per-campaign working data — each campaign has its own `profile.md`, `applied/`, and `knowledge-base/`. Nothing user-specific is committed to this repo. You can run multiple independent campaigns by creating more under `campaigns/`.
 
 The data layout (folder-per-application, markdown + JSON, no DB) leaves room for an optional local web client in the future. The CLI and MCP server are the v1 surfaces; see `docs/PLAN.md` §20 for the forward-looking design notes.
 
@@ -51,6 +51,8 @@ jho init
 #    (suggests a target role from your profile; you confirm or override)
 jho track https://au.seek.com.au/job/12345
 
+> **Job ID extraction**: URLs are parsed for a job-board ID used in the folder slug. Built-in patterns support Seek, LinkedIn, Indeed, and a generic trailing-number fallback. Custom patterns can be added via the `JHO_URL_PATTERNS` environment variable — a JSON array of `{ name, pattern, group }` objects that are tried before the built-in patterns.
+
 # 3. Generate a tailored cover letter
 jho cover-letter 2026-Jun-03-SE-Nuage-Technology-Group-12345
 
@@ -79,12 +81,12 @@ jho stats
 > **Tip**: you can omit the slug and just `cd` into the application folder — `jho show`, `jho cover-letter`, `jho answer`, `jho interview ...`, `jho prepare`, and `jho retro` all infer the slug from the current directory.
 >
 > ```sh
-> cd ~/job-hunting-organizer/applied/2026-Jun-03-SE-Nuage-Technology-Group-12345
+> cd ~/job-hunting-organizer-data/campaigns/default/applied/2026-Jun-03-SE-Nuage-Technology-Group-12345
 > jho show              # same as passing the slug explicitly
 > jho retro             # works from any subfolder too
 > ```
 >
-> **Multiple campaigns**: each one lives at `<global-root>/campaigns/<name>/`. Create them with `jho init <name>` (omit the name to use the `default` campaign). All commands accept `--campaign <name>` to target a specific one; otherwise the campaign is inferred from your cwd.
+> **Multiple campaigns**: each one lives at `<data-root>/campaigns/<name>/`. Create them with `jho init <name>` (omit the name to use the `default` campaign). All commands accept `--campaign <name>` to target a specific one; otherwise the campaign is inferred from your cwd.
 >
 > ```sh
 > jho init freelance

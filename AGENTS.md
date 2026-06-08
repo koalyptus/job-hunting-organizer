@@ -8,18 +8,22 @@ This document is for AI agents (Claude, Cursor, etc.) using the `job-hunting-org
 - **Language**: TypeScript (strict, ESM, Node ≥ 20)
 - **Package layout**: single package (not monorepo)
 - **LLM**: generic OpenAI-compatible client (Ollama, OpenCode, LM Studio, OpenAI, etc.)
-- **Data location**: external global root `~/job-hunting-organizer/` (or `$JHO_ROOT`); never inside the repo. Campaigns live under `<global>/campaigns/<name>/`. See [Data layout](#data-layout-two-level-global-root--campaigns).
-- **Campaign selection**: per-command `--campaign <name>`, or cwd-inferred when run from inside `<global>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
+- **Data location**: two external directories under the user's home; never inside the repo. The **config home** (`~/.job-hunting-organizer/`, override with `$JHO_CONFIG_HOME`) holds the global `config.json` and `.locks/`. The **data root** (`~/job-hunting-organizer-data/`, override with `$JHO_DATA`) holds `campaigns/<name>/` and all user-authored working data. See [Data layout](#data-layout-two-level-config-home--data-root).
+- **Campaign selection**: per-command `--campaign <name>`, or cwd-inferred when run from inside `<dataRoot>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
 
-## Data layout (two-level: global root + campaigns)
+## Data layout (two-level: config home + data root)
+
+The tool stores its state under **two** directories under the user's home: a small **config home** for the global `config.json` and lock sidecars, and a separate **data root** that holds all per-campaign working data. The two live side by side and serve clearly different roles — config is small, write-rarely, and may have stricter permissions; data is large, write-often, and may sit on a different filesystem.
 
 ```
-~/job-hunting-organizer/                       # global root (override with $JHO_ROOT)
+~/job-hunting-organizer/                       # config home (override with $JHO_CONFIG_HOME)
 ├── config.json                                # global: LLM, GitHub, calendar, logging
-├── .locks/                                    # proper-lockfile sidecars
+└── .locks/                                    # proper-lockfile sidecars
+
+~/job-hunting-organizer-data/                  # data root (override with $JHO_DATA)
 └── campaigns/
     ├── default/                               # default campaign (auto-created on first `jho init`)
-    │   ├── config.json                        # per-campaign: profile path, applied dir, KB dir
+    │   ├── config.json                        # per-campaign: profile path, CV path, applied dir, KB dir
     │   ├── profile.md                         # candidate profile, target roles
     │   ├── applied/                           # folder per application
     │   │   └── YYYY-MMM-DD-role-co-jobid/
@@ -28,9 +32,9 @@ This document is for AI agents (Claude, Cursor, etc.) using the `job-hunting-org
         └── ...
 ```
 
-The global root is fixed; campaigns are subfolders. Power users can relocate the **global** root via `$JHO_ROOT` (no CLI flag for it by design — matches `git`, `VS Code`, `ssh` config location conventions). Campaign selection: `jho --campaign <name> ...` (explicit) or cwd-inferred from `<global>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
+The config home is fixed; the data root is fixed; campaigns are subfolders of the data root. Power users can relocate **each** independently via its env var (no CLI flags by design — matches `git`, `VS Code`, `ssh` config location conventions). Campaign selection: `jho --campaign <name> ...` (explicit) or cwd-inferred from `<dataRoot>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
 
-**Renaming a campaign**: the folder name is the only thing that identifies a campaign; nothing on disk references it elsewhere. `jho rename-campaign <old> <new>` is the validated path (validates `<new>`, takes a `proper-lockfile` lock, atomic `fs.rename`, logs the move). Bare `mv` on `<global>/campaigns/<old>/` is also supported as an escape hatch — the tool will pick up the new name on the next call.
+**Renaming a campaign**: the folder name is the only thing that identifies a campaign; nothing on disk references it elsewhere. `jho rename-campaign <old> <new>` is the validated path (validates `<new>`, takes a `proper-lockfile` lock, atomic `fs.rename`, logs the move). Bare `mv` on `<dataRoot>/campaigns/<old>/` is also supported as an escape hatch — the tool will pick up the new name on the next call.
 
 ## Repo structure
 
@@ -71,8 +75,8 @@ npm run eval         # lightweight LLM eval suite (manual)
 
 ```
 jho init [<name>]       # wizard: build profile from CV + GitHub; creates a new campaign
-jho config show|path [--global]  # show merged (or global-only) config; secrets redacted
-jho root                # print the inferred campaign root (or global root with --global)
+jho config show|path    # show the global config (in the config home); secrets redacted
+jho campaign config show|path  # show the active campaign's config (in the data root); secrets redacted
 jho rename-campaign [<old>] <new>  # rename a campaign folder (or `mv` the folder directly)
 jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
@@ -108,21 +112,21 @@ jho mcp                 # start MCP server
 
 **The one rule**: _If a comment at the top of the file says `jho:...`, the boundary is right there. If not, the file is yours._
 
-| File                                   | Tool writes                                                     | Edit freely?                   | Tool behavior on your edit                                 |
-| -------------------------------------- | --------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------- |
-| `meta.md` frontmatter                  | yes (rebuild from JD + state)                                   | yes (add custom fields)        | round-tripped, custom fields preserved                     |
-| `meta.md` body                         | never                                                           | yes                            | preserved verbatim                                         |
-| `jd.md` (above `jho:start:fetched-jd`) | yes (on re-track)                                               | no (tool-managed region)       | overwritten                                                |
-| `jd.md` (below `jho:end:fetched-jd`)   | never                                                           | yes                            | preserved on re-track                                      |
-| `cover-letter.md`                      | on regenerate                                                   | yes                            | prompts on next regenerate                                 |
-| `qa.md`                                | appends only                                                    | yes                            | prior entries untouched                                    |
-| `interviews.md`                        | appends, `Status:` line updates                                 | yes (except `Status:`)         | mark status via `jho interview mark`                       |
-| `retro.md`                             | appends new H2 sections                                         | yes (checklists, notes)        | prior retros untouched                                     |
-| `prep.md`                              | regenerates on `--update`; appends user-added topics on `--add` | yes                            | prompts on overwrite; user edits preserved unless accepted |
-| `profile.md` `## Target roles`         | suggests on `jho init`/`profile rebuild`                        | yes (titles, fields, priority) | prompts before overwrite; user edits preserved             |
-| `notes.md`                             | never                                                           | yes                            | never touched                                              |
-| `.index.json`                          | on read / staleness                                             | no (internal cache)            | regenerated                                                |
-| `.counters.json`                       | on slug collision                                               | no (internal cache)            | regenerated                                                |
+| File                                                | Tool writes                                                                   | Edit freely?                                        | Tool behavior on your edit                                      |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------- |
+| `meta.md` (the metadata fields at the top)          | yes (rewrites from the job ad + your current status)                          | yes (add your own key:value lines)                  | your extra fields are kept; the rest is rewritten               |
+| `meta.md` (everything below the metadata fields)    | never                                                                         | yes                                                 | kept exactly as you wrote it                                    |
+| `jd.md` (the auto-fetched job ad, at the top)       | yes (replaces it when you re-run `jho track`)                                 | no (the tool owns this section)                     | your edits are lost on the next `jho track`                     |
+| `jd.md` (everything below the auto-fetched section) | never                                                                         | yes                                                 | kept when you re-run `jho track`                                |
+| `cover-letter.md`                                   | when you re-run `jho cover-letter`                                            | yes                                                 | asks before overwriting on the next regenerate                  |
+| `qa.md`                                             | appends new entries; never rewrites old ones                                  | yes                                                 | older entries stay as you wrote them                            |
+| `interviews.md`                                     | appends new entries; updates the current status line                          | yes (except the current status line)                | change the status with `jho interview mark`                     |
+| `retro.md`                                          | appends a new section per retro                                               | yes (your notes and checklists inside a section)    | older retro sections stay as you wrote them                     |
+| `prep.md`                                           | rewrites on `--update`; appends topics on `--add`                             | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
+| `profile.md` (the "Target roles" section)           | suggests roles on `jho campaign init` and `profile rebuild`                   | yes (titles, fields, priority)                      | asks before overwriting                                         |
+| `notes.md`                                          | never                                                                         | yes                                                 | this file is entirely yours — the tool never reads or writes it |
+| `applied/.index.json`                               | regenerated when the tool reads it (to refresh the listing)                   | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
+| `applied/.counters.json`                            | when two applications need the same folder name (so a -2, -3 suffix is added) | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
 
 Each tool-managed file has a `.toolhash` sidecar. If the file's current hash differs from the sidecar, the tool refuses silent overwrite and shows a diff.
 
@@ -149,7 +153,6 @@ When interacting via MCP:
 
 - **Never** exfiltrate user data to anywhere except the LLM endpoint the user has configured.
 - **Never** suggest adding real PII to the repo, git history, or any remote.
-- The legacy `applied/2026-Jun-03-SE-Nuage-Technology-Group.md` is gitignored and ignored by the tool; do not read or modify it.
 
 ## Slug convention
 
@@ -157,7 +160,7 @@ When interacting via MCP:
 
 - `roleAbbr` = first 2–3 words of the title, alphanumeric + hyphens, ≤ 24 chars.
 - `companySlug` = lowercased, alphanumeric + hyphens.
-- `jobId` = extracted from URL when present (Seek trailing numeric, LinkedIn `/view/<id>`, Indeed `jk=`).
+- `jobId` = extracted from URL when present. Built-in patterns: Seek trailing numeric, LinkedIn `/view/<id>`, Indeed `jk=`, and a generic 5+-digit trailing number preceded by `/` or `-` (excluding years 1900-2099). Custom patterns can be added via the `JHO_URL_PATTERNS` environment variable — a JSON array of `{ name, pattern, group }` objects that take precedence over built-ins.
 - `-{n}` = integer suffix on collision; counter at `applied/.counters.json`.
 - Recognized as a slug by matching `^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$` (used for cwd inference in CLI; see "Slug inference" above).
 
@@ -190,7 +193,7 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 ### Environment
 
-- Use `process.env` with uppercase keys (`JHO_ROOT`, `LLM_API_KEY`, `GITHUB_TOKEN`, etc.). Windows is case-insensitive in the shell, but `process.env` lookups in JS are case-sensitive — be consistent.
+- Use `process.env` with uppercase keys (`JHO_CONFIG_HOME`, `JHO_DATA`, `JHO_URL_PATTERNS`, `LLM_API_KEY`, `GITHUB_TOKEN`, etc.). Windows is case-insensitive in the shell, but `process.env` lookups in JS are case-sensitive — be consistent.
 
 ### Line endings
 

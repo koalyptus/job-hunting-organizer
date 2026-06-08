@@ -1,22 +1,27 @@
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
+import { existsSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import {
   DEFAULT_APPLIED_DIRNAME,
   DEFAULT_CAMPAIGNS_DIRNAME,
   DEFAULT_CONFIG_FILENAME,
-  DEFAULT_ROOT_DIRNAME,
-  SLUG_PATTERN,
+  DEFAULT_CONFIG_HOMEDIR,
+  DEFAULT_DATA_ROOT_DIRNAME,
+  ensureRoot,
   findCampaignFromCwd,
+  findConfigPath,
   findSlugFromCwd,
   isUnder,
   isWindows,
   resolveAppliedDir,
   resolveCampaignRoot,
+  resolveConfigHome,
   resolveConfigPath,
-  resolveGlobalRoot,
+  resolveDataRoot,
 } from '../paths.js';
+import { SLUG_PATTERN } from '../slug.js';
 
 describe('isWindows', () => {
   it('returns a boolean consistent with process.platform', () => {
@@ -25,32 +30,61 @@ describe('isWindows', () => {
   });
 });
 
-describe('resolveGlobalRoot', () => {
-  const originalEnv = process.env['JHO_ROOT'];
+describe('resolveDataRoot', () => {
+  const originalEnv = process.env['JHO_DATA'];
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      delete process.env['JHO_ROOT'];
+      delete process.env['JHO_DATA'];
     } else {
-      process.env['JHO_ROOT'] = originalEnv;
+      process.env['JHO_DATA'] = originalEnv;
     }
   });
 
-  it('uses $JHO_ROOT when set', () => {
-    process.env['JHO_ROOT'] = '/tmp/from-env';
-    expect(resolveGlobalRoot()).toBe(resolve('/tmp/from-env'));
+  it('uses $JHO_DATA when set', () => {
+    process.env['JHO_DATA'] = '/tmp/from-env';
+    expect(resolveDataRoot()).toBe(resolve('/tmp/from-env'));
   });
 
-  it('ignores empty $JHO_ROOT', () => {
-    process.env['JHO_ROOT'] = '';
-    const result = resolveGlobalRoot();
-    expect(result.endsWith(DEFAULT_ROOT_DIRNAME)).toBe(true);
+  it('ignores empty $JHO_DATA', () => {
+    process.env['JHO_DATA'] = '';
+    const result = resolveDataRoot();
+    expect(result.endsWith(DEFAULT_DATA_ROOT_DIRNAME)).toBe(true);
   });
 
-  it('falls back to $HOME/job-hunting-organizer when no env', () => {
-    delete process.env['JHO_ROOT'];
-    const result = resolveGlobalRoot();
-    expect(result.endsWith(sep + DEFAULT_ROOT_DIRNAME)).toBe(true);
+  it('falls back to $HOME/job-hunting-organizer-data when no env', () => {
+    delete process.env['JHO_DATA'];
+    const result = resolveDataRoot();
+    expect(result.endsWith(sep + DEFAULT_DATA_ROOT_DIRNAME)).toBe(true);
+  });
+});
+
+describe('resolveConfigHome', () => {
+  const originalEnv = process.env['JHO_CONFIG_HOME'];
+
+  afterEach(() => {
+    if (originalEnv === undefined) {
+      delete process.env['JHO_CONFIG_HOME'];
+    } else {
+      process.env['JHO_CONFIG_HOME'] = originalEnv;
+    }
+  });
+
+  it('uses $JHO_CONFIG_HOME when set', () => {
+    process.env['JHO_CONFIG_HOME'] = '/tmp/from-env';
+    expect(resolveConfigHome()).toBe(resolve('/tmp/from-env'));
+  });
+
+  it('ignores empty $JHO_CONFIG_HOME', () => {
+    process.env['JHO_CONFIG_HOME'] = '';
+    const result = resolveConfigHome();
+    expect(result.endsWith(DEFAULT_CONFIG_HOMEDIR)).toBe(true);
+  });
+
+  it('falls back to $HOME/.job-hunting-organizer when no env', () => {
+    delete process.env['JHO_CONFIG_HOME'];
+    const result = resolveConfigHome();
+    expect(result.endsWith(sep + DEFAULT_CONFIG_HOMEDIR)).toBe(true);
   });
 });
 
@@ -73,6 +107,54 @@ describe('resolveConfigPath / resolveAppliedDir', () => {
 
   it("joins 'applied' to the root", () => {
     expect(resolveAppliedDir('/tmp/x')).toBe(resolve('/tmp/x', DEFAULT_APPLIED_DIRNAME));
+  });
+});
+
+describe('findConfigPath', () => {
+  let workDir: string;
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), 'jho-find-config-'));
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  it('returns the config path when the file exists', async () => {
+    const configPath = join(workDir, DEFAULT_CONFIG_FILENAME);
+    await writeFile(configPath, '{}', 'utf8');
+    expect(await findConfigPath(workDir)).toBe(configPath);
+  });
+
+  it('returns null when the file is missing', async () => {
+    expect(await findConfigPath(workDir)).toBeNull();
+  });
+});
+
+describe('ensureRoot', () => {
+  let workDir: string;
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), 'jho-ensure-'));
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  it('creates the directory if it does not exist', async () => {
+    const target = join(workDir, 'nested', 'campaign');
+    expect(existsSync(target)).toBe(false);
+    await ensureRoot(target);
+    expect(existsSync(target)).toBe(true);
+  });
+
+  it('is a no-op when the directory already exists', async () => {
+    const target = join(workDir, 'existing');
+    await mkdir(target, { recursive: true });
+    await ensureRoot(target);
+    expect(existsSync(target)).toBe(true);
   });
 });
 
@@ -128,33 +210,33 @@ describe('findSlugFromCwd', () => {
 });
 
 describe('findCampaignFromCwd', () => {
-  let globalRoot: string;
+  let dataRoot: string;
 
   beforeEach(async () => {
-    globalRoot = await mkdtemp(join(tmpdir(), 'jho-campaigns-'));
-    await mkdir(join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'), { recursive: true });
-    await mkdir(join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'ft-jobs'), { recursive: true });
+    dataRoot = await mkdtemp(join(tmpdir(), 'jho-campaigns-'));
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'), { recursive: true });
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'ft-jobs'), { recursive: true });
   });
 
   afterEach(async () => {
-    await rm(globalRoot, { recursive: true, force: true });
+    await rm(dataRoot, { recursive: true, force: true });
   });
 
   it('returns null when cwd is outside the campaigns dir', () => {
-    expect(findCampaignFromCwd(tmpdir(), globalRoot)).toBeNull();
+    expect(findCampaignFromCwd(tmpdir(), dataRoot)).toBeNull();
   });
 
   it('returns the campaign name when cwd is the campaign folder', () => {
-    const cwd = join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance');
-    expect(findCampaignFromCwd(cwd, globalRoot)).toBe('freelance');
+    const cwd = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance');
+    expect(findCampaignFromCwd(cwd, dataRoot)).toBe('freelance');
   });
 
   it('returns the campaign name when cwd is a subfolder of the campaign', () => {
-    const cwd = join(globalRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance', 'applied', 'notes');
-    expect(findCampaignFromCwd(cwd, globalRoot)).toBe('freelance');
+    const cwd = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance', 'applied', 'notes');
+    expect(findCampaignFromCwd(cwd, dataRoot)).toBe('freelance');
   });
 
-  it('returns null when no campaigns/ folder exists under the global root', async () => {
+  it('returns null when no campaigns/ folder exists under the data root', async () => {
     const empty = await mkdtemp(join(tmpdir(), 'jho-empty-'));
     try {
       expect(findCampaignFromCwd(empty, empty)).toBeNull();

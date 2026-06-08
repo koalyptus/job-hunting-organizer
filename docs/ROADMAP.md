@@ -52,7 +52,7 @@
 
 **Scope** (split into 2a/2b for incremental delivery — see below):
 
-- `core/paths.ts` — resolves `$JHO_ROOT`, finds global `config.json`, resolves campaign root, `findSlugFromCwd` and `findCampaignFromCwd`
+- `core/paths.ts` — resolves `$JHO_CONFIG_HOME` and `$JHO_DATA`, finds global `config.json`, resolves campaign root, `findSlugFromCwd` and `findCampaignFromCwd`
 - `core/config.ts` — zod schemas (global + per-campaign), read/write both, redact secrets, `updateConfig(partial)` merge
 - `core/config.schema.ts` — Zod schemas split out (single-responsibility: validation rules in their own module)
 - `core/logger.ts` — pino factory, redaction paths, TTY vs JSON, child loggers
@@ -70,17 +70,17 @@ Sub-phase covering the lowest-risk modules first. Smaller, easier to review, unb
 
 **Delivered**:
 
-- `core/paths.ts` — `$JHO_ROOT`, global root, campaign root, slug & campaign cwd inference
+- `core/paths.ts` — `$JHO_CONFIG_HOME` and `$JHO_DATA`, config home + data root, campaign root, slug & campaign cwd inference
 - `core/config.ts` + `core/config.schema.ts` — zod schemas, global + per-campaign config load/merge/update
 - `core/logger.ts` — pino factory, redaction, TTY/JSON output, file output
 - `core/debug.ts` — `jho:*` namespace helper
 - `core/fs.ts` — `atomicWrite` (writeFile → rename), `pathExists`, `withBackup`
 - `core/locks.ts` — proper-lockfile wrapper
 - `core/package.ts` — package version / root resolution
-- `src/cli/index.ts` — `jho --version`, `jho --help`, `jho root [--global]`
+- `src/cli/index.ts` — `jho --version`, `jho --help`, `jho config [show|path]`, `jho campaign config [show|path]`, `jho ownership`
 - Tests: 63/63 passing, ~88% line coverage on `core/`
 
-**Deliverable**: `jho root` prints the inferred (or global) root. `jho --help` works. Two-level config is loaded and merged correctly.
+**Deliverable**: `jho config show` and `jho campaign config show` print the global and campaign configs respectively. `jho --help` works. Two-level config is loaded with disjoint global / campaign key sets.
 
 **Commit**: `feat(core): paths, config, logger, locks, package, root command`
 
@@ -154,12 +154,12 @@ Picks up the more opinionated modules that build on 2a. Unblocks Phase 5 (JD ext
 
 **Scope**:
 
-- `core/jobs.ts` — `extractJdFromUrl`, `extractJdFromText`, `extractJobId`, `fetchWithFallback`
+- `core/jobs.ts` — `extractJdFromUrl`, `extractJdFromText`, `extractJobId` (uses `JHO_URL_PATTERNS` env var for custom patterns), `fetchWithFallback`
 - `core/jobs.ts` (extended) — `suggestTargetRole(jd, profile)` — returns the slug of the best-matching target role from the profile's `## Target roles` section
 - `core/tracker.ts` (initial) — `createApplication`, `writeMeta`, `writeJd`, `listApplications`, `findBySlug`
 - `core/slug.ts` (extended) — build full slug from JD + jobId
 - `core/frontmatter.ts` (extended) — meta.md frontmatter schema with zod, including optional `targetRole` field
-- `jho track` (full) — extracts JD, suggests a `targetRole`, prompts user to confirm/override, writes `meta.md` with `targetRole: <slug>` set
+- `jho track` (full) — extracts JD, suggests a `targetRole`, prompts user to confirm/override; when the URL has no extractable job ID, prompts user to supply one manually (optional — skip to proceed without); writes `meta.md` with `targetRole: <slug>` set
 - `jho list` (basic) — supports `--role <slug>` filter
 - `applied/.index.json` builder (includes `targetRole`)
 - `core/tracker.ts` (extended) — `meta.md` status enum: `applied | interview | offer | rejected | withdrawn | abandoned | ghosted` (the LLM distinguishes `withdrawn` from `abandoned` based on user input; see PLAN §4 status semantics table)
