@@ -76,6 +76,55 @@ export interface LoggerConfig {
 }
 
 /**
+ * LLM provider settings used by {@link chatComplete}. Derived from the
+ * global config's `llm` block with env-var overrides.
+ */
+export interface LlmConfig {
+  /** Base URL of the API, e.g. `https://api.openai.com/v1`. */
+  readonly baseUrl: string;
+  /** API key. Prefer setting the `LLM_API_KEY` env var. */
+  readonly apiKey: string;
+  /** Model identifier, e.g. `gpt-4o-mini`. */
+  readonly model: string;
+}
+
+/**
+ * Options for {@link chatComplete}. All fields are optional.
+ */
+export interface ChatCompleteOptions {
+  /** Sampling temperature (0–2). Default: `0.6`. */
+  readonly temperature?: number;
+  /** Maximum tokens to generate. Default: model-specific cap. */
+  readonly maxTokens?: number;
+  /** Request structured JSON output (`response_format: { type: 'json_object' }`). */
+  readonly jsonMode?: boolean;
+  /** AbortSignal for cancellation. */
+  readonly signal?: AbortSignal;
+  /** Request timeout in milliseconds. Default: `120_000`. */
+  readonly timeout?: number;
+}
+
+/**
+ * Result of a successful {@link chatComplete} call.
+ */
+export interface ChatCompleteResult {
+  /** The generated text content (empty string if the model refused or returned nothing). */
+  readonly content: string;
+  /** The model identifier that produced the response. */
+  readonly model: string;
+  /** Token usage from the API response. */
+  readonly usage: {
+    readonly promptTokens: number;
+    readonly completionTokens: number;
+    readonly totalTokens: number;
+  };
+  /** How the model stopped generating: `stop`, `length`, `content_filter`, `tool_calls`, `function_call`, or `null`. */
+  readonly finishReason: string | null;
+  /** Wall-clock duration of the request in milliseconds. */
+  readonly durationMs: number;
+}
+
+/**
  * Global configuration (per-user, stored at the config home). Holds the
  * settings that are *shared across every campaign* the user runs: the
  * LLM endpoint, GitHub identity, calendar provider, logging defaults,
