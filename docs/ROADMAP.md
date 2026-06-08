@@ -154,12 +154,12 @@ Picks up the more opinionated modules that build on 2a. Unblocks Phase 5 (JD ext
 
 **Scope**:
 
-- `core/jobs.ts` — `extractJdFromUrl`, `extractJdFromText`, `extractJobId`, `fetchWithFallback`
+- `core/jobs.ts` — `extractJdFromUrl`, `extractJdFromText`, `extractJobId` (uses `JHO_URL_PATTERNS` env var for custom patterns), `fetchWithFallback`
 - `core/jobs.ts` (extended) — `suggestTargetRole(jd, profile)` — returns the slug of the best-matching target role from the profile's `## Target roles` section
 - `core/tracker.ts` (initial) — `createApplication`, `writeMeta`, `writeJd`, `listApplications`, `findBySlug`
 - `core/slug.ts` (extended) — build full slug from JD + jobId
 - `core/frontmatter.ts` (extended) — meta.md frontmatter schema with zod, including optional `targetRole` field
-- `jho track` (full) — extracts JD, suggests a `targetRole`, prompts user to confirm/override, writes `meta.md` with `targetRole: <slug>` set
+- `jho track` (full) — extracts JD, suggests a `targetRole`, prompts user to confirm/override; when the URL has no extractable job ID, prompts user to supply one manually (optional — skip to proceed without); writes `meta.md` with `targetRole: <slug>` set
 - `jho list` (basic) — supports `--role <slug>` filter
 - `applied/.index.json` builder (includes `targetRole`)
 - `core/tracker.ts` (extended) — `meta.md` status enum: `applied | interview | offer | rejected | withdrawn | abandoned | ghosted` (the LLM distinguishes `withdrawn` from `abandoned` based on user input; see PLAN §4 status semantics table)

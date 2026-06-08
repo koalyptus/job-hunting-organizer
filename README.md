@@ -51,6 +51,8 @@ jho init
 #    (suggests a target role from your profile; you confirm or override)
 jho track https://au.seek.com.au/job/12345
 
+> **Job ID extraction**: URLs are parsed for a job-board ID used in the folder slug. Built-in patterns support Seek, LinkedIn, Indeed, and a generic trailing-number fallback. Custom patterns can be added via the `JHO_URL_PATTERNS` environment variable — a JSON array of `{ name, pattern, group }` objects that are tried before the built-in patterns.
+
 # 3. Generate a tailored cover letter
 jho cover-letter 2026-Jun-03-SE-Nuage-Technology-Group-12345
 

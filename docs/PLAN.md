@@ -107,7 +107,7 @@ applied/
 
 - `roleAbbr` = first 2–3 words of title, alphanumeric + hyphens, ≤ 24 chars.
 - `companySlug` = lowercase, alphanumeric + hyphens.
-- `jobId` = extracted from URL when present (Seek trailing numeric; LinkedIn `/view/<id>`; Indeed `jk=`).
+- `jobId` = extracted from URL when present. Built-in patterns: Seek trailing numeric, LinkedIn `/view/<id>`, Indeed `jk=`, and a generic 5+-digit trailing number preceded by `/` or `-` (excluding years 1900-2099). Custom patterns can be added via `JHO_URL_PATTERNS` env var.
 - `-{n}` = integer suffix on collision; counter persisted in `.counters.json`.
 - Recognized as a slug by matching `^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$` (used for cwd inference; see below).
 
@@ -117,6 +117,8 @@ Slugs are intentionally unique but visually noisy. To make the CLI ergonomic, ev
 
 - `core/paths.ts` exposes `findSlugFromCwd(cwd, appliedDir)` which walks up from `cwd` and returns the basename of the first directory whose name matches the slug pattern above and lives under `appliedDir`. Returns `null` if none found.
 - `core/slug.ts` exports the `SLUG_PATTERN` regex and a `validateSlug(slug)` helper.
+- `core/url.ts` provides `extractJobIdFromUrl(url)` — tries user-supplied patterns from `JHO_URL_PATTERNS` first, then built-in patterns (LinkedIn `/view/<id>`, Indeed `jk=`, Seek trailing numeric, generic trailing 5+ digits excluding years). Returns `null` when no pattern matches.
+- **Interactive fallback (future, Phase 5)**: when `jho track <url>` cannot extract a job ID from the URL, the tool interactively prompts the user to supply one manually (an optional input — users can skip it and proceed with no JobId in the slug). This is the CLI-only convenience; MCP `track_application` and `--yes` mode skip the prompt silently.
 - Resolution rule in every CLI command:
   1. If a `<slug>` argument is passed explicitly, use it.
   2. Else, call `findSlugFromCwd(process.cwd(), appliedDir)`. If non-null, use it.
@@ -632,6 +634,9 @@ jho track --stdin
   flags: --status s --salary r --tag t,t --note text
          --target-role <slug>          # set the target role slug (from profile ## Target roles)
          --yes --verbose --quiet
+  # Interactive: when the URL contains no extractable job ID, prompts the user
+  #   to supply one manually (optional — skip to proceed without). Skipped in
+  #   --yes, --paste, --stdin modes.
 
 jho list [--status s] [--tag t] [--role <slug>] [--json]
 jho show [<slug>]         # slug is optional; inferred from cwd if omitted

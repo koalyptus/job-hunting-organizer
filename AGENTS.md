@@ -160,7 +160,7 @@ When interacting via MCP:
 
 - `roleAbbr` = first 2–3 words of the title, alphanumeric + hyphens, ≤ 24 chars.
 - `companySlug` = lowercased, alphanumeric + hyphens.
-- `jobId` = extracted from URL when present (Seek trailing numeric, LinkedIn `/view/<id>`, Indeed `jk=`).
+- `jobId` = extracted from URL when present. Built-in patterns: Seek trailing numeric, LinkedIn `/view/<id>`, Indeed `jk=`, and a generic 5+-digit trailing number preceded by `/` or `-` (excluding years 1900-2099). Custom patterns can be added via the `JHO_URL_PATTERNS` environment variable — a JSON array of `{ name, pattern, group }` objects that take precedence over built-ins.
 - `-{n}` = integer suffix on collision; counter at `applied/.counters.json`.
 - Recognized as a slug by matching `^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$` (used for cwd inference in CLI; see "Slug inference" above).
 
@@ -193,7 +193,7 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 ### Environment
 
-- Use `process.env` with uppercase keys (`JHO_CONFIG_HOME`, `JHO_DATA`, `LLM_API_KEY`, `GITHUB_TOKEN`, etc.). Windows is case-insensitive in the shell, but `process.env` lookups in JS are case-sensitive — be consistent.
+- Use `process.env` with uppercase keys (`JHO_CONFIG_HOME`, `JHO_DATA`, `JHO_URL_PATTERNS`, `LLM_API_KEY`, `GITHUB_TOKEN`, etc.). Windows is case-insensitive in the shell, but `process.env` lookups in JS are case-sensitive — be consistent.
 
 ### Line endings
 
