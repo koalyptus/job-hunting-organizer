@@ -5,8 +5,8 @@
 ## Status
 
 - [x] **Phase 0** — Planning artifacts
-- [ ] **Phase 1** — Skeleton & toolchain
-- [ ] **Phase 2** — Core infra (paths, config, logger, slug, frontmatter, markers)
+- [x] **Phase 1** — Skeleton & toolchain
+- [x] **Phase 2** — Core infra (paths, config, logger, slug, frontmatter, markers)
 - [ ] **Phase 3** — LLM client & profile builder
 - [ ] **Phase 4** — CLI scaffolding & `init` wizard
 - [ ] **Phase 5** — JD extraction & `track`
@@ -84,7 +84,7 @@ Sub-phase covering the lowest-risk modules first. Smaller, easier to review, unb
 
 **Commit**: `feat(core): paths, config, logger, locks, package, root command`
 
-### Phase 2b — Schema-driven IO (planned)
+### Phase 2b — Schema-driven IO (delivered)
 
 Picks up the more opinionated modules that build on 2a. Unblocks Phase 5 (JD extraction) and Phase 6 (cover letter / Q&A).
 
