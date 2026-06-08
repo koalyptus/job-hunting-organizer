@@ -118,6 +118,8 @@ export interface ChatCompleteResult {
     readonly completionTokens: number;
     readonly totalTokens: number;
   };
+  /** How the model stopped generating: `stop`, `length`, `content_filter`, `tool_calls`, `function_call`, or `null`. */
+  readonly finishReason: string | null;
   /** Wall-clock duration of the request in milliseconds. */
   readonly durationMs: number;
 }

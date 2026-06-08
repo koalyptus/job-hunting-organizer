@@ -92,6 +92,7 @@ describe('extractJobIdFromUrl (built-in patterns)', () => {
 
 describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', () => {
   beforeEach(() => {
+    // Suppress expected warning logs from invalid JHO_URL_PATTERNS values
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     // Reset the module cache to re-run the module-level code with the new environment
     vi.resetModules();

@@ -4,6 +4,15 @@ import type { Logger } from 'pino';
 import { loadGlobalConfig } from './config.js';
 import type { GlobalConfig, LlmConfig, ChatCompleteOptions, ChatCompleteResult } from './types.js';
 
+/**
+ * Resolve an {@link LlmConfig} from an explicit `GlobalConfig` or the
+ * global config file (defaults to Ollama localhost if no file exists).
+ * Environment variables (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`)
+ * take precedence over either source.
+ *
+ * Callers that already hold a `GlobalConfig` should pass it explicitly
+ * rather than relying on the file-system fallback.
+ */
 export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
   const config = global ?? loadGlobalConfig();
   return {
@@ -50,6 +59,7 @@ export async function chatComplete(
   const result: ChatCompleteResult = {
     content: choice?.message?.content ?? '',
     model: response.model,
+    finishReason: choice?.finish_reason ?? null,
     usage: {
       promptTokens: response.usage?.prompt_tokens ?? 0,
       completionTokens: response.usage?.completion_tokens ?? 0,

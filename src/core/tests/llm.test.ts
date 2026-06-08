@@ -68,6 +68,7 @@ describe('chatComplete', () => {
 
       expect(result.content).toBe('Hello!');
       expect(result.model).toBe('gpt-4o');
+      expect(result.finishReason).toBe('stop');
     });
 
     it('returns usage information', async () => {
