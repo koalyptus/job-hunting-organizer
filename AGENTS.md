@@ -188,7 +188,7 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 - All **exported** symbols (functions, classes, interfaces, types) must have a JSDoc comment describing their purpose. The `@param` and `@returns` tags are used for non-trivial parameters and return values; `{@link}` references related types and functions.
 - **Private** helper functions do not need JSDoc — a descriptive name is sufficient. This keeps documentation effort focused on the module's public API.
-- Short single-line descriptions use `/** ... */`. Multi-line descriptions and tags use the block form with ` * ` continuation lines.
+- Short single-line descriptions use `/** ... */`. Multi-line descriptions and tags use the block form with `*` continuation lines.
 
 ### File operations
 
