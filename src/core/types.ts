@@ -1,3 +1,5 @@
+import type { paths } from '@octokit/openapi-types';
+
 /**
  * Options for {@link atomicWrite}. All fields are optional; defaults are
  * sensible (UTF-8, default file mode, no auto-mkdir).
@@ -86,6 +88,23 @@ export interface LlmConfig {
   readonly apiKey: string;
   /** Model identifier, e.g. `gpt-4o-mini`. */
   readonly model: string;
+}
+
+/**
+ * Supported CV file formats for {@link readCv}.
+ */
+export type CvFormat = 'pdf' | 'docx' | 'text';
+
+/**
+ * Result of a successful {@link readCv} call.
+ */
+export interface CvContent {
+  /** Plain text extracted from the CV file. */
+  readonly text: string;
+  /** Detected format based on file extension. */
+  readonly format: CvFormat;
+  /** Original file name (basename only). */
+  readonly fileName: string;
 }
 
 /**
@@ -354,3 +373,11 @@ export interface RenderOwnershipOptions {
    */
   readonly configPath?: string;
 }
+
+/** GitHub user profile returned by `GET /users/{username}`. */
+export type GithubUser =
+  paths['/users/{username}']['get']['responses'][200]['content']['application/json'];
+
+/** GitHub repository returned by `GET /users/{username}/repos`. */
+export type GithubRepo =
+  paths['/users/{username}/repos']['get']['responses'][200]['content']['application/json'][number];
