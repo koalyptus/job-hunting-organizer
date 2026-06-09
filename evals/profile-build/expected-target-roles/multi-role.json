@@ -1,0 +1,35 @@
+[
+  {
+    "slug": "senior-frontend-engineer",
+    "title": "Senior Frontend Engineer",
+    "priority": "primary",
+    "level": "Senior (IC4)",
+    "domain": "Frontend, UI/UX",
+    "stack": "React, TypeScript, Tailwind CSS",
+    "workStyle": "Remote",
+    "compensation": "170k AUD",
+    "notes": ""
+  },
+  {
+    "slug": "fullstack-engineer",
+    "title": "Fullstack Engineer",
+    "priority": "secondary",
+    "level": "Senior",
+    "domain": "Fullstack",
+    "stack": "TypeScript, React, Node.js, PostgreSQL",
+    "workStyle": "Hybrid (Melbourne)",
+    "compensation": "",
+    "notes": ""
+  },
+  {
+    "slug": "staff-engineer",
+    "title": "Staff Engineer",
+    "priority": "stretch",
+    "level": "Staff (IC5)",
+    "domain": "Platform engineering",
+    "stack": "TypeScript, Go, Kubernetes",
+    "workStyle": "",
+    "compensation": "",
+    "notes": ""
+  }
+]

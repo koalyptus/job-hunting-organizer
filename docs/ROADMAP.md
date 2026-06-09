@@ -12,7 +12,7 @@
   - [x] 3b — CV parser + GitHub client
   - [x] 3c — Target roles
   - [x] 3d — Profile builder
-  - [ ] 3e — Knowledge base caching & evals
+  - [x] 3e — Knowledge base caching & evals
 - [ ] **Phase 4** — CLI scaffolding & `init` wizard
 - [ ] **Phase 5** — JD extraction & `track`
 - [ ] **Phase 6** — Cover letter & Q&A
@@ -139,7 +139,7 @@ Split into sub-phases for incremental delivery.
 
 #### 3e — Knowledge base caching & evals
 
-`knowledge-base/local/{cv,github}/` for raw text caching. `evals/profile-build/{target-roles-cases.ts, expected-target-roles/}` — golden fixtures for the target-roles output.
+`knowledge-base/local/{cv,github}/` for raw text caching. `evals/profile-build/{target-roles-cases.ts, expected-target-roles/}` — golden fixtures for the target-roles output. Evals use vitest for structural checks. `--judge` (LLM-as-judge, planned for later phases) will use [`openevals`](https://github.com/langchain-ai/openevals).
 
 **Commit**: `feat(profile): knowledge base caching and eval fixtures`
 
