@@ -7,7 +7,12 @@
 - [x] **Phase 0** — Planning artifacts
 - [x] **Phase 1** — Skeleton & toolchain
 - [x] **Phase 2** — Core infra (paths, config, logger, slug, frontmatter, markers)
-- [ ] **Phase 3** — LLM client & profile builder
+- [ ] **Phase 3** — LLM client & profile building
+  - [x] 3a — LLM client
+  - [x] 3b — CV parser + GitHub client
+  - [x] 3c — Target roles
+  - [ ] 3d — Profile builder
+  - [ ] 3e — Knowledge base caching & evals
 - [ ] **Phase 4** — CLI scaffolding & `init` wizard
 - [ ] **Phase 5** — JD extraction & `track`
 - [ ] **Phase 6** — Cover letter & Q&A
@@ -104,21 +109,39 @@ Picks up the more opinionated modules that build on 2a. Unblocks Phase 5 (JD ext
 
 ## Phase 3 — LLM client & profile building
 
-**Scope**:
+Split into sub-phases for incremental delivery.
 
-- `core/llm.ts` — OpenAI-compatible client
-- `core/cv.ts` — PDF (pdf-parse), DOCX (mammoth), MD/TXT readers
-- `core/github.ts` — REST API client for user + repos
-- `core/profile.ts` — orchestrates CV + GitHub → LLM → `profile.md` (including the `## Target roles` section)
-- `core/target-roles.ts` — parse/validate/update the `## Target roles` section in `profile.md`
-- `prompts/profile-build.md` — must include a "generate 2-4 target roles" section with priority, level, domain, stack, comp floor, notes
-- `knowledge-base/local/{cv,github}/` for raw text caching
-- `evals/profile-build/{target-roles-cases.ts, expected-target-roles/}` — golden fixtures for the target-roles output
-- Tests with nock + msw
+#### 3a — LLM client (delivered)
+
+`core/llm.ts` — OpenAI-compatible client (`chatComplete`, `defaultLlmConfig`, `parseJsonResult`). 22 tests.
+
+**Commit**: `feat(llm): OpenAI-compatible chat client`
+
+#### 3b — CV parser + GitHub client (delivered)
+
+`core/cv.ts` — PDF (pdf-parse), DOCX (mammoth), MD/TXT readers. `core/github.ts` — REST API client for user + repos. Types in `types.ts` (`CvFormat`, `CvContent`, `GithubUser`, `GithubRepo`). 23 tests.
+
+**Commit**: `feat(profile): CV parser and GitHub API client`
+
+#### 3c — Target roles
+
+`core/target-roles.ts` — parse/validate/update the `## Target roles` section in `profile.md`. H3-per-role format with slug, title, priority, level, domain, stack, work style, comp floor, notes. Tests.
+
+**Commit**: `feat(profile): target roles parser and validator`
+
+#### 3d — Profile builder
+
+`core/profile.ts` — orchestrates CV + GitHub → LLM → `profile.md` (including the `## Target roles` section). `prompts/profile-build.md` — must include a "generate 2-4 target roles" section with priority, level, domain, stack, comp floor, notes. Tests with nock + msw.
 
 **Deliverable**: `buildProfile({ cvPath, githubUser })` returns generated `profile.md` content (including `## Target roles`). CLI not yet wired.
 
-**Commit**: `feat(profile): CV parsing, GitHub fetch, LLM-backed profile builder, target roles`
+**Commit**: `feat(profile): LLM-backed profile builder with prompt template`
+
+#### 3e — Knowledge base caching & evals
+
+`knowledge-base/local/{cv,github}/` for raw text caching. `evals/profile-build/{target-roles-cases.ts, expected-target-roles/}` — golden fixtures for the target-roles output.
+
+**Commit**: `feat(profile): knowledge base caching and eval fixtures`
 
 ---
 

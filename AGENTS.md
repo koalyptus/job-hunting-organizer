@@ -45,7 +45,7 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │   ├── cli/            # CLI commands
 │   ├── mcp/            # MCP server
 │   └── core/           # shared business logic (no I/O boundaries)
-│       ├── types.ts    # all shared interfaces and type aliases; no type definitions outside this file (consumed via `import type`)
+│       ├── types.ts    # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
 │       └── tests/      # colocated vitest suite (Jest `__tests__` convention)
 ├── prompts/            # versioned LLM prompt templates
 ├── evals/              # lightweight eval suite (not in CI)
