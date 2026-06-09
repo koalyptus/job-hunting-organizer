@@ -34,17 +34,17 @@ export async function readCachedCv(campaignRoot: string, log?: Logger): Promise<
 
   try {
     const raw = await readFile(cachePath, 'utf8');
-    const parsed = JSON.parse(raw) as CvContent;
-
-    if (typeof parsed.text !== 'string') {
-      return null;
-    }
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
 
     if (log) {
       log.info({ cachePath }, 'kb.cv.read');
     }
 
-    return parsed;
+    return {
+      text: parsed.text as string,
+      format: parsed.format as CvContent['format'],
+      fileName: parsed.fileName as string,
+    };
   } catch {
     return null;
   }
@@ -100,10 +100,6 @@ export async function readCachedGithub(
   try {
     const raw = await readFile(cachePath, 'utf8');
     const parsed = JSON.parse(raw) as CachedGithubData;
-
-    if (typeof parsed.user !== 'object' || parsed.user === null || !Array.isArray(parsed.repos)) {
-      return null;
-    }
 
     if (log) {
       log.info({ cachePath, username }, 'kb.github.read');

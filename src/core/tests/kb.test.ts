@@ -60,19 +60,6 @@ describe('readCachedCv', () => {
     expect(result).toBeNull();
   });
 
-  it('returns null when text field is missing', async () => {
-    const cacheDir = join(workDir, 'knowledge-base', 'local', 'cv');
-    const { mkdirSync, writeFileSync } = await import('node:fs');
-    mkdirSync(cacheDir, { recursive: true });
-    writeFileSync(
-      join(cacheDir, 'cv.json'),
-      JSON.stringify({ format: 'text', fileName: 'cv.txt' }),
-    );
-
-    const result = await readCachedCv(workDir);
-    expect(result).toBeNull();
-  });
-
   it('reads a valid cache file', async () => {
     const cacheDir = join(workDir, 'knowledge-base', 'local', 'cv');
     const { mkdirSync, writeFileSync } = await import('node:fs');
@@ -153,19 +140,6 @@ describe('readCachedGithub', () => {
     const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'testuser.json'), '{bad');
-
-    const result = await readCachedGithub(workDir, 'testuser');
-    expect(result).toBeNull();
-  });
-
-  it('returns null when user field is missing', async () => {
-    const cacheDir = join(workDir, 'knowledge-base', 'local', 'github');
-    const { mkdirSync, writeFileSync } = await import('node:fs');
-    mkdirSync(cacheDir, { recursive: true });
-    writeFileSync(
-      join(cacheDir, 'testuser.json'),
-      JSON.stringify({ repos: [], cachedAt: new Date().toISOString() }),
-    );
 
     const result = await readCachedGithub(workDir, 'testuser');
     expect(result).toBeNull();

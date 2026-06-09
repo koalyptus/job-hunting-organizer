@@ -1,17 +1,30 @@
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import type { TargetRole } from '../../src/core/types.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Golden test cases for target-roles parsing. Each case provides a
- * markdown body with a `## Target roles` section and the expected
- * parsed output.
+ * markdown body with a `## Target roles` section and a reference to
+ * a golden JSON fixture in `expected-target-roles/`.
  */
 export interface TargetRolesCase {
   /** Human-readable test name. */
   readonly name: string;
   /** Markdown body (everything after frontmatter). */
   readonly input: string;
-  /** Expected parsed target roles. */
-  readonly expected: TargetRole[];
+  /**
+   * Filename of the expected output JSON in `expected-target-roles/`.
+   * The test loads and parses this file at runtime.
+   */
+  readonly fixture: string;
+}
+
+function loadFixture(filename: string): TargetRole[] {
+  const fixturePath = resolve(__dirname, 'expected-target-roles', filename);
+  return JSON.parse(readFileSync(fixturePath, 'utf8')) as TargetRole[];
 }
 
 export const cases: TargetRolesCase[] = [
@@ -37,19 +50,7 @@ Senior engineer with 10 years of experience.
 - TypeScript
 - Go
 - PostgreSQL`,
-    expected: [
-      {
-        slug: 'senior-backend-engineer',
-        title: 'Senior Backend Engineer',
-        priority: 'primary',
-        level: 'Senior (IC4)',
-        domain: 'Backend, distributed systems',
-        stack: 'TypeScript, Node.js, PostgreSQL',
-        workStyle: 'Remote or hybrid (Sydney timezone)',
-        compensation: '180k AUD',
-        notes: 'Focus on platform and infrastructure',
-      },
-    ],
+    fixture: 'senior-backend.json',
   },
   {
     name: 'single secondary role with minimal fields',
@@ -59,19 +60,7 @@ Senior engineer with 10 years of experience.
 
 - Level: Mid
 - Stack: AWS, Terraform, GitHub Actions`,
-    expected: [
-      {
-        slug: 'devops-engineer',
-        title: 'DevOps Engineer',
-        priority: 'secondary',
-        level: 'Mid',
-        domain: '',
-        stack: 'AWS, Terraform, GitHub Actions',
-        workStyle: '',
-        compensation: '',
-        notes: '',
-      },
-    ],
+    fixture: 'devops-engineer.json',
   },
   {
     name: 'multiple roles with mixed priorities',
@@ -105,41 +94,7 @@ Full-stack engineer based in Melbourne.
 ## Experience
 
 - 10 years in software engineering`,
-    expected: [
-      {
-        slug: 'senior-frontend-engineer',
-        title: 'Senior Frontend Engineer',
-        priority: 'primary',
-        level: 'Senior (IC4)',
-        domain: 'Frontend, UI/UX',
-        stack: 'React, TypeScript, Tailwind CSS',
-        workStyle: 'Remote',
-        compensation: '170k AUD',
-        notes: '',
-      },
-      {
-        slug: 'fullstack-engineer',
-        title: 'Fullstack Engineer',
-        priority: 'secondary',
-        level: 'Senior',
-        domain: 'Fullstack',
-        stack: 'TypeScript, React, Node.js, PostgreSQL',
-        workStyle: 'Hybrid (Melbourne)',
-        compensation: '',
-        notes: '',
-      },
-      {
-        slug: 'staff-engineer',
-        title: 'Staff Engineer',
-        priority: 'stretch',
-        level: 'Staff (IC5)',
-        domain: 'Platform engineering',
-        stack: 'TypeScript, Go, Kubernetes',
-        workStyle: '',
-        compensation: '',
-        notes: '',
-      },
-    ],
+    fixture: 'multi-role.json',
   },
   {
     name: 'no target roles section returns empty array',
@@ -151,6 +106,18 @@ Just a summary with no target roles section.
 
 - TypeScript
 - Go`,
-    expected: [],
+    fixture: 'empty.json',
   },
 ];
+
+/**
+ * Load all expected outputs from their fixture files.
+ * Called once by the test runner to build the case list.
+ */
+export function loadCases(): { name: string; input: string; expected: TargetRole[] }[] {
+  return cases.map((c) => ({
+    name: c.name,
+    input: c.input,
+    expected: loadFixture(c.fixture),
+  }));
+}
