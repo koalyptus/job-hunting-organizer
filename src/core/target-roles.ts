@@ -79,7 +79,7 @@ export function parseTargetRoles(body: string): TargetRole[] {
 
     const fieldMatch = line.match(FIELD_RE);
     if (fieldMatch && current) {
-      const key = fieldMatch[1]?.trim();
+      const key = fieldMatch[1];
       const value = fieldMatch[2]?.trim() ?? '';
       if (key === 'Level') {
         current.level = value;

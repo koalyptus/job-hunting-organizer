@@ -134,6 +134,14 @@ describe('parseTargetRoles', () => {
     expect(roles).toHaveLength(1);
     expect(roles[0]!.slug).toBe('role-a');
   });
+
+  it('returns empty array for empty string', () => {
+    expect(parseTargetRoles('')).toEqual([]);
+  });
+
+  it('returns empty array for section with no roles', () => {
+    expect(parseTargetRoles('## Target roles\n')).toEqual([]);
+  });
 });
 
 describe('findTargetRole', () => {
@@ -227,6 +235,36 @@ describe('replaceTargetRoles', () => {
     ];
     const result = replaceTargetRoles(PROFILE_BODY, newRoles);
     expect(result).toContain('<!-- jho:target-roles -->');
+  });
+
+  it('replaces section that starts at position 0', () => {
+    const body = `## Target roles
+
+### old-role — Old Role [primary]
+
+- Level: Mid
+
+## Experience
+`;
+    const newRoles = [
+      {
+        slug: 'new-role',
+        title: 'New Role',
+        priority: 'secondary' as const,
+        level: 'Senior',
+        domain: '',
+        stack: '',
+        workStyle: '',
+        compensation: '',
+        notes: '',
+      },
+    ];
+    const result = replaceTargetRoles(body, newRoles);
+    expect(result).toContain('## Target roles');
+    expect(result).toContain('## Experience');
+    const roles = parseTargetRoles(result);
+    expect(roles).toHaveLength(1);
+    expect(roles[0]!.slug).toBe('new-role');
   });
 });
 
