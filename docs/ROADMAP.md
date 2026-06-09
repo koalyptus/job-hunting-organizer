@@ -11,7 +11,7 @@
   - [x] 3a — LLM client
   - [x] 3b — CV parser + GitHub client
   - [x] 3c — Target roles
-  - [ ] 3d — Profile builder
+  - [x] 3d — Profile builder
   - [ ] 3e — Knowledge base caching & evals
 - [ ] **Phase 4** — CLI scaffolding & `init` wizard
 - [ ] **Phase 5** — JD extraction & `track`
