@@ -18,11 +18,7 @@ function errorMessage(status: number, url: string): string {
   return `GitHub API returned ${status} for ${url}`;
 }
 
-async function githubFetch<T>(
-  url: string,
-  token: string | undefined,
-  log: Logger | undefined,
-): Promise<T> {
+async function githubFetch<T>(url: string, token?: string, log?: Logger): Promise<T> {
   if (log) {
     log.info({ url }, 'github.fetch');
   }
