@@ -184,6 +184,12 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 - ESM only. CommonJS is not supported.
 - Use the `node:` prefix for built-ins (`import { readFileSync } from 'node:fs'`).
 
+### JSDoc
+
+- All **exported** symbols (functions, classes, interfaces, types) must have a JSDoc comment describing their purpose. The `@param` and `@returns` tags are used for non-trivial parameters and return values; `{@link}` references related types and functions.
+- **Private** helper functions do not need JSDoc — a descriptive name is sufficient. This keeps documentation effort focused on the module's public API.
+- Short single-line descriptions use `/** ... */`. Multi-line descriptions and tags use the block form with ` * ` continuation lines.
+
 ### File operations
 
 - All writes go through `core/fs.ts` `atomicWrite` (write to a sibling `*.tmp` with a unique suffix, then `fs.rename` over the target). The same code path runs on all OSes; no platform branching. `rename` is atomic on POSIX and on modern Windows (Node ≥ 14).

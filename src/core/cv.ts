@@ -5,6 +5,11 @@ import mammoth from 'mammoth';
 import type { Logger } from 'pino';
 import type { CvContent, CvFormat } from './types.js';
 
+/**
+ * Error thrown by {@link readCv} when the file cannot be parsed.
+ * The `code` discriminates between a format the tool doesn't support
+ * and a genuine parse failure.
+ */
 export class CvError extends Error {
   constructor(
     message: string,
@@ -49,6 +54,14 @@ function parseText(buffer: Buffer): string {
   return buffer.toString('utf8');
 }
 
+/**
+ * Read and parse a CV file, returning its plain-text content and metadata.
+ * Supports PDF, DOCX, TXT, and MD files. Throws {@link CvError} on
+ * unsupported formats or parse failures.
+ * @param path - Absolute or relative path to the CV file.
+ * @param log - Optional pino logger; logs format, file size, and file name.
+ * @returns The extracted text, detected format, and original file name.
+ */
 export async function readCv(path: string, log?: Logger): Promise<CvContent> {
   const format = detectFormat(path);
   const buffer = await readFile(path);

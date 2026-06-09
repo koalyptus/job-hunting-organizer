@@ -46,6 +46,13 @@ async function githubFetch<T>(
   throw new Error(errorMessage(response.status, url));
 }
 
+/**
+ * Fetch a GitHub user's public profile.
+ * @param user - GitHub username.
+ * @param token - Optional personal access token (avoids strict rate limits).
+ * @param log - Optional pino logger; logs the request URL.
+ * @returns The user's public profile, typed via {@link GithubUser}.
+ */
 export async function fetchGithubUser(
   user: string,
   token?: string,
@@ -54,6 +61,14 @@ export async function fetchGithubUser(
   return githubFetch<GithubUser>(`${GITHUB_API}/users/${encodeURIComponent(user)}`, token, log);
 }
 
+/**
+ * Fetch a GitHub user's public repositories, sorted by most recently pushed.
+ * Returns up to 100 repos (the API max per page).
+ * @param user - GitHub username.
+ * @param token - Optional personal access token (avoids strict rate limits).
+ * @param log - Optional pino logger; logs the request URL.
+ * @returns An array of repos, each typed via {@link GithubRepo}.
+ */
 export async function fetchGithubRepos(
   user: string,
   token?: string,
