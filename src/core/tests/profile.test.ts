@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { GithubUser, GithubRepo } from '../types.js';
 import { buildProfile } from '../profile.js';
 
 vi.mock('../cv.js', () => ({
@@ -19,6 +20,13 @@ vi.mock('../package.js', () => ({
   getPackageRoot: vi.fn(() => '/mock/package/root'),
 }));
 
+vi.mock('../kb.js', () => ({
+  readCachedCv: vi.fn(),
+  writeCachedCv: vi.fn(),
+  readCachedGithub: vi.fn(),
+  writeCachedGithub: vi.fn(),
+}));
+
 vi.mock('node:fs/promises', async () => {
   const actual = await vi.importActual('node:fs/promises');
   return {
@@ -30,12 +38,17 @@ vi.mock('node:fs/promises', async () => {
 import { readCv } from '../cv.js';
 import { fetchGithubUser, fetchGithubRepos } from '../github.js';
 import { chatComplete } from '../llm.js';
+import { readCachedCv, writeCachedCv, readCachedGithub, writeCachedGithub } from '../kb.js';
 
 const mockReadCv = vi.mocked(readCv);
 const mockFetchGithubUser = vi.mocked(fetchGithubUser);
 const mockFetchGithubRepos = vi.mocked(fetchGithubRepos);
 const mockChatComplete = vi.mocked(chatComplete);
 const mockReadFile = vi.mocked(readFile);
+const mockReadCachedCv = vi.mocked(readCachedCv);
+const mockWriteCachedCv = vi.mocked(writeCachedCv);
+const mockReadCachedGithub = vi.mocked(readCachedGithub);
+const mockWriteCachedGithub = vi.mocked(writeCachedGithub);
 
 const testLlmConfig = {
   baseUrl: 'https://api.test.com/v1',
@@ -208,5 +221,90 @@ describe('buildProfile', () => {
       expect.any(Object),
       log,
     );
+  });
+
+  it('uses cached CV when available', async () => {
+    mockReadCachedCv.mockResolvedValue({
+      text: 'Cached CV text',
+      format: 'text',
+      fileName: 'cv.txt',
+    });
+
+    await buildProfile({
+      cvPath: '/tmp/cv.txt',
+      githubUser: 'testuser',
+      llmConfig: testLlmConfig,
+      campaignRoot: '/tmp/campaign',
+    });
+
+    expect(mockReadCachedCv).toHaveBeenCalledWith('/tmp/campaign', undefined);
+    expect(mockReadCv).not.toHaveBeenCalled();
+  });
+
+  it('uses cached GitHub data when available', async () => {
+    mockReadCachedGithub.mockResolvedValue({
+      user: mockUser as GithubUser,
+      repos: mockRepos as GithubRepo[],
+    });
+
+    await buildProfile({
+      cvPath: '/tmp/cv.txt',
+      githubUser: 'testuser',
+      llmConfig: testLlmConfig,
+      campaignRoot: '/tmp/campaign',
+    });
+
+    expect(mockReadCachedGithub).toHaveBeenCalledWith('/tmp/campaign', 'testuser', undefined);
+    expect(mockFetchGithubUser).not.toHaveBeenCalled();
+    expect(mockFetchGithubRepos).not.toHaveBeenCalled();
+  });
+
+  it('writes cache after fresh CV fetch', async () => {
+    mockReadCachedCv.mockResolvedValue(null);
+
+    await buildProfile({
+      cvPath: '/tmp/cv.txt',
+      githubUser: 'testuser',
+      llmConfig: testLlmConfig,
+      campaignRoot: '/tmp/campaign',
+    });
+
+    expect(mockWriteCachedCv).toHaveBeenCalledWith(
+      '/tmp/campaign',
+      { text: 'John Doe\nSoftware Engineer', format: 'text', fileName: 'cv.txt' },
+      undefined,
+    );
+  });
+
+  it('writes cache after fresh GitHub fetch', async () => {
+    mockReadCachedGithub.mockResolvedValue(null);
+
+    await buildProfile({
+      cvPath: '/tmp/cv.txt',
+      githubUser: 'testuser',
+      llmConfig: testLlmConfig,
+      campaignRoot: '/tmp/campaign',
+    });
+
+    expect(mockWriteCachedGithub).toHaveBeenCalledWith(
+      '/tmp/campaign',
+      'testuser',
+      mockUser,
+      mockRepos,
+      undefined,
+    );
+  });
+
+  it('skips cache entirely when campaignRoot is omitted', async () => {
+    await buildProfile({
+      cvPath: '/tmp/cv.txt',
+      githubUser: 'testuser',
+      llmConfig: testLlmConfig,
+    });
+
+    expect(mockReadCachedCv).not.toHaveBeenCalled();
+    expect(mockReadCachedGithub).not.toHaveBeenCalled();
+    expect(mockWriteCachedCv).not.toHaveBeenCalled();
+    expect(mockWriteCachedGithub).not.toHaveBeenCalled();
   });
 });

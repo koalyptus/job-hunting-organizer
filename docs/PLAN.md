@@ -950,7 +950,7 @@ evals/
 ```
 
 - `npm run eval` — structural only, fast.
-- `npm run eval -- --judge` — adds LLM-as-judge (separate from generation model).
+- `npm run eval -- --judge` — adds LLM-as-judge (separate from generation model). Uses [`openevals`](https://github.com/langchain-ai/openevals) (LangChain) for LLM-as-judge evaluation — provides Vitest custom matchers, built-in prompts (correctness, hallucination, relevance), and structured output evaluation. Structural evals (Tier 3) remain vitest-native with no additional dependencies.
 - `npm run eval -- --update` — regenerates golden files, prints diffs.
 - **Not in CI** (slow, non-deterministic, requires user's LLM).
 

@@ -33,7 +33,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "eval": "vitest run --config evals/vitest.config.ts"
   },
   "keywords": [
     "mcp",

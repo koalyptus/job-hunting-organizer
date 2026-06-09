@@ -1,0 +1,13 @@
+[
+  {
+    "slug": "senior-backend-engineer",
+    "title": "Senior Backend Engineer",
+    "priority": "primary",
+    "level": "Senior (IC4)",
+    "domain": "Backend, distributed systems",
+    "stack": "TypeScript, Node.js, PostgreSQL",
+    "workStyle": "Remote or hybrid (Sydney timezone)",
+    "compensation": "180k AUD",
+    "notes": "Focus on platform and infrastructure"
+  }
+]

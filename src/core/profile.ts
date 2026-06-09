@@ -2,7 +2,9 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger } from 'pino';
 import { readCv } from './cv.js';
+import { parseFrontmatter } from './frontmatter.js';
 import { fetchGithubUser, fetchGithubRepos } from './github.js';
+import { readCachedCv, readCachedGithub, writeCachedCv, writeCachedGithub } from './kb.js';
 import { chatComplete } from './llm.js';
 import { getPackageRoot } from './package.js';
 import type { LlmConfig } from './types.js';
@@ -19,6 +21,12 @@ export interface BuildProfileOptions {
   githubToken?: string;
   /** LLM configuration (baseUrl, apiKey, model). */
   llmConfig: LlmConfig;
+  /**
+   * Absolute path to the campaign root. When provided, enables
+   * knowledge-base caching: CV and GitHub data are read from cache
+   * (if available) and written after a fresh fetch.
+   */
+  campaignRoot?: string;
   /** AbortSignal for cancellation. */
   signal?: AbortSignal;
   /** Optional pino logger. */
@@ -38,14 +46,21 @@ export interface BuildProfileResult {
 }
 
 /**
- * Load the profile-build prompt template from `prompts/profile-build.md`.
- * Reads from the package root so it works in both source and built layouts.
- * @returns The prompt template string.
+ * Load and parse the profile-build prompt template from
+ * `prompts/profile-build.md`. Returns the parsed frontmatter (with
+ * `recommendedTemperature`) and the body (system message).
+ * @returns The parsed frontmatter and body.
  */
-async function loadPromptTemplate(): Promise<string> {
+async function loadPromptTemplate(): Promise<{ temperature: number; body: string }> {
   const root = getPackageRoot();
   const promptPath = join(root, 'prompts', 'profile-build.md');
-  return readFile(promptPath, 'utf8');
+  const raw = await readFile(promptPath, 'utf8');
+  const { frontmatter, body } = parseFrontmatter(raw);
+  const temperature =
+    typeof frontmatter['recommendedTemperature'] === 'number'
+      ? frontmatter['recommendedTemperature']
+      : 0.6;
+  return { temperature, body };
 }
 
 /**
@@ -58,23 +73,46 @@ async function loadPromptTemplate(): Promise<string> {
  * @returns The generated profile content, model, and duration.
  */
 export async function buildProfile(options: BuildProfileOptions): Promise<BuildProfileResult> {
-  const { cvPath, githubUser, githubToken, llmConfig, signal, log } = options;
+  const { cvPath, githubUser, githubToken, llmConfig, campaignRoot, signal, log } = options;
 
   if (log) {
     log.info({ cvPath, githubUser }, 'profile.build.start');
   }
 
-  // 1. Read CV
-  const cv = await readCv(cvPath, log);
+  // 1. Read CV (cache-first when campaignRoot is provided)
+  let cv;
+  if (campaignRoot) {
+    cv = await readCachedCv(campaignRoot, log);
+  }
+  if (!cv) {
+    cv = await readCv(cvPath, log);
+    if (campaignRoot) {
+      await writeCachedCv(campaignRoot, cv, log);
+    }
+  }
 
-  // 2. Fetch GitHub data
-  const [user, repos] = await Promise.all([
-    fetchGithubUser(githubUser, githubToken, log),
-    fetchGithubRepos(githubUser, githubToken, log),
-  ]);
+  // 2. Fetch GitHub data (cache-first when campaignRoot is provided)
+  let user;
+  let repos;
+  if (campaignRoot) {
+    const cached = await readCachedGithub(campaignRoot, githubUser, log);
+    if (cached) {
+      user = cached.user;
+      repos = cached.repos;
+    }
+  }
+  if (!user || !repos) {
+    [user, repos] = await Promise.all([
+      fetchGithubUser(githubUser, githubToken, log),
+      fetchGithubRepos(githubUser, githubToken, log),
+    ]);
+    if (campaignRoot) {
+      await writeCachedGithub(campaignRoot, githubUser, user, repos, log);
+    }
+  }
 
   // 3. Load prompt template
-  const template = await loadPromptTemplate();
+  const { temperature, body: systemMessage } = await loadPromptTemplate();
 
   // 4. Build context for the LLM
   const repoSummary = repos
@@ -85,8 +123,6 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
         `- ${r.name}: ${r.description ?? '(no description)'} [${r.language ?? 'unknown'}] ★${r.stargazers_count} — ${r.html_url}`,
     )
     .join('\n');
-
-  const systemMessage = template.split('---').slice(2).join('---').trim();
 
   const userMessage = `## CV Text
 
@@ -117,7 +153,7 @@ Generate the profile markdown following the template above.`;
       { role: 'user', content: userMessage },
     ],
     llmConfig,
-    { temperature: 0.6, signal },
+    { temperature, signal },
     log,
   );
 

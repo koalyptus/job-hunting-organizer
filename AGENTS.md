@@ -146,6 +146,7 @@ Each tool-managed file has a `.toolhash` sidecar. If the file's current hash dif
 - Lightweight, manual, **not in CI** (LLMs are slow and non-deterministic; CI can't run them).
 - Run before prompt changes or when switching LLM providers.
 - Tiered guard rails: high strictness for structured extraction, medium for creative generation, max for non-LLM internals.
+- When `--judge` lands, it will use [`openevals`](https://github.com/langchain-ai/openevals) (LangChain) for LLM-as-judge evaluation. Structural evals stay vitest-native.
 - See `docs/PLAN.md` §12 for the full guard-rail tiering and eval runner design.
 
 ## Privacy posture
