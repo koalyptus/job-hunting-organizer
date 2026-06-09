@@ -435,7 +435,7 @@ references it.
 - Domain: Backend, distributed systems
 - Stack: TypeScript, Node.js, PostgreSQL, AWS, Kubernetes
 - Work style: Remote or hybrid (Sydney timezone)
-- Comp floor: 160k AUD
+- Compensation: 160k AUD
 - Notes: my strongest area; open to platform/infra adjacent roles
 
 ### staff-engineer — Staff Engineer [stretch]
@@ -444,7 +444,7 @@ references it.
 - Domain: Platform, infrastructure
 - Stack: same as above + Go
 - Work style: Remote or hybrid
-- Comp floor: 200k AUD
+- Compensation: 200k AUD
 - Notes: aspirational; would need to demonstrate cross-team impact
 
 ### engineering-manager — Engineering Manager [secondary]
@@ -453,7 +453,7 @@ references it.
 - Domain: People management, delivery
 - Stack: (agnostic)
 - Work style: Hybrid preferred
-- Comp floor: 180k AUD
+- Compensation: 180k AUD
 - Notes: would be a step sideways; only pursue if hands-on IC roles dry up
 ```
 
@@ -463,7 +463,7 @@ references it.
 - `Domain` — comma-separated keywords (e.g. `Backend`, `Platform`, `Data`).
 - `Stack` — comma-separated tech keywords; empty if agnostic.
 - `Work style` — one of `Remote`, `Hybrid`, `On-site`, or a freeform note.
-- `Comp floor` — a number + currency; the user-defined lower bound.
+- `Compensation` — a number + currency; the user-defined lower bound.
 - `Notes` — free text.
 - **Priority** (the `[primary | secondary | stretch]` tag in the H3 heading):
   - `primary` — main focus, actively applying

@@ -108,6 +108,32 @@ export interface CvContent {
 }
 
 /**
+ * A single target role entry from the `## Target roles` section of
+ * `profile.md`. Each role is an H3 heading with a slug, title, and
+ * priority tag, followed by bullet-point fields.
+ */
+export interface TargetRole {
+  /** Stable identifier (lowercase, alphanumeric + hyphens). Used in `meta.md` `targetRole`. */
+  readonly slug: string;
+  /** Display title (e.g. `"Senior Backend Engineer"`). */
+  readonly title: string;
+  /** Priority: `primary` (main focus), `secondary` (open to), or `stretch` (aspirational). */
+  readonly priority: 'primary' | 'secondary' | 'stretch';
+  /** Freeform level (e.g. `"Senior (IC4)"`, `"Staff"`, `"M3"`). */
+  readonly level: string;
+  /** Comma-separated domain keywords (e.g. `"Backend, distributed systems"`). */
+  readonly domain: string;
+  /** Comma-separated tech keywords (e.g. `"TypeScript, Node.js, PostgreSQL"`). */
+  readonly stack: string;
+  /** Work arrangement (e.g. `"Remote or hybrid (Sydney timezone)"`). */
+  readonly workStyle: string;
+  /** Compensation lower bound (e.g. `"160k AUD"`). */
+  readonly compensation: string;
+  /** Freeform notes about the role. */
+  readonly notes: string;
+}
+
+/**
  * Options for {@link chatComplete}. All fields are optional.
  */
 export interface ChatCompleteOptions {
