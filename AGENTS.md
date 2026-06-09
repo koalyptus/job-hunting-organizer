@@ -45,7 +45,7 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │   ├── cli/            # CLI commands
 │   ├── mcp/            # MCP server
 │   └── core/           # shared business logic (no I/O boundaries)
-│       ├── types.ts    # shared interfaces and type aliases (consumed via `import type`)
+│       ├── types.ts    # all shared interfaces and type aliases; no type definitions outside this file (consumed via `import type`)
 │       └── tests/      # colocated vitest suite (Jest `__tests__` convention)
 ├── prompts/            # versioned LLM prompt templates
 ├── evals/              # lightweight eval suite (not in CI)
@@ -135,6 +135,7 @@ Each tool-managed file has a `.toolhash` sidecar. If the file's current hash dif
 ## Logging conventions
 
 - Logs go to **stderr** only. **stdout** is reserved for command output.
+- By default, logs are also appended to `<config home>/jho.log` (append-only, no rotation). Override the path via `JHO_LOG_FILE` env var or `logging.file` in `config.json`. Set `logging.file: ""` to disable file logging entirely.
 - No user content is logged (no CV / JD / cover letter / Q&A text). Metadata only (slugs, model, tokens, duration).
 - MCP server logs are JSON. CLI logs are pretty (TTY) or JSON (non-TTY).
 - Every log line carries a correlation id; MCP reuses the JSON-RPC request id.
@@ -183,6 +184,12 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 - ESM only. CommonJS is not supported.
 - Use the `node:` prefix for built-ins (`import { readFileSync } from 'node:fs'`).
+
+### JSDoc
+
+- All **exported** symbols (functions, classes, interfaces, types) must have a JSDoc comment describing their purpose. The `@param` and `@returns` tags are used for non-trivial parameters and return values; `{@link}` references related types and functions.
+- **Private** helper functions do not need JSDoc — a descriptive name is sufficient. This keeps documentation effort focused on the module's public API.
+- Short single-line descriptions use `/** ... */`. Multi-line descriptions and tags use the block form with `*` continuation lines.
 
 ### File operations
 
