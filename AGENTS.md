@@ -135,6 +135,7 @@ Each tool-managed file has a `.toolhash` sidecar. If the file's current hash dif
 ## Logging conventions
 
 - Logs go to **stderr** only. **stdout** is reserved for command output.
+- By default, logs are also appended to `<config home>/jho.log` (append-only, no rotation). Override the path via `JHO_LOG_FILE` env var or `logging.file` in `config.json`. Set `logging.file: ""` to disable file logging entirely.
 - No user content is logged (no CV / JD / cover letter / Q&A text). Metadata only (slugs, model, tokens, duration).
 - MCP server logs are JSON. CLI logs are pretty (TTY) or JSON (non-TTY).
 - Every log line carries a correlation id; MCP reuses the JSON-RPC request id.

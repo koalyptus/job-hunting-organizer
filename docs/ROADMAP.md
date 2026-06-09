@@ -272,6 +272,7 @@ Picks up the more opinionated modules that build on 2a. Unblocks Phase 5 (JD ext
 - `jho help <topic>` wired
 - Snapshot tests for help output
 - `docs/examples/`
+- **Default log file**: `defaultLoggerConfig()` computes `${resolveConfigHome()}/jho.log` when no `JHO_LOG_FILE` env var or `logging.file` override is set. Append-only, no rotation (user manages externally). Update `AGENTS.md` logging conventions accordingly.
 - `npm publish --dry-run` clean
 - Glama submission
 - Tagged release
