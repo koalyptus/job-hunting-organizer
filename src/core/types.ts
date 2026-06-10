@@ -300,22 +300,6 @@ export interface Counters {
 }
 
 /**
- * Output of the hand-rolled argv parser in `cli/index.ts`. Transient —
- * `commander` (Phase 2c) replaces both the parser and this type. Kept
- * here so the CLI file doesn't redeclare it inline.
- */
-export interface ParsedArgs {
-  /** The first non-flag token in argv, or `null` if none (i.e. `jho` with no args). */
-  readonly command: string | null;
-  /** Everything after the command token. */
-  readonly rest: readonly string[];
-  /** True if `--version` appeared before the command token. */
-  readonly showVersion: boolean;
-  /** True if `--help` or `-h` appeared before the command token. */
-  readonly showHelp: boolean;
-}
-
-/**
  * A flat mapping of frontmatter keys to YAML-decoded values. Custom
  * user fields are preserved on round-trip; see `mergeFrontmatter` in
  * `core/frontmatter.ts`.

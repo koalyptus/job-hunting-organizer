@@ -14,6 +14,10 @@
   - [x] 3d — Profile builder
   - [x] 3e — Knowledge base caching & evals
 - [ ] **Phase 4** — CLI scaffolding & `init` wizard
+  - [x] 4a — CLI framework & command module structure
+  - [ ] 4b — Real commands (rename-campaign, campaign inference)
+  - [ ] 4c — Init wizard
+  - [ ] 4d — Tests & polish
 - [ ] **Phase 5** — JD extraction & `track`
 - [ ] **Phase 6** — Cover letter & Q&A
 - [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro)
@@ -147,29 +151,66 @@ Split into sub-phases for incremental delivery.
 
 ## Phase 4 — CLI scaffolding & `init` wizard
 
-**Scope**:
+Split into sub-phases for incremental delivery.
 
-- `src/cli/index.ts` — commander setup, command registration
-- One file per command (init, config, root, rename-campaign, profile, track, list, show, cover-letter, answer, interview, retro, ownership, doctor, repair, help, mcp)
-- Hand-written `--help` for each
-- Stub commands error with "not implemented yet (planned: phase X)"
-- Real commands: `init`, `config`, `root`, `rename-campaign`, `profile show`, `ownership`, `help`
-- `src/cli/spinner.ts` — ora wrapper
-- `jho init [<name>]` wizard with `@clack/prompts`:
-  - Campaign name (defaults to `default`) → CV path → GitHub user (+token) → LLM baseUrl/key/model → calendar provider
-  - Runs profile build (phase 3) → writes `profile.md` (per-campaign)
-  - **Reviews the generated `## Target roles` list** — user can accept all / edit one / add / delete / open in editor
-  - Writes **global** `config.json` (LLM, GitHub, calendar, logging) AND **per-campaign** `config.json` (profile/applied/knowledgeBase paths), and `outlook-tokens.json` if needed
-- `jho rename-campaign [<old>] <new>`:
-  - Validates `<new>` (no empty, no `/`, no `\\`, no `..`, no `.`, no leading `-`, no leading/trailing whitespace)
-  - Refuses if cwd is inside the campaign being renamed
-  - Takes a `proper-lockfile` lock on the campaign root
-  - Atomic `fs.rename`; logs the move with correlation id
-  - Bare `mv` on `campaigns/<name>/` is also supported as an escape hatch; this command is the validated path
+#### 4a — CLI framework & command module structure
 
-**Deliverable**: `jho init` works end-to-end on a fresh machine. User has a profile with a reviewed list of target roles. `jho rename-campaign` renames a campaign folder safely. All other commands are visible in `--help` with full docs, even if they error.
+- Install `commander`, `@clack/prompts`, `ora` as production dependencies
+- Create `src/cli/commands/` directory with one file per command
+- `src/cli/spinner.ts` — ora wrapper (TTY-only, auto-disabled on non-TTY, replaced by single info line)
+- `src/cli/options.ts` — shared global option parser (`--campaign`, `--verbose`, `--quiet`, `--yes`, `--no-color`, `--log-file`)
+- Refactor `src/cli/index.ts` from hand-rolled argv parser to commander setup
+- Register all commands (real + stubs) with hand-written `--help` for each
+- Stub commands: `track`, `list`, `show`, `cover-letter`, `answer`, `interview`, `retro`, `prepare`, `doctor`, `repair`, `stats`, `mcp` — each errors with `"not implemented yet (planned: phase X)"`
+- Real commands wired: `config`, `campaign config`, `ownership`, `profile show`
+- Remove `ParsedArgs` from `core/types.ts` (commander replaces it)
 
-**Commit**: `feat(cli): command surface with full --help, init wizard with target-roles review, rename-campaign`
+**Deliverable**: `jho --help` shows all commands with full docs. `jho config show`, `jho campaign config show`, `jho ownership`, `jho profile show` work. All other commands show "not implemented yet" with the correct phase number. Commander handles arg parsing, help generation, and `--version`.
+
+**Commit**: `feat(cli): commander setup with command modules, global options, spinner`
+
+#### 4b — Real commands (rename-campaign, campaign inference)
+
+- `src/cli/commands/rename-campaign.ts` — validates `<new>` (no empty, no `/`, no `\`, no `..`, no `.`, no leading `-`, no leading/trailing whitespace); refuses if cwd is inside the campaign being renamed; takes `proper-lockfile` lock on campaign root; atomic `fs.rename`; logs move with correlation id; supports both `jho rename-campaign [<old>] <new>` and `jho rename-campaign <new>` (cwd-infer old)
+- Wire `--campaign` flag on all commands that need it (config, ownership, profile, rename-campaign, stubs)
+- `src/cli/commands/profile.ts` — add `rebuild` subcommand (calls `buildProfile` from Phase 3)
+
+**Deliverable**: `jho rename-campaign new-name` works. `jho --campaign freelance config show` works. All commands respect `--campaign`.
+
+**Commit**: `feat(cli): rename-campaign with validation and lock, --campaign flag on all commands`
+
+#### 4c — Init wizard
+
+- `src/cli/commands/init.ts` — full `jho init [<name>]` wizard using `@clack/prompts`:
+  1. Prompt for campaign name (default: `default`)
+  2. Prompt for CV path (file picker or text input; validate exists)
+  3. Prompt for GitHub username (+ optional token)
+  4. Prompt for LLM baseUrl, apiKey, model (with defaults from env vars)
+  5. Prompt for calendar provider (default: `ics`)
+  6. Create campaign directory structure (`applied/`, `knowledge-base/local/`)
+  7. Run `buildProfile()` from Phase 3 (with spinner)
+  8. Parse generated `## Target roles` via `parseTargetRoles()`
+  9. **Review loop**: show roles in a table, user can accept all / edit one / add / delete / open in editor
+  10. Write `profile.md` to campaign root
+  11. Write global `config.json` (LLM, GitHub, calendar, logging)
+  12. Write per-campaign `config.json` (profile, cv, applied, knowledgeBase paths)
+  13. Print success summary
+- Support `--yes` flag to skip prompts (use defaults)
+- Handle first-time vs re-init (if campaign already exists, warn and confirm)
+
+**Deliverable**: `jho init` works end-to-end on a fresh machine. User has a profile with a reviewed list of target roles. Both config files are written.
+
+**Commit**: `feat(cli): init wizard with profile build, target-roles review, config write`
+
+#### 4d — Tests & polish
+
+- `src/cli/tests/` — command tests for config, ownership, init (mocked prompts), rename-campaign, spinner, options
+- Snapshot tests for `--help` output of every command (prevents help drift)
+- Update `AGENTS.md` and `docs/ROADMAP.md` Phase 4 status to checked
+
+**Deliverable**: All tests pass. Help output is snapshot-tested. Phase 4 complete.
+
+**Commit**: `test(cli): command tests, help snapshots, init wizard tests`
 
 ---
 
