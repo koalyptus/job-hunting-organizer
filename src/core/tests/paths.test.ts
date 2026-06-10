@@ -231,8 +231,9 @@ describe('findCampaignFromCwd', () => {
     expect(findCampaignFromCwd(cwd, dataRoot)).toBe('freelance');
   });
 
-  it('returns the campaign name when cwd is a subfolder of the campaign', () => {
+  it('returns the campaign name when cwd is a subfolder of the campaign', async () => {
     const cwd = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance', 'applied', 'notes');
+    await mkdir(cwd, { recursive: true });
     expect(findCampaignFromCwd(cwd, dataRoot)).toBe('freelance');
   });
 
