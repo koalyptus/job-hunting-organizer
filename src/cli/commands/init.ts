@@ -8,7 +8,6 @@ export const initCommand = new Command('init')
   .argument('[name]', 'campaign name', 'default')
   .option('--cv <path>', 'path to CV file')
   .option('--github <user>', 'GitHub username')
-  .option('-y, --yes', 'skip prompts and use defaults')
   .action(() => {
     process.stderr.write('jho init: not implemented yet (planned: phase 4c)\n');
     process.exit(1);

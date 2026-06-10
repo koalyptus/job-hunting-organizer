@@ -1,6 +1,20 @@
 import ora from 'ora';
-import type { Ora } from 'ora';
 import { isInteractive } from '../core/logger.js';
+
+/**
+ * Minimal interface for the subset of `Ora` we actually use.
+ * Narrower than the full `Ora` type so the noop implementation
+ * doesn't need to stub every method.
+ */
+export interface Spinner {
+  start: () => Spinner;
+  stop: () => Spinner;
+  succeed: (text?: string) => Spinner;
+  fail: (text?: string) => Spinner;
+  warn: (text?: string) => Spinner;
+  info: (text?: string) => Spinner;
+  text: string;
+}
 
 /**
  * Create a spinner instance. Auto-disabled when stderr is not a TTY
@@ -8,7 +22,7 @@ import { isInteractive } from '../core/logger.js';
  * silently ignores start/stop/succeed/fail/etc so callers don't need
  * to branch on TTY detection.
  */
-export function createSpinner(text?: string): Ora {
+export function createSpinner(text?: string): Spinner {
   if (!isInteractive(process.stderr)) {
     return noopSpinner();
   }
@@ -37,9 +51,9 @@ export async function withSpinner<T>(
 }
 
 /** No-op spinner for non-TTY contexts. */
-function noopSpinner(): Ora {
-  const noop = () => spinner;
-  const spinner = {
+function noopSpinner(): Spinner {
+  const noop = () => self;
+  const self: Spinner = {
     start: noop,
     stop: noop,
     succeed: noop,
@@ -47,6 +61,6 @@ function noopSpinner(): Ora {
     warn: noop,
     info: noop,
     text: '',
-  } as unknown as Ora;
-  return spinner;
+  };
+  return self;
 }

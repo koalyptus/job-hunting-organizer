@@ -14,8 +14,8 @@ import { repairCommand } from '../../commands/repair.js';
 const optionLongs = (cmd: Command) => cmd.options.map((o) => o.long).filter(Boolean);
 
 describe('command option definitions match documentation', () => {
-  it('init has --cv, --github, --yes', () => {
-    expect(optionLongs(initCommand)).toEqual(expect.arrayContaining(['--cv', '--github', '--yes']));
+  it('init has --cv, --github', () => {
+    expect(optionLongs(initCommand)).toEqual(expect.arrayContaining(['--cv', '--github']));
   });
 
   it('track has --paste, --stdin, --status, --salary, --tag, --note, --target-role, --yes', () => {

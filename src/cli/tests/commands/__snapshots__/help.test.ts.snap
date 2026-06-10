@@ -119,7 +119,6 @@ Arguments:
 Options:
   --cv <path>      path to CV file
   --github <user>  GitHub username
-  -y, --yes        skip prompts and use defaults
   -h, --help       display help for command
 "
 `;

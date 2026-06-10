@@ -1,5 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createSpinner, withSpinner } from '../spinner.js';
+
+const oraMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    start: vi.fn().mockReturnThis(),
+    stop: vi.fn().mockReturnThis(),
+    succeed: vi.fn().mockReturnThis(),
+    fail: vi.fn().mockReturnThis(),
+    warn: vi.fn().mockReturnThis(),
+    info: vi.fn().mockReturnThis(),
+    text: '',
+  })),
+);
+
+vi.mock('ora', () => ({ default: oraMock }));
 
 describe('createSpinner', () => {
   it('returns a spinner object with expected methods', () => {
@@ -21,6 +35,20 @@ describe('createSpinner', () => {
   it('works without text parameter', () => {
     const spinner = createSpinner();
     expect(spinner).toBeDefined();
+  });
+
+  it('returns a noop spinner when stderr is not interactive', () => {
+    const originalIsTTY = process.stderr.isTTY;
+    Object.defineProperty(process.stderr, 'isTTY', { value: false, configurable: true });
+
+    oraMock.mockClear();
+    const spinner = createSpinner('test');
+    spinner.start();
+    spinner.stop();
+
+    expect(oraMock).not.toHaveBeenCalled();
+
+    Object.defineProperty(process.stderr, 'isTTY', { value: originalIsTTY, configurable: true });
   });
 });
 

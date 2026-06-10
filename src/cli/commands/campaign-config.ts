@@ -13,7 +13,7 @@ export const campaignConfigCommand = new Command('config')
   .option('--reveal', 'show secrets in clear text (default: redacted)')
   .argument('[subcommand]', 'show or path', 'show')
   .action(function (subcommand, opts) {
-    const globals = this.parent?.opts() as GlobalOpts | undefined;
+    const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
     const campaign = globals?.campaign ?? 'default';
     switch (subcommand) {
       case 'show': {

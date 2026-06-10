@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { collectTags } from '../options.js';
 
 /**
  * `jho list` — list all applications.
@@ -13,10 +14,6 @@ export const listCommand = new Command('list')
     process.stderr.write('jho list: not implemented yet (planned: phase 5)\n');
     process.exit(1);
   });
-
-function collectTags(value: string, previous: string[]): string[] {
-  return previous.concat([value]);
-}
 
 listCommand.addHelpText(
   'after',

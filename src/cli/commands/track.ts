@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { collectTags } from '../options.js';
 
 /**
  * `jho track <url>` — record a new application (or update by slug).
@@ -18,10 +19,6 @@ export const trackCommand = new Command('track')
     process.stderr.write('jho track: not implemented yet (planned: phase 5)\n');
     process.exit(1);
   });
-
-function collectTags(value: string, previous: string[]): string[] {
-  return previous.concat([value]);
-}
 
 trackCommand.addHelpText(
   'after',

@@ -1,9 +1,9 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
 import { clearConfigCache } from '../../../core/config.js';
+import { runCommand } from '../helpers.js';
 import { configCommand } from '../../commands/config.js';
 
 describe('config command', () => {
@@ -51,49 +51,8 @@ describe('config command', () => {
     await rm(testHome, { recursive: true, force: true });
   });
 
-  async function run(
-    ...argv: string[]
-  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-    let stdout = '';
-    let stderr = '';
-    let exitCode = 0;
-    const origStdout = process.stdout.write;
-    const origStderr = process.stderr.write;
-    const origExit = process.exit;
-
-    process.stdout.write = ((chunk: string | Uint8Array) => {
-      stdout += typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk);
-      return true;
-    }) as typeof process.stdout.write;
-    process.stderr.write = ((chunk: string | Uint8Array) => {
-      stderr += typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk);
-      return true;
-    }) as typeof process.stderr.write;
-    process.exit = ((code?: number) => {
-      exitCode = code ?? 0;
-      throw new Error(`EXIT_${exitCode}`);
-    }) as never;
-
-    const parent = new Command('test-parent').addCommand(configCommand);
-    try {
-      await parent.parseAsync(['node', 'test-parent', 'config', ...argv]);
-    } catch (e: unknown) {
-      if (e instanceof Error && e.message.startsWith('EXIT_')) {
-        exitCode = parseInt(e.message.replace('EXIT_', ''), 10);
-      } else {
-        throw e;
-      }
-    } finally {
-      process.stdout.write = origStdout;
-      process.stderr.write = origStderr;
-      process.exit = origExit;
-    }
-
-    return { stdout, stderr, exitCode };
-  }
-
   it('show (default) outputs redacted JSON', async () => {
-    const { stdout, exitCode } = await run('show');
+    const { stdout, exitCode } = await runCommand(configCommand, ['config', 'show']);
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.llm.apiKey).toContain('***');
@@ -101,7 +60,7 @@ describe('config command', () => {
   });
 
   it('show --reveal outputs raw JSON', async () => {
-    const { stdout, exitCode } = await run('show', '--reveal');
+    const { stdout, exitCode } = await runCommand(configCommand, ['config', 'show', '--reveal']);
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.llm.apiKey).toBe('secret-key');
@@ -109,26 +68,26 @@ describe('config command', () => {
   });
 
   it('show (default without explicit subcommand) outputs redacted JSON', async () => {
-    const { stdout, exitCode } = await run();
+    const { stdout, exitCode } = await runCommand(configCommand, ['config']);
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.llm.apiKey).toContain('***');
   });
 
   it('path outputs a path containing config.json', async () => {
-    const { stdout, exitCode } = await run('path');
+    const { stdout, exitCode } = await runCommand(configCommand, ['config', 'path']);
     expect(exitCode).toBe(0);
     expect(stdout.trim()).toContain('config.json');
   });
 
   it('edit exits with code 1 (stub)', async () => {
-    const { stderr, exitCode } = await run('edit');
+    const { stderr, exitCode } = await runCommand(configCommand, ['config', 'edit']);
     expect(exitCode).toBe(1);
     expect(stderr).toContain('not implemented yet');
   });
 
   it('unknown subcommand exits with code 1', async () => {
-    const { stderr, exitCode } = await run('bogus');
+    const { stderr, exitCode } = await runCommand(configCommand, ['config', 'bogus']);
     expect(exitCode).toBe(1);
     expect(stderr).toContain('unknown subcommand');
     expect(stderr).toContain('bogus');

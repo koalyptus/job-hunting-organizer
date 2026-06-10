@@ -1,6 +1,17 @@
 import { Option } from 'commander';
 
 /**
+ * Commander accumulator callback for repeatable `--tag` options.
+ * Passed as the third argument to `.option('--tag <tag>', ..., collectTags, [])`.
+ * @param value - The current tag value.
+ * @param previous - Tags accumulated so far.
+ * @returns The extended array.
+ */
+export function collectTags(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
+/**
  * Global options shared by every command. Added to the parent
  * `commander.program` so they're available on all subcommands.
  */
