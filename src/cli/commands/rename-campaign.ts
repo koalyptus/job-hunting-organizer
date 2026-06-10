@@ -56,7 +56,6 @@ export const renameCampaignCommand = new Command('rename-campaign')
     if (validationError) {
       process.stderr.write(`error: invalid campaign name "${new_}"\nhint: ${validationError}\n`);
       process.exit(1);
-      return;
     }
 
     // Resolve old name: --from flag or cwd inference
@@ -68,7 +67,6 @@ export const renameCampaignCommand = new Command('rename-campaign')
           'error: could not infer campaign from cwd\nhint: pass the campaign name explicitly with --from, or run from inside the campaign folder\n',
         );
         process.exit(1);
-        return;
       }
       oldName = inferred;
     }
@@ -82,14 +80,12 @@ export const renameCampaignCommand = new Command('rename-campaign')
         `error: cannot rename the campaign you are currently in\nhint: cd out of campaigns/${oldName} first\n`,
       );
       process.exit(1);
-      return;
     }
 
     // Pre-flight: source must exist (no lock needed)
     if (!(await pathExists(oldPath))) {
       process.stderr.write(`error: campaign "${oldName}" not found\n`);
       process.exit(1);
-      return;
     }
 
     const start = Date.now();
@@ -98,7 +94,6 @@ export const renameCampaignCommand = new Command('rename-campaign')
       if (await pathExists(newPath)) {
         process.stderr.write(`error: campaign "${new_}" already exists\n`);
         process.exit(1);
-        return;
       }
       await rename(oldPath, newPath);
     });
