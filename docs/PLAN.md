@@ -614,10 +614,10 @@ jho init [<name>] [--cv <path>] [--github <user>] [--yes]
   #   reviews generated ## Target roles → writes global + campaign config.json + profile.md
 jho config [show|path|edit] [--reveal]
 jho campaign config [show|path|edit] [--reveal]
-jho rename-campaign [<old>] <new>
+jho rename-campaign <new> [--from <old>]
   # Rename a campaign folder: <global>/campaigns/<old>/ → <global>/campaigns/<new>/.
-  # Implicit form: from inside the campaign folder, `jho rename-campaign <new>` infers <old>.
-  # Validates <new>: rejects empty, '/', '\\', '..', '.', leading '-', leading/trailing whitespace.
+  # Implicit form: from inside the campaign folder, `jho rename-campaign <new>` infers <old> via --from omission.
+  # Validates <new>: rejects empty, '/', '\\', '..', '.', leading '-', any whitespace.
   # Refuses if cwd is inside the campaign being renamed (no self-foot-gun).
   # Takes a proper-lockfile lock on the campaign root for the duration.
   # Atomic `fs.rename` on the same filesystem.
@@ -1107,7 +1107,7 @@ Each phase is self-contained, buildable, testable. Earlier phases are smaller; p
 | Profile location?                                  | Per campaign: `<dataRoot>/campaigns/<name>/profile.md`.                                                                                                                                                                                    |
 | Global-root CLI flag?                              | No — `$JHO_CONFIG_HOME` and `$JHO_DATA` env vars only (matches git, VS Code, ssh config location).                                                                                                                                         |
 | Campaign selection?                                | Explicit `--campaign <name>` flag, or cwd-inferred from inside `<dataRoot>/campaigns/<name>/`. Default: `default`.                                                                                                                         |
-| Rename a campaign?                                 | `jho rename-campaign [<old>] <new>`. Validates name, takes a lock, atomic `fs.rename`, logs the move. Bare `mv` on `campaigns/<name>/` is also supported as an escape hatch.                                                               |
+| Rename a campaign?                                 | `jho rename-campaign <new> [--from <old>]`. Validates name, takes a lock, atomic `fs.rename`, logs the move. Bare `mv` on `campaigns/<name>/` is also supported as an escape hatch.                                                          |
 | `webServer` config block?                          | Removed. Was a placeholder for a future web client; can be added back when `jho web` lands.                                                                                                                                                |
 | File ownership model?                              | In-file markers + `.toolhash` sidecars + `jho ownership` + `jho doctor` + `jho show` footer.                                                                                                                                               |
 | Logging?                                           | `pino` to stderr; redaction built-in; correlation ids.                                                                                                                                                                                     |
