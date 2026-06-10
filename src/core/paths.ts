@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
@@ -198,16 +198,34 @@ export async function ensureRoot(root: string): Promise<void> {
 }
 
 /**
+ * Resolve symlinks in `p` via `realpathSync`. Falls back to `path.resolve`
+ * if the path does not yet exist on disk (e.g. a destination that hasn't
+ * been created yet). This ensures that paths like `/tmp/...` and
+ * `/private/tmp/...` (macOS) are compared as the same location.
+ * @param p - The path to resolve.
+ * @returns The real, resolved path.
+ */
+function safeRealpath(p: string): string {
+  try {
+    return realpathSync(p);
+  } catch {
+    return resolve(p);
+  }
+}
+
+/**
  * Whether `child` is located under `parent` in the filesystem tree.
- * Equality (same path) counts as "under". Comparison is done with
- * `path.relative` and is purely lexical — it does not check that the
- * paths exist.
+ * Equality (same path) counts as "under". Both paths are resolved through
+ * {@link safeRealpath} before comparison so that symlinks (e.g.
+ * `/tmp` → `/private/tmp` on macOS) are handled correctly.
  * @param child - The path to test.
  * @param parent - The path to test against.
  * @returns `true` if `child` is the same as `parent` or below it.
  */
 export function isUnder(child: string, parent: string): boolean {
-  const rel = relative(parent, child);
+  const realChild = safeRealpath(child);
+  const realParent = safeRealpath(parent);
+  const rel = relative(realParent, realChild);
   if (rel === '') {
     return true;
   }
@@ -237,7 +255,7 @@ export function findSlugFromCwd(cwd: string, appliedDir: string): string | null 
     return null;
   }
 
-  const normalizedCwd = resolve(cwd);
+  const normalizedCwd = safeRealpath(cwd);
   const parts = normalizedCwd.split(sep);
   for (let i = parts.length - 1; i >= 0; i--) {
     const candidate = parts[i];
@@ -279,8 +297,9 @@ export function findCampaignFromCwd(cwd: string, dataRoot: string): string | nul
     return null;
   }
 
-  const normalizedCwd = resolve(cwd);
-  const rel = relative(campaignsRoot, normalizedCwd);
+  const realCwd = safeRealpath(cwd);
+  const realCampaignsRoot = safeRealpath(campaignsRoot);
+  const rel = relative(realCampaignsRoot, realCwd);
   if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
     return null;
   }

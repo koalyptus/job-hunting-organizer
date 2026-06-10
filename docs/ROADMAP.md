@@ -171,7 +171,7 @@ Split into sub-phases for incremental delivery.
 
 #### 4b — Real commands (rename-campaign, campaign inference)
 
-- `src/cli/commands/rename-campaign.ts` — validates `<new>` (no empty, no `/`, no `\`, no `..`, no `.`, no leading `-`, no leading/trailing whitespace); refuses if cwd is inside the campaign being renamed; takes `proper-lockfile` lock on campaign root; atomic `fs.rename`; logs move with correlation id; supports both `jho rename-campaign [<old>] <new>` and `jho rename-campaign <new>` (cwd-infer old)
+- `src/cli/commands/rename-campaign.ts` — validates `<new>` (no empty, no `/`, no `\`, no `..`, no `.`, no leading `-`, no whitespace); refuses if cwd is inside the campaign being renamed; takes `proper-lockfile` lock on campaign root; atomic `fs.rename`; logs move with correlation id; `jho rename-campaign <new> [--from <old>]` with cwd-infer old when `--from` is omitted
 - Wire `--campaign` flag on all commands that need it (config, ownership, profile, rename-campaign, stubs)
 - `src/cli/commands/profile.ts` — add `rebuild` subcommand (calls `buildProfile` from Phase 3)
 

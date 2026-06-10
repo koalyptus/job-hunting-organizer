@@ -34,7 +34,7 @@ The tool stores its state under **two** directories under the user's home: a sma
 
 The config home is fixed; the data root is fixed; campaigns are subfolders of the data root. Power users can relocate **each** independently via its env var (no CLI flags by design — matches `git`, `VS Code`, `ssh` config location conventions). Campaign selection: `jho --campaign <name> ...` (explicit) or cwd-inferred from `<dataRoot>/campaigns/<name>/`. MCP tool calls always pass an explicit campaign name.
 
-**Renaming a campaign**: the folder name is the only thing that identifies a campaign; nothing on disk references it elsewhere. `jho rename-campaign <old> <new>` is the validated path (validates `<new>`, takes a `proper-lockfile` lock, atomic `fs.rename`, logs the move). Bare `mv` on `<dataRoot>/campaigns/<old>/` is also supported as an escape hatch — the tool will pick up the new name on the next call.
+**Renaming a campaign**: the folder name is the only thing that identifies a campaign; nothing on disk references it elsewhere. `jho rename-campaign <new> [--from <old>]` is the validated path (validates `<new>`, takes a `proper-lockfile` lock, atomic `fs.rename`, logs the move). Bare `mv` on `<dataRoot>/campaigns/<old>/` is also supported as an escape hatch — the tool will pick up the new name on the next call.
 
 ## Repo structure
 
@@ -77,7 +77,7 @@ npm run eval         # lightweight LLM eval suite (manual)
 jho init [<name>]       # wizard: build profile from CV + GitHub; creates a new campaign
 jho config show|path    # show the global config (in the config home); secrets redacted
 jho campaign config show|path  # show the active campaign's config (in the data root); secrets redacted
-jho rename-campaign [<old>] <new>  # rename a campaign folder (or `mv` the folder directly)
+jho rename-campaign <new> [--from <old>]  # rename a campaign folder (or `mv` the folder directly)
 jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
 jho list [--role <slug>] # list all applications (filter by target role)

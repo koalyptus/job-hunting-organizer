@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
-import { renameCampaignCommand } from '../../commands/rename-campaign.js';
 import { trackCommand } from '../../commands/track.js';
 import { listCommand } from '../../commands/list.js';
 import { showCommand } from '../../commands/show.js';
@@ -22,13 +21,6 @@ describe('stub commands exit with correct phase messages', () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain('not implemented yet');
     expect(stderr).toContain('phase 4c');
-  });
-
-  it('rename-campaign exits with code 1 and mentions phase 4b', async () => {
-    const { stderr, exitCode } = await runCommand(renameCampaignCommand, ['rename-campaign']);
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain('not implemented yet');
-    expect(stderr).toContain('phase 4b');
   });
 
   it('track exits with code 1 and mentions phase 5', async () => {

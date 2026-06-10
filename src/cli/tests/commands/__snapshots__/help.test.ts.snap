@@ -212,16 +212,16 @@ Commands:
 `;
 
 exports[`command --help output > rename-campaign has consistent help output 1`] = `
-"Usage: rename-campaign [options] [old] [new]
+"Usage: rename-campaign [options] <new>
 
 Rename a campaign folder
 
 Arguments:
-  old         current campaign name (inferred from cwd if omitted)
-  new         new campaign name
+  new           new campaign name
 
 Options:
-  -h, --help  display help for command
+  --from <old>  current campaign name (inferred from cwd if omitted)
+  -h, --help    display help for command
 "
 `;
 
