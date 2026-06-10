@@ -1,0 +1,388 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`campaign subcommands --help > campaign config has consistent help output 1`] = `
+"Usage: campaign config [options] [subcommand]
+
+Show or print the path of the active campaign's config
+
+Arguments:
+  subcommand  show or path (default: "show")
+
+Options:
+  --reveal    show secrets in clear text (default: redacted)
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > answer has consistent help output 1`] = `
+"Usage: answer [options] [slug] [question]
+
+Tailor an answer to a question (slug inferred from cwd if omitted)
+
+Arguments:
+  slug            application slug (inferred from cwd if omitted)
+  question        question to answer (or use --stdin)
+
+Options:
+  --image <path>  include a screenshot or image
+  --stdin         read the question from stdin
+  -h, --help      display help for command
+"
+`;
+
+exports[`command --help output > campaign has consistent help output 1`] = `
+"Usage: campaign [options] [command]
+
+Operations on a campaign
+
+Options:
+  -h, --help                     display help for command
+
+Commands:
+  config [options] [subcommand]  Show or print the path of the active campaign's
+                                 config
+  init
+  rename
+  doctor
+  repair
+  stats
+  help [command]                 display help for command
+"
+`;
+
+exports[`command --help output > config has consistent help output 1`] = `
+"Usage: config [options] [subcommand]
+
+Show or print the path of the global config
+
+Arguments:
+  subcommand  show or path (default: "show")
+
+Options:
+  --reveal    show secrets in clear text (default: redacted)
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > cover-letter has consistent help output 1`] = `
+"Usage: cover-letter [options] [slugOrUrl]
+
+Generate a tailored cover letter (slug inferred from cwd if omitted)
+
+Arguments:
+  slugOrUrl     application slug or job posting URL
+
+Options:
+  --save        save to cover-letter.md in the application folder
+  --paste       copy to clipboard
+  --out <path>  write to a file
+  -h, --help    display help for command
+"
+`;
+
+exports[`command --help output > doctor has consistent help output 1`] = `
+"Usage: doctor [options] [slug]
+
+Diagnose the campaign or a single application (slug inferred from cwd if
+omitted)
+
+Arguments:
+  slug        application slug (inferred from cwd if omitted)
+
+Options:
+  --all       run all checks including optional ones
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > help has consistent help output 1`] = `
+"Usage: help [options] [subject]
+
+Show help for a command or topic
+
+Arguments:
+  subject     command or topic to get help on
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > init has consistent help output 1`] = `
+"Usage: init [options] [name]
+
+Create a new campaign (wizard)
+
+Arguments:
+  name             campaign name (default: "default")
+
+Options:
+  --cv <path>      path to CV file
+  --github <user>  GitHub username
+  -y, --yes        skip prompts and use defaults
+  -h, --help       display help for command
+"
+`;
+
+exports[`command --help output > interview has consistent help output 1`] = `
+"Usage: interview [options] [command] [slug]
+
+Manage the interview pipeline (slug inferred from cwd if omitted)
+
+Arguments:
+  slug                 application slug (inferred from cwd if omitted)
+
+Options:
+  -h, --help           display help for command
+
+Commands:
+  add [options]        Add an interview entry
+  list                 List interviews for an application
+  mark [options] <n>   Mark the current interview status
+  notes [options] <n>  Add notes to an interview entry
+  help [command]       display help for command
+"
+`;
+
+exports[`command --help output > list has consistent help output 1`] = `
+"Usage: list [options]
+
+List all applications
+
+Options:
+  --status <status>  filter by status
+  --tag <tag>        filter by tag (repeatable) (default: [])
+  --role <role>      filter by target role
+  --json             output as JSON
+  -h, --help         display help for command
+"
+`;
+
+exports[`command --help output > mcp has consistent help output 1`] = `
+"Usage: mcp [options]
+
+Start the MCP server (stdio transport)
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > ownership has consistent help output 1`] = `
+"Usage: ownership [options]
+
+Print the file ownership table
+
+Options:
+  --markdown  output as a markdown table
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > prepare has consistent help output 1`] = `
+"Usage: prepare [options] [slugOrUrl]
+
+Generate a pre-interview prep plan (slug inferred from cwd if omitted)
+
+Arguments:
+  slugOrUrl      application slug or job posting URL
+
+Options:
+  --update       update an existing prep plan
+  --add <topic>  add a topic to brush up on
+  --text <text>  paste job description text (ad-hoc, prints to stdout)
+  --days <n>     number of days until the interview (default: "7")
+  --json         output as JSON
+  -h, --help     display help for command
+"
+`;
+
+exports[`command --help output > profile has consistent help output 1`] = `
+"Usage: profile [options] [command]
+
+Show or rebuild the candidate profile
+
+Options:
+  -h, --help         display help for command
+
+Commands:
+  show               Print the current profile
+  rebuild [options]  Regenerate profile from CV + GitHub
+  help [command]     display help for command
+"
+`;
+
+exports[`command --help output > rename-campaign has consistent help output 1`] = `
+"Usage: rename-campaign [options] [old] [new]
+
+Rename a campaign folder
+
+Arguments:
+  old         current campaign name (inferred from cwd if omitted)
+  new         new campaign name
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > repair has consistent help output 1`] = `
+"Usage: repair [options] [slug]
+
+Attempt auto-repair for the campaign or a single application (slug inferred from
+cwd if omitted)
+
+Arguments:
+  slug        application slug (inferred from cwd if omitted)
+
+Options:
+  --all       attempt all possible repairs
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > retro has consistent help output 1`] = `
+"Usage: retro [options] [slug]
+
+Post-mortem for failed interviews (slug inferred from cwd if omitted)
+
+Arguments:
+  slug                 application slug (inferred from cwd if omitted)
+
+Options:
+  --show               display the most recent retro
+  --interview <index>  retro for a specific interview index
+  --append             append notes to the existing retro
+  --aggregate          show recurring weak topics across all apps
+  --role <slug>        scope to a single target role (with --aggregate)
+  --include-abandoned  also count weak topics from abandoned apps
+  -h, --help           display help for command
+"
+`;
+
+exports[`command --help output > show has consistent help output 1`] = `
+"Usage: show [options] [slug]
+
+Show one application (slug inferred from cwd if omitted)
+
+Arguments:
+  slug        application slug (inferred from cwd if omitted)
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`command --help output > stats has consistent help output 1`] = `
+"Usage: stats [options]
+
+Show a campaign snapshot: counts by status, role, site, funnel
+
+Options:
+  --role <role>    filter stats by target role
+  --since <date>   only count applications since a date
+  --include-notes  include LLM-extracted abandonment reasons (costs tokens)
+  --json           output as JSON
+  -h, --help       display help for command
+"
+`;
+
+exports[`command --help output > track has consistent help output 1`] = `
+"Usage: track [options] [urlOrSlug]
+
+Record a new application (or update by slug)
+
+Arguments:
+  urlOrSlug             job posting URL or existing application slug
+
+Options:
+  --paste               paste job description from clipboard
+  --stdin               read job description from stdin
+  --status <status>     initial status (default: "applied")
+  --salary <range>      salary or pay range
+  --tag <tag>           add a tag (repeatable) (default: [])
+  --note <text>         add a note
+  --target-role <role>  target role for the application
+  -y, --yes             skip confirmation prompts
+  -h, --help            display help for command
+"
+`;
+
+exports[`interview subcommands --help > interview add has consistent help output 1`] = `
+"Usage: interview add [options]
+
+Add an interview entry
+
+Options:
+  --when <datetime>      interview date/time (e.g. "2026-06-15 10:00")
+  --type <type>          interview type (hr, technical, system-design,
+                         behavioural, take-home, final, other) (default:
+                         "technical")
+  --duration <minutes>   duration in minutes (default: "60")
+  --interviewer <name>   interviewer name
+  --location <location>  interview location or link
+  --provider <provider>  calendar provider (ics, outlook) (default: "ics")
+  --title <title>        interview title
+  -h, --help             display help for command
+"
+`;
+
+exports[`interview subcommands --help > interview list has consistent help output 1`] = `
+"Usage: interview list [options]
+
+List interviews for an application
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`interview subcommands --help > interview mark has consistent help output 1`] = `
+"Usage: interview mark [options] <n>
+
+Mark the current interview status
+
+Arguments:
+  n                  interview number (from list)
+
+Options:
+  --status <status>  new status (passed, failed, no-show, rescheduled, pending)
+  -h, --help         display help for command
+"
+`;
+
+exports[`interview subcommands --help > interview notes has consistent help output 1`] = `
+"Usage: interview notes [options] <n>
+
+Add notes to an interview entry
+
+Arguments:
+  n                interview number (from list)
+
+Options:
+  --append <text>  notes to append
+  -h, --help       display help for command
+"
+`;
+
+exports[`profile subcommands --help > profile rebuild has consistent help output 1`] = `
+"Usage: profile rebuild [options]
+
+Regenerate profile from CV + GitHub
+
+Options:
+  --cv <path>      path to CV file
+  --github <user>  GitHub username
+  -h, --help       display help for command
+"
+`;
+
+exports[`profile subcommands --help > profile show has consistent help output 1`] = `
+"Usage: profile show [options]
+
+Print the current profile
+
+Options:
+  -h, --help  display help for command
+"
+`;

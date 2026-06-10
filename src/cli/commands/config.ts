@@ -25,6 +25,7 @@ export const configCommand = new Command('config')
       case 'edit': {
         process.stderr.write('jho config edit: not implemented yet\n');
         process.exit(1);
+        break;
       }
       default:
         process.stderr.write(`jho config: unknown subcommand: ${subcommand}\n`);
