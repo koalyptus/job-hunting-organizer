@@ -190,11 +190,14 @@ export async function findConfigPath(root: string): Promise<string | null> {
  * Ensure a directory exists, creating it (recursively) if it does not.
  * Used by `jho init` and `jho repair` to bootstrap the data layout.
  * @param root - The absolute path of the directory to ensure.
+ * @returns `true` if the directory was created, `false` if it already existed.
  */
-export async function ensureRoot(root: string): Promise<void> {
+export async function ensureRoot(root: string): Promise<boolean> {
   if (!(await pathExists(root))) {
     await mkdir(root, { recursive: true });
+    return true;
   }
+  return false;
 }
 
 /**

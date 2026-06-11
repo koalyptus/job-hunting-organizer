@@ -31,6 +31,35 @@ let _globalConfig: GlobalConfig | null = null;
  */
 const _campaignConfigCache: Map<string, CampaignConfig> = new Map();
 
+// ── Config resolution helpers ───────────────────────────────────────────────
+
+/**
+ * Resolve a config value with optional env var override and default.
+ * Lookup order: config → env → default.
+ * @param configValue - Value from config (may be undefined).
+ * @param envKey - Environment variable name (optional).
+ * @param defaultValue - Fallback if both config and env are missing.
+ * @returns The resolved value.
+ */
+export function getConfigValue(
+  configValue: string | undefined,
+  envKey: string | undefined,
+  defaultValue: string,
+): string {
+  if (configValue !== undefined && configValue !== '') {
+    return configValue;
+  }
+  if (envKey !== undefined) {
+    const envVal = process.env[envKey];
+    if (envVal !== undefined && envVal !== '') {
+      return envVal;
+    }
+  }
+  return defaultValue;
+}
+
+// ── Config loading ──────────────────────────────────────────────────────────
+
 /**
  * Load and validate the global config from
  * `<configHome>/config.json`. The result is cached

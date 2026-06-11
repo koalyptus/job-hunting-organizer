@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildSlug, companySlug, roleAbbr, validateSlug } from '../slug.js';
+import { buildSlug, companySlug, roleAbbr } from '../slug.js';
+import { validateSlug } from '../validate.js';
 
 describe('roleAbbr', () => {
   it('takes the first 2-3 words, lowercased and sanitized', () => {

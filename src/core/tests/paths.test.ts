@@ -146,14 +146,16 @@ describe('ensureRoot', () => {
   it('creates the directory if it does not exist', async () => {
     const target = join(workDir, 'nested', 'campaign');
     expect(existsSync(target)).toBe(false);
-    await ensureRoot(target);
+    const created = await ensureRoot(target);
+    expect(created).toBe(true);
     expect(existsSync(target)).toBe(true);
   });
 
   it('is a no-op when the directory already exists', async () => {
     const target = join(workDir, 'existing');
     await mkdir(target, { recursive: true });
-    await ensureRoot(target);
+    const created = await ensureRoot(target);
+    expect(created).toBe(false);
     expect(existsSync(target)).toBe(true);
   });
 });

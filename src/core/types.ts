@@ -391,3 +391,25 @@ export type GithubUser =
 /** GitHub repository returned by `GET /users/{username}/repos`. */
 export type GithubRepo =
   paths['/users/{username}/repos']['get']['responses'][200]['content']['application/json'][number];
+
+/**
+ * Actions available in the target roles review loop during `jho init`.
+ */
+export type RoleAction = 'accept' | 'edit' | 'add' | 'delete';
+
+/**
+ * Options for the `jho init` wizard. Passed from the CLI layer to
+ * {@link runInit} in `core/init.ts`.
+ */
+export interface InitOptions {
+  /** Campaign name (default: `'default'`). */
+  readonly name?: string;
+  /** Path to CV file. */
+  readonly cv?: string;
+  /** GitHub username. */
+  readonly github?: string;
+  /** Path to existing `profile.md` to copy instead of building. */
+  readonly profile?: string;
+  /** Non-interactive mode: use env vars/defaults, skip all prompts. */
+  readonly yes?: boolean;
+}

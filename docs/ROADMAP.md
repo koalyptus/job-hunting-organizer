@@ -13,11 +13,11 @@
   - [x] 3c — Target roles
   - [x] 3d — Profile builder
   - [x] 3e — Knowledge base caching & evals
-- [ ] **Phase 4** — CLI scaffolding & `init` wizard
+- [x] **Phase 4** — CLI scaffolding & `init` wizard
   - [x] 4a — CLI framework & command module structure
-  - [ ] 4b — Real commands (rename-campaign, campaign inference)
-  - [ ] 4c — Init wizard
-  - [ ] 4d — Tests & polish
+  - [x] 4b — Real commands (rename-campaign, campaign inference)
+  - [x] 4c — Init wizard
+  - [x] 4d — Tests & polish
 - [ ] **Phase 5** — JD extraction & `track`
 - [ ] **Phase 6** — Cover letter & Q&A
 - [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro)
@@ -182,23 +182,28 @@ Split into sub-phases for incremental delivery.
 #### 4c — Init wizard
 
 - `src/cli/commands/init.ts` — full `jho init [<name>]` wizard using `@clack/prompts`:
-  1. Prompt for campaign name (default: `default`)
-  2. Prompt for CV path (file picker or text input; validate exists)
-  3. Prompt for GitHub username (+ optional token)
-  4. Prompt for LLM baseUrl, apiKey, model (with defaults from env vars)
-  5. Prompt for calendar provider (default: `ics`)
-  6. Create campaign directory structure (`applied/`, `knowledge-base/local/`)
-  7. Run `buildProfile()` from Phase 3 (with spinner)
-  8. Parse generated `## Target roles` via `parseTargetRoles()`
-  9. **Review loop**: show roles in a table, user can accept all / edit one / add / delete / open in editor
+  1. Prompt for campaign name (default: `default`); skip if arg provided
+  2. Prompt for CV path (optional; empty = skip profile build)
+  3. Prompt for GitHub username (+ optional token, masked); optional
+  4. Prompt for LLM baseUrl, apiKey, model (pre-filled from env vars or existing global config); optional
+  5. Prompt for calendar provider: ICS / Outlook / **None** (skip; user can enable later via re-init or config edit)
+  6. Create campaign directory structure (`applied/`, `knowledge-base/local/cv/`, `knowledge-base/local/github/`)
+  7. **Profile build decision**: if `--profile <path>` → copy file; elif CV + LLM → `buildProfile()` with spinner; else → create skeleton `profile.md` with full structure and placeholder text, warn user
+  8. If profile built: parse `## Target roles` via `parseTargetRoles()`
+  9. **Review loop** (if roles exist and not `--yes`): show roles in a table, user can accept all / edit one / add / delete
   10. Write `profile.md` to campaign root
-  11. Write global `config.json` (LLM, GitHub, calendar, logging)
-  12. Write per-campaign `config.json` (profile, cv, applied, knowledgeBase paths)
-  13. Print success summary
-- Support `--yes` flag to skip prompts (use defaults)
-- Handle first-time vs re-init (if campaign already exists, warn and confirm)
+  11. Write global `config.json` (always merge via `updateGlobalConfig`)
+  12. Write per-campaign `config.json`
+  13. Print success summary with next steps
+- Individual `@clack/prompts` calls (`text`, `select`, `password`, `confirm`) for each step; pre-fill all fields from existing config on re-init
+- `--yes` flag: skip all prompts, use flags + env vars + defaults; no flags required — missing CV/LLM → skeleton profile
+- Re-init: if campaign exists, warn and confirm (skip in `--yes` mode); always write global config (shallow merge preserves untouched fields)
+- **Calendar skip**: "None" sets `defaultProvider: 'none'` in config; not permanent — user can re-init or edit config to enable later; calendar commands check provider and show helpful message if `'none'`
+- **Profile graceful degradation**: if CV or LLM missing, create skeleton `profile.md` with `<!-- jho:target-roles -->` marker; user can edit manually or re-run `jho init --cv ./cv.pdf` with LLM configured
+- **`--profile <path>`**: copies existing `profile.md` into campaign, skips build; useful for migration
+- Tests: mock `@clack/prompts`, mock `buildProfile`, test happy path / `--yes` / re-init / skeleton / `--profile` / error cases
 
-**Deliverable**: `jho init` works end-to-end on a fresh machine. User has a profile with a reviewed list of target roles. Both config files are written.
+**Deliverable**: `jho init` works end-to-end on a fresh machine. User has a profile with a reviewed list of target roles (or a skeleton to fill in). Both config files are written. Calendar can be skipped.
 
 **Commit**: `feat(cli): init wizard with profile build, target-roles review, config write`
 

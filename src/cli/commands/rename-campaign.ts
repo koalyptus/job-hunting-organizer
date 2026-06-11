@@ -10,39 +10,9 @@ import { pathExists } from '../../core/fs.js';
 import { acquireLock } from '../../core/locks.js';
 import { clearConfigCache } from '../../core/config.js';
 import { childLogger } from '../../core/logger.js';
+import { validateName } from '../../core/validate.js';
 
 const log = childLogger({ cmd: 'rename-campaign' });
-
-/** Characters forbidden in a campaign name. */
-const FORBIDDEN = ['/', '\\'];
-
-/**
- * Validate a campaign name. Returns `null` if valid, or an error
- * message string explaining why it's invalid.
- */
-function validateName(name: string): string | null {
-  if (name === '' || name.trim() === '') {
-    return 'must not be empty or whitespace-only';
-  }
-  if (name !== name.trim()) {
-    return 'must not have leading or trailing whitespace';
-  }
-  if (/\s/.test(name)) {
-    return 'must not contain whitespace';
-  }
-  if (name.startsWith('-')) {
-    return 'must not start with a dash';
-  }
-  if (name === '.' || name === '..') {
-    return 'must not be "." or ".."';
-  }
-  for (const ch of FORBIDDEN) {
-    if (name.includes(ch)) {
-      return `must not contain "${ch}"`;
-    }
-  }
-  return null;
-}
 
 /**
  * `jho rename-campaign <new> [--from <old>]` — rename a campaign folder.

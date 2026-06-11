@@ -74,7 +74,14 @@ npm run eval         # lightweight LLM eval suite (manual)
 ## CLI commands (planned)
 
 ```
-jho init [<name>]       # wizard: build profile from CV + GitHub; creates a new campaign
+jho init [<name>] [--cv <path>] [--github <user>] [--profile <path>] [--yes]
+  # wizard: CV path → GitHub user + token → LLM config → calendar →
+  #   profile build (LLM) → target-roles review → write config + profile.md
+  # --yes: skip prompts (uses env vars for LLM; missing CV/LLM → skeleton profile)
+  # --profile <path>: copy existing profile.md, skip build
+  # Re-init: warns if campaign exists; always merges global config
+  # Calendar: ICS / Outlook / None (user can enable later)
+  # Graceful degradation: if CV or LLM missing, creates skeleton profile.md
 jho config show|path    # show the global config (in the config home); secrets redacted
 jho campaign config show|path  # show the active campaign's config (in the data root); secrets redacted
 jho rename-campaign <new> [--from <old>]  # rename a campaign folder (or `mv` the folder directly)
@@ -185,6 +192,11 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 - ESM only. CommonJS is not supported.
 - Use the `node:` prefix for built-ins (`import { readFileSync } from 'node:fs'`).
+
+### Code style
+
+- Add blank lines before and after `if` statements for human readability. Always use braces (enforced by ESLint `curly` rule), even for short single-line guards.
+- Async functions should always return a value for clarity. Avoid `Promise<void>` where a meaningful return type is possible (e.g. `ensureRoot` returns `boolean` to indicate whether it created the directory).
 
 ### JSDoc
 

@@ -8,7 +8,7 @@
 //   jobId        : optional, extracted from the URL (LinkedIn, Seek, Indeed, generic)
 //   -N           : optional, integer suffix on collision (see core/counters.ts)
 
-import { formatDateUtc, parseDateOrNow, MONTH_ABBR } from './date.js';
+import { formatDateUtc, parseDateOrNow } from './date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
 import type { SlugBuildInput, SlugOptions } from './types.js';
@@ -84,32 +84,4 @@ export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): st
     return `${base}-${jobId}`;
   }
   return base;
-}
-
-/**
- * Verify that a string is a well-formed slug. Checks the pattern AND
- * the semantics of each date component (valid year range, known month
- * abbreviation, valid day-of-month).
- * @param slug - The string to validate.
- * @returns `{ ok: true }` on success, `{ ok: false, reason }` otherwise.
- */
-export function validateSlug(slug: string): { ok: true } | { ok: false; reason: string } {
-  if (!SLUG_PATTERN.test(slug)) {
-    return { ok: false, reason: 'does not match YYYY-MMM-DD-* pattern' };
-  }
-  const datePart = slug.slice(0, 11);
-  const [yyyy, mmm, dd] = datePart.split('-');
-  const year = Number(yyyy);
-  const monthIdx = MONTH_ABBR.indexOf(mmm ?? '');
-  const day = Number(dd);
-  if (!Number.isInteger(year) || year < 1900 || year > 9999) {
-    return { ok: false, reason: `invalid year: ${yyyy}` };
-  }
-  if (monthIdx < 0) {
-    return { ok: false, reason: `invalid month abbreviation: ${mmm}` };
-  }
-  if (!Number.isInteger(day) || day < 1 || day > 31) {
-    return { ok: false, reason: `invalid day: ${dd}` };
-  }
-  return { ok: true };
 }

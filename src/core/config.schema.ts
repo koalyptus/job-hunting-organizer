@@ -112,7 +112,7 @@ export const GlobalConfigSchema = z.object({
   /** Calendar integration. ICS is the zero-config default. */
   calendar: z
     .object({
-      defaultProvider: z.enum(['ics', 'outlook']).default('ics'),
+      defaultProvider: z.enum(['ics', 'outlook', 'none']).default('ics'),
       outlook: z
         .object({
           tenantId: z.string().default(''),
