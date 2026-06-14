@@ -17,8 +17,6 @@ export const DEFAULT_LLM_MODEL = 'llama3.1';
 export const DEFAULT_CALENDAR_PROVIDER = 'ics';
 
 /** Knowledge-base subdirectory names. */
-export const KB_LOCAL = 'local';
-export const KB_CV = 'cv';
 export const KB_GITHUB = 'github';
 
 /** Default log level for new campaigns. */

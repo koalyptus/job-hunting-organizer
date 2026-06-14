@@ -1,5 +1,5 @@
-import { text, password, isCancel, log as clackLog } from '@clack/prompts';
-import { MSG_CANCELLED } from './constants.js';
+import { text, password, isCancel } from '@clack/prompts';
+import { InitCancelled } from './errors.js';
 import type { GlobalConfig } from '../types.js';
 
 /** Result of the GitHub prompts step. */
@@ -12,35 +12,36 @@ export interface GithubResult {
  * Prompt for GitHub username and optional token.
  * Pre-fills from existing config on re-init.
  * Returns `undefined` values if skipped or cancelled.
+ * @throws {InitCancelled} if the user cancels any prompt.
  */
 export async function promptGithub(
   defaultUser: string | undefined,
   nonInteractive: boolean,
   existingConfig: GlobalConfig | null,
 ): Promise<GithubResult> {
-  let githubUser = defaultUser ?? (existingConfig?.github?.user || undefined);
+  const prefill = defaultUser ?? existingConfig?.github?.user;
 
-  if (!githubUser && !nonInteractive) {
-    const input = await text({
-      message: 'GitHub username? (optional, press Enter to skip)',
-      initialValue: existingConfig?.github?.user || undefined,
-      placeholder: '',
-    });
-    if (isCancel(input)) {
-      clackLog.info(MSG_CANCELLED);
-      process.exit(0);
-    }
-    githubUser = input || undefined;
+  if (nonInteractive) {
+    return { user: prefill, token: undefined };
   }
 
+  const input = await text({
+    message: 'GitHub username? (optional, press Enter to skip)',
+    initialValue: prefill || undefined,
+    placeholder: '',
+  });
+  if (isCancel(input)) {
+    throw new InitCancelled();
+  }
+  const githubUser = input || undefined;
+
   let githubToken: string | undefined;
-  if (githubUser && !nonInteractive) {
+  if (githubUser) {
     const token = await password({
       message: 'GitHub personal access token? (optional, avoids API throttling)',
     });
     if (isCancel(token)) {
-      clackLog.info(MSG_CANCELLED);
-      process.exit(0);
+      throw new InitCancelled();
     }
     githubToken = token || undefined;
   }

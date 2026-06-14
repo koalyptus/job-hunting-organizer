@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../core/config.js';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
+import * as profileModule from '../../../core/profile.js';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),
@@ -20,7 +21,7 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-vi.mock('../../../../src/core/profile.js', () => ({
+vi.mock('../../../core/profile.js', () => ({
   buildProfile: vi.fn(() =>
     Promise.resolve({
       content:
@@ -35,10 +36,12 @@ describe('init command', () => {
   let testHome: string;
   let originalJhoConfigHome: string | undefined;
   let originalJhoData: string | undefined;
+  let originalJhoCvPath: string | undefined;
 
   beforeEach(async () => {
     originalJhoConfigHome = process.env['JHO_CONFIG_HOME'];
     originalJhoData = process.env['JHO_DATA'];
+    originalJhoCvPath = process.env['JHO_CV_PATH'];
     testHome = await mkdtemp(join(tmpdir(), 'jho-init-'));
     process.env['JHO_CONFIG_HOME'] = join(testHome, '.jho');
     process.env['JHO_DATA'] = join(testHome, 'data');
@@ -50,7 +53,7 @@ describe('init command', () => {
 
   afterEach(async () => {
     clearConfigCache();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
     if (originalJhoConfigHome === undefined) {
       delete process.env['JHO_CONFIG_HOME'];
     } else {
@@ -60,6 +63,11 @@ describe('init command', () => {
       delete process.env['JHO_DATA'];
     } else {
       process.env['JHO_DATA'] = originalJhoData;
+    }
+    if (originalJhoCvPath === undefined) {
+      delete process.env['JHO_CV_PATH'];
+    } else {
+      process.env['JHO_CV_PATH'] = originalJhoCvPath;
     }
     await rm(testHome, { recursive: true, force: true });
   });
@@ -90,12 +98,8 @@ describe('init command', () => {
     const campaignDir = join(testHome, 'data', 'campaigns', 'default');
     await stat(campaignDir);
 
-    // Applied dir created
-    await stat(join(campaignDir, 'applied'));
-
     // KB dirs created
-    await stat(join(campaignDir, 'knowledge-base', 'local', 'cv'));
-    await stat(join(campaignDir, 'knowledge-base', 'local', 'github'));
+    await stat(join(campaignDir, 'knowledge-base', 'github'));
 
     // Skeleton profile written
     const profile = await readFile(join(campaignDir, 'profile.md'), 'utf8');
@@ -190,6 +194,46 @@ describe('init command', () => {
     );
   });
 
+  it('shows CV prompt on re-init with existing CV path', async () => {
+    const { text, select, confirm, password } = await import('@clack/prompts');
+    const cvPath = join(testHome, 'my-cv.pdf');
+    await writeFile(cvPath, 'fake cv');
+
+    // Create existing campaign with config containing CV path
+    const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+    await mkdir(campaignDir, { recursive: true });
+    await writeFile(
+      join(campaignDir, 'config.json'),
+      JSON.stringify({
+        version: 1,
+        profile: { path: join(campaignDir, 'profile.md') },
+        cv: { path: cvPath },
+        applied: { dir: join(campaignDir, 'applied') },
+        knowledgeBase: { dir: join(campaignDir, 'knowledge-base') },
+      }),
+    );
+
+    vi.mocked(confirm).mockResolvedValueOnce(true); // Confirm overwrite
+    // CV prompt should appear with initialValue set to existing CV path
+    vi.mocked(text)
+      .mockResolvedValueOnce(cvPath) // CV (user confirms existing)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run();
+    expect(exitCode).toBe(0);
+
+    // Verify CV prompt was called with initialValue
+    expect(vi.mocked(text)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('CV'),
+        initialValue: cvPath,
+      }),
+    );
+  });
+
   it('cancels on user decline at re-init', async () => {
     const { confirm } = await import('@clack/prompts');
 
@@ -225,11 +269,71 @@ describe('init command', () => {
   });
 
   it('errors on missing --profile file', async () => {
-    const { confirm, log } = await import('@clack/prompts');
+    const { confirm } = await import('@clack/prompts');
     vi.mocked(confirm).mockResolvedValueOnce(false);
 
-    const { exitCode } = await run('--profile', '/nonexistent/profile.md');
+    const { exitCode, stderr } = await run('--profile', '/nonexistent/profile.md');
     expect(exitCode).toBe(1);
-    expect(vi.mocked(log.error)).toHaveBeenCalledWith(expect.stringContaining('not found'));
+    expect(stderr).toContain('not found');
+  });
+
+  it('uses JHO_CV_PATH env var when set', async () => {
+    const { text, select, confirm, password } = await import('@clack/prompts');
+    const cvPath = join(testHome, 'my-cv.pdf');
+    await writeFile(cvPath, 'fake cv');
+
+    process.env['JHO_CV_PATH'] = cvPath;
+
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text).mockResolvedValueOnce('').mockResolvedValueOnce(''); // GitHub, LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run();
+
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.cv.path).toBe(cvPath);
+  });
+
+  it('saves CV path when profile build fails', async () => {
+    let callCount = 0;
+    vi.mocked(profileModule.buildProfile).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return Promise.reject(new Error('LLM API error: 401'));
+      }
+      return Promise.resolve({
+        content:
+          '# Profile — Test User\n\n## Target roles\n\n### senior-backend — Senior Backend [primary]\n\n- Level: Senior\n- Domain: Backend\n- Stack: TypeScript\n- Work style: Remote\n- Compensation: 150k\n- Notes: test\n',
+        model: 'test-model',
+        durationMs: 100,
+      });
+    });
+
+    const { text, select, confirm, password } = await import('@clack/prompts');
+    const cvPath = join(testHome, 'my-cv.pdf');
+    await writeFile(cvPath, 'fake cv');
+
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text)
+      .mockResolvedValueOnce(cvPath) // CV
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce('https://llm.example.com/v1') // LLM base URL
+      .mockResolvedValueOnce('model-name'); // LLM model
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('test-key');
+
+    // Run should throw because the error propagates through CLI
+    await expect(run()).rejects.toThrow('LLM API error: 401');
+
+    // Campaign config should still have the CV path (written before profile build)
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.cv.path).toBe(cvPath);
   });
 });

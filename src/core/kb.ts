@@ -7,7 +7,7 @@ import type { CvContent, GithubRepo, GithubUser } from './types.js';
 
 /**
  * Cached GitHub user and repo data, written to
- * `knowledge-base/local/github/<username>.json`.
+ * `knowledge-base/github/<username>.json`.
  */
 export interface CachedGithubData {
   /** The user profile snapshot. */
@@ -26,7 +26,7 @@ export interface CachedGithubData {
  */
 export async function readCachedCv(campaignRoot: string, log?: Logger): Promise<CvContent | null> {
   const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const cachePath = join(kbDir, 'local', 'cv', 'cv.json');
+  const cachePath = join(kbDir, 'cv.json');
 
   if (!(await pathExists(cachePath))) {
     return null;
@@ -62,7 +62,7 @@ export async function writeCachedCv(
   log?: Logger,
 ): Promise<void> {
   const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const cachePath = join(kbDir, 'local', 'cv', 'cv.json');
+  const cachePath = join(kbDir, 'cv.json');
 
   const data = {
     text: cv.text,
@@ -91,7 +91,7 @@ export async function readCachedGithub(
   log?: Logger,
 ): Promise<{ user: GithubUser; repos: GithubRepo[] } | null> {
   const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const cachePath = join(kbDir, 'local', 'github', `${username}.json`);
+  const cachePath = join(kbDir, 'github', `${username}.json`);
 
   if (!(await pathExists(cachePath))) {
     return null;
@@ -127,7 +127,7 @@ export async function writeCachedGithub(
   log?: Logger,
 ): Promise<void> {
   const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const cachePath = join(kbDir, 'local', 'github', `${username}.json`);
+  const cachePath = join(kbDir, 'github', `${username}.json`);
 
   const data: CachedGithubData = {
     user,

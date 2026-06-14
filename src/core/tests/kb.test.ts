@@ -51,7 +51,7 @@ describe('readCachedCv', () => {
   });
 
   it('returns null for corrupted JSON', async () => {
-    const cacheDir = join(workDir, 'knowledge-base', 'local', 'cv');
+    const cacheDir = join(workDir, 'knowledge-base');
     const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'cv.json'), 'NOT JSON');
@@ -61,7 +61,7 @@ describe('readCachedCv', () => {
   });
 
   it('reads a valid cache file', async () => {
-    const cacheDir = join(workDir, 'knowledge-base', 'local', 'cv');
+    const cacheDir = join(workDir, 'knowledge-base');
     const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(
@@ -115,7 +115,7 @@ describe('writeCachedCv', () => {
     });
 
     const { existsSync } = await import('node:fs');
-    expect(existsSync(join(workDir, 'knowledge-base', 'local', 'cv', 'cv.json'))).toBe(true);
+    expect(existsSync(join(workDir, 'knowledge-base', 'cv.json'))).toBe(true);
   });
 });
 
@@ -136,7 +136,7 @@ describe('readCachedGithub', () => {
   });
 
   it('returns null for corrupted JSON', async () => {
-    const cacheDir = join(workDir, 'knowledge-base', 'local', 'github');
+    const cacheDir = join(workDir, 'knowledge-base', 'github');
     const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'testuser.json'), '{bad');
@@ -146,7 +146,7 @@ describe('readCachedGithub', () => {
   });
 
   it('reads a valid cache file', async () => {
-    const cacheDir = join(workDir, 'knowledge-base', 'local', 'github');
+    const cacheDir = join(workDir, 'knowledge-base', 'github');
     const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(
@@ -186,19 +186,14 @@ describe('writeCachedGithub', () => {
     await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos);
 
     const { existsSync } = await import('node:fs');
-    expect(existsSync(join(workDir, 'knowledge-base', 'local', 'github', 'testuser.json'))).toBe(
-      true,
-    );
+    expect(existsSync(join(workDir, 'knowledge-base', 'github', 'testuser.json'))).toBe(true);
   });
 
   it('includes cachedAt timestamp', async () => {
     await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos);
 
     const { readFileSync } = await import('node:fs');
-    const raw = readFileSync(
-      join(workDir, 'knowledge-base', 'local', 'github', 'testuser.json'),
-      'utf8',
-    );
+    const raw = readFileSync(join(workDir, 'knowledge-base', 'github', 'testuser.json'), 'utf8');
     const parsed = JSON.parse(raw);
     expect(parsed.cachedAt).toBeDefined();
     expect(new Date(parsed.cachedAt).getTime()).toBeGreaterThan(0);

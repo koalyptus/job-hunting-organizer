@@ -22,24 +22,9 @@ describe('createDirectories', () => {
     await stat(campaignRoot);
   });
 
-  it('creates applied directory', async () => {
+  it('creates knowledge-base/github directory', async () => {
     await createDirectories(campaignRoot);
-    await stat(join(campaignRoot, 'applied'));
-  });
-
-  it('creates knowledge-base/local/cv directory', async () => {
-    await createDirectories(campaignRoot);
-    await stat(join(campaignRoot, 'knowledge-base', 'local', 'cv'));
-  });
-
-  it('creates knowledge-base/local/github directory', async () => {
-    await createDirectories(campaignRoot);
-    await stat(join(campaignRoot, 'knowledge-base', 'local', 'github'));
-  });
-
-  it('returns appliedDir path', async () => {
-    const result = await createDirectories(campaignRoot);
-    expect(result.appliedDir).toBe(join(campaignRoot, 'applied'));
+    await stat(join(campaignRoot, 'knowledge-base', 'github'));
   });
 
   it('returns kbDir path', async () => {

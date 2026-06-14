@@ -110,6 +110,39 @@ describe('reviewRoles', () => {
     expect(result[0]?.compensation).toBe('180k');
   });
 
+  it('pre-fills existing values when editing a role', async () => {
+    const { select, text } = await import('@clack/prompts');
+    vi.mocked(select)
+      .mockResolvedValueOnce('edit')
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce('primary')
+      .mockResolvedValueOnce('accept');
+    vi.mocked(text)
+      .mockResolvedValueOnce('senior-backend')
+      .mockResolvedValueOnce('Senior Backend Engineer')
+      .mockResolvedValueOnce('Senior')
+      .mockResolvedValueOnce('Backend')
+      .mockResolvedValueOnce('TypeScript, Node.js')
+      .mockResolvedValueOnce('Remote')
+      .mockResolvedValueOnce('150k')
+      .mockResolvedValueOnce('');
+
+    await reviewRoles(mockRoles);
+
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: 'senior-backend' }));
+    expect(text).toHaveBeenCalledWith(
+      expect.objectContaining({ initialValue: 'Senior Backend Engineer' }),
+    );
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: 'Senior' }));
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: 'Backend' }));
+    expect(text).toHaveBeenCalledWith(
+      expect.objectContaining({ initialValue: 'TypeScript, Node.js' }),
+    );
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: 'Remote' }));
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: '150k' }));
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: '' }));
+  });
+
   it('continues loop on cancel during edit selection', async () => {
     const { select, isCancel } = await import('@clack/prompts');
     vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);

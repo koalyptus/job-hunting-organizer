@@ -6,8 +6,6 @@ import {
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_MODEL,
   DEFAULT_CALENDAR_PROVIDER,
-  KB_LOCAL,
-  KB_CV,
   KB_GITHUB,
   DEFAULT_LOG_LEVEL,
 } from '../init/constants.js';
@@ -40,9 +38,7 @@ describe('init constants', () => {
     expect(DEFAULT_CALENDAR_PROVIDER).toBe('ics');
   });
 
-  it('KB constants are lowercase', () => {
-    expect(KB_LOCAL).toBe('local');
-    expect(KB_CV).toBe('cv');
+  it('KB_GITHUB is "github"', () => {
     expect(KB_GITHUB).toBe('github');
   });
 

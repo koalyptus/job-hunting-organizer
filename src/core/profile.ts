@@ -146,7 +146,7 @@ ${repoSummary || '(no repos found)'}
 
 Generate the profile markdown following the template above.`;
 
-  // 5. Call LLM
+  // 5. Call LLM (throws if empty content)
   const result = await chatComplete(
     [
       { role: 'system', content: systemMessage },

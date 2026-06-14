@@ -1,11 +1,7 @@
-import { text, password, isCancel, log as clackLog } from '@clack/prompts';
+import { text, password, isCancel } from '@clack/prompts';
 import { clearConfigCache, loadGlobalConfig, getConfigValue } from '../config.js';
-import {
-  DEFAULT_LLM_BASE_URL,
-  DEFAULT_LLM_API_KEY,
-  DEFAULT_LLM_MODEL,
-  MSG_CANCELLED,
-} from './constants.js';
+import { DEFAULT_LLM_BASE_URL, DEFAULT_LLM_API_KEY, DEFAULT_LLM_MODEL } from './constants.js';
+import { InitCancelled } from './errors.js';
 
 /** Result of the LLM prompts step. */
 export interface LlmResult {
@@ -30,6 +26,7 @@ export function loadExistingConfig(): ReturnType<typeof loadGlobalConfig> | null
 /**
  * Prompt for LLM configuration (base URL, API key, model).
  * In non-interactive mode, uses env vars or defaults.
+ * @throws {InitCancelled} if the user cancels any prompt.
  */
 export async function promptLlm(
   nonInteractive: boolean,
@@ -63,8 +60,7 @@ export async function promptLlm(
   });
 
   if (isCancel(baseInput)) {
-    clackLog.info(MSG_CANCELLED);
-    process.exit(0);
+    throw new InitCancelled();
   }
 
   const llmBaseUrl = baseInput || undefined;
@@ -73,16 +69,16 @@ export async function promptLlm(
     return { baseUrl: undefined, apiKey: undefined, model: undefined };
   }
 
+  const hasExistingKey = Boolean(existingConfig?.llm?.apiKey);
   const keyInput = await password({
-    message: 'LLM API key?',
+    message: hasExistingKey ? 'LLM API key? (press Enter to keep existing)' : 'LLM API key?',
   });
 
   if (isCancel(keyInput)) {
-    clackLog.info(MSG_CANCELLED);
-    process.exit(0);
+    throw new InitCancelled();
   }
 
-  const llmApiKey = keyInput;
+  const llmApiKey = keyInput || existingConfig?.llm?.apiKey || undefined;
 
   const modelInput = await text({
     message: 'LLM model?',
@@ -92,8 +88,7 @@ export async function promptLlm(
   });
 
   if (isCancel(modelInput)) {
-    clackLog.info(MSG_CANCELLED);
-    process.exit(0);
+    throw new InitCancelled();
   }
 
   const llmModel = modelInput || undefined;

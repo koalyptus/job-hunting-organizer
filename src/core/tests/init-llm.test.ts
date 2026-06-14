@@ -145,4 +145,48 @@ describe('promptLlm', () => {
       }),
     );
   });
+
+  it('shows "press Enter to keep existing" when API key exists', async () => {
+    const { text, password } = await import('@clack/prompts');
+    vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce('mymodel');
+    vi.mocked(password).mockResolvedValue('new-key');
+
+    await promptLlm(false, {
+      llm: { baseUrl: 'http://old:11434/v1', apiKey: 'old-key', model: 'old-model' },
+    } as GlobalConfig);
+
+    expect(password).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'LLM API key? (press Enter to keep existing)',
+      }),
+    );
+  });
+
+  it('shows plain prompt when no existing API key', async () => {
+    const { text, password } = await import('@clack/prompts');
+    vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce('mymodel');
+    vi.mocked(password).mockResolvedValue('my-key');
+
+    await promptLlm(false, {
+      llm: { baseUrl: 'http://old:11434/v1', model: 'old-model' },
+    } as GlobalConfig);
+
+    expect(password).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'LLM API key?',
+      }),
+    );
+  });
+
+  it('uses existing API key when password prompt is empty', async () => {
+    const { text, password } = await import('@clack/prompts');
+    vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce('mymodel');
+    vi.mocked(password).mockResolvedValue(''); // press Enter
+
+    const result = await promptLlm(false, {
+      llm: { baseUrl: 'http://old:11434/v1', apiKey: 'existing-key', model: 'old-model' },
+    } as GlobalConfig);
+
+    expect(result.apiKey).toBe('existing-key');
+  });
 });

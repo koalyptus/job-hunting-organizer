@@ -6,6 +6,9 @@ import { SLUG_PATTERN } from './slug.js';
 /** Characters forbidden in a campaign name. */
 const FORBIDDEN_CAMPAIGN = ['/', '\\'];
 
+/** Maximum allowed length for a campaign name (filesystem safety). */
+const MAX_NAME_LENGTH = 64;
+
 /**
  * Validate a campaign name. Returns `null` if valid, or an error message
  * string explaining why it's invalid.
@@ -25,6 +28,12 @@ export function validateName(name: string): string | null {
   }
   if (name === '.' || name === '..') {
     return 'must not be "." or ".."';
+  }
+  if (name.includes('.')) {
+    return 'must not contain dots';
+  }
+  if (name.length > MAX_NAME_LENGTH) {
+    return `must not exceed ${MAX_NAME_LENGTH} characters`;
   }
   for (const ch of FORBIDDEN_CAMPAIGN) {
     if (name.includes(ch)) {

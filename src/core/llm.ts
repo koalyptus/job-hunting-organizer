@@ -5,6 +5,18 @@ import { loadGlobalConfig } from './config.js';
 import type { GlobalConfig, LlmConfig, ChatCompleteOptions, ChatCompleteResult } from './types.js';
 
 /**
+ * Normalise a base URL for the OpenAI-compatible API.
+ * Appends `/v1` when missing so `http://localhost:11434` and
+ * `http://localhost:11434/` both resolve to `http://localhost:11434/v1`.
+ */
+function normaliseBaseUrl(url: string): string {
+  if (url.endsWith('/v1')) {
+    return url;
+  }
+  return url.endsWith('/') ? `${url}v1` : `${url}/v1`;
+}
+
+/**
  * Resolve an {@link LlmConfig} from an explicit `GlobalConfig` or the
  * global config file (defaults to Ollama localhost if no file exists).
  * Environment variables (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`)
@@ -31,11 +43,11 @@ export async function chatComplete(
   const temperature = options.temperature ?? 0.6;
   const maxTokens = options.maxTokens;
   const jsonMode = options.jsonMode ?? false;
-  const timeout = options.timeout ?? 120_000;
+  const timeout = options.timeout ?? 300_000;
 
   const client = new OpenAI({
-    baseURL: config.baseUrl,
-    apiKey: config.apiKey,
+    baseURL: normaliseBaseUrl(config.baseUrl),
+    apiKey: config.apiKey || 'ollama',
     maxRetries: 0,
     timeout,
   });
@@ -55,9 +67,20 @@ export async function chatComplete(
 
   const durationMs = Date.now() - start;
 
-  const choice = response.choices[0];
+  const choice = response.choices?.[0];
+  const content = choice?.message?.content ?? '';
+
+  if (!content) {
+    // Log the raw response to help debug API format mismatches
+    const snippet = JSON.stringify(response).slice(0, 500);
+    throw new Error(
+      `LLM returned empty or unexpected response (model: ${config.model}). ` +
+        `Response preview: ${snippet}`,
+    );
+  }
+
   const result: ChatCompleteResult = {
-    content: choice?.message?.content ?? '',
+    content,
     model: response.model,
     finishReason: choice?.finish_reason ?? null,
     usage: {

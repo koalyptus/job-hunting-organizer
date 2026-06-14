@@ -1,5 +1,5 @@
 import { text, confirm, isCancel, log as clackLog } from '@clack/prompts';
-import { resolveCampaignRoot, resolveDataRoot, resolveProfilePath } from '../paths.js';
+import { resolveCampaignRoot, resolveDataRoot, resolveProfilePath, ensureRoot } from '../paths.js';
 import { pathExists } from '../fs.js';
 import {
   updateGlobalConfig,
@@ -8,6 +8,7 @@ import {
   loadCampaignConfig,
 } from '../config.js';
 import { validateName } from '../validate.js';
+import { acquireLock } from '../locks.js';
 import type { InitOptions, LlmConfig } from '../types.js';
 import {
   DEFAULT_CAMPAIGN,
@@ -15,7 +16,6 @@ import {
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_MODEL,
-  MSG_CANCELLED,
 } from './constants.js';
 import { validateCvPath } from './cv.js';
 import { promptGithub } from './github.js';
@@ -23,9 +23,12 @@ import { promptLlm, loadExistingConfig } from './llm.js';
 import { promptCalendar } from './calendar.js';
 import { createDirectories } from './directories.js';
 import { handleProfile } from './profile.js';
+import { InitCancelled, InitError } from './errors.js';
 
 /**
  * Run the init wizard. Called from the CLI command.
+ * @throws {InitCancelled} if the user cancels any prompt.
+ * @throws {InitError} on validation or file errors.
  */
 export async function runInit(opts: InitOptions): Promise<void> {
   const name = opts.name ?? DEFAULT_CAMPAIGN;
@@ -33,8 +36,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const validationError = validateName(name);
 
   if (validationError) {
-    process.stderr.write(`error: invalid campaign name "${name}"\nhint: ${validationError}\n`);
-    process.exit(1);
+    throw new InitError(`invalid campaign name "${name}" — hint: ${validationError}`);
   }
 
   const campaignRoot = resolveCampaignRoot(name);
@@ -51,8 +53,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
       });
 
       if (isCancel(overwrite) || !overwrite) {
-        clackLog.info(MSG_CANCELLED);
-        return;
+        throw new InitCancelled();
       }
     }
   }
@@ -68,7 +69,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
     // Campaign config doesn't exist yet on first init.
   }
 
-  let cvPath = opts.cv ?? existingCvPath;
+  const envCvPath = process.env['JHO_CV_PATH'];
+  let cvPath = opts.cv ?? envCvPath;
 
   if (!cvPath && !opts.yes) {
     const input = await text({
@@ -78,11 +80,12 @@ export async function runInit(opts: InitOptions): Promise<void> {
     });
 
     if (isCancel(input)) {
-      clackLog.info(MSG_CANCELLED);
-      return;
+      throw new InitCancelled();
     }
 
     cvPath = input || undefined;
+  } else if (!cvPath && existingCvPath) {
+    cvPath = existingCvPath;
   }
 
   // Validate CV path with retry loop
@@ -113,69 +116,78 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const llm = await promptLlm(opts.yes ?? false, existingConfig);
 
   const hasLlm = llm.baseUrl && llm.model;
-  // apiKey is optional for local LLMs that don't require it
+  // apiKey is optional for local LLMs; fall back to default ('ollama') when empty
   const llmConfig: LlmConfig | undefined = hasLlm
-    ? { baseUrl: llm.baseUrl!, apiKey: llm.apiKey ?? '', model: llm.model! }
+    ? { baseUrl: llm.baseUrl!, apiKey: llm.apiKey || DEFAULT_LLM_API_KEY, model: llm.model! }
     : undefined;
 
   // --- Step 4: Calendar ---
   const calendarProvider = await promptCalendar(opts.yes ?? false, existingConfig);
 
-  // --- Step 5: Create directory structure ---
-  const { appliedDir, kbDir } = await createDirectories(campaignRoot);
-
-  // --- Step 6: Profile ---
-  const profilePath = resolveProfilePath(campaignRoot);
-  await handleProfile({
+  // --- Steps 5-8: Directory creation, config writes, profile (locked) ---
+  // Ensure campaign root exists before locking (proper-lockfile requires the path).
+  await ensureRoot(campaignRoot);
+  await acquireLock(
     campaignRoot,
-    profileFlag: opts.profile,
-    cvPath,
-    githubUser: github.user,
-    githubToken: github.token,
-    llmConfig,
-    nonInteractive: opts.yes ?? false,
-  });
+    async () => {
+      // --- Step 5: Create directory structure ---
+      const { kbDir } = await createDirectories(campaignRoot);
 
-  // --- Step 7: Write global config ---
-  // Deep-merge calendar to preserve outlook credentials on re-init.
-  const currentConfig = loadGlobalConfig();
-  updateGlobalConfig({
-    version: 1,
-    dataRoot,
-    llm: {
-      baseUrl: llm.baseUrl || DEFAULT_LLM_BASE_URL,
-      apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
-      model: llm.model || DEFAULT_LLM_MODEL,
-    },
-    github: {
-      user: github.user ?? '',
-      token: github.token ?? '',
-      repos: [],
-    },
-    calendar: {
-      ...currentConfig.calendar,
-      defaultProvider: calendarProvider as 'ics' | 'outlook' | 'none',
-    },
-    logging: {
-      level: DEFAULT_LOG_LEVEL,
-      file: '',
-      redactPaths: [],
-    },
-  });
+      // --- Step 6: Write configs early (so CV path is saved even if profile build fails) ---
+      const profilePath = resolveProfilePath(campaignRoot);
 
-  // --- Step 8: Write per-campaign config ---
-  updateCampaignConfig(name, {
-    version: 1,
-    profile: { path: profilePath },
-    cv: { path: cvPath ?? '' },
-    applied: { dir: appliedDir },
-    knowledgeBase: { dir: kbDir },
-  });
+      // Deep-merge calendar and logging to preserve user-customised values on re-init.
+      const currentConfig = loadGlobalConfig();
+      updateGlobalConfig({
+        version: 1,
+        dataRoot,
+        llm: {
+          baseUrl: llm.baseUrl || DEFAULT_LLM_BASE_URL,
+          apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
+          model: llm.model || DEFAULT_LLM_MODEL,
+        },
+        github: {
+          user: github.user ?? '',
+          token: github.token ?? '',
+          repos: [],
+        },
+        calendar: {
+          ...currentConfig.calendar,
+          defaultProvider: calendarProvider,
+        },
+        logging: {
+          ...currentConfig.logging,
+          level: DEFAULT_LOG_LEVEL,
+          file: '',
+          redactPaths: currentConfig.logging?.redactPaths ?? [],
+        },
+      });
+
+      updateCampaignConfig(name, {
+        version: 1,
+        profile: { path: profilePath },
+        cv: { path: cvPath ?? '' },
+        knowledgeBase: { dir: kbDir },
+      });
+
+      // --- Step 7: Profile build (may fail — config is already saved) ---
+      await handleProfile({
+        campaignRoot,
+        profileFlag: opts.profile,
+        cvPath,
+        githubUser: github.user,
+        githubToken: github.token,
+        llmConfig,
+        nonInteractive: opts.yes ?? false,
+      });
+    },
+    { retries: 3 },
+  );
 
   // --- Step 9: Summary ---
   clackLog.success(`Campaign "${name}" created`);
   clackLog.info(`
-  Profile: ${profilePath}
+  Profile: ${resolveProfilePath(campaignRoot)}
   ${cvPath ? `CV: ${cvPath}` : 'CV: (not set)'}
   ${github.user ? `GitHub: ${github.user}` : 'GitHub: (not set)'}
   LLM: ${hasLlm ? `${llm.baseUrl} (${llm.model})` : '(not configured)'}

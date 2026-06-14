@@ -5,16 +5,15 @@ import { pathExists, atomicWrite } from '../fs.js';
 import { buildProfile } from '../profile.js';
 import { parseTargetRoles, replaceTargetRoles } from '../target-roles.js';
 import { withSpinner } from '../../cli/spinner.js';
-import { childLogger } from '../logger.js';
 import type { LlmConfig } from '../types.js';
 import { reviewRoles } from './roles.js';
 import { generateSkeletonProfile } from './skeleton.js';
-
-const log = childLogger({ cmd: 'init' });
+import { InitError } from './errors.js';
 
 /**
  * Handle profile creation: copy, auto-build, or skeleton.
  * Returns the profile content that was written.
+ * @throws {InitError} if the profile file is missing or copy fails.
  */
 export async function handleProfile(opts: {
   campaignRoot: string;
@@ -30,15 +29,13 @@ export async function handleProfile(opts: {
   if (opts.profileFlag) {
     // --profile: copy existing file
     if (!(await pathExists(opts.profileFlag))) {
-      clackLog.error(`Profile file not found: ${opts.profileFlag}`);
-      process.exit(1);
+      throw new InitError(`Profile file not found: ${opts.profileFlag}`);
     }
 
     try {
       await copyFile(opts.profileFlag, profilePath);
     } catch (err) {
-      clackLog.error(`Failed to copy profile: ${(err as Error).message}`);
-      process.exit(1);
+      throw new InitError(`Failed to copy profile: ${(err as Error).message}`);
     }
 
     clackLog.success(`Copied profile from ${opts.profileFlag}`);
@@ -46,7 +43,7 @@ export async function handleProfile(opts: {
   }
 
   if (opts.cvPath && opts.llmConfig) {
-    // Auto-build profile
+    // Auto-build profile (no logger — debug logs confuse end users)
     const profile = await withSpinner('Building profile from CV + GitHub...', 'Profile built', () =>
       buildProfile({
         cvPath: opts.cvPath!,
@@ -54,7 +51,6 @@ export async function handleProfile(opts: {
         githubToken: opts.githubToken,
         llmConfig: opts.llmConfig!,
         campaignRoot: opts.campaignRoot,
-        log,
       }),
     );
 

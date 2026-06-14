@@ -16,9 +16,13 @@ describe('promptGithub', () => {
     vi.clearAllMocks();
   });
 
-  it('returns initial user when provided', async () => {
+  it('shows prompt with pre-filled value when defaultUser provided', async () => {
+    const { text } = await import('@clack/prompts');
+    vi.mocked(text).mockResolvedValue('testuser');
+
     const result = await promptGithub('testuser', false, null);
     expect(result).toEqual({ user: 'testuser', token: undefined });
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: 'testuser' }));
   });
 
   it('skips prompts in non-interactive mode', async () => {
@@ -81,19 +85,27 @@ describe('promptGithub', () => {
   });
 
   it('pre-fills username from existing config', async () => {
+    const { text } = await import('@clack/prompts');
+    vi.mocked(text).mockResolvedValue('configuser');
+
     const config = {
       github: { user: 'configuser', token: 'tok', repos: [] },
     } as unknown as GlobalConfig;
     const result = await promptGithub(undefined, false, config);
     expect(result).toEqual({ user: 'configuser', token: undefined });
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: 'configuser' }));
   });
 
   it('CLI flag takes precedence over config', async () => {
+    const { text } = await import('@clack/prompts');
+    vi.mocked(text).mockResolvedValue('cliuser');
+
     const config = {
       github: { user: 'configuser', token: 'tok', repos: [] },
     } as unknown as GlobalConfig;
     const result = await promptGithub('cliuser', false, config);
     expect(result).toEqual({ user: 'cliuser', token: undefined });
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: 'cliuser' }));
   });
 
   it('passes initialValue from config to text prompt when no user in config', async () => {

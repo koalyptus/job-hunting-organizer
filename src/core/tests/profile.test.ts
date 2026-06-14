@@ -307,4 +307,16 @@ describe('buildProfile', () => {
     expect(mockWriteCachedCv).not.toHaveBeenCalled();
     expect(mockWriteCachedGithub).not.toHaveBeenCalled();
   });
+
+  it('throws when LLM returns empty content', async () => {
+    mockChatComplete.mockRejectedValue(new Error('LLM returned empty or unexpected response'));
+
+    await expect(
+      buildProfile({
+        cvPath: '/tmp/cv.txt',
+        githubUser: 'testuser',
+        llmConfig: testLlmConfig,
+      }),
+    ).rejects.toThrow('empty or unexpected response');
+  });
 });

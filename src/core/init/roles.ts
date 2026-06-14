@@ -1,7 +1,7 @@
 import { text, select, isCancel, log as clackLog } from '@clack/prompts';
 import Table from 'cli-table3';
 import type { TargetRole, RoleAction } from '../types.js';
-import { MSG_CANCELLED } from './constants.js';
+import { InitCancelled } from './errors.js';
 
 /**
  * Display target roles in a table.
@@ -24,7 +24,7 @@ function displayRoles(roles: TargetRole[]): void {
 async function editRole(existing: TargetRole | null): Promise<TargetRole | null> {
   const slug = await text({
     message: 'Role slug (lowercase, hyphens):',
-    defaultValue: existing?.slug ?? '',
+    initialValue: existing?.slug ?? '',
     validate: (v) => {
       if (!v) {
         return 'Slug is required';
@@ -40,7 +40,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
 
   const title = await text({
     message: 'Role title:',
-    defaultValue: existing?.title ?? '',
+    initialValue: existing?.title ?? '',
     validate: (v) => (v ? undefined : 'Title is required'),
   });
   if (isCancel(title)) {
@@ -62,7 +62,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
 
   const level = await text({
     message: 'Level:',
-    defaultValue: existing?.level ?? '',
+    initialValue: existing?.level ?? '',
   });
   if (isCancel(level)) {
     return null;
@@ -70,7 +70,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
 
   const domain = await text({
     message: 'Domain:',
-    defaultValue: existing?.domain ?? '',
+    initialValue: existing?.domain ?? '',
   });
   if (isCancel(domain)) {
     return null;
@@ -78,7 +78,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
 
   const stack = await text({
     message: 'Stack:',
-    defaultValue: existing?.stack ?? '',
+    initialValue: existing?.stack ?? '',
   });
   if (isCancel(stack)) {
     return null;
@@ -86,7 +86,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
 
   const workStyle = await text({
     message: 'Work style:',
-    defaultValue: existing?.workStyle ?? '',
+    initialValue: existing?.workStyle ?? '',
   });
   if (isCancel(workStyle)) {
     return null;
@@ -94,7 +94,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
 
   const compensation = await text({
     message: 'Compensation:',
-    defaultValue: existing?.compensation ?? '',
+    initialValue: existing?.compensation ?? '',
   });
   if (isCancel(compensation)) {
     return null;
@@ -102,7 +102,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
 
   const notes = await text({
     message: 'Notes:',
-    defaultValue: existing?.notes ?? '',
+    initialValue: existing?.notes ?? '',
   });
   if (isCancel(notes)) {
     return null;
@@ -113,6 +113,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
 
 /**
  * Review loop for target roles. Returns the final list.
+ * @throws {InitCancelled} if the user cancels the action prompt.
  */
 export async function reviewRoles(roles: TargetRole[]): Promise<TargetRole[]> {
   const current = [...roles];
@@ -132,8 +133,7 @@ export async function reviewRoles(roles: TargetRole[]): Promise<TargetRole[]> {
     });
 
     if (isCancel(action)) {
-      clackLog.info(MSG_CANCELLED);
-      process.exit(0);
+      throw new InitCancelled();
     }
 
     if (action === 'accept') {

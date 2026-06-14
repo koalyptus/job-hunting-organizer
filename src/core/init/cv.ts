@@ -16,7 +16,16 @@ export async function validateCvPath(cvPath: string): Promise<CvValidationResult
     return { ok: false, error: `CV file not found: ${cvPath}` };
   }
 
-  const ext = cvPath.substring(cvPath.lastIndexOf('.')).toLowerCase();
+  const dotIdx = cvPath.lastIndexOf('.');
+  // Guard against hidden files with no extension (e.g. ".hidden")
+  if (dotIdx < 0 || dotIdx === cvPath.length - 1) {
+    return {
+      ok: false,
+      error: `Unsupported CV format. Supported: ${CV_EXTENSIONS.join(', ')}`,
+    };
+  }
+
+  const ext = cvPath.substring(dotIdx).toLowerCase();
 
   if (!CV_EXTENSIONS.includes(ext)) {
     return {

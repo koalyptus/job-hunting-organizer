@@ -124,9 +124,25 @@ describe('chatComplete', () => {
         }),
       );
 
-      const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig);
+      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
+        'empty or unexpected response',
+      );
+    });
 
-      expect(result.content).toBe('');
+    it('throws when choices is missing from response', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(
+        okJson({
+          id: 'chatcmpl-abc',
+          object: 'chat.completion',
+          created: 1700000000,
+          model: 'gpt-4o',
+        }),
+      );
+
+      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
+        'empty or unexpected response',
+      );
     });
 
     it('handles response without usage', async () => {

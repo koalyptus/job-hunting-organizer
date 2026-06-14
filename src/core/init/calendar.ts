@@ -1,21 +1,26 @@
-import { select, isCancel, log as clackLog } from '@clack/prompts';
+import { select, isCancel } from '@clack/prompts';
 import { getConfigValue } from '../config.js';
 import type { GlobalConfig } from '../types.js';
-import { DEFAULT_CALENDAR_PROVIDER, MSG_CANCELLED } from './constants.js';
+import { DEFAULT_CALENDAR_PROVIDER } from './constants.js';
+import { InitCancelled } from './errors.js';
+
+/** Supported calendar provider keys. */
+export type CalendarProvider = 'ics' | 'outlook' | 'none';
 
 /**
  * Prompt for calendar provider selection.
  * Returns the provider key ('ics', 'outlook', or 'none').
+ * @throws {InitCancelled} if the user cancels the prompt.
  */
 export async function promptCalendar(
   nonInteractive: boolean,
   existingConfig: GlobalConfig | null,
-): Promise<string> {
+): Promise<CalendarProvider> {
   const defaultProvider = getConfigValue(
     existingConfig?.calendar?.defaultProvider,
     undefined,
     DEFAULT_CALENDAR_PROVIDER,
-  );
+  ) as CalendarProvider;
 
   if (nonInteractive) {
     return defaultProvider;
@@ -32,8 +37,7 @@ export async function promptCalendar(
   });
 
   if (isCancel(selected)) {
-    clackLog.info(MSG_CANCELLED);
-    process.exit(0);
+    throw new InitCancelled();
   }
 
   return selected;
