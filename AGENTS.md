@@ -25,6 +25,7 @@ The tool stores its state under **two** directories under the user's home: a sma
     ├── default/                               # default campaign (auto-created on first `jho init`)
     │   ├── config.json                        # per-campaign: profile path, CV path, LinkedIn URL, applied dir, KB dir
     │   ├── profile.md                         # candidate profile, target roles
+    │   ├── backups/                           # profile backups on re-init (profile.YYYY-MM-DD_HH-mm-ss.md.bak)
     │   ├── applied/                           # folder per application
     │   │   └── YYYY-MMM-DD-role-co-jobid/
     │   └── knowledge-base/
@@ -132,6 +133,7 @@ jho mcp                 # start MCP server
 | `retro.md`                                          | appends a new section per retro                                               | yes (your notes and checklists inside a section)    | older retro sections stay as you wrote them                     |
 | `prep.md`                                           | rewrites on `--update`; appends topics on `--add`                             | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
 | `profile.md` (the "Target roles" section)           | suggests roles on `jho campaign init` and `profile rebuild`                   | yes (titles, fields, priority)                      | asks before overwriting                                         |
+| `backups/profile.*.md.bak`                          | created on re-init (before profile overwrite)                                 | no (tool-managed backups)                           | previous profile versions preserved; safe to delete manually    |
 | `notes.md`                                          | never                                                                         | yes                                                 | this file is entirely yours — the tool never reads or writes it |
 | `applied/.index.json`                               | regenerated when the tool reads it (to refresh the listing)                   | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
 | `applied/.counters.json`                            | when two applications need the same folder name (so a -2, -3 suffix is added) | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |

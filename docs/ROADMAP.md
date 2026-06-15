@@ -198,7 +198,7 @@ Split into sub-phases for incremental delivery.
   14. Print success summary with next steps
 - Individual `@clack/prompts` calls (`text`, `select`, `password`, `confirm`) for each step; pre-fill all fields from existing config on re-init
 - `--yes` flag: skip all prompts, use flags + env vars + defaults; no flags required — missing CV/LLM → skeleton profile
-- Re-init: if campaign exists, warn and confirm (skip in `--yes` mode); always write global config (shallow merge preserves untouched fields)
+- Re-init: if campaign exists, warn and confirm (skip in `--yes` mode); backup existing `profile.md` to `backups/profile.YYYY-MM-DD_HH-mm-ss.md.bak`; always write global config (shallow merge preserves untouched fields)
 - **Calendar skip**: "None" sets `defaultProvider: 'none'` in config; not permanent — user can re-init or edit config to enable later; calendar commands check provider and show helpful message if `'none'`
 - **Profile graceful degradation**: if CV or LLM missing, create skeleton `profile.md` with `<!-- jho:target-roles -->` marker; user can edit manually or re-run `jho init --cv ./cv.pdf` with LLM configured
 - **`--profile <path>`**: copies existing `profile.md` into campaign, skips build; useful for migration
