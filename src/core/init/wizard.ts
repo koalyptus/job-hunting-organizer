@@ -121,6 +121,13 @@ export async function runInit(opts: InitOptions): Promise<void> {
       break;
     }
 
+    // In --yes mode, silently skip invalid CV instead of prompting
+    if (opts.yes) {
+      clackLog.warn(`CV path invalid in non-interactive mode, skipping: ${result.error}`);
+      cvPath = undefined;
+      break;
+    }
+
     clackLog.warn(result.error ?? 'Invalid CV path');
     const retry = await text({
       message: 'Enter a different CV path, or press Enter to skip:',

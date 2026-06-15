@@ -309,3 +309,13 @@ export function findCampaignFromCwd(cwd: string, dataRoot: string): string | nul
   const first = rel.split(sep)[0];
   return first ?? null;
 }
+
+/**
+ * Resolve the campaign name from an explicit argument or cwd inference.
+ * Lookup order: explicit name → cwd-inferred → `'default'`.
+ * @param explicitName - Name passed via CLI argument (optional).
+ * @returns The resolved campaign name.
+ */
+export function resolveCampaignName(explicitName: string | undefined): string {
+  return explicitName ?? findCampaignFromCwd(process.cwd(), resolveDataRoot()) ?? 'default';
+}

@@ -4,7 +4,7 @@ import { resolveProfilePath } from '../paths.js';
 import { pathExists, atomicWrite } from '../fs.js';
 import { buildProfile } from '../profile.js';
 import { parseTargetRoles, replaceTargetRoles } from '../target-roles.js';
-import { withSpinner } from '../../cli/spinner.js';
+import { withSpinner } from '../spinner.js';
 import type { LlmConfig } from '../types.js';
 import { reviewRoles } from './roles.js';
 import { generateSkeletonProfile } from './skeleton.js';
@@ -45,16 +45,21 @@ export async function handleProfile(opts: {
 
   if (opts.cvPath && opts.llmConfig) {
     // Auto-build profile (no logger — debug logs confuse end users)
-    const profile = await withSpinner('Building profile from CV + GitHub...', 'Profile built', () =>
-      buildProfile({
-        cvPath: opts.cvPath!,
-        githubUser: opts.githubUser ?? '',
-        githubToken: opts.githubToken,
-        linkedinUrl: opts.linkedinUrl,
-        llmConfig: opts.llmConfig!,
-        campaignRoot: opts.campaignRoot,
-      }),
-    );
+    let profile;
+    try {
+      profile = await withSpinner('Building profile from CV + GitHub...', 'Profile built', () =>
+        buildProfile({
+          cvPath: opts.cvPath!,
+          githubUser: opts.githubUser ?? '',
+          githubToken: opts.githubToken,
+          linkedinUrl: opts.linkedinUrl,
+          llmConfig: opts.llmConfig!,
+          campaignRoot: opts.campaignRoot,
+        }),
+      );
+    } catch (err) {
+      throw new InitError(`Profile build failed: ${(err as Error).message ?? 'unknown error'}`);
+    }
 
     let profileContent = profile.content;
 

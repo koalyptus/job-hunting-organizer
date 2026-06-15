@@ -2,22 +2,25 @@ import { Command } from 'commander';
 import { log as clackLog } from '@clack/prompts';
 import { runInit } from '../../core/init/index.js';
 import { InitCancelled, InitError } from '../../core/init/errors.js';
+import { resolveCampaignName } from '../../core/paths.js';
 
 /**
  * `jho init [<name>]` — campaign creation wizard.
  */
 export const initCommand = new Command('init')
   .description('Create a new campaign (wizard)')
-  .argument('[name]', 'campaign name', 'default')
+  .argument('[name]', 'campaign name')
   .option('--cv <path>', 'path to CV file')
   .option('--linkedin <url>', 'LinkedIn profile URL')
   .option('--github <user>', 'GitHub username')
   .option('--profile <path>', 'copy existing profile.md instead of building')
   .option('--yes', 'non-interactive mode (use env vars/defaults)')
-  .action(async function (name: string, opts) {
+  .action(async function (name: string | undefined, opts) {
+    const resolvedName = resolveCampaignName(name);
+
     try {
       await runInit({
-        name,
+        name: resolvedName,
         cv: opts.cv as string | undefined,
         linkedin: opts.linkedin as string | undefined,
         github: opts.github as string | undefined,
@@ -42,12 +45,14 @@ initCommand.addHelpText(
   `
 Create a new campaign with a profile built from your CV and GitHub.
 
+When run from inside a campaign folder, the campaign is inferred automatically.
+
 Examples:
-  $ jho init                  # default campaign (interactive)
-  $ jho init freelance        # named campaign
-  $ jho init --cv ./cv.pdf    # skip CV path prompt
+  $ jho init                                  # infer campaign from cwd, or use "default"
+  $ jho init freelance                        # create/reinit named campaign
+  $ jho init --cv ./cv.pdf                    # skip CV path prompt
   $ jho init --linkedin https://linkedin.com/in/user  # skip LinkedIn URL prompt
   $ jho init --profile ~/existing-profile.md  # use existing profile
-  $ jho init --yes            # non-interactive (uses env vars/defaults)
+  $ jho init --yes                            # non-interactive (uses env vars/defaults)
 `,
 );

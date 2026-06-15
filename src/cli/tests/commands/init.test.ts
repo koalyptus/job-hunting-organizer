@@ -385,8 +385,11 @@ describe('init command', () => {
     vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('test-key');
 
-    // Run should throw because the error propagates through CLI
-    await expect(run()).rejects.toThrow('LLM API error: 401');
+    // CLI catches InitError and writes to stderr with exit code 1
+    const { exitCode, stderr } = await run();
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Profile build failed');
+    expect(stderr).toContain('LLM API error: 401');
 
     // Campaign config should still have the CV path (written before profile build)
     const campaignConfig = JSON.parse(

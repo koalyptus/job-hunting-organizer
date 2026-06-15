@@ -114,7 +114,7 @@ exports[`command --help output > init has consistent help output 1`] = `
 Create a new campaign (wizard)
 
 Arguments:
-  name              campaign name (default: "default")
+  name              campaign name
 
 Options:
   --cv <path>       path to CV file
