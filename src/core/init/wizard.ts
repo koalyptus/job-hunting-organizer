@@ -1,3 +1,5 @@
+import { copyFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { text, confirm, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignRoot, resolveDataRoot, resolveProfilePath, ensureRoot } from '../paths.js';
 import { pathExists } from '../fs.js';
@@ -16,6 +18,7 @@ import {
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_MODEL,
+  JHO_LINKEDIN_URL,
 } from './constants.js';
 import { validateCvPath } from './cv.js';
 import { promptGithub } from './github.js';
@@ -58,17 +61,39 @@ export async function runInit(opts: InitOptions): Promise<void> {
     }
   }
 
-  // --- Step 1: CV path ---
+  // --- Step 1: LinkedIn profile URL ---
   // Load existing configs early for pre-filling prompts.
   const existingConfig = loadExistingConfig();
   let existingCvPath: string | undefined;
+  let existingLinkedinUrl: string | undefined;
   try {
     const campaignConfig = loadCampaignConfig(name);
     existingCvPath = campaignConfig.cv?.path || undefined;
+    existingLinkedinUrl = campaignConfig.linkedin?.url || undefined;
   } catch {
     // Campaign config doesn't exist yet on first init.
   }
 
+  const envLinkedinUrl = process.env[JHO_LINKEDIN_URL];
+  let linkedinUrl = opts.linkedin ?? envLinkedinUrl;
+
+  if (!linkedinUrl && !opts.yes) {
+    const input = await text({
+      message: 'LinkedIn profile URL? (optional, press Enter to skip)',
+      initialValue: existingLinkedinUrl || undefined,
+      placeholder: '',
+    });
+
+    if (isCancel(input)) {
+      throw new InitCancelled();
+    }
+
+    linkedinUrl = input || undefined;
+  } else if (!linkedinUrl && existingLinkedinUrl) {
+    linkedinUrl = existingLinkedinUrl;
+  }
+
+  // --- Step 2: CV path ---
   const envCvPath = process.env['JHO_CV_PATH'];
   let cvPath = opts.cv ?? envCvPath;
 
@@ -167,16 +192,28 @@ export async function runInit(opts: InitOptions): Promise<void> {
         version: 1,
         profile: { path: profilePath },
         cv: { path: cvPath ?? '' },
+        linkedin: { url: linkedinUrl ?? '' },
         knowledgeBase: { dir: kbDir },
       });
 
       // --- Step 7: Profile build (may fail — config is already saved) ---
+      // Backup existing profile before overwriting on re-init.
+      if (await pathExists(profilePath)) {
+        const backupsDir = join(campaignRoot, 'backups');
+        await mkdir(backupsDir, { recursive: true });
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19).replace('T', '_');
+        const backupPath = join(backupsDir, `profile.${ts}.md.bak`);
+        await copyFile(profilePath, backupPath);
+        clackLog.info(`Previous profile backed up to ${backupPath}`);
+      }
+
       await handleProfile({
         campaignRoot,
         profileFlag: opts.profile,
         cvPath,
         githubUser: github.user,
         githubToken: github.token,
+        linkedinUrl,
         llmConfig,
         nonInteractive: opts.yes ?? false,
       });
@@ -188,6 +225,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   clackLog.success(`Campaign "${name}" created`);
   clackLog.info(`
   Profile: ${resolveProfilePath(campaignRoot)}
+  ${linkedinUrl ? `LinkedIn: ${linkedinUrl}` : 'LinkedIn: (not set)'}
   ${cvPath ? `CV: ${cvPath}` : 'CV: (not set)'}
   ${github.user ? `GitHub: ${github.user}` : 'GitHub: (not set)'}
   LLM: ${hasLlm ? `${llm.baseUrl} (${llm.model})` : '(not configured)'}

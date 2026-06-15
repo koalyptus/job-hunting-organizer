@@ -249,6 +249,11 @@ export interface CampaignConfig {
     /** Absolute path to this campaign's CV (`.pdf` / `.docx` / `.md`). */
     path: string;
   };
+  /** Per-campaign LinkedIn profile. */
+  linkedin: {
+    /** LinkedIn profile URL (e.g. `https://linkedin.com/in/username`). */
+    url: string;
+  };
   /** Per-campaign applications directory. */
   applied: {
     /** Absolute path to this campaign's `applied/` directory. */
@@ -406,6 +411,8 @@ export interface InitOptions {
   readonly name?: string;
   /** Path to CV file. */
   readonly cv?: string;
+  /** LinkedIn profile URL. */
+  readonly linkedin?: string;
   /** GitHub username. */
   readonly github?: string;
   /** Path to existing `profile.md` to copy instead of building. */

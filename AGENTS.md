@@ -23,7 +23,7 @@ The tool stores its state under **two** directories under the user's home: a sma
 ~/job-hunting-organizer-data/                  # data root (override with $JHO_DATA)
 └── campaigns/
     ├── default/                               # default campaign (auto-created on first `jho init`)
-    │   ├── config.json                        # per-campaign: profile path, CV path, applied dir, KB dir
+    │   ├── config.json                        # per-campaign: profile path, CV path, LinkedIn URL, applied dir, KB dir
     │   ├── profile.md                         # candidate profile, target roles
     │   ├── applied/                           # folder per application
     │   │   └── YYYY-MMM-DD-role-co-jobid/
@@ -74,10 +74,11 @@ npm run eval         # lightweight LLM eval suite (manual)
 ## CLI commands (planned)
 
 ```
-jho init [<name>] [--cv <path>] [--github <user>] [--profile <path>] [--yes]
-  # wizard: CV path → GitHub user + token → LLM config → calendar →
+jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--yes]
+  # wizard: LinkedIn URL (optional) → CV path → GitHub user + token → LLM config → calendar →
   #   profile build (LLM) → target-roles review → write config + profile.md
   # --yes: skip prompts (uses env vars for LLM; missing CV/LLM → skeleton profile)
+  # --linkedin <url>: skip LinkedIn prompt (JHO_LINKEDIN_URL env var also pre-fills)
   # --profile <path>: copy existing profile.md, skip build
   # Re-init: warns if campaign exists; always merges global config
   # Calendar: ICS / Outlook / None (user can enable later)

@@ -1,7 +1,9 @@
 /**
  * Generate a skeleton profile.md with placeholder structure.
+ * @param githubUser GitHub username (empty string to omit).
+ * @param linkedinUrl LinkedIn profile URL (empty string to omit).
  */
-export function generateSkeletonProfile(githubUser: string): string {
+export function generateSkeletonProfile(githubUser: string, linkedinUrl: string = ''): string {
   return `# Profile — Candidate
 
 ## Contact
@@ -9,7 +11,7 @@ export function generateSkeletonProfile(githubUser: string): string {
 - Email:
 - Phone:
 - Location:
-- LinkedIn:
+- LinkedIn: ${linkedinUrl}
 - GitHub: ${githubUser}
 - Website:
 

@@ -129,7 +129,7 @@ describe('config', () => {
       'utf8',
     );
 
-    expect(() => loadGlobalConfig()).toThrowError(/Config schema v1 expected/);
+    expect(() => loadGlobalConfig()).toThrowError(/migration|schema version/i);
   });
 
   it('rejects a campaign config file with a wrong schema version', async () => {
@@ -141,6 +141,6 @@ describe('config', () => {
       'utf8',
     );
 
-    expect(() => loadCampaignConfig('stale')).toThrowError(/Config schema v1 expected/);
+    expect(() => loadCampaignConfig('stale')).toThrowError(/migration|schema version/i);
   });
 });

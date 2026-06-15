@@ -24,3 +24,6 @@ export const DEFAULT_LOG_LEVEL = 'info';
 
 /** Message displayed when user cancels a prompt. */
 export const MSG_CANCELLED = 'Init cancelled.';
+
+/** Environment variable for LinkedIn profile URL. */
+export const JHO_LINKEDIN_URL = 'JHO_LINKEDIN_URL';

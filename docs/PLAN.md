@@ -527,6 +527,7 @@ The two layers are *additive*, not an override cascade. `jho config` shows the g
   "version": 1,
   "profile": { "path": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/profile.md" },
   "cv":      { "path": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/cv.pdf" },
+  "linkedin": { "url": "https://linkedin.com/in/example" },
   "applied": { "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/applied" },
   "knowledgeBase": {
     "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/knowledge-base"
@@ -608,9 +609,9 @@ The tool is designed for single-user, single-process use today, but the CLI, MCP
 jho                          # top-level overview
 jho --version
 
-jho init [<name>] [--cv <path>] [--github <user>] [--yes]
-  # Wizard prompts: campaign name (defaults to "default") → CV path → GitHub user (+token) →
-  #   LLM baseUrl/key/model → calendar provider → runs profile build →
+jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--yes]
+  # Wizard prompts: campaign name (defaults to "default") → LinkedIn URL (optional) → CV path →
+  #   GitHub user (+token) → LLM baseUrl/key/model → calendar provider → runs profile build →
   #   reviews generated ## Target roles → writes global + campaign config.json + profile.md
 jho config [show|path|edit] [--reveal]
 jho campaign config [show|path|edit] [--reveal]

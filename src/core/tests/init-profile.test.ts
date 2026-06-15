@@ -58,6 +58,7 @@ describe('handleProfile', () => {
       cvPath: undefined,
       githubUser: undefined,
       githubToken: undefined,
+      linkedinUrl: undefined,
       llmConfig: undefined,
       nonInteractive: false,
     });
@@ -72,6 +73,7 @@ describe('handleProfile', () => {
       cvPath: undefined,
       githubUser: 'testuser',
       githubToken: undefined,
+      linkedinUrl: undefined,
       llmConfig: undefined,
       nonInteractive: false,
     });
@@ -87,6 +89,7 @@ describe('handleProfile', () => {
       cvPath: '/path/to/cv.pdf',
       githubUser: 'testuser',
       githubToken: 'token',
+      linkedinUrl: undefined,
       llmConfig: { baseUrl: 'http://localhost:11434/v1', apiKey: 'key', model: 'model' },
       nonInteractive: false,
     });
@@ -101,6 +104,7 @@ describe('handleProfile', () => {
       cvPath: undefined,
       githubUser: 'myuser',
       githubToken: undefined,
+      linkedinUrl: undefined,
       llmConfig: undefined,
       nonInteractive: false,
     });
@@ -115,10 +119,26 @@ describe('handleProfile', () => {
       cvPath: undefined,
       githubUser: undefined,
       githubToken: undefined,
+      linkedinUrl: undefined,
       llmConfig: undefined,
       nonInteractive: false,
     });
 
     expect(result).toContain('GitHub: ');
+  });
+
+  it('includes LinkedIn URL in skeleton profile', async () => {
+    const result = await handleProfile({
+      campaignRoot,
+      profileFlag: undefined,
+      cvPath: undefined,
+      githubUser: undefined,
+      githubToken: undefined,
+      linkedinUrl: 'https://linkedin.com/in/testuser',
+      llmConfig: undefined,
+      nonInteractive: false,
+    });
+
+    expect(result).toContain('LinkedIn: https://linkedin.com/in/testuser');
   });
 });

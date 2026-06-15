@@ -7,7 +7,13 @@ import {
   getDefaultCampaignName,
 } from './paths.js';
 import type { GlobalConfig, CampaignConfig } from './types.js';
-import { GlobalConfigSchema, CampaignConfigSchema } from './config.schema.js';
+import {
+  GlobalConfigSchema,
+  CampaignConfigSchema,
+  CURRENT_GLOBAL_CONFIG_VERSION,
+  CURRENT_CAMPAIGN_CONFIG_VERSION,
+} from './config.schema.js';
+import { GLOBAL_MIGRATIONS, CAMPAIGN_MIGRATIONS, runMigrations } from './config.migrations.js';
 
 // Re-export for callers that import `getDefaultCampaignName` from
 // `./config.js`. The canonical definition lives in `./paths.ts` so
@@ -81,7 +87,7 @@ export function loadGlobalConfig(): GlobalConfig {
   const configHome = resolveConfigHome();
   const configPath = resolveConfigPath(configHome);
 
-  let rawConfig: unknown = {};
+  let rawConfig: Record<string, unknown> = {};
   try {
     const configContent = readFileSync(configPath, 'utf8');
     rawConfig = JSON.parse(configContent);
@@ -92,7 +98,8 @@ export function loadGlobalConfig(): GlobalConfig {
     rawConfig = {};
   }
 
-  const parsed = GlobalConfigSchema.parse(rawConfig);
+  const migrated = runMigrations(rawConfig, GLOBAL_MIGRATIONS, CURRENT_GLOBAL_CONFIG_VERSION);
+  const parsed = GlobalConfigSchema.parse(migrated);
   _globalConfig = parsed;
   return _globalConfig;
 }
@@ -116,7 +123,7 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
   const campaignRoot = resolveCampaignRoot(campaignName);
   const configPath = resolveConfigPath(campaignRoot);
 
-  let rawConfig: unknown = {};
+  let rawConfig: Record<string, unknown> = {};
   try {
     const configContent = readFileSync(configPath, 'utf8');
     rawConfig = JSON.parse(configContent);
@@ -127,7 +134,8 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
     rawConfig = {};
   }
 
-  const parsed = CampaignConfigSchema.parse(rawConfig);
+  const migrated = runMigrations(rawConfig, CAMPAIGN_MIGRATIONS, CURRENT_CAMPAIGN_CONFIG_VERSION);
+  const parsed = CampaignConfigSchema.parse(migrated);
   _campaignConfigCache.set(cacheKey, parsed);
   return parsed;
 }

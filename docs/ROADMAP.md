@@ -183,18 +183,19 @@ Split into sub-phases for incremental delivery.
 
 - `src/cli/commands/init.ts` — full `jho init [<name>]` wizard using `@clack/prompts`:
   1. Prompt for campaign name (default: `default`); skip if arg provided
-  2. Prompt for CV path (optional; empty = skip profile build)
-  3. Prompt for GitHub username (+ optional token, masked); optional
-  4. Prompt for LLM baseUrl, apiKey, model (pre-filled from env vars or existing global config); optional
-  5. Prompt for calendar provider: ICS / Outlook / **None** (skip; user can enable later via re-init or config edit)
-  6. Create campaign directory structure (`applied/`, `knowledge-base/local/cv/`, `knowledge-base/local/github/`)
-  7. **Profile build decision**: if `--profile <path>` → copy file; elif CV + LLM → `buildProfile()` with spinner; else → create skeleton `profile.md` with full structure and placeholder text, warn user
-  8. If profile built: parse `## Target roles` via `parseTargetRoles()`
-  9. **Review loop** (if roles exist and not `--yes`): show roles in a table, user can accept all / edit one / add / delete
-  10. Write `profile.md` to campaign root
-  11. Write global `config.json` (always merge via `updateGlobalConfig`)
-  12. Write per-campaign `config.json`
-  13. Print success summary with next steps
+  2. Prompt for LinkedIn URL (optional; pre-filled from existing config); `--linkedin <url>` skips prompt; `JHO_LINKEDIN_URL` env var pre-fills
+  3. Prompt for CV path (optional; empty = skip profile build)
+  4. Prompt for GitHub username (+ optional token, masked); optional
+  5. Prompt for LLM baseUrl, apiKey, model (pre-filled from env vars or existing global config); optional
+  6. Prompt for calendar provider: ICS / Outlook / **None** (skip; user can enable later via re-init or config edit)
+  7. Create campaign directory structure (`applied/`, `knowledge-base/local/cv/`, `knowledge-base/local/github/`)
+  8. **Profile build decision**: if `--profile <path>` → copy file; elif CV + LLM → `buildProfile()` with spinner; else → create skeleton `profile.md` with full structure and placeholder text, warn user
+  9. If profile built: parse `## Target roles` via `parseTargetRoles()`
+  10. **Review loop** (if roles exist and not `--yes`): show roles in a table, user can accept all / edit one / add / delete
+  11. Write `profile.md` to campaign root
+  12. Write global `config.json` (always merge via `updateGlobalConfig`)
+  13. Write per-campaign `config.json`
+  14. Print success summary with next steps
 - Individual `@clack/prompts` calls (`text`, `select`, `password`, `confirm`) for each step; pre-fill all fields from existing config on re-init
 - `--yes` flag: skip all prompts, use flags + env vars + defaults; no flags required — missing CV/LLM → skeleton profile
 - Re-init: if campaign exists, warn and confirm (skip in `--yes` mode); always write global config (shallow merge preserves untouched fields)

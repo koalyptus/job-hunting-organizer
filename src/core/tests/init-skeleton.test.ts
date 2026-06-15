@@ -12,6 +12,16 @@ describe('generateSkeletonProfile', () => {
     expect(result).toContain('GitHub: ');
   });
 
+  it('includes LinkedIn URL when provided', () => {
+    const result = generateSkeletonProfile('', 'https://linkedin.com/in/testuser');
+    expect(result).toContain('LinkedIn: https://linkedin.com/in/testuser');
+  });
+
+  it('has empty LinkedIn when not provided', () => {
+    const result = generateSkeletonProfile('');
+    expect(result).toContain('LinkedIn: ');
+  });
+
   it('contains all required sections', () => {
     const result = generateSkeletonProfile('');
     expect(result).toContain('# Profile');

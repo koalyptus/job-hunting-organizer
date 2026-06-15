@@ -10,6 +10,7 @@ export const initCommand = new Command('init')
   .description('Create a new campaign (wizard)')
   .argument('[name]', 'campaign name', 'default')
   .option('--cv <path>', 'path to CV file')
+  .option('--linkedin <url>', 'LinkedIn profile URL')
   .option('--github <user>', 'GitHub username')
   .option('--profile <path>', 'copy existing profile.md instead of building')
   .option('--yes', 'non-interactive mode (use env vars/defaults)')
@@ -18,6 +19,7 @@ export const initCommand = new Command('init')
       await runInit({
         name,
         cv: opts.cv as string | undefined,
+        linkedin: opts.linkedin as string | undefined,
         github: opts.github as string | undefined,
         profile: opts.profile as string | undefined,
         yes: opts.yes as boolean | undefined,
@@ -44,6 +46,7 @@ Examples:
   $ jho init                  # default campaign (interactive)
   $ jho init freelance        # named campaign
   $ jho init --cv ./cv.pdf    # skip CV path prompt
+  $ jho init --linkedin https://linkedin.com/in/user  # skip LinkedIn URL prompt
   $ jho init --profile ~/existing-profile.md  # use existing profile
   $ jho init --yes            # non-interactive (uses env vars/defaults)
 `,

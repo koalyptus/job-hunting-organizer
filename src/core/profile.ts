@@ -19,6 +19,8 @@ export interface BuildProfileOptions {
   githubUser: string;
   /** GitHub personal access token (optional, avoids rate limits). */
   githubToken?: string;
+  /** LinkedIn profile URL (optional, included in the generated profile). */
+  linkedinUrl?: string;
   /** LLM configuration (baseUrl, apiKey, model). */
   llmConfig: LlmConfig;
   /**
@@ -73,7 +75,8 @@ async function loadPromptTemplate(): Promise<{ temperature: number; body: string
  * @returns The generated profile content, model, and duration.
  */
 export async function buildProfile(options: BuildProfileOptions): Promise<BuildProfileResult> {
-  const { cvPath, githubUser, githubToken, llmConfig, campaignRoot, signal, log } = options;
+  const { cvPath, githubUser, githubToken, linkedinUrl, llmConfig, campaignRoot, signal, log } =
+    options;
 
   if (log) {
     log.info({ cvPath, githubUser }, 'profile.build.start');
@@ -137,6 +140,7 @@ ${cv.text}
 - Company: ${user.company ?? '(not specified)'}
 - Public repos: ${user.public_repos}
 - Followers: ${user.followers}
+${linkedinUrl ? `- LinkedIn: ${linkedinUrl}` : ''}
 
 ## GitHub Repositories (non-fork, non-archived, sorted by recent push)
 

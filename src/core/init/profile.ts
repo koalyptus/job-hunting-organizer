@@ -21,6 +21,7 @@ export async function handleProfile(opts: {
   cvPath: string | undefined;
   githubUser: string | undefined;
   githubToken: string | undefined;
+  linkedinUrl: string | undefined;
   llmConfig: LlmConfig | undefined;
   nonInteractive: boolean;
 }): Promise<string> {
@@ -49,6 +50,7 @@ export async function handleProfile(opts: {
         cvPath: opts.cvPath!,
         githubUser: opts.githubUser ?? '',
         githubToken: opts.githubToken,
+        linkedinUrl: opts.linkedinUrl,
         llmConfig: opts.llmConfig!,
         campaignRoot: opts.campaignRoot,
       }),
@@ -70,7 +72,7 @@ export async function handleProfile(opts: {
   }
 
   // Skeleton profile
-  const skeleton = generateSkeletonProfile(opts.githubUser ?? '');
+  const skeleton = generateSkeletonProfile(opts.githubUser ?? '', opts.linkedinUrl ?? '');
   await atomicWrite(profilePath, skeleton);
   clackLog.warn('Profile auto-generation skipped (CV or LLM not provided)');
   clackLog.info(`A skeleton profile.md has been created at ${profilePath}`);
