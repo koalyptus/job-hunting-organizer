@@ -2,9 +2,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { promptLlm, loadExistingConfig } from '../init/llm.js';
-import { clearConfigCache } from '../config.js';
-import type { GlobalConfig } from '../types.js';
+import { promptLlm, loadExistingConfig } from '../../init/llm.js';
+import { clearConfigCache } from '../../config.js';
+import type { GlobalConfig } from '../../types.js';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),

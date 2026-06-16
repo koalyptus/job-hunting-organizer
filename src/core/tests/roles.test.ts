@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { reviewRoles } from '../init/roles.js';
+import { reviewRoles } from '../roles.js';
 import type { TargetRole } from '../types.js';
 
 vi.mock('@clack/prompts', () => ({

@@ -1,8 +1,5 @@
-/** Default campaign name when none is specified. */
-export const DEFAULT_CAMPAIGN = 'default';
-
-/** Supported CV file extensions. */
-export const CV_EXTENSIONS = ['.pdf', '.docx', '.md', '.txt'];
+// Re-export generic constants from core/constants.ts
+export { DEFAULT_CAMPAIGN, CV_EXTENSIONS, KB_GITHUB } from '../constants.js';
 
 /** Default LLM base URL (Ollama local). */
 export const DEFAULT_LLM_BASE_URL = 'http://localhost:11434/v1';
@@ -15,9 +12,6 @@ export const DEFAULT_LLM_MODEL = 'llama3.1';
 
 /** Default calendar provider. */
 export const DEFAULT_CALENDAR_PROVIDER = 'ics';
-
-/** Knowledge-base subdirectory names. */
-export const KB_GITHUB = 'github';
 
 /** Default log level for new campaigns. */
 export const DEFAULT_LOG_LEVEL = 'info';

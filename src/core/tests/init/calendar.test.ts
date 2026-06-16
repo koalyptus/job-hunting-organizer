@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { promptCalendar } from '../init/calendar.js';
-import type { GlobalConfig } from '../types.js';
+import { promptCalendar } from '../../init/calendar.js';
+import type { GlobalConfig } from '../../types.js';
 
 vi.mock('@clack/prompts', () => ({
   select: vi.fn(),

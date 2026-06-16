@@ -20,12 +20,12 @@ import {
   DEFAULT_LLM_MODEL,
   JHO_LINKEDIN_URL,
 } from './constants.js';
-import { validateCvPath } from './cv.js';
+import { validateCvPath } from '../cv.js';
 import { promptGithub } from './github.js';
 import { promptLlm, loadExistingConfig } from './llm.js';
 import { promptCalendar } from './calendar.js';
-import { createDirectories } from './directories.js';
-import { handleProfile } from './profile.js';
+import { createDirectories } from '../directories.js';
+import { handleProfile } from '../profile-builder.js';
 import { InitCancelled, InitError } from './errors.js';
 
 /**

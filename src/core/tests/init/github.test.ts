@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { promptGithub } from '../init/github.js';
-import type { GlobalConfig } from '../types.js';
+import { promptGithub } from '../../init/github.js';
+import type { GlobalConfig } from '../../types.js';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),

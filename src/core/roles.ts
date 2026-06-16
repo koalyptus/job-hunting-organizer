@@ -1,7 +1,7 @@
 import { text, select, isCancel, log as clackLog } from '@clack/prompts';
 import Table from 'cli-table3';
-import type { TargetRole, RoleAction } from '../types.js';
-import { InitCancelled } from './errors.js';
+import type { TargetRole, RoleAction } from './types.js';
+import { InitCancelled } from './init/errors.js';
 
 /**
  * Display target roles in a table.

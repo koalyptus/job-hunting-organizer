@@ -1,14 +1,14 @@
 import { copyFile } from 'node:fs/promises';
 import { log as clackLog } from '@clack/prompts';
-import { resolveProfilePath } from '../paths.js';
-import { pathExists, atomicWrite } from '../fs.js';
-import { buildProfile } from '../profile.js';
-import { parseTargetRoles, replaceTargetRoles } from '../target-roles.js';
-import { withSpinner } from '../spinner.js';
-import type { LlmConfig } from '../types.js';
+import { resolveProfilePath } from './paths.js';
+import { pathExists, atomicWrite } from './fs.js';
+import { buildProfile } from './profile.js';
+import { parseTargetRoles, replaceTargetRoles } from './target-roles.js';
+import { withSpinner } from './spinner.js';
+import type { LlmConfig } from './types.js';
 import { reviewRoles } from './roles.js';
-import { generateSkeletonProfile } from './skeleton.js';
-import { InitError } from './errors.js';
+import { generateSkeletonProfile } from './init/skeleton.js';
+import { InitError } from './init/errors.js';
 
 /**
  * Handle profile creation: copy, auto-build, or skeleton.

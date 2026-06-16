@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleProfile } from '../init/profile.js';
+import { handleProfile } from '../../profile-builder.js';
 
 vi.mock('@clack/prompts', () => ({
   log: {
@@ -13,7 +13,7 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-vi.mock('../profile.js', () => ({
+vi.mock('../../profile.js', () => ({
   buildProfile: vi.fn(() =>
     Promise.resolve({
       content:
@@ -24,12 +24,12 @@ vi.mock('../profile.js', () => ({
   ),
 }));
 
-vi.mock('../target-roles.js', () => ({
+vi.mock('../../target-roles.js', () => ({
   parseTargetRoles: vi.fn(() => []),
   replaceTargetRoles: vi.fn((content: string) => content),
 }));
 
-vi.mock('../../cli/spinner.js', () => ({
+vi.mock('../../spinner.js', () => ({
   withSpinner: vi.fn((_msg: string, _success: string, fn: () => Promise<unknown>) => fn()),
 }));
 

@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { resolveKnowledgeBaseDir, ensureRoot } from '../paths.js';
+import { resolveKnowledgeBaseDir, ensureRoot } from './paths.js';
 import { KB_GITHUB } from './constants.js';
 
 /** Paths created during campaign initialization. */

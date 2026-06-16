@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateSkeletonProfile } from '../init/skeleton.js';
+import { generateSkeletonProfile } from '../../init/skeleton.js';
 
 describe('generateSkeletonProfile', () => {
   it('includes GitHub user when provided', () => {

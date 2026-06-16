@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createDirectories } from '../init/directories.js';
+import { createDirectories } from '../directories.js';
 
 describe('createDirectories', () => {
   let testDir: string;
