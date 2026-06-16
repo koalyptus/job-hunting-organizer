@@ -1,11 +1,8 @@
 import { select, isCancel } from '@clack/prompts';
 import { getConfigValue } from '../config.js';
-import type { GlobalConfig } from '../types.js';
+import type { CalendarProvider, GlobalConfig } from '../types.js';
 import { DEFAULT_CALENDAR_PROVIDER } from './constants.js';
 import { InitCancelled } from './errors.js';
-
-/** Supported calendar provider keys. */
-export type CalendarProvider = 'ics' | 'outlook' | 'none';
 
 /**
  * Prompt for calendar provider selection.

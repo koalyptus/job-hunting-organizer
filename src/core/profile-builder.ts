@@ -47,15 +47,19 @@ export async function handleProfile(opts: {
     // Auto-build profile (no logger — debug logs confuse end users)
     let profile;
     try {
-      profile = await withSpinner('Building profile from CV + GitHub...', 'Profile built', () =>
-        buildProfile({
-          cvPath: opts.cvPath!,
-          githubUser: opts.githubUser ?? '',
-          githubToken: opts.githubToken,
-          linkedinUrl: opts.linkedinUrl,
-          llmConfig: opts.llmConfig!,
-          campaignRoot: opts.campaignRoot,
-        }),
+      profile = await withSpinner(
+        'Building profile from CV + GitHub...',
+        'Profile built',
+        () =>
+          buildProfile({
+            cvPath: opts.cvPath!,
+            githubUser: opts.githubUser ?? '',
+            githubToken: opts.githubToken,
+            linkedinUrl: opts.linkedinUrl,
+            llmConfig: opts.llmConfig!,
+            campaignRoot: opts.campaignRoot,
+          }),
+        'Profile build failed',
       );
     } catch (err) {
       throw new InitError(`Profile build failed: ${(err as Error).message ?? 'unknown error'}`);

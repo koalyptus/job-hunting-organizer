@@ -4,7 +4,7 @@ import { DEFAULT_LLM_BASE_URL, DEFAULT_LLM_API_KEY, DEFAULT_LLM_MODEL } from './
 import { InitCancelled } from './errors.js';
 
 /** Result of the LLM prompts step. */
-export interface LlmResult {
+interface LlmResult {
   baseUrl: string | undefined;
   apiKey: string | undefined;
   model: string | undefined;

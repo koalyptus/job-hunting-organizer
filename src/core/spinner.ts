@@ -33,11 +33,16 @@ export function createSpinner(text?: string): Spinner {
  * Run an async function with a spinner. The spinner shows `text` while
  * the function runs, then shows `successText` on completion. On error
  * the spinner stops and the error is re-thrown.
+ * @param failText - Optional custom message for the spinner on error.
+ *   When omitted the raw error message is used. Pass a generic string
+ *   when the caller wraps the error in its own error class to avoid
+ *   printing the same message twice to stderr.
  */
 export async function withSpinner<T>(
   text: string,
   successText: string,
   fn: () => Promise<T>,
+  failText?: string,
 ): Promise<T> {
   const spinner = createSpinner(text).start();
   try {
@@ -45,7 +50,7 @@ export async function withSpinner<T>(
     spinner.succeed(successText);
     return result;
   } catch (error) {
-    spinner.fail(String(error));
+    spinner.fail(failText ?? String(error));
     throw error;
   }
 }

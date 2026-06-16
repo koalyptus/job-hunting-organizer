@@ -8,7 +8,7 @@ import { CV_EXTENSIONS } from './constants.js';
 import type { CvContent, CvFormat } from './types.js';
 
 /** Result of CV path validation. */
-export interface CvValidationResult {
+interface CvValidationResult {
   ok: boolean;
   error?: string;
 }

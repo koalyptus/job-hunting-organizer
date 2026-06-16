@@ -1,5 +1,8 @@
 import type { paths } from '@octokit/openapi-types';
 
+/** Supported calendar providers. */
+export type CalendarProvider = 'ics' | 'outlook' | 'none';
+
 /**
  * Options for {@link atomicWrite}. All fields are optional; defaults are
  * sensible (UTF-8, default file mode, no auto-mkdir).
@@ -208,7 +211,7 @@ export interface GlobalConfig {
   /** Calendar integration (used by `jho interview schedule`). */
   calendar: {
     /** Provider key: `ics` (default) or `outlook`. */
-    defaultProvider: string;
+    defaultProvider: CalendarProvider;
     /** Microsoft Graph settings (only used when `defaultProvider === 'outlook'`). */
     outlook: {
       /** Azure AD tenant id. */

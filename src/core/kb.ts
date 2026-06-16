@@ -9,7 +9,7 @@ import type { CvContent, GithubRepo, GithubUser } from './types.js';
  * Cached GitHub user and repo data, written to
  * `knowledge-base/github/<username>.json`.
  */
-export interface CachedGithubData {
+interface CachedGithubData {
   /** The user profile snapshot. */
   readonly user: GithubUser;
   /** The repos list snapshot (unfiltered — forks/archives included). */

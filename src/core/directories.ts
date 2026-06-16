@@ -3,7 +3,7 @@ import { resolveKnowledgeBaseDir, ensureRoot } from './paths.js';
 import { KB_GITHUB } from './constants.js';
 
 /** Paths created during campaign initialization. */
-export interface CampaignDirs {
+interface CampaignDirs {
   kbDir: string;
 }
 

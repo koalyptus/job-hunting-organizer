@@ -71,7 +71,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
     existingCvPath = campaignConfig.cv?.path || undefined;
     existingLinkedinUrl = campaignConfig.linkedin?.url || undefined;
   } catch {
-    // Campaign config doesn't exist yet on first init.
+    // Campaign directory doesn't exist yet (first init).
   }
 
   const envLinkedinUrl = process.env[JHO_LINKEDIN_URL];

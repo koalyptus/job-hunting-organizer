@@ -3,7 +3,7 @@ import { InitCancelled } from './errors.js';
 import type { GlobalConfig } from '../types.js';
 
 /** Result of the GitHub prompts step. */
-export interface GithubResult {
+interface GithubResult {
   user: string | undefined;
   token: string | undefined;
 }

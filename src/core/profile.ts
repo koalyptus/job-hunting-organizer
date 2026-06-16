@@ -12,7 +12,7 @@ import type { LlmConfig } from './types.js';
 /**
  * Options for {@link buildProfile}.
  */
-export interface BuildProfileOptions {
+interface BuildProfileOptions {
   /** Absolute path to the CV file (PDF, DOCX, TXT, or MD). */
   cvPath: string;
   /** GitHub username. */
@@ -38,7 +38,7 @@ export interface BuildProfileOptions {
 /**
  * Result of a successful {@link buildProfile} call.
  */
-export interface BuildProfileResult {
+interface BuildProfileResult {
   /** The generated profile markdown content (no frontmatter). */
   content: string;
   /** The model identifier that produced the response. */
