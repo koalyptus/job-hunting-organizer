@@ -23,8 +23,9 @@ The tool stores its state under **two** directories under the user's home: a sma
 ~/job-hunting-organizer-data/                  # data root (override with $JHO_DATA)
 └── campaigns/
     ├── default/                               # default campaign (auto-created on first `jho init`)
-    │   ├── config.json                        # per-campaign: profile path, CV path, applied dir, KB dir
+    │   ├── config.json                        # per-campaign: profile path, CV path, LinkedIn URL, applied dir, KB dir
     │   ├── profile.md                         # candidate profile, target roles
+    │   ├── backups/                           # profile backups on re-init (profile.YYYY-MM-DD_HH-mm-ss.md.bak)
     │   ├── applied/                           # folder per application
     │   │   └── YYYY-MMM-DD-role-co-jobid/
     │   └── knowledge-base/
@@ -74,7 +75,15 @@ npm run eval         # lightweight LLM eval suite (manual)
 ## CLI commands (planned)
 
 ```
-jho init [<name>]       # wizard: build profile from CV + GitHub; creates a new campaign
+jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--yes]
+  # wizard: LinkedIn URL (optional) → CV path → GitHub user + token → LLM config → calendar →
+  #   profile build (LLM) → target-roles review → write config + profile.md
+  # --yes: skip prompts (uses env vars for LLM; missing CV/LLM → skeleton profile)
+  # --linkedin <url>: skip LinkedIn prompt (JHO_LINKEDIN_URL env var also pre-fills)
+  # --profile <path>: copy existing profile.md, skip build
+  # Re-init: warns if campaign exists; always merges global config
+  # Calendar: ICS / Outlook / None (user can enable later)
+  # Graceful degradation: if CV or LLM missing, creates skeleton profile.md
 jho config show|path    # show the global config (in the config home); secrets redacted
 jho campaign config show|path  # show the active campaign's config (in the data root); secrets redacted
 jho rename-campaign <new> [--from <old>]  # rename a campaign folder (or `mv` the folder directly)
@@ -124,6 +133,7 @@ jho mcp                 # start MCP server
 | `retro.md`                                          | appends a new section per retro                                               | yes (your notes and checklists inside a section)    | older retro sections stay as you wrote them                     |
 | `prep.md`                                           | rewrites on `--update`; appends topics on `--add`                             | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
 | `profile.md` (the "Target roles" section)           | suggests roles on `jho campaign init` and `profile rebuild`                   | yes (titles, fields, priority)                      | asks before overwriting                                         |
+| `backups/profile.*.md.bak`                          | created on re-init (before profile overwrite)                                 | no (tool-managed backups)                           | previous profile versions preserved; safe to delete manually    |
 | `notes.md`                                          | never                                                                         | yes                                                 | this file is entirely yours — the tool never reads or writes it |
 | `applied/.index.json`                               | regenerated when the tool reads it (to refresh the listing)                   | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
 | `applied/.counters.json`                            | when two applications need the same folder name (so a -2, -3 suffix is added) | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
@@ -185,6 +195,11 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 - ESM only. CommonJS is not supported.
 - Use the `node:` prefix for built-ins (`import { readFileSync } from 'node:fs'`).
+
+### Code style
+
+- Add blank lines before and after `if` statements for human readability. Always use braces (enforced by ESLint `curly` rule), even for short single-line guards.
+- Async functions should always return a value for clarity. Avoid `Promise<void>` where a meaningful return type is possible (e.g. `ensureRoot` returns `boolean` to indicate whether it created the directory).
 
 ### JSDoc
 

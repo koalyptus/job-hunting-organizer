@@ -12,13 +12,15 @@ import type { LlmConfig } from './types.js';
 /**
  * Options for {@link buildProfile}.
  */
-export interface BuildProfileOptions {
+interface BuildProfileOptions {
   /** Absolute path to the CV file (PDF, DOCX, TXT, or MD). */
   cvPath: string;
   /** GitHub username. */
   githubUser: string;
   /** GitHub personal access token (optional, avoids rate limits). */
   githubToken?: string;
+  /** LinkedIn profile URL (optional, included in the generated profile). */
+  linkedinUrl?: string;
   /** LLM configuration (baseUrl, apiKey, model). */
   llmConfig: LlmConfig;
   /**
@@ -36,7 +38,7 @@ export interface BuildProfileOptions {
 /**
  * Result of a successful {@link buildProfile} call.
  */
-export interface BuildProfileResult {
+interface BuildProfileResult {
   /** The generated profile markdown content (no frontmatter). */
   content: string;
   /** The model identifier that produced the response. */
@@ -73,7 +75,8 @@ async function loadPromptTemplate(): Promise<{ temperature: number; body: string
  * @returns The generated profile content, model, and duration.
  */
 export async function buildProfile(options: BuildProfileOptions): Promise<BuildProfileResult> {
-  const { cvPath, githubUser, githubToken, llmConfig, campaignRoot, signal, log } = options;
+  const { cvPath, githubUser, githubToken, linkedinUrl, llmConfig, campaignRoot, signal, log } =
+    options;
 
   if (log) {
     log.info({ cvPath, githubUser }, 'profile.build.start');
@@ -137,6 +140,7 @@ ${cv.text}
 - Company: ${user.company ?? '(not specified)'}
 - Public repos: ${user.public_repos}
 - Followers: ${user.followers}
+${linkedinUrl ? `- LinkedIn: ${linkedinUrl}` : ''}
 
 ## GitHub Repositories (non-fork, non-archived, sorted by recent push)
 
@@ -146,7 +150,7 @@ ${repoSummary || '(no repos found)'}
 
 Generate the profile markdown following the template above.`;
 
-  // 5. Call LLM
+  // 5. Call LLM (throws if empty content)
   const result = await chatComplete(
     [
       { role: 'system', content: systemMessage },

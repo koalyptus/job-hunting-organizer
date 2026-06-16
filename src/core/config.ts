@@ -7,7 +7,13 @@ import {
   getDefaultCampaignName,
 } from './paths.js';
 import type { GlobalConfig, CampaignConfig } from './types.js';
-import { GlobalConfigSchema, CampaignConfigSchema } from './config.schema.js';
+import {
+  GlobalConfigSchema,
+  CampaignConfigSchema,
+  CURRENT_GLOBAL_CONFIG_VERSION,
+  CURRENT_CAMPAIGN_CONFIG_VERSION,
+} from './config.schema.js';
+import { GLOBAL_MIGRATIONS, CAMPAIGN_MIGRATIONS, runMigrations } from './config.migrations.js';
 
 // Re-export for callers that import `getDefaultCampaignName` from
 // `./config.js`. The canonical definition lives in `./paths.ts` so
@@ -31,6 +37,35 @@ let _globalConfig: GlobalConfig | null = null;
  */
 const _campaignConfigCache: Map<string, CampaignConfig> = new Map();
 
+// ── Config resolution helpers ───────────────────────────────────────────────
+
+/**
+ * Resolve a config value with optional env var override and default.
+ * Lookup order: config → env → default.
+ * @param configValue - Value from config (may be undefined).
+ * @param envKey - Environment variable name (optional).
+ * @param defaultValue - Fallback if both config and env are missing.
+ * @returns The resolved value.
+ */
+export function getConfigValue(
+  configValue: string | undefined,
+  envKey: string | undefined,
+  defaultValue: string,
+): string {
+  if (configValue !== undefined && configValue !== '') {
+    return configValue;
+  }
+  if (envKey !== undefined) {
+    const envVal = process.env[envKey];
+    if (envVal !== undefined && envVal !== '') {
+      return envVal;
+    }
+  }
+  return defaultValue;
+}
+
+// ── Config loading ──────────────────────────────────────────────────────────
+
 /**
  * Load and validate the global config from
  * `<configHome>/config.json`. The result is cached
@@ -52,7 +87,7 @@ export function loadGlobalConfig(): GlobalConfig {
   const configHome = resolveConfigHome();
   const configPath = resolveConfigPath(configHome);
 
-  let rawConfig: unknown = {};
+  let rawConfig: Record<string, unknown> = {};
   try {
     const configContent = readFileSync(configPath, 'utf8');
     rawConfig = JSON.parse(configContent);
@@ -63,7 +98,8 @@ export function loadGlobalConfig(): GlobalConfig {
     rawConfig = {};
   }
 
-  const parsed = GlobalConfigSchema.parse(rawConfig);
+  const migrated = runMigrations(rawConfig, GLOBAL_MIGRATIONS, CURRENT_GLOBAL_CONFIG_VERSION);
+  const parsed = GlobalConfigSchema.parse(migrated);
   _globalConfig = parsed;
   return _globalConfig;
 }
@@ -87,7 +123,7 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
   const campaignRoot = resolveCampaignRoot(campaignName);
   const configPath = resolveConfigPath(campaignRoot);
 
-  let rawConfig: unknown = {};
+  let rawConfig: Record<string, unknown> = {};
   try {
     const configContent = readFileSync(configPath, 'utf8');
     rawConfig = JSON.parse(configContent);
@@ -98,7 +134,8 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
     rawConfig = {};
   }
 
-  const parsed = CampaignConfigSchema.parse(rawConfig);
+  const migrated = runMigrations(rawConfig, CAMPAIGN_MIGRATIONS, CURRENT_CAMPAIGN_CONFIG_VERSION);
+  const parsed = CampaignConfigSchema.parse(migrated);
   _campaignConfigCache.set(cacheKey, parsed);
   return parsed;
 }

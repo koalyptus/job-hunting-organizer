@@ -307,4 +307,41 @@ describe('buildProfile', () => {
     expect(mockWriteCachedCv).not.toHaveBeenCalled();
     expect(mockWriteCachedGithub).not.toHaveBeenCalled();
   });
+
+  it('includes LinkedIn URL in user message when provided', async () => {
+    await buildProfile({
+      cvPath: '/tmp/cv.txt',
+      githubUser: 'testuser',
+      linkedinUrl: 'https://linkedin.com/in/testuser',
+      llmConfig: testLlmConfig,
+    });
+
+    const call = mockChatComplete.mock.calls[0]!;
+    const userMessage = (call[0][1] as { role: string; content: string }).content;
+    expect(userMessage).toContain('- LinkedIn: https://linkedin.com/in/testuser');
+  });
+
+  it('omits LinkedIn line from user message when not provided', async () => {
+    await buildProfile({
+      cvPath: '/tmp/cv.txt',
+      githubUser: 'testuser',
+      llmConfig: testLlmConfig,
+    });
+
+    const call = mockChatComplete.mock.calls[0]!;
+    const userMessage = (call[0][1] as { role: string; content: string }).content;
+    expect(userMessage).not.toContain('LinkedIn');
+  });
+
+  it('throws when LLM returns empty content', async () => {
+    mockChatComplete.mockRejectedValue(new Error('LLM returned empty or unexpected response'));
+
+    await expect(
+      buildProfile({
+        cvPath: '/tmp/cv.txt',
+        githubUser: 'testuser',
+        llmConfig: testLlmConfig,
+      }),
+    ).rejects.toThrow('empty or unexpected response');
+  });
 });

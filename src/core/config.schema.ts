@@ -5,17 +5,14 @@ import { resolveDataRoot } from './paths.js';
  * Current version of the global config schema. Bumped on any
  * backwards-incompatible change to the global schema below.
  *
- * **Maintenance story (v0.x, pre-release):** breaking changes are
- * permitted freely. On a bump, users with an old config file see a
- * `ZodError` on the `version` field at load time pointing them at
- * `jho campaign init`. No migration code is shipped yet — deleting
- * the config file and re-running init is the supported recovery.
+ * **How to bump (after v1.0):**
+ * 1. Increment this constant.
+ * 2. Add a migration function in `config.migrations.ts` → `GLOBAL_MIGRATIONS`
+ *    with key = old version number. The function transforms raw JSON vN → vN+1.
+ * 3. Add a test in `tests/config.migrations.test.ts`.
+ * 4. No other code changes needed — `loadGlobalConfig` runs migrations automatically.
  *
- * **Maintenance story (v1.0+):** breaking changes will be paired with
- * a migration step in `core/config.migrations.ts` (`MIGRATIONS: Map<N,
- * (old) => new>`), run in sequence on load, with a `jho doctor --fix`
- * helper to apply them interactively. The constant stays the single
- * source of truth.
+ * **Pre-1.0:** Breaking changes are permitted freely. Users re-init.
  */
 export const CURRENT_GLOBAL_CONFIG_VERSION = 1;
 
@@ -34,10 +31,8 @@ export const CURRENT_CAMPAIGN_CONFIG_VERSION = 1;
 function versionMismatchMessage(expected: number): string {
   return (
     `Config schema v${expected} expected; this file declares a different version. ` +
-    `The tool is pre-release and has no migration path yet — delete the config file ` +
-    `and re-run \`jho campaign init\`. (Pre-1.0 the schema can break freely; from ` +
-    `v1.0 onward, bumping this number requires a migration step in ` +
-    `\`core/config.migrations.ts\`. See CURRENT_GLOBAL_CONFIG_VERSION.)`
+    `This usually means a migration function is missing in config.migrations.ts. ` +
+    `Delete the config file and re-run \`jho init\`, or add the missing migration.`
   );
 }
 
@@ -112,7 +107,7 @@ export const GlobalConfigSchema = z.object({
   /** Calendar integration. ICS is the zero-config default. */
   calendar: z
     .object({
-      defaultProvider: z.enum(['ics', 'outlook']).default('ics'),
+      defaultProvider: z.enum(['ics', 'outlook', 'none']).default('ics'),
       outlook: z
         .object({
           tenantId: z.string().default(''),
@@ -198,6 +193,12 @@ export const CampaignConfigSchema = z.object({
       path: z.string().default(''),
     })
     .default({ path: '' }),
+  /** Per-campaign LinkedIn profile. */
+  linkedin: z
+    .object({
+      url: z.string().default(''),
+    })
+    .default({ url: '' }),
   /** Per-campaign applications directory. */
   applied: z
     .object({

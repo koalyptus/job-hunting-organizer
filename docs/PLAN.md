@@ -527,6 +527,7 @@ The two layers are *additive*, not an override cascade. `jho config` shows the g
   "version": 1,
   "profile": { "path": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/profile.md" },
   "cv":      { "path": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/cv.pdf" },
+  "linkedin": { "url": "https://linkedin.com/in/example" },
   "applied": { "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/applied" },
   "knowledgeBase": {
     "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/knowledge-base"
@@ -608,9 +609,9 @@ The tool is designed for single-user, single-process use today, but the CLI, MCP
 jho                          # top-level overview
 jho --version
 
-jho init [<name>] [--cv <path>] [--github <user>] [--yes]
-  # Wizard prompts: campaign name (defaults to "default") → CV path → GitHub user (+token) →
-  #   LLM baseUrl/key/model → calendar provider → runs profile build →
+jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--yes]
+  # Wizard prompts: campaign name (defaults to "default") → LinkedIn URL (optional) → CV path →
+  #   GitHub user (+token) → LLM baseUrl/key/model → calendar provider → runs profile build →
   #   reviews generated ## Target roles → writes global + campaign config.json + profile.md
 jho config [show|path|edit] [--reveal]
 jho campaign config [show|path|edit] [--reveal]
@@ -1115,6 +1116,9 @@ Each phase is self-contained, buildable, testable. Earlier phases are smaller; p
 | Evals?                                             | Lightweight, manual, not in CI; tiered guard rails.                                                                                                                                                                                        |
 | glama?                                             | `glama.json` from phase 1; full readiness by phase 8.                                                                                                                                                                                      |
 | Phasing?                                           | 10 phases, manual commits at phase boundaries.                                                                                                                                                                                             |
+| Init wizard prompts?                               | `@clack/prompts` with `clack.group()` for sequential flow. All fields pre-filled from existing config on re-init. LLM provider/model lists not maintained — raw text fields for flexibility. Target roles table shown even in `--yes` mode for transparency. Global config always written (shallow merge preserves untouched fields). Existing `profile.md` backed up to `backups/profile.YYYY-MM-DD_HH-mm-ss.md.bak` on re-init. |
+| Init wizard graceful degradation?                  | CV, GitHub, and LLM are all optional in interactive mode. If CV + LLM provided → auto-build profile. If `--profile <path>` → copy existing profile. Otherwise → create skeleton `profile.md` with placeholder structure and `<!-- jho:target-roles -->` marker. User can edit manually or re-run with CV/LLM later. |
+| Calendar skip?                                      | Calendar provider prompt includes "None" option → sets `defaultProvider: 'none'` in config. Not permanent — user can re-run `jho init` or edit config to enable later. Calendar commands check provider and show helpful message if `'none'`. |
 
 ---
 

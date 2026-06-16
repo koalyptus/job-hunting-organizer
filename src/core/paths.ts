@@ -190,11 +190,14 @@ export async function findConfigPath(root: string): Promise<string | null> {
  * Ensure a directory exists, creating it (recursively) if it does not.
  * Used by `jho init` and `jho repair` to bootstrap the data layout.
  * @param root - The absolute path of the directory to ensure.
+ * @returns `true` if the directory was created, `false` if it already existed.
  */
-export async function ensureRoot(root: string): Promise<void> {
+export async function ensureRoot(root: string): Promise<boolean> {
   if (!(await pathExists(root))) {
     await mkdir(root, { recursive: true });
+    return true;
   }
+  return false;
 }
 
 /**
@@ -305,4 +308,14 @@ export function findCampaignFromCwd(cwd: string, dataRoot: string): string | nul
   }
   const first = rel.split(sep)[0];
   return first ?? null;
+}
+
+/**
+ * Resolve the campaign name from an explicit argument or cwd inference.
+ * Lookup order: explicit name → cwd-inferred → `'default'`.
+ * @param explicitName - Name passed via CLI argument (optional).
+ * @returns The resolved campaign name.
+ */
+export function resolveCampaignName(explicitName: string | undefined): string {
+  return explicitName ?? findCampaignFromCwd(process.cwd(), resolveDataRoot()) ?? 'default';
 }

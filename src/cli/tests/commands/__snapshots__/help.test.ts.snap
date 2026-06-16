@@ -114,12 +114,15 @@ exports[`command --help output > init has consistent help output 1`] = `
 Create a new campaign (wizard)
 
 Arguments:
-  name             campaign name (default: "default")
+  name              campaign name
 
 Options:
-  --cv <path>      path to CV file
-  --github <user>  GitHub username
-  -h, --help       display help for command
+  --cv <path>       path to CV file
+  --linkedin <url>  LinkedIn profile URL
+  --github <user>   GitHub username
+  --profile <path>  copy existing profile.md instead of building
+  --yes             non-interactive mode (use env vars/defaults)
+  -h, --help        display help for command
 "
 `;
 

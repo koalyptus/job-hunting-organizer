@@ -1,5 +1,8 @@
 import type { paths } from '@octokit/openapi-types';
 
+/** Supported calendar providers. */
+export type CalendarProvider = 'ics' | 'outlook' | 'none';
+
 /**
  * Options for {@link atomicWrite}. All fields are optional; defaults are
  * sensible (UTF-8, default file mode, no auto-mkdir).
@@ -208,7 +211,7 @@ export interface GlobalConfig {
   /** Calendar integration (used by `jho interview schedule`). */
   calendar: {
     /** Provider key: `ics` (default) or `outlook`. */
-    defaultProvider: string;
+    defaultProvider: CalendarProvider;
     /** Microsoft Graph settings (only used when `defaultProvider === 'outlook'`). */
     outlook: {
       /** Azure AD tenant id. */
@@ -248,6 +251,11 @@ export interface CampaignConfig {
   cv: {
     /** Absolute path to this campaign's CV (`.pdf` / `.docx` / `.md`). */
     path: string;
+  };
+  /** Per-campaign LinkedIn profile. */
+  linkedin: {
+    /** LinkedIn profile URL (e.g. `https://linkedin.com/in/username`). */
+    url: string;
   };
   /** Per-campaign applications directory. */
   applied: {
@@ -391,3 +399,27 @@ export type GithubUser =
 /** GitHub repository returned by `GET /users/{username}/repos`. */
 export type GithubRepo =
   paths['/users/{username}/repos']['get']['responses'][200]['content']['application/json'][number];
+
+/**
+ * Actions available in the target roles review loop during `jho init`.
+ */
+export type RoleAction = 'accept' | 'edit' | 'add' | 'delete';
+
+/**
+ * Options for the `jho init` wizard. Passed from the CLI layer to
+ * {@link runInit} in `core/init.ts`.
+ */
+export interface InitOptions {
+  /** Campaign name (default: `'default'`). */
+  readonly name?: string;
+  /** Path to CV file. */
+  readonly cv?: string;
+  /** LinkedIn profile URL. */
+  readonly linkedin?: string;
+  /** GitHub username. */
+  readonly github?: string;
+  /** Path to existing `profile.md` to copy instead of building. */
+  readonly profile?: string;
+  /** Non-interactive mode: use env vars/defaults, skip all prompts. */
+  readonly yes?: boolean;
+}

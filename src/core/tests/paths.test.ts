@@ -17,6 +17,7 @@ import {
   isWindows,
   resolveAppliedDir,
   resolveCampaignRoot,
+  resolveCampaignName,
   resolveConfigHome,
   resolveConfigPath,
   resolveDataRoot,
@@ -146,14 +147,16 @@ describe('ensureRoot', () => {
   it('creates the directory if it does not exist', async () => {
     const target = join(workDir, 'nested', 'campaign');
     expect(existsSync(target)).toBe(false);
-    await ensureRoot(target);
+    const created = await ensureRoot(target);
+    expect(created).toBe(true);
     expect(existsSync(target)).toBe(true);
   });
 
   it('is a no-op when the directory already exists', async () => {
     const target = join(workDir, 'existing');
     await mkdir(target, { recursive: true });
-    await ensureRoot(target);
+    const created = await ensureRoot(target);
+    expect(created).toBe(false);
     expect(existsSync(target)).toBe(true);
   });
 });
@@ -270,5 +273,76 @@ describe('isUnder', () => {
 
   it('returns false for a distant cousin', () => {
     expect(isUnder('/x/y', '/a/b')).toBe(false);
+  });
+});
+
+describe('resolveCampaignName', () => {
+  let dataRoot: string;
+  let originalJhoData: string | undefined;
+  let originalCwd: string;
+
+  beforeEach(async () => {
+    originalJhoData = process.env['JHO_DATA'];
+    originalCwd = process.cwd();
+    dataRoot = await mkdtemp(join(tmpdir(), 'jho-resolve-campaign-'));
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'), { recursive: true });
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'ft-jobs'), { recursive: true });
+    process.env['JHO_DATA'] = dataRoot;
+  });
+
+  afterEach(async () => {
+    if (originalJhoData === undefined) {
+      delete process.env['JHO_DATA'];
+    } else {
+      process.env['JHO_DATA'] = originalJhoData;
+    }
+    process.chdir(originalCwd);
+    await rm(dataRoot, { recursive: true, force: true });
+  });
+
+  it('returns explicit name when provided', () => {
+    expect(resolveCampaignName('my-campaign')).toBe('my-campaign');
+  });
+
+  it('returns explicit name even when inside a campaign folder', async () => {
+    const cwd = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance');
+    process.chdir(cwd);
+    expect(resolveCampaignName('override')).toBe('override');
+  });
+
+  it('infers campaign from cwd when no explicit name', async () => {
+    const cwd = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance');
+    process.chdir(cwd);
+    expect(resolveCampaignName(undefined)).toBe('freelance');
+  });
+
+  it('infers campaign from subfolder of campaign', async () => {
+    const cwd = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'ft-jobs', 'applied');
+    await mkdir(cwd, { recursive: true });
+    process.chdir(cwd);
+    expect(resolveCampaignName(undefined)).toBe('ft-jobs');
+  });
+
+  it('returns "default" when cwd is outside campaigns dir', () => {
+    process.chdir(tmpdir());
+    expect(resolveCampaignName(undefined)).toBe('default');
+  });
+
+  it('returns "default" when data root has no campaigns folder', async () => {
+    const emptyRoot = await mkdtemp(join(tmpdir(), 'jho-empty-'));
+    try {
+      process.env['JHO_DATA'] = emptyRoot;
+      process.chdir(emptyRoot);
+      expect(resolveCampaignName(undefined)).toBe('default');
+    } finally {
+      process.chdir(originalCwd);
+      await rm(emptyRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('returns "default" when cwd is the campaigns root itself', () => {
+    const campaignsRoot = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME);
+    process.chdir(campaignsRoot);
+    expect(resolveCampaignName(undefined)).toBe('default');
   });
 });
