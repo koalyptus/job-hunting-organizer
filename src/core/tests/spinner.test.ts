@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { withSpinner } from '../spinner.js';
 
 const mockFail = vi.fn();
 const mockSucceed = vi.fn();
@@ -27,14 +28,12 @@ describe('withSpinner', () => {
   });
 
   it('returns the result on success', async () => {
-    const { withSpinner } = await import('../spinner.js');
     const result = await withSpinner('loading', 'done', async () => 42);
     expect(result).toBe(42);
     expect(mockSucceed).toHaveBeenCalledWith('done');
   });
 
   it('re-throws on error', async () => {
-    const { withSpinner } = await import('../spinner.js');
     await expect(
       withSpinner('loading', 'done', async () => {
         throw new Error('boom');
@@ -43,7 +42,6 @@ describe('withSpinner', () => {
   });
 
   it('uses raw error message as fail text by default', async () => {
-    const { withSpinner } = await import('../spinner.js');
     await expect(
       withSpinner('loading', 'done', async () => {
         throw new Error('api error');
@@ -54,7 +52,6 @@ describe('withSpinner', () => {
   });
 
   it('uses custom failText when provided', async () => {
-    const { withSpinner } = await import('../spinner.js');
     await expect(
       withSpinner(
         'loading',

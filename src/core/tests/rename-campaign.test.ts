@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../config.js';
 import { resolveOldName, renameCampaign, RenameError } from '../rename-campaign.js';
 
@@ -96,5 +96,17 @@ describe('renameCampaign', () => {
     await createCampaign('dest');
 
     await expect(renameCampaign('source', 'dest')).rejects.toThrow(RenameError);
+  });
+
+  it('throws RenameError when cwd is inside the campaign being renamed', async () => {
+    const campaignDir = await createCampaign('my-campaign');
+    const originalCwd = process.cwd();
+    vi.spyOn(process, 'cwd').mockReturnValue(join(campaignDir, 'subdir'));
+
+    try {
+      await expect(renameCampaign('my-campaign', 'renamed')).rejects.toThrow(RenameError);
+    } finally {
+      vi.spyOn(process, 'cwd').mockReturnValue(originalCwd);
+    }
   });
 });
