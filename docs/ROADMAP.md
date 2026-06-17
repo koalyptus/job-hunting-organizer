@@ -19,6 +19,13 @@
   - [x] 4c — Init wizard
   - [x] 4d — Tests & polish
 - [ ] **Phase 5** — JD extraction & `track`
+  - [ ] 5a — Data schemas & tracker core
+  - [ ] 5b — JD fetch & extraction
+  - [ ] 5c — Target role suggestion
+  - [ ] 5d — jho track CLI
+  - [ ] 5e — jho list
+  - [ ] 5f — core/stats & jho stats
+  - [ ] 5g — Tests, docs & polish
 - [ ] **Phase 6** — Cover letter & Q&A
 - [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro)
 - [ ] **Phase 8** — MCP server
@@ -222,24 +229,94 @@ Split into sub-phases for incremental delivery.
 
 ## Phase 5 — JD extraction & `track`
 
-**Scope**:
+Split into sub-phases for incremental delivery.
 
-- `core/jobs.ts` — `extractJdFromUrl`, `extractJdFromText`, `extractJobId` (uses `JHO_URL_PATTERNS` env var for custom patterns), `fetchWithFallback`
-- `core/jobs.ts` (extended) — `suggestTargetRole(jd, profile)` — returns the slug of the best-matching target role from the profile's `## Target roles` section
-- `core/tracker.ts` (initial) — `createApplication`, `writeMeta`, `writeJd`, `listApplications`, `findBySlug`
-- `core/slug.ts` (extended) — build full slug from JD + jobId
-- `core/frontmatter.ts` (extended) — meta.md frontmatter schema with zod, including optional `targetRole` field
-- `jho track` (full) — extracts JD, suggests a `targetRole`, prompts user to confirm/override; when the URL has no extractable job ID, prompts user to supply one manually (optional — skip to proceed without); writes `meta.md` with `targetRole: <slug>` set
-- `jho list` (basic) — supports `--role <slug>` filter
-- `applied/.index.json` builder (includes `targetRole`)
-- `core/tracker.ts` (extended) — `meta.md` status enum: `applied | interview | offer | rejected | withdrawn | abandoned | ghosted` (the LLM distinguishes `withdrawn` from `abandoned` based on user input; see PLAN §4 status semantics table)
-- `core/stats.ts` (initial) — pure read of `applied/.index.json` + `meta.md` frontmatter; counts by status / target role / site; funnel; this-month delta; no LLM
-- `jho stats` (basic) — `--role <slug>`, `--since <date|7d|30d|90d>`, `--json`; pretty TTY table by default. See PLAN §8.
-- Tests
+#### 5a — Data schemas & tracker core
 
-**Deliverable**: `jho track https://au.seek.com/job/12345` creates a folder with `meta.md` + `jd.md`, suggests a target role from the profile, and writes `targetRole` to frontmatter. `jho list --role <slug>` filters. `jho stats` prints a campaign snapshot.
+- `src/core/meta-schema.ts` — Zod schema for `meta.md` frontmatter: `slug`, `status` enum (`applied | interview | offer | rejected | withdrawn | abandoned | ghosted | accepted`), `appliedOn`, `title`, `company`, `location`, `site`, `link`, `salary`, `tags[]`, `targetRole`
+- `src/core/tracker.ts` — `createApplication(opts)` (builds slug, creates folder + `meta.md` + `jd.md` with markers, updates index), `updateApplication(slug, patch)` (reads + merges + writes frontmatter), `readApplication(appliedDir, slug)`, `listApplications(appliedDir, filters?)`
+- `src/core/index-builder.ts` — build/update `applied/.index.json` from folder listing; schema: `{slug, status, title, company, site, targetRole, appliedOn, tags[]}[]`
+- `src/core/types.ts` — add `MetaFrontmatter`, `ApplicationStatus`, `ApplicationEntry`, `CreateApplicationInput`, `UpdateApplicationInput`
+- Tests: create app happy path, collision suffix, update status, update multiple fields, index builder round-trip, list with filters
 
-**Commit**: `feat(jobs+tracker): URL fetch, JD extract, application creation, list, target-role, stats`
+**Deliverable**: `createApplication` creates a folder with `meta.md` + `jd.md`. `updateApplication` patches frontmatter. `.index.json` stays in sync.
+
+**Commit**: `feat(tracker): meta schema, application CRUD, index builder`
+
+#### 5b — JD fetch & extraction (single LLM call)
+
+- `src/core/jobs.ts` — `fetchWithFallback(url, log?)` (fetch with user-agent, 15s timeout, redirect follow), `extractJdFromUrl(url, llmConfig, log?)`, `extractJdFromText(text, llmConfig, log?)`
+- `prompts/jd-extract.md` — Tier 1 prompt (temperature 0.1, `response_format: json_object`, 2 retries, 20k char cap); extracts title, company, location, salary, tags, description, requirements in a single call
+- `src/core/types.ts` — add `ExtractedJd`, `FetchResult`
+- `package.json` — add `clipboardy` production dependency (for `--paste`)
+- Tests: fetch mock success/failure, extract from URL/text mock, paste fallback, stdin read, validation retry
+
+**Deliverable**: `jho track --paste` reads clipboard, `jho track --stdin` reads pipe, both extract structured JD via LLM.
+
+**Commit**: `feat(jobs): URL fetch, single-call JD extraction, paste/stdin support`
+
+#### 5c — Target role suggestion
+
+- `src/core/jobs.ts` — add `suggestTargetRole(jd, targetRoles, llmConfig, log?)`
+- `prompts/suggest-role.md` — Tier 1 prompt; input: JD + target roles list; output: `{roleSlug, confidence, reasoning}` zod-validated
+- `src/core/types.ts` — add `RoleSuggestion`
+- Tests: matching role, no match, no roles, skip when `--target-role` flag provided
+
+**Deliverable**: `jho track` suggests a target role from the profile. Skipped when `--target-role` flag is given.
+
+**Commit**: `feat(jobs): LLM-backed target role suggestion from profile`
+
+#### 5d — `jho track` CLI (create + update)
+
+- `src/cli/commands/track.ts` — replace stub with full implementation
+- `src/cli/commands/track/prompts.ts` — interactive: confirm tracking, prompt job ID, confirm update
+- Create flow: fetch → extract → suggest role → show summary → confirm → create app
+- Update flow: `jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X]` → read existing → merge patch → write
+- `--paste` flow: read clipboard → extract from text → same as create
+- `--stdin` flow: read pipe → extract from text → same as create
+- `--yes` mode: skip all prompts, use flags + defaults
+- No-arg: cwd-infer slug for update, error with hint if not in app folder
+- Tests: create from URL, create from paste, create with --yes, update status, update multiple fields, no-arg cwd inference, error on missing slug, jobId prompt
+
+**Deliverable**: `jho track <url>` creates app with JD + suggested role. `jho track <slug> --status interview` updates existing app.
+
+**Commit**: `feat(cli): wire jho track with full pipeline and interactive prompts`
+
+#### 5e — `jho list` implementation
+
+- `src/cli/commands/list.ts` — replace stub with real implementation
+- Reads `.index.json`; default: pretty table via `cli-table3` (Slug, Title, Company, Status, Role, Date)
+- `--json`: machine-readable; `--status`, `--role`, `--tag` filters (AND-combined)
+- Tests: list all, filter by status/role/tag, JSON output, empty result
+
+**Deliverable**: `jho list --role senior-backend-engineer` filters applications.
+
+**Commit**: `feat(cli): implement jho list with filters and JSON output`
+
+#### 5f — `core/stats.ts` & `jho stats`
+
+- `src/core/stats.ts` — `computeStats(appliedDir, options?)`: reads `.index.json` + `meta.md` bodies for `accepted` heuristic
+- `src/cli/commands/stats.ts` — replace stub; pretty table: by status, by role, by site, funnel, this-month delta
+- `src/core/types.ts` — add `CampaignStats`, `StatsOptions`
+- `accepted` count: `offer` apps with `meta.md` body matching `/accepted|joining/i`
+- `--role`, `--since` (ISO or `7d/30d/90d`), `--json` flags
+- Tests: counts, funnel, accepted heuristic, this-month delta, filters, empty campaign, JSON
+
+**Deliverable**: `jho stats` prints campaign snapshot. `jho stats --role X --since 30d` filters.
+
+**Commit**: `feat(stats): campaign snapshot with counts, funnel, and this-month delta`
+
+#### 5g — Tests, docs & polish
+
+- CLI tests: `track.test.ts`, `list.test.ts`, `stats.test.ts`
+- Core tests: `tracker.test.ts`, `jobs.test.ts`, `stats.test.ts`, `index-builder.test.ts`, `meta-schema.test.ts`
+- Snapshot tests for `--help` output of track, list, stats
+- Update `docs/ROADMAP.md` Phase 5 status to checked
+- Update `AGENTS.md` — new modules, updated commands, updated MCP tools list
+
+**Deliverable**: All tests pass (~75 new). Phase 5 complete.
+
+**Commit**: `test: Phase 5 tests, help snapshots, docs update`
 
 ---
 

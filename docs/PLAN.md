@@ -132,7 +132,7 @@ Slugs are intentionally unique but visually noisy. To make the CLI ergonomic, ev
 
 ```yaml
 slug: 2026-Jun-03-SE-Nuage-Technology-Group-92448554
-status: applied | interview | offer | rejected | withdrawn | abandoned | ghosted
+status: applied | interview | offer | rejected | withdrawn | abandoned | ghosted | accepted
 appliedOn: 2026-06-03
 title: Software Engineer
 company: Nuage Technology Group
@@ -153,6 +153,7 @@ Body: user-owned (untouched by tool).
 | `applied`   | Application sent, no response yet.                                         | (none)                                                     |
 | `interview` | ≥ 1 interview scheduled or completed.                                      | (none)                                                     |
 | `offer`     | Offer received; decision pending.                                          | (decision deadline)                                        |
+| `accepted`  | Offer accepted; joining.                                                   | "accepted", "joining", "start date"                        |
 | `rejected`  | They said no (explicit or implicit via rejection email).                   | (rejection reason if known)                                |
 | `withdrawn` | **I formally pulled out** — replied to recruiter, sent a withdrawal email. | "told them I'm no longer interested", "accepted elsewhere" |
 | `abandoned` | **I just stopped** responding / preparing, without a formal withdrawal.    | (no closing email)                                         |
@@ -630,11 +631,14 @@ jho profile show | rebuild [--cv <path>] [--github <user>]
 
 jho track <url> [flags]
 jho track <slug> [flags]
-jho track --paste
-jho track --stdin
+jho track --paste                    # read JD from clipboard (via clipboardy)
+jho track --stdin                   # read JD from stdin pipe
   flags: --status s --salary r --tag t,t --note text
          --target-role <slug>          # set the target role slug (from profile ## Target roles)
          --yes --verbose --quiet
+  # Create mode (URL or --paste/--stdin): fetch JD, extract via LLM, suggest target role,
+  #   prompt to confirm, create application folder with meta.md + jd.md.
+  # Update mode (slug): read existing meta.md, merge flag values, write back.
   # Interactive: when the URL contains no extractable job ID, prompts the user
   #   to supply one manually (optional — skip to proceed without). Skipped in
   #   --yes, --paste, --stdin modes.
@@ -720,7 +724,7 @@ This month (June 2026):
 ```
 
 - `core/stats.ts` — pure read of `applied/.index.json` (Phase 5) and `meta.md` frontmatter. Computes counts, funnel, recency. No LLM.
-- `accepted` count is the only fuzzy part of the funnel: the enum has no `accepted` status (a successful `offer` is recorded as `offer` with a note in the body). v1 counts `accepted` as the number of `offer` apps that have an `accepted:` line in `meta.md` body OR a `meta.md` body line matching `/accepted|joining/i` in the last 30 days. If neither, the row is omitted rather than guessed.
+- `accepted` is a proper status in the enum (set via `jho track <slug> --status accepted`). The funnel counts it directly. Additionally, for apps still in `offer` status, the stats module checks `meta.md` body for `/accepted|joining/i` to count implicit acceptances.
 - Flags: `--role <slug>` (reuses the same filter as `jho list`), `--since <date>` (ISO date or relative: `7d`, `30d`, `90d` — for "this month" deltas), `--json` (machine-readable).
 - `--include-notes` (off by default): triggers one small LLM call to extract "top 3 abandonment reasons" from `meta.md` body and `notes.md` of `abandoned` apps. Useful for retros; opt-in because it costs tokens.
 - Funnel percentages are derived from current state (no historical snapshots in v1) — they reflect "of all apps in this campaign, where they ended up" rather than "conversion rate through each stage." Documented as such in `--help`.
@@ -1044,7 +1048,7 @@ Each `prompts/*.md` has frontmatter `version`, `recommendedModel`, `recommendedT
 | 2   | Core infra (no LLM, no net) | `jho config show`, `jho campaign config show`, `jho ownership` work                       | `feat(core): paths, config, logger, slug, frontmatter, markers`                      |
 | 3   | LLM client & profile        | `buildProfile({ cvPath, githubUser })` returns profile.md (incl. `## Target roles`)       | `feat(profile): CV parsing, GitHub fetch, LLM-backed profile builder`                |
 | 4   | CLI scaffolding & init      | `jho init` is the full onboarding experience                                              | `feat(cli): command surface with full --help, init wizard`                           |
-| 5   | JD extraction & track       | `jho track <url>` records (suggests `targetRole` from profile); `jho list --role` filters | `feat(jobs+tracker): URL fetch, JD extract, application creation, list, target-role` |
+| 5   | JD extraction & track       | `jho track <url>` creates app with JD + suggested role; `jho track <slug>` updates; `jho list --role` filters; `jho stats` prints snapshot | `feat(jobs+tracker): URL fetch, JD extract, application CRUD, list, stats` |
 | 6   | Cover letter & Q&A          | `jho cover-letter`, `jho answer` work                                                     | `feat(generation): cover letter and application Q&A`                                 |
 | 7   | Tracker depth               | interviews, doctor, repair, ownership, show                                               | `feat(tracker): interviews, doctor, repair, ownership table`                         |
 | 8   | MCP server                  | `npx jho-mcp` works in Claude/Cursor; glama-ready                                         | `feat(mcp): full server with tools, resources, prompts, examples`                    |
