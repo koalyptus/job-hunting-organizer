@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { text, select, isCancel } from '@clack/prompts';
 import { reviewRoles } from '../roles.js';
 import type { TargetRole } from '../types.js';
 
@@ -42,7 +43,6 @@ describe('reviewRoles', () => {
   });
 
   it('returns original roles when accept is selected', async () => {
-    const { select } = await import('@clack/prompts');
     vi.mocked(select).mockResolvedValue('accept');
 
     const result = await reviewRoles(mockRoles);
@@ -51,7 +51,6 @@ describe('reviewRoles', () => {
   });
 
   it('adds a new role when add is selected', async () => {
-    const { select, text } = await import('@clack/prompts');
     vi.mocked(select)
       .mockResolvedValueOnce('add')
       .mockResolvedValueOnce('primary')
@@ -73,7 +72,6 @@ describe('reviewRoles', () => {
   });
 
   it('deletes a role when delete is selected', async () => {
-    const { select } = await import('@clack/prompts');
     vi.mocked(select)
       .mockResolvedValueOnce('delete')
       .mockResolvedValueOnce(0) // select first role
@@ -86,7 +84,6 @@ describe('reviewRoles', () => {
   });
 
   it('edits a role when edit is selected', async () => {
-    const { select, text } = await import('@clack/prompts');
     vi.mocked(select)
       .mockResolvedValueOnce('edit')
       .mockResolvedValueOnce(0) // select first role
@@ -111,7 +108,6 @@ describe('reviewRoles', () => {
   });
 
   it('pre-fills existing values when editing a role', async () => {
-    const { select, text } = await import('@clack/prompts');
     vi.mocked(select)
       .mockResolvedValueOnce('edit')
       .mockResolvedValueOnce(0)
@@ -144,7 +140,6 @@ describe('reviewRoles', () => {
   });
 
   it('continues loop on cancel during edit selection', async () => {
-    const { select, isCancel } = await import('@clack/prompts');
     vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
     vi.mocked(isCancel).mockReturnValueOnce(false).mockReturnValueOnce(true); // cancel role selection
 
@@ -157,7 +152,6 @@ describe('reviewRoles', () => {
   });
 
   it('continues loop on cancel during delete selection', async () => {
-    const { select, isCancel } = await import('@clack/prompts');
     vi.mocked(select).mockResolvedValueOnce('delete').mockResolvedValueOnce(0);
     vi.mocked(isCancel).mockReturnValueOnce(false).mockReturnValueOnce(true); // cancel role selection
 

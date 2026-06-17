@@ -7,7 +7,35 @@ import { fetchGithubUser, fetchGithubRepos } from './github.js';
 import { readCachedCv, readCachedGithub, writeCachedCv, writeCachedGithub } from './kb.js';
 import { chatComplete } from './llm.js';
 import { getPackageRoot } from './package.js';
+import { resolveProfilePath } from './paths.js';
 import type { LlmConfig } from './types.js';
+
+/**
+ * Error thrown when the profile file cannot be read.
+ */
+export class ProfileReadError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ProfileReadError';
+  }
+}
+
+/**
+ * Read the profile file for a campaign. Returns the file content as a string.
+ * @param campaignRoot - Absolute path to the campaign root directory.
+ * @returns The profile markdown content.
+ * @throws {ProfileReadError} if the file does not exist or cannot be read.
+ */
+export async function readProfile(campaignRoot: string): Promise<string> {
+  const profilePath = resolveProfilePath(campaignRoot);
+  try {
+    return await readFile(profilePath, 'utf8');
+  } catch {
+    throw new ProfileReadError(
+      `no profile found at ${profilePath}\nRun \`jho init\` to create one.`,
+    );
+  }
+}
 
 /**
  * Options for {@link buildProfile}.

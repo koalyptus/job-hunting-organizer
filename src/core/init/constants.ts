@@ -4,8 +4,8 @@ export { DEFAULT_CAMPAIGN, CV_EXTENSIONS, KB_GITHUB } from '../constants.js';
 /** Default LLM base URL (Ollama local). */
 export const DEFAULT_LLM_BASE_URL = 'http://localhost:11434/v1';
 
-/** Default LLM API key (Ollama default). */
-export const DEFAULT_LLM_API_KEY = 'ollama';
+/** Default LLM API key (placeholder for providers that don't require one). */
+export const DEFAULT_LLM_API_KEY = 'no-key';
 
 /** Default LLM model. */
 export const DEFAULT_LLM_MODEL = 'llama3.1';

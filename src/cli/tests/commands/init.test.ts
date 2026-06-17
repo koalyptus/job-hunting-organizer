@@ -2,6 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { text, select, confirm, password } from '@clack/prompts';
 import { clearConfigCache } from '../../../core/config.js';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
@@ -86,8 +87,6 @@ describe('init command', () => {
   }
 
   it('creates campaign with skeleton profile when no CV or LLM provided', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     // Mock prompts: LinkedIn (empty), CV (empty), GitHub (empty), LLM base (empty), calendar (ics)
     vi.mocked(text)
       .mockResolvedValueOnce('') // LinkedIn URL
@@ -125,8 +124,6 @@ describe('init command', () => {
   });
 
   it('creates named campaign', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     vi.mocked(text)
       .mockResolvedValueOnce('') // LinkedIn
       .mockResolvedValueOnce('') // CV
@@ -151,8 +148,6 @@ describe('init command', () => {
   });
 
   it('pre-fills GitHub username in skeleton profile', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     vi.mocked(text)
       .mockResolvedValueOnce('') // LinkedIn
       .mockResolvedValueOnce('') // CV
@@ -172,8 +167,6 @@ describe('init command', () => {
   });
 
   it('writes calendar none when selected', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     vi.mocked(text)
       .mockResolvedValueOnce('')
       .mockResolvedValueOnce('')
@@ -190,8 +183,6 @@ describe('init command', () => {
   });
 
   it('prompts for confirmation on re-init', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     // Create existing campaign
     const campaignDir = join(testHome, 'data', 'campaigns', 'default');
     await mkdir(join(campaignDir, 'applied'), { recursive: true });
@@ -213,7 +204,6 @@ describe('init command', () => {
   });
 
   it('shows CV prompt on re-init with existing CV path', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
     const cvPath = join(testHome, 'my-cv.pdf');
     await writeFile(cvPath, 'fake cv');
 
@@ -255,8 +245,6 @@ describe('init command', () => {
   });
 
   it('cancels on user decline at re-init', async () => {
-    const { confirm } = await import('@clack/prompts');
-
     // Create existing campaign
     const campaignDir = join(testHome, 'data', 'campaigns', 'default');
     await mkdir(join(campaignDir, 'applied'), { recursive: true });
@@ -268,8 +256,6 @@ describe('init command', () => {
   });
 
   it('backs up existing profile on re-init', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     // Create existing campaign with a profile
     const campaignDir = join(testHome, 'data', 'campaigns', 'default');
     await mkdir(campaignDir, { recursive: true });
@@ -301,7 +287,6 @@ describe('init command', () => {
   });
 
   it('copies profile with --profile flag', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
     const existingProfile = join(testHome, 'existing-profile.md');
     await writeFile(existingProfile, '# My Profile\n\n## Summary\n\nExperienced dev.\n');
 
@@ -326,7 +311,6 @@ describe('init command', () => {
   });
 
   it('errors on missing --profile file', async () => {
-    const { confirm } = await import('@clack/prompts');
     vi.mocked(confirm).mockResolvedValueOnce(false);
 
     const { exitCode, stderr } = await run('--profile', '/nonexistent/profile.md');
@@ -335,7 +319,6 @@ describe('init command', () => {
   });
 
   it('uses JHO_CV_PATH env var when set', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
     const cvPath = join(testHome, 'my-cv.pdf');
     await writeFile(cvPath, 'fake cv');
 
@@ -371,7 +354,6 @@ describe('init command', () => {
       });
     });
 
-    const { text, select, confirm, password } = await import('@clack/prompts');
     const cvPath = join(testHome, 'my-cv.pdf');
     await writeFile(cvPath, 'fake cv');
 
@@ -399,8 +381,6 @@ describe('init command', () => {
   });
 
   it('saves LinkedIn URL from prompt to campaign config', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     vi.mocked(confirm).mockResolvedValueOnce(false);
     vi.mocked(text)
       .mockResolvedValueOnce('https://linkedin.com/in/testuser') // LinkedIn
@@ -421,8 +401,6 @@ describe('init command', () => {
   });
 
   it('pre-fills LinkedIn URL in skeleton profile', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     vi.mocked(confirm).mockResolvedValueOnce(false);
     vi.mocked(text)
       .mockResolvedValueOnce('https://linkedin.com/in/testuser') // LinkedIn
@@ -442,8 +420,6 @@ describe('init command', () => {
   });
 
   it('uses --linkedin flag to skip prompt', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     vi.mocked(confirm).mockResolvedValueOnce(false);
     vi.mocked(text)
       .mockResolvedValueOnce('') // CV
@@ -463,8 +439,6 @@ describe('init command', () => {
   });
 
   it('uses JHO_LINKEDIN_URL env var when set', async () => {
-    const { text, select, confirm, password } = await import('@clack/prompts');
-
     process.env['JHO_LINKEDIN_URL'] = 'https://linkedin.com/in/envuser';
 
     vi.mocked(confirm).mockResolvedValueOnce(false);
@@ -483,5 +457,80 @@ describe('init command', () => {
       await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
     );
     expect(campaignConfig.linkedin.url).toBe('https://linkedin.com/in/envuser');
+  });
+
+  it('trims whitespace from LinkedIn URL prompt', async () => {
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text)
+      .mockResolvedValueOnce('  https://linkedin.com/in/testuser  ') // LinkedIn with whitespace
+      .mockResolvedValueOnce('') // CV
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    await run();
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.linkedin.url).toBe('https://linkedin.com/in/testuser');
+  });
+
+  it('trims whitespace from --linkedin flag', async () => {
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // CV
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    await run('--linkedin', '  https://linkedin.com/in/flaguser  ');
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.linkedin.url).toBe('https://linkedin.com/in/flaguser');
+  });
+
+  it('trims whitespace from JHO_LINKEDIN_URL env var', async () => {
+    process.env['JHO_LINKEDIN_URL'] = '  https://linkedin.com/in/envuser  ';
+
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // CV
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    await run();
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.linkedin.url).toBe('https://linkedin.com/in/envuser');
+  });
+
+  it('trims whitespace from CV path prompt', async () => {
+    const cvPath = join(testHome, 'my-cv.pdf');
+    await writeFile(cvPath, 'fake cv');
+
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // LinkedIn
+      .mockResolvedValueOnce(`  ${cvPath}  `) // CV with whitespace
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    await run();
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.cv.path).toBe(cvPath);
   });
 });

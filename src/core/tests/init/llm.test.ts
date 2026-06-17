@@ -2,6 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { text, password } from '@clack/prompts';
 import { promptLlm, loadExistingConfig } from '../../init/llm.js';
 import { clearConfigCache } from '../../config.js';
 import type { GlobalConfig } from '../../types.js';
@@ -79,13 +80,12 @@ describe('promptLlm', () => {
 
     expect(result).toEqual({
       baseUrl: 'http://localhost:11434/v1',
-      apiKey: 'ollama',
+      apiKey: 'no-key',
       model: 'llama3.1',
     });
   });
 
   it('prompts for LLM config in interactive mode', async () => {
-    const { text, password } = await import('@clack/prompts');
     vi.mocked(text)
       .mockResolvedValueOnce('http://myserver:8080/v1') // base URL
       .mockResolvedValueOnce('mymodel'); // model
@@ -101,7 +101,6 @@ describe('promptLlm', () => {
   });
 
   it('returns undefined values when base URL is empty', async () => {
-    const { text } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('');
 
     const result = await promptLlm(false, null);
@@ -114,7 +113,6 @@ describe('promptLlm', () => {
   });
 
   it('pre-fills from existing config', async () => {
-    const { text } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('');
 
     await promptLlm(false, {
@@ -130,7 +128,6 @@ describe('promptLlm', () => {
   });
 
   it('pre-fills model from existing config', async () => {
-    const { text, password } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce(''); // accept default model
     vi.mocked(password).mockResolvedValue('key');
 
@@ -147,7 +144,6 @@ describe('promptLlm', () => {
   });
 
   it('shows "press Enter to keep existing" when API key exists', async () => {
-    const { text, password } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce('mymodel');
     vi.mocked(password).mockResolvedValue('new-key');
 
@@ -163,7 +159,6 @@ describe('promptLlm', () => {
   });
 
   it('shows plain prompt when no existing API key', async () => {
-    const { text, password } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce('mymodel');
     vi.mocked(password).mockResolvedValue('my-key');
 
@@ -179,7 +174,6 @@ describe('promptLlm', () => {
   });
 
   it('uses existing API key when password prompt is empty', async () => {
-    const { text, password } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce('mymodel');
     vi.mocked(password).mockResolvedValue(''); // press Enter
 
@@ -188,5 +182,51 @@ describe('promptLlm', () => {
     } as GlobalConfig);
 
     expect(result.apiKey).toBe('existing-key');
+  });
+
+  it('skips API key prompt for localhost URLs', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('http://localhost:11434/v1')
+      .mockResolvedValueOnce('mymodel');
+
+    const result = await promptLlm(false, null);
+
+    expect(result).toEqual({
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: undefined,
+      model: 'mymodel',
+    });
+    expect(password).not.toHaveBeenCalled();
+  });
+
+  it('skips API key prompt for 127.0.0.1 URLs', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('http://127.0.0.1:11434/v1')
+      .mockResolvedValueOnce('mymodel');
+
+    const result = await promptLlm(false, null);
+
+    expect(result).toEqual({
+      baseUrl: 'http://127.0.0.1:11434/v1',
+      apiKey: undefined,
+      model: 'mymodel',
+    });
+    expect(password).not.toHaveBeenCalled();
+  });
+
+  it('prompts for API key for non-local URLs', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('https://api.openai.com/v1')
+      .mockResolvedValueOnce('gpt-4');
+    vi.mocked(password).mockResolvedValue('sk-xxx');
+
+    const result = await promptLlm(false, null);
+
+    expect(result).toEqual({
+      baseUrl: 'https://api.openai.com/v1',
+      apiKey: 'sk-xxx',
+      model: 'gpt-4',
+    });
+    expect(password).toHaveBeenCalled();
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { select } from '@clack/prompts';
 import { promptCalendar } from '../../init/calendar.js';
 import type { GlobalConfig } from '../../types.js';
 
@@ -28,7 +29,6 @@ describe('promptCalendar', () => {
   });
 
   it('prompts for provider in interactive mode', async () => {
-    const { select } = await import('@clack/prompts');
     vi.mocked(select).mockResolvedValue('none');
 
     const result = await promptCalendar(false, null);
@@ -38,7 +38,6 @@ describe('promptCalendar', () => {
   });
 
   it('pre-fills from existing config', async () => {
-    const { select } = await import('@clack/prompts');
     vi.mocked(select).mockResolvedValue('outlook');
 
     await promptCalendar(false, {
@@ -49,7 +48,6 @@ describe('promptCalendar', () => {
   });
 
   it('offers ics, outlook, and none options', async () => {
-    const { select } = await import('@clack/prompts');
     vi.mocked(select).mockResolvedValue('ics');
 
     await promptCalendar(false, null);
