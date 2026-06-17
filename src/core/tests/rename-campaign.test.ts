@@ -100,8 +100,10 @@ describe('renameCampaign', () => {
 
   it('throws RenameError when cwd is inside the campaign being renamed', async () => {
     const campaignDir = await createCampaign('my-campaign');
+    const subdir = join(campaignDir, 'subdir');
+    await mkdir(subdir, { recursive: true });
     const originalCwd = process.cwd();
-    vi.spyOn(process, 'cwd').mockReturnValue(join(campaignDir, 'subdir'));
+    vi.spyOn(process, 'cwd').mockReturnValue(subdir);
 
     try {
       await expect(renameCampaign('my-campaign', 'renamed')).rejects.toThrow(RenameError);
