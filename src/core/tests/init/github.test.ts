@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { text, password } from '@clack/prompts';
 import { promptGithub } from '../../init/github.js';
 import type { GlobalConfig } from '../../types.js';
 
@@ -17,7 +18,6 @@ describe('promptGithub', () => {
   });
 
   it('shows prompt with pre-filled value when defaultUser provided', async () => {
-    const { text } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('testuser');
 
     const result = await promptGithub('testuser', false, null);
@@ -26,14 +26,12 @@ describe('promptGithub', () => {
   });
 
   it('skips prompts in non-interactive mode', async () => {
-    const { text } = await import('@clack/prompts');
     const result = await promptGithub(undefined, true, null);
     expect(result).toEqual({ user: undefined, token: undefined });
     expect(text).not.toHaveBeenCalled();
   });
 
   it('prompts for username when not provided', async () => {
-    const { text, password } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('newuser');
     vi.mocked(password).mockResolvedValue('token123');
 
@@ -49,7 +47,6 @@ describe('promptGithub', () => {
   });
 
   it('returns undefined user when empty string entered', async () => {
-    const { text } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('');
 
     const result = await promptGithub(undefined, false, null);
@@ -58,7 +55,6 @@ describe('promptGithub', () => {
   });
 
   it('skips token prompt when no user provided', async () => {
-    const { text, password } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('');
 
     await promptGithub(undefined, false, null);
@@ -67,7 +63,6 @@ describe('promptGithub', () => {
   });
 
   it('skips token prompt in non-interactive mode even with user', async () => {
-    const { password } = await import('@clack/prompts');
     const result = await promptGithub('testuser', true, null);
 
     expect(result).toEqual({ user: 'testuser', token: undefined });
@@ -75,7 +70,6 @@ describe('promptGithub', () => {
   });
 
   it('returns undefined token when empty string entered', async () => {
-    const { text, password } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('user');
     vi.mocked(password).mockResolvedValue('');
 
@@ -85,7 +79,6 @@ describe('promptGithub', () => {
   });
 
   it('pre-fills username from existing config', async () => {
-    const { text } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('configuser');
 
     const config = {
@@ -97,7 +90,6 @@ describe('promptGithub', () => {
   });
 
   it('CLI flag takes precedence over config', async () => {
-    const { text } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('cliuser');
 
     const config = {
@@ -109,7 +101,6 @@ describe('promptGithub', () => {
   });
 
   it('passes initialValue from config to text prompt when no user in config', async () => {
-    const { text } = await import('@clack/prompts');
     vi.mocked(text).mockResolvedValue('');
 
     const config = { github: { user: '', token: '', repos: [] } } as unknown as GlobalConfig;

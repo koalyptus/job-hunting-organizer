@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { performance } from 'node:perf_hooks';
 import type { z } from 'zod';
 import type { Logger } from 'pino';
 import { loadGlobalConfig } from './config.js';
@@ -47,12 +48,12 @@ export async function chatComplete(
 
   const client = new OpenAI({
     baseURL: normaliseBaseUrl(config.baseUrl),
-    apiKey: config.apiKey || 'ollama',
+    apiKey: config.apiKey || 'no-key',
     maxRetries: 0,
     timeout,
   });
 
-  const start = Date.now();
+  const start = performance.now();
 
   const response = await client.chat.completions.create(
     {
@@ -65,7 +66,7 @@ export async function chatComplete(
     { signal: options.signal },
   );
 
-  const durationMs = Date.now() - start;
+  const durationMs = Math.round(performance.now() - start);
 
   const choice = response.choices?.[0];
   const content = choice?.message?.content ?? '';

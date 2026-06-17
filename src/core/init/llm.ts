@@ -24,6 +24,24 @@ export function loadExistingConfig(): ReturnType<typeof loadGlobalConfig> | null
 }
 
 /**
+ * Check if a URL points to a local machine. Local LLM providers
+ * (Ollama, LM Studio, etc.) don't require an API key.
+ */
+function isLocalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.hostname === 'localhost' ||
+      parsed.hostname === '127.0.0.1' ||
+      parsed.hostname === '::1' ||
+      parsed.hostname.endsWith('.localhost')
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Prompt for LLM configuration (base URL, API key, model).
  * In non-interactive mode, uses env vars or defaults.
  * @throws {InitCancelled} if the user cancels any prompt.
@@ -67,6 +85,23 @@ export async function promptLlm(
 
   if (!llmBaseUrl) {
     return { baseUrl: undefined, apiKey: undefined, model: undefined };
+  }
+
+  // Local LLM providers (Ollama, LM Studio, etc.) don't need an API key.
+  if (isLocalUrl(llmBaseUrl)) {
+    const modelInput = await text({
+      message: 'LLM model?',
+      initialValue: existingConfig?.llm?.model || undefined,
+      placeholder: defaultModel,
+      defaultValue: defaultModel,
+    });
+
+    if (isCancel(modelInput)) {
+      throw new InitCancelled();
+    }
+
+    const llmModel = modelInput || undefined;
+    return { baseUrl: llmBaseUrl, apiKey: undefined, model: llmModel };
   }
 
   const hasExistingKey = Boolean(existingConfig?.llm?.apiKey);

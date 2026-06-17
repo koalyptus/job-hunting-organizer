@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { readFileSync } from 'node:fs';
-import { resolveCampaignRoot, resolveProfilePath } from '../../core/paths.js';
+import { resolveCampaignRoot } from '../../core/paths.js';
+import { readProfile, ProfileReadError } from '../../core/profile.js';
 import type { GlobalOpts } from '../options.js';
 
 /**
@@ -8,18 +8,18 @@ import type { GlobalOpts } from '../options.js';
  */
 const showCommand = new Command('show')
   .description('Print the current profile')
-  .action(function () {
+  .action(async function () {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
     const campaign = globals?.campaign ?? 'default';
-    const profilePath = resolveProfilePath(resolveCampaignRoot(campaign));
     try {
-      const content = readFileSync(profilePath, 'utf8');
+      const content = await readProfile(resolveCampaignRoot(campaign));
       process.stdout.write(content);
-    } catch {
-      process.stderr.write(
-        `jho profile show: no profile found at ${profilePath}\nRun \`jho init\` to create one.\n`,
-      );
-      process.exit(1);
+    } catch (err) {
+      if (err instanceof ProfileReadError) {
+        process.stderr.write(`jho profile show: ${err.message}\n`);
+        process.exit(1);
+      }
+      throw err;
     }
   });
 

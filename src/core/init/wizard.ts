@@ -75,7 +75,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   }
 
   const envLinkedinUrl = process.env[JHO_LINKEDIN_URL];
-  let linkedinUrl = opts.linkedin ?? envLinkedinUrl;
+  let linkedinUrl = (opts.linkedin ?? envLinkedinUrl)?.trim() || undefined;
 
   if (!linkedinUrl && !opts.yes) {
     const input = await text({
@@ -88,14 +88,14 @@ export async function runInit(opts: InitOptions): Promise<void> {
       throw new InitCancelled();
     }
 
-    linkedinUrl = input || undefined;
+    linkedinUrl = input?.trim() || undefined;
   } else if (!linkedinUrl && existingLinkedinUrl) {
     linkedinUrl = existingLinkedinUrl;
   }
 
   // --- Step 2: CV path ---
   const envCvPath = process.env['JHO_CV_PATH'];
-  let cvPath = opts.cv ?? envCvPath;
+  let cvPath = (opts.cv ?? envCvPath)?.trim() || undefined;
 
   if (!cvPath && !opts.yes) {
     const input = await text({
@@ -108,7 +108,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
       throw new InitCancelled();
     }
 
-    cvPath = input || undefined;
+    cvPath = input?.trim() || undefined;
   } else if (!cvPath && existingCvPath) {
     cvPath = existingCvPath;
   }
@@ -137,7 +137,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
     if (isCancel(retry) || retry === '') {
       cvPath = undefined;
     } else {
-      cvPath = retry;
+      cvPath = retry.trim();
     }
   }
 
@@ -148,7 +148,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const llm = await promptLlm(opts.yes ?? false, existingConfig);
 
   const hasLlm = llm.baseUrl && llm.model;
-  // apiKey is optional for local LLMs; fall back to default ('ollama') when empty
+  // apiKey is optional for local LLMs; fall back to default ('no-key') when empty
   const llmConfig: LlmConfig | undefined = hasLlm
     ? { baseUrl: llm.baseUrl!, apiKey: llm.apiKey || DEFAULT_LLM_API_KEY, model: llm.model! }
     : undefined;

@@ -85,12 +85,12 @@ export const GlobalConfigSchema = z.object({
   llm: z
     .object({
       baseUrl: z.string().url().default('http://localhost:11434/v1'),
-      apiKey: z.string().default('ollama'),
+      apiKey: z.string().default('no-key'),
       model: z.string().default('llama3.1'),
     })
     .default({
       baseUrl: 'http://localhost:11434/v1',
-      apiKey: 'ollama',
+      apiKey: 'no-key',
       model: 'llama3.1',
     }),
   /**

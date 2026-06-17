@@ -70,7 +70,7 @@ describe('config', () => {
     expect(config.version).toBe(1);
     expect(config.llm.baseUrl).toBe('http://localhost:11434/v1');
     expect(config.llm.model).toBe('llama3.1');
-    expect(config.llm.apiKey).toBe('ollama');
+    expect(config.llm.apiKey).toBe('no-key');
   });
 
   it('respects JHO_DATA environment variable', () => {
