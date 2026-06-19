@@ -19,7 +19,7 @@
   - [x] 4c — Init wizard
   - [x] 4d — Tests & polish
 - [ ] **Phase 5** — JD extraction & `track`
-  - [ ] 5a — Data schemas & tracker core
+  - [ ] 5a — Data schemas & applications core
   - [ ] 5b — JD fetch & extraction
   - [ ] 5c — Target role suggestion
   - [ ] 5d — jho track CLI
@@ -231,17 +231,17 @@ Split into sub-phases for incremental delivery.
 
 Split into sub-phases for incremental delivery.
 
-#### 5a — Data schemas & tracker core
+#### 5a — Data schemas & applications core
 
 - `src/core/meta-schema.ts` — Zod schema for `meta.md` frontmatter: `slug`, `status` enum (`applied | interview | offer | rejected | withdrawn | abandoned | ghosted | accepted`), `appliedOn`, `title`, `company`, `location`, `site`, `link`, `salary`, `tags[]`, `targetRole`
-- `src/core/tracker.ts` — `createApplication(opts)` (builds slug, creates folder + `meta.md` + `jd.md` with markers, updates index), `updateApplication(slug, patch)` (reads + merges + writes frontmatter), `readApplication(appliedDir, slug)`, `listApplications(appliedDir, filters?)`
+- `src/core/applications.ts` — `createApplication(opts)` (builds slug, creates folder + `meta.md` + `jd.md` with markers, updates index), `updateApplication(slug, patch)` (reads + merges + writes frontmatter), `readApplication(appliedDir, slug)`, `listApplications(appliedDir, filters?)`
 - `src/core/index-builder.ts` — build/update `applied/.index.json` from folder listing; schema: `{slug, status, title, company, site, targetRole, appliedOn, tags[]}[]`
 - `src/core/types.ts` — add `MetaFrontmatter`, `ApplicationStatus`, `ApplicationEntry`, `CreateApplicationInput`, `UpdateApplicationInput`
 - Tests: create app happy path, collision suffix, update status, update multiple fields, index builder round-trip, list with filters
 
 **Deliverable**: `createApplication` creates a folder with `meta.md` + `jd.md`. `updateApplication` patches frontmatter. `.index.json` stays in sync.
 
-**Commit**: `feat(tracker): meta schema, application CRUD, index builder`
+**Commit**: `feat(applications): meta schema, application CRUD, index builder`
 
 #### 5b — JD fetch & extraction (single LLM call)
 
@@ -309,7 +309,7 @@ Split into sub-phases for incremental delivery.
 #### 5g — Tests, docs & polish
 
 - CLI tests: `track.test.ts`, `list.test.ts`, `stats.test.ts`
-- Core tests: `tracker.test.ts`, `jobs.test.ts`, `stats.test.ts`, `index-builder.test.ts`, `meta-schema.test.ts`
+- Core tests: `applications.test.ts`, `jobs.test.ts`, `stats.test.ts`, `index-builder.test.ts`, `meta-schema.test.ts`
 - Snapshot tests for `--help` output of track, list, stats
 - Update `docs/ROADMAP.md` Phase 5 status to checked
 - Update `AGENTS.md` — new modules, updated commands, updated MCP tools list
@@ -370,7 +370,7 @@ Split into sub-phases for incremental delivery.
 
 **Deliverable**: Full CLI tracker workflow including post-mortem retro for failed interviews with LLM-generated learning plans, cross-app aggregation, and pre-interview prep plans generated from JD + profile. Real job-hunting campaign usable from CLI only.
 
-**Commit**: `feat(tracker): interviews, doctor, repair, ownership, retro, prep`
+**Commit**: `feat(applications): interviews, doctor, repair, ownership, retro, prep`
 
 ---
 

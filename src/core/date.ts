@@ -37,6 +37,36 @@ export function formatDateUtc(d: Date): string {
 }
 
 /**
+ * Format a `Date` as `YYYY-MM-DD` (ISO 8601 date-only) in UTC.
+ * @param d - The date to format.
+ * @returns A 10-character string like `2026-06-03`.
+ */
+export function toIsoDate(d: Date): string {
+  return d.toISOString().split('T')[0]!;
+}
+
+/**
+ * Return today's date as `YYYY-MM-DD` in UTC.
+ * @returns A 10-character string like `2026-06-03`.
+ */
+export function todayIso(): string {
+  return toIsoDate(new Date());
+}
+
+/**
+ * Format a `Date` or ISO string as `YYYY-MM-DD` in UTC.
+ * @param input - A Date or ISO date/datetime string.
+ * @returns A 10-character string like `2026-06-03`.
+ */
+export function toIsoDateString(input: Date | string): string {
+  if (typeof input === 'string') {
+    const tIdx = input.indexOf('T');
+    return tIdx === -1 ? input : input.slice(0, tIdx);
+  }
+  return toIsoDate(input);
+}
+
+/**
  * Parse a `Date` from a `Date` instance, an ISO 8601 string, or `undefined`
  * (meaning "now"). Strings are parsed with the platform `Date` constructor,
  * which accepts ISO 8601 and a few other common formats.

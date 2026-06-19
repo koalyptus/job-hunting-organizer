@@ -41,8 +41,8 @@ export async function readProfile(campaignRoot: string): Promise<string> {
  * Options for {@link buildProfile}.
  */
 interface BuildProfileOptions {
-  /** Absolute path to the CV file (PDF, DOCX, TXT, or MD). */
-  cvPath: string;
+  /** Absolute path to the CV file (PDF, DOCX, TXT, or MD). Optional — profile can be built from GitHub alone. */
+  cvPath?: string;
   /** GitHub username. */
   githubUser: string;
   /** GitHub personal access token (optional, avoids rate limits). */
@@ -112,13 +112,13 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
 
   // 1. Read CV (cache-first when campaignRoot is provided)
   let cv;
-  if (campaignRoot) {
-    cv = await readCachedCv(campaignRoot, log);
-  }
-  if (!cv) {
-    cv = await readCv(cvPath, log);
-    if (campaignRoot) {
-      await writeCachedCv(campaignRoot, cv, log);
+  if (cvPath) {
+    cv = campaignRoot ? await readCachedCv(campaignRoot, log) : undefined;
+    if (!cv) {
+      cv = await readCv(cvPath, log);
+      if (campaignRoot) {
+        await writeCachedCv(campaignRoot, cv, log);
+      }
     }
   }
 
@@ -157,7 +157,7 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
 
   const userMessage = `## CV Text
 
-${cv.text}
+${cv ? cv.text : '(not provided)'}
 
 ## GitHub Profile
 

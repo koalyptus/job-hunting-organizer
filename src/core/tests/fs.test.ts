@@ -37,6 +37,12 @@ describe('atomicWrite', () => {
     await rm(workDir, { recursive: true, force: true });
   });
 
+  it('returns true on success', async () => {
+    const target = join(workDir, 'file.txt');
+    const result = await atomicWrite(target, 'hello');
+    expect(result).toBe(true);
+  });
+
   it('creates parent directories by default', async () => {
     const target = join(workDir, 'deep', 'nested', 'file.txt');
     await atomicWrite(target, 'hello');
@@ -66,9 +72,17 @@ describe('atomicWrite', () => {
     expect(files).toEqual(['clean.txt']);
   });
 
-  it('respects ensureDir: false', async () => {
+  it('returns false when ensureDir is false and parent missing', async () => {
     const target = join(workDir, 'no-such-dir', 'file.txt');
-    await expect(atomicWrite(target, 'x', { ensureDir: false })).rejects.toThrow();
+    const result = await atomicWrite(target, 'x', { ensureDir: false });
+    expect(result).toBe(false);
+  });
+
+  it('returns false when writing to an invalid path', async () => {
+    const blocker = join(workDir, 'blocker');
+    await writeFile(blocker, 'x');
+    const result = await atomicWrite(join(blocker, 'child', 'file.txt'), 'x');
+    expect(result).toBe(false);
   });
 });
 

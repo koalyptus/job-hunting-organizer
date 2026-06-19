@@ -47,7 +47,7 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │   ├── mcp/            # MCP server
 │   └── core/           # shared business logic (no I/O boundaries)
 │       ├── types.ts    # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
-│       ├── tracker.ts  # application CRUD: create, update, read, list; writes meta.md + jd.md + index
+│   ├── applications.ts  # application CRUD: create, update, read, list; writes meta.md + jd.md + index
 │       ├── jobs.ts     # JD fetch, extraction (single LLM call), target-role suggestion
 │       ├── stats.ts    # campaign snapshot: counts by status/role/site, funnel, this-month delta
 │       ├── index-builder.ts  # build/update applied/.index.json from folder listing
@@ -130,11 +130,11 @@ jho mcp                 # start MCP server
 
 ## Prompts (versioned LLM templates)
 
-| Prompt | Phase | Purpose |
-|---|---|---|
-| `profile-build.md` | 3d | Generate profile.md from CV + GitHub |
-| `jd-extract.md` | 5b | Extract structured JD from raw text (Tier 1) |
-| `suggest-role.md` | 5c | Suggest best-matching target role from profile |
+| Prompt             | Phase | Purpose                                        |
+| ------------------ | ----- | ---------------------------------------------- |
+| `profile-build.md` | 3d    | Generate profile.md from CV + GitHub           |
+| `jd-extract.md`    | 5b    | Extract structured JD from raw text (Tier 1)   |
+| `suggest-role.md`  | 5c    | Suggest best-matching target role from profile |
 
 ## File ownership model
 

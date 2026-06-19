@@ -1,6 +1,7 @@
 import { copyFile, mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
+import { getRootLogger } from './logger.js';
 import type { AtomicWriteOptions, WithBackupOptions } from './types.js';
 
 /**
@@ -50,19 +51,26 @@ async function ensureParentDir(target: string, ensureDir: boolean): Promise<void
  *   encoding; `Uint8Array` is written verbatim.
  * @param options - Encoding, file mode, and whether to auto-create
  *   the parent directory.
+ * @returns `true` on success, `false` on failure.
  */
 export async function atomicWrite(
   target: string,
   content: string | Uint8Array,
   options: AtomicWriteOptions = {},
-): Promise<void> {
+): Promise<boolean> {
   const { encoding = 'utf8', mode, ensureDir = true } = options;
-  const resolved = isAbsolute(target) ? target : resolve(target);
-  await ensureParentDir(resolved, ensureDir);
+  try {
+    const resolved = isAbsolute(target) ? target : resolve(target);
+    await ensureParentDir(resolved, ensureDir);
 
-  const tmp = generateTempName(resolved);
-  await writeFile(tmp, content, { encoding, mode });
-  await rename(tmp, resolved);
+    const tmp = generateTempName(resolved);
+    await writeFile(tmp, content, { encoding, mode });
+    await rename(tmp, resolved);
+    return true;
+  } catch (err) {
+    getRootLogger().debug({ err, target }, 'atomicWrite failed');
+    return false;
+  }
 }
 
 /**

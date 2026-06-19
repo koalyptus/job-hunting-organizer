@@ -259,6 +259,18 @@ describe('buildProfile', () => {
     expect(mockFetchGithubRepos).not.toHaveBeenCalled();
   });
 
+  it('skips CV reading when cvPath is undefined', async () => {
+    await buildProfile({
+      githubUser: 'testuser',
+      llmConfig: testLlmConfig,
+    });
+
+    expect(mockReadCv).not.toHaveBeenCalled();
+    const call = mockChatComplete.mock.calls[0]!;
+    const userMessage = (call[0][1] as { role: string; content: string }).content;
+    expect(userMessage).toContain('(not provided)');
+  });
+
   it('writes cache after fresh CV fetch', async () => {
     mockReadCachedCv.mockResolvedValue(null);
 

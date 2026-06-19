@@ -43,16 +43,16 @@ export async function handleProfile(opts: {
     return '(copied)';
   }
 
-  if (opts.cvPath && opts.llmConfig) {
+  if (opts.llmConfig) {
     // Auto-build profile (no logger — debug logs confuse end users)
     let profile;
     try {
       profile = await withSpinner(
-        'Building profile from CV + GitHub...',
+        'Building profile...',
         'Profile built',
         () =>
           buildProfile({
-            cvPath: opts.cvPath!,
+            cvPath: opts.cvPath,
             githubUser: opts.githubUser ?? '',
             githubToken: opts.githubToken,
             linkedinUrl: opts.linkedinUrl,
@@ -75,18 +75,24 @@ export async function handleProfile(opts: {
       profileContent = replaceTargetRoles(profileContent, reviewed);
     }
 
-    await atomicWrite(profilePath, profileContent);
+    const written = await atomicWrite(profilePath, profileContent);
+    if (!written) {
+      throw new Error(`failed to write profile to ${profilePath}`);
+    }
     clackLog.success('Profile written');
     return profileContent;
   }
 
   // Skeleton profile
   const skeleton = generateSkeletonProfile(opts.githubUser ?? '', opts.linkedinUrl ?? '');
-  await atomicWrite(profilePath, skeleton);
-  clackLog.warn('Profile auto-generation skipped (CV or LLM not provided)');
+  const skeletonWritten = await atomicWrite(profilePath, skeleton);
+  if (!skeletonWritten) {
+    throw new Error(`failed to write skeleton profile to ${profilePath}`);
+  }
+  clackLog.warn('Profile auto-generation skipped (LLM not configured)');
   clackLog.info(`A skeleton profile.md has been created at ${profilePath}`);
   clackLog.info(
-    'Edit it with your details, or re-run with --cv and an LLM configured to auto-generate.',
+    'Edit it with your details, or re-run with an LLM configured to auto-generate.',
   );
   return skeleton;
 }
