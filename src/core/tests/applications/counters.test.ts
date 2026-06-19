@@ -2,7 +2,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { readCollisionSuffix, readCounters } from '../counters.js';
+import {
+  readCollisionSuffix,
+  readCounters,
+  readCountersAsync,
+  writeCountersAsync,
+} from '../../applications/index.js';
 
 let workDir: string;
 
@@ -57,6 +62,51 @@ describe('readCounters', () => {
       'utf8',
     );
     expect(readCounters(workDir)).toEqual({ good: 3, 'also-good': 0 });
+  });
+});
+
+describe('readCountersAsync', () => {
+  it('returns an empty record when .counters.json does not exist', async () => {
+    expect(await readCountersAsync(workDir)).toEqual({});
+  });
+
+  it('reads existing counters', async () => {
+    await writeFile(
+      join(workDir, '.counters.json'),
+      JSON.stringify({ '2026-Jun-03-engineer-foo': 2 }),
+      'utf8',
+    );
+    expect(await readCountersAsync(workDir)).toEqual({ '2026-Jun-03-engineer-foo': 2 });
+  });
+
+  it('treats malformed JSON as an empty counter set', async () => {
+    await writeFile(join(workDir, '.counters.json'), '{not json', 'utf8');
+    expect(await readCountersAsync(workDir)).toEqual({});
+  });
+
+  it('treats a JSON array as an empty counter set', async () => {
+    await writeFile(join(workDir, '.counters.json'), '[1, 2, 3]', 'utf8');
+    expect(await readCountersAsync(workDir)).toEqual({});
+  });
+});
+
+describe('writeCountersAsync', () => {
+  it('returns true on success', async () => {
+    const result = await writeCountersAsync(workDir, { '2026-Jun-03-engineer-foo': 2 });
+    expect(result).toBe(true);
+  });
+
+  it('writes and reads back round-trip', async () => {
+    await writeCountersAsync(workDir, { '2026-Jun-03-engineer-foo': 3, another: 0 });
+    const read = await readCountersAsync(workDir);
+    expect(read).toEqual({ '2026-Jun-03-engineer-foo': 3, another: 0 });
+  });
+
+  it('returns false when writing to an invalid path', async () => {
+    const blocker = join(workDir, 'blocker');
+    await writeFile(blocker, 'x');
+    const result = await writeCountersAsync(join(blocker, 'child'), { a: 1 });
+    expect(result).toBe(false);
   });
 });
 

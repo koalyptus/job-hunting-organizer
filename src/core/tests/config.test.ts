@@ -8,7 +8,7 @@ import {
 } from '../config.js';
 import { resolve } from 'node:path';
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
-import { homedir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { DEFAULT_CONFIG_FILENAME } from '../paths.js';
 
 describe('config', () => {
@@ -26,7 +26,7 @@ describe('config', () => {
     originalJhoData = process.env['JHO_DATA'];
     originalJhoConfigHome = process.env['JHO_CONFIG_HOME'];
     originalJhoDefaultCampaign = process.env['JHO_DEFAULT_CAMPAIGN'];
-    testHome = await mkdtemp(`${homedir()}/jho-test-`);
+    testHome = await mkdtemp(`${tmpdir()}/jho-test-`);
     process.env['HOME'] = testHome;
     process.env['USERPROFILE'] = testHome;
     delete process.env['JHO_DATA'];

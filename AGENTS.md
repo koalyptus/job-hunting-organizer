@@ -47,6 +47,11 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │   ├── mcp/            # MCP server
 │   └── core/           # shared business logic (no I/O boundaries)
 │       ├── types.ts    # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
+│   ├── applications.ts  # application CRUD: create, update, read, list; writes meta.md + jd.md + index
+│       ├── jobs.ts     # JD fetch, extraction (single LLM call), target-role suggestion
+│       ├── stats.ts    # campaign snapshot: counts by status/role/site, funnel, this-month delta
+│       ├── index-builder.ts  # build/update applied/.index.json from folder listing
+│       ├── meta-schema.ts    # Zod schema for meta.md frontmatter
 │       └── tests/      # colocated vitest suite (Jest `__tests__` convention)
 ├── prompts/            # versioned LLM prompt templates
 ├── evals/              # lightweight eval suite (not in CI)
@@ -89,7 +94,12 @@ jho campaign config show|path  # show the active campaign's config (in the data 
 jho rename-campaign <new> [--from <old>]  # rename a campaign folder (or `mv` the folder directly)
 jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
-jho list [--role <slug>] # list all applications (filter by target role)
+jho track <url> --paste # paste JD from clipboard, extract, create application
+jho track <url> --stdin # read JD from stdin pipe, extract, create application
+jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X]
+  # update existing application by slug (or cwd-inferred)
+jho list [--status s] [--tag t] [--role <slug>] [--json]
+  # list all applications; filters are AND-combined
 jho show [<slug>]       # slug is optional; inferred from cwd if omitted
 jho cover-letter [<slug>] # generate a tailored cover letter
 jho answer [<slug>] "..." # tailor an answer (text or screenshot)
@@ -100,7 +110,8 @@ jho retro --aggregate   # recurring weak topics across all apps
 jho ownership           # what you can/can't edit
 jho doctor              # diagnose the campaign
 jho repair              # attempt auto-repair
-jho stats               # campaign snapshot: counts by status / role / site, funnel, this-month delta
+jho stats [--role <slug>] [--since <date|7d|30d|90d>] [--json]
+  # campaign snapshot: counts by status / role / site, funnel, this-month delta
 jho help [<cmd>|<topic>]
 jho mcp                 # start MCP server
 ```
@@ -116,6 +127,14 @@ jho mcp                 # start MCP server
 ## Resources (planned)
 
 `profile://current`, `applied://list`, `applied://<slug>`, `applied://<slug>/interviews`, `applied://<slug>/retro`, `applied://<slug>/prep`.
+
+## Prompts (versioned LLM templates)
+
+| Prompt             | Phase | Purpose                                        |
+| ------------------ | ----- | ---------------------------------------------- |
+| `profile-build.md` | 3d    | Generate profile.md from CV + GitHub           |
+| `jd-extract.md`    | 5b    | Extract structured JD from raw text (Tier 1)   |
+| `suggest-role.md`  | 5c    | Suggest best-matching target role from profile |
 
 ## File ownership model
 
@@ -178,7 +197,7 @@ When interacting via MCP:
 
 ## Current phase
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope.
+Phase 5 — JD extraction & `track`. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 5a (schemas & tracker), 5b (JD fetch), 5c (target role), 5d (track CLI), 5e (list), 5f (stats), 5g (tests & docs).
 
 ## Cross-platform conventions
 

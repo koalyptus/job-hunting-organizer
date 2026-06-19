@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateUtc, parseDateOrNow } from '../date.js';
+import { formatDateUtc, parseDateOrNow, toIsoDateString } from '../date.js';
 
 describe('formatDateUtc', () => {
   it('formats a UTC date as YYYY-MMM-DD', () => {
@@ -47,5 +47,19 @@ describe('parseDateOrNow', () => {
 
   it('throws on an empty string', () => {
     expect(() => parseDateOrNow('')).toThrow(/invalid date/);
+  });
+});
+
+describe('toIsoDateString', () => {
+  it('formats a Date as YYYY-MM-DD', () => {
+    expect(toIsoDateString(new Date(Date.UTC(2026, 5, 3)))).toBe('2026-06-03');
+  });
+
+  it('truncates an ISO datetime string at T', () => {
+    expect(toIsoDateString('2026-06-03T12:30:00Z')).toBe('2026-06-03');
+  });
+
+  it('passes through an ISO date-only string', () => {
+    expect(toIsoDateString('2026-06-03')).toBe('2026-06-03');
   });
 });

@@ -66,7 +66,7 @@ describe('handleProfile', () => {
     expect(result).toBe('(copied)');
   });
 
-  it('creates skeleton profile when no CV or LLM provided', async () => {
+  it('creates skeleton profile when no LLM provided', async () => {
     const result = await handleProfile({
       campaignRoot,
       profileFlag: undefined,
@@ -82,11 +82,26 @@ describe('handleProfile', () => {
     expect(result).toContain('GitHub: testuser');
   });
 
-  it('builds profile when CV and LLM provided', async () => {
+  it('builds profile when LLM provided (with CV)', async () => {
     const result = await handleProfile({
       campaignRoot,
       profileFlag: undefined,
       cvPath: '/path/to/cv.pdf',
+      githubUser: 'testuser',
+      githubToken: 'token',
+      linkedinUrl: undefined,
+      llmConfig: { baseUrl: 'http://localhost:11434/v1', apiKey: 'key', model: 'model' },
+      nonInteractive: false,
+    });
+
+    expect(result).toContain('# Profile — Test User');
+  });
+
+  it('builds profile when LLM provided (without CV)', async () => {
+    const result = await handleProfile({
+      campaignRoot,
+      profileFlag: undefined,
+      cvPath: undefined,
       githubUser: 'testuser',
       githubToken: 'token',
       linkedinUrl: undefined,

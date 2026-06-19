@@ -131,6 +131,12 @@ describe('serializeFrontmatter', () => {
 });
 
 describe('readFrontmatter + writeFrontmatter', () => {
+  it('returns true on success', async () => {
+    const path = join(workDir, 'meta.md');
+    const result = await writeFrontmatter(path, { key: 'value' }, 'body');
+    expect(result).toBe(true);
+  });
+
   it('round-trips a real file', async () => {
     const path = join(workDir, 'meta.md');
     const fm = { slug: 'foo', status: 'applied', tags: ['a'] };
@@ -148,6 +154,17 @@ describe('readFrontmatter + writeFrontmatter', () => {
     const result = await readFrontmatter(path);
     expect(result.frontmatter).toEqual({ old: 2, new: 3 });
     expect(result.body).toBe('new body');
+  });
+
+  it('returns false when writing to an invalid path', async () => {
+    const blocker = join(workDir, 'blocker');
+    await writeFile(blocker, 'x');
+    const result = await writeFrontmatter(
+      join(blocker, 'child', 'meta.md'),
+      { key: 'value' },
+      'body',
+    );
+    expect(result).toBe(false);
   });
 });
 

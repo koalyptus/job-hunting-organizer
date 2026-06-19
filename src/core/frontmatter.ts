@@ -107,10 +107,15 @@ export async function readFrontmatter(path: string): Promise<ParsedFile> {
  * @param path - The absolute path to write to.
  * @param fm - The frontmatter mapping to write.
  * @param body - The body text to write.
+ * @returns `true` on success.
  */
-export async function writeFrontmatter(path: string, fm: Frontmatter, body: string): Promise<void> {
+export async function writeFrontmatter(
+  path: string,
+  fm: Frontmatter,
+  body: string,
+): Promise<boolean> {
   const content = serializeFrontmatter(fm, body);
-  await atomicWrite(path, content, { encoding: 'utf8' });
+  return atomicWrite(path, content, { encoding: 'utf8' });
 }
 
 /**

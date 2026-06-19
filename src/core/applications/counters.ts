@@ -1,6 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import type { Counters } from './types.js';
+import { atomicWrite } from '../fs.js';
+import { getRootLogger } from '../logger.js';
+import type { Counters } from '../types.js';
 
 /**
  * Filename of the counters file inside the applied directory.
@@ -39,13 +42,14 @@ export function readCounters(appliedDir: string): Counters {
       return {};
     }
     const out: Counters = {};
-    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof v === 'number' && Number.isInteger(v) && v >= 0) {
-        out[k] = v;
+    for (const [slug, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+        out[slug] = value;
       }
     }
     return out;
-  } catch {
+  } catch (err) {
+    getRootLogger().debug({ err }, 'failed to read counters, returning empty');
     return {};
   }
 }
@@ -69,4 +73,43 @@ export function readCounters(appliedDir: string): Counters {
 export function readCollisionSuffix(baseSlug: string, appliedDir: string): number {
   const counters = readCounters(appliedDir);
   return counters[baseSlug] ?? 0;
+}
+
+/**
+ * Read the counters file asynchronously. Returns an empty record if the
+ * file is missing, unreadable, or not a valid JSON object.
+ * @param appliedDir - The absolute path to the campaign's `applied/` folder.
+ * @returns A fresh `Counters` object.
+ */
+export async function readCountersAsync(appliedDir: string): Promise<Counters> {
+  const path = resolve(appliedDir, COUNTERS_FILENAME);
+  try {
+    const raw = await readFile(path, 'utf8');
+    const parsed: unknown = JSON.parse(raw);
+    // Guard against null, non-objects, and arrays (possible with manual edits)
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const out: Counters = {};
+    for (const [slug, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+        out[slug] = value;
+      }
+    }
+    return out;
+  } catch (err) {
+    getRootLogger().debug({ err }, 'failed to read counters async, returning empty');
+    return {};
+  }
+}
+
+/**
+ * Write the counters file asynchronously using atomic write.
+ * @param appliedDir - The absolute path to the campaign's `applied/` folder.
+ * @param counters - The counters to write.
+ * @returns `true` on success.
+ */
+export async function writeCountersAsync(appliedDir: string, counters: Counters): Promise<boolean> {
+  const path = resolve(appliedDir, COUNTERS_FILENAME);
+  return atomicWrite(path, JSON.stringify(counters, null, 2) + '\n');
 }

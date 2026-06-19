@@ -8,9 +8,13 @@
 //   jobId        : optional, extracted from the URL (LinkedIn, Seek, Indeed, generic)
 //   -N           : optional, integer suffix on collision (see core/counters.ts)
 
-import { formatDateUtc, parseDateOrNow } from './date.js';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { formatDateUtc, parseDateOrNow, MONTH_ABBR } from './date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
+import { readCountersAsync, writeCountersAsync } from './applications/counters.js';
+import { getRootLogger } from './logger.js';
 import type { SlugBuildInput, SlugOptions } from './types.js';
 
 /**
@@ -19,6 +23,33 @@ import type { SlugBuildInput, SlugOptions } from './types.js';
  * folder name as a slug.
  */
 export const SLUG_PATTERN = /^\d{4}-[A-Z][a-z]{2}-\d{2}-.+$/;
+
+/**
+ * Regex that captures the date components (year, month abbreviation, day)
+ * from the start of a slug. Used by {@link extractDateFromSlug}.
+ */
+const SLUG_DATE_RE = /^(\d{4})-([A-Z][a-z]{2})-(\d{2})/;
+
+/**
+ * Extract a sortable date string from a slug. Slugs start with
+ * `YYYY-MMM-DD`; this converts the month abbreviation to a number
+ * so lexicographic sorting works correctly (e.g. `'20260603'`).
+ * @param slug - The application slug.
+ * @returns A string like `'20260603'` for date-based sorting, or `''` if unparseable.
+ */
+export function extractDateFromSlug(slug: string): string {
+  const dateMatch = slug.match(SLUG_DATE_RE);
+  if (!dateMatch) {
+    return '';
+  }
+  const year = dateMatch[1]!;
+  const monthIdx = MONTH_ABBR.indexOf(dateMatch[2] as (typeof MONTH_ABBR)[number]);
+  const day = dateMatch[3]!;
+  if (monthIdx === -1) {
+    return '';
+  }
+  return `${year}${String(monthIdx + 1).padStart(2, '0')}${day}`;
+}
 
 /**
  * Reduce a job title to the first 2-3 sanitized words, fitting in
@@ -84,4 +115,38 @@ export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): st
     return `${base}-${jobId}`;
   }
   return base;
+}
+
+/**
+ * Build a unique slug for a new application. Handles collision suffixes
+ * by reading the counter and appending `-N` when needed.
+ * @param input - Fields for slug generation.
+ * @param appliedDir - The applied directory (for counter lookups).
+ * @returns A unique slug string.
+ */
+export async function uniqueSlug(
+  input: { title?: string; company?: string; url?: string; appliedOn?: string | Date },
+  appliedDir: string,
+): Promise<string> {
+  const base = buildSlug({
+    title: input.title,
+    company: input.company,
+    url: input.url,
+    appliedOn: input.appliedOn,
+  });
+
+  const counters = await readCountersAsync(appliedDir);
+  const current = counters[base] ?? 0;
+
+  if (current === 0 && !existsSync(join(appliedDir, base))) {
+    return base;
+  }
+
+  const next = current + 1;
+  counters[base] = next;
+  const written = await writeCountersAsync(appliedDir, counters);
+  if (!written) {
+    getRootLogger().debug({ slug: `${base}-${next}` }, 'failed to persist collision counter');
+  }
+  return `${base}-${next}`;
 }

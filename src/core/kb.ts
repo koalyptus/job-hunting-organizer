@@ -71,7 +71,10 @@ export async function writeCachedCv(
     cachedAt: new Date().toISOString(),
   };
 
-  await atomicWrite(cachePath, JSON.stringify(data, null, 2) + '\n');
+  const written = await atomicWrite(cachePath, JSON.stringify(data, null, 2) + '\n');
+  if (!written && log) {
+    log.warn({ cachePath }, 'kb.cv.write.failed');
+  }
 
   if (log) {
     log.info({ cachePath }, 'kb.cv.write');
@@ -135,7 +138,10 @@ export async function writeCachedGithub(
     cachedAt: new Date().toISOString(),
   };
 
-  await atomicWrite(cachePath, JSON.stringify(data, null, 2) + '\n');
+  const written = await atomicWrite(cachePath, JSON.stringify(data, null, 2) + '\n');
+  if (!written && log) {
+    log.warn({ cachePath, username }, 'kb.github.write.failed');
+  }
 
   if (log) {
     log.info({ cachePath, username }, 'kb.github.write');
