@@ -1,4 +1,4 @@
-import { readdir, readFile, mkdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { SLUG_PATTERN, extractDateFromSlug } from '../slug.js';
