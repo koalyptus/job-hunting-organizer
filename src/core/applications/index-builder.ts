@@ -1,10 +1,11 @@
-import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readdir, readFile, mkdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { SLUG_PATTERN, extractDateFromSlug } from '../slug.js';
 import { readFrontmatter } from '../frontmatter.js';
 import { safeValidateMetaFrontmatter } from './meta-schema.js';
 import { debug } from '../debug.js';
+import { atomicWrite } from '../fs.js';
 import type { ApplicationEntry, ApplicationStatus } from '../types.js';
 
 const log = debug('index-builder');
@@ -154,16 +155,9 @@ export async function writeIndex(
   appliedDir: string,
   entries: ApplicationEntry[],
 ): Promise<boolean> {
-  try {
-    await mkdir(appliedDir, { recursive: true });
-    const sorted = [...entries].sort(sortBySlugDesc);
-    const json = JSON.stringify(sorted, null, 2) + '\n';
-    await writeFile(indexPath(appliedDir), json, 'utf8');
-    return true;
-  } catch (err) {
-    log('failed to write index: %s', String(err));
-    return false;
-  }
+  const sorted = [...entries].sort(sortBySlugDesc);
+  const json = JSON.stringify(sorted, null, 2) + '\n';
+  return atomicWrite(indexPath(appliedDir), json, { ensureDir: true });
 }
 
 /**
