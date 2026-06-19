@@ -56,6 +56,9 @@ function buildUpdates(
   if (patch.site !== undefined) {
     updates.site = patch.site;
   }
+  if (patch.link !== undefined) {
+    updates.link = patch.link;
+  }
   if (patch.tags !== undefined) {
     updates.tags = [...new Set([...existingTags, ...patch.tags])];
   }

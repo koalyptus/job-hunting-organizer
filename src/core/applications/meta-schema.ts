@@ -23,9 +23,9 @@ export const ApplicationStatusSchema = z.enum([
 
 /**
  * Zod schema for `meta.md` frontmatter. Every field has a `.default(...)`
- * so a missing or partial file still yields a known-good shape. The schema
- * is intentionally lenient on reads (extra keys are preserved via
- * `passthrough()` on the parent) and strict on writes (known fields only).
+ * so a missing or partial file still yields a known-good shape. Extra keys
+ * survive the file round-trip (preserved by `mergeFrontmatter` before
+ * `writeFrontmatter`) but are stripped from the Zod-validated type.
  */
 export const MetaFrontmatterSchema = z.object({
   /** Application slug (matches the folder name). */

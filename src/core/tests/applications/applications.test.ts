@@ -164,6 +164,13 @@ describe('updateApplication', () => {
     expect(frontmatter.targetRole).toBe('staff-engineer');
   });
 
+  it('updates link', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    await updateApplication(appliedDir, slug, { link: 'https://example.com/job/123' });
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.link).toBe('https://example.com/job/123');
+  });
+
   it('adds tags without removing existing ones', async () => {
     const slug = await createApplication({
       appliedDir,

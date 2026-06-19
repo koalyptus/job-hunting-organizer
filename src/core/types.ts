@@ -541,4 +541,6 @@ export interface UpdateApplicationInput {
   location?: string;
   /** New site. */
   site?: string;
+  /** New job posting URL. */
+  link?: string;
 }
