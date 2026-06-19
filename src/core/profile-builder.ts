@@ -91,8 +91,6 @@ export async function handleProfile(opts: {
   }
   clackLog.warn('Profile auto-generation skipped (LLM not configured)');
   clackLog.info(`A skeleton profile.md has been created at ${profilePath}`);
-  clackLog.info(
-    'Edit it with your details, or re-run with an LLM configured to auto-generate.',
-  );
+  clackLog.info('Edit it with your details, or re-run with an LLM configured to auto-generate.');
   return skeleton;
 }
