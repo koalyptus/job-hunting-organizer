@@ -11,7 +11,7 @@ import {
   upsertIndexEntry,
   removeIndexEntry,
 } from '../../applications/index.js';
-import type { ApplicationEntry } from '../../types.js';
+import type { ApplicationEntry } from '../../applications/types.js';
 
 let workDir: string;
 let appliedDir: string;

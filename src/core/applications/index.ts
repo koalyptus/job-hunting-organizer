@@ -22,16 +22,16 @@ export {
   readCollisionSuffix,
 } from './counters.js';
 export {
-  MetaFrontmatterSchema,
+  ApplicationFrontmatterSchema,
   ApplicationStatusSchema,
-  validateMetaFrontmatter,
-  safeValidateMetaFrontmatter,
+  validateApplicationFrontmatter,
+  safeValidateApplicationFrontmatter,
 } from './meta-schema.js';
 export type {
   ApplicationEntry,
   ApplicationStatus,
   CreateApplicationInput,
   UpdateApplicationInput,
-  MetaFrontmatter,
+  ApplicationFrontmatter,
   Counters,
-} from '../types.js';
+} from './types.js';

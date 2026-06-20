@@ -119,6 +119,15 @@ export async function writeFrontmatter(
 }
 
 /**
+ * Read a numeric field from a {@link Frontmatter} mapping with a
+ * fallback default. Returns `fallback` when the key is missing or
+ * the value is not a `number`.
+ */
+export function getFrontmatterNumber(fm: Frontmatter, key: string, fallback: number): number {
+  return typeof fm[key] === 'number' ? (fm[key] as number) : fallback;
+}
+
+/**
  * Shallow-merge two frontmatter mappings. Keys in `updates` overwrite
  * keys in `existing`; keys in `existing` not mentioned by `updates` are
  * preserved. This is the mechanism that keeps user-added custom fields

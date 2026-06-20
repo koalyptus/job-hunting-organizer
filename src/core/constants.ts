@@ -6,3 +6,6 @@ export const CV_EXTENSIONS = ['.pdf', '.docx', '.md', '.txt'];
 
 /** Knowledge-base subdirectory names. */
 export const KB_GITHUB = 'github';
+
+/** Default fetch timeout in milliseconds. */
+export const FETCH_TIMEOUT_MS = 15_000;

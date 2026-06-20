@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import {
   FrontmatterParseError,
+  getFrontmatterNumber,
   mergeFrontmatter,
   parseFrontmatter,
   readFrontmatter,
@@ -184,5 +185,31 @@ describe('mergeFrontmatter', () => {
     expect(mergeFrontmatter({ status: 'applied' }, { status: 'interview' })).toEqual({
       status: 'interview',
     });
+  });
+});
+
+describe('getFrontmatterNumber', () => {
+  it('returns the value when key exists and is a number', () => {
+    expect(getFrontmatterNumber({ temperature: 0.7 }, 'temperature', 0.1)).toBe(0.7);
+  });
+
+  it('returns fallback when key is missing', () => {
+    expect(getFrontmatterNumber({}, 'temperature', 0.5)).toBe(0.5);
+  });
+
+  it('returns fallback when value is a string', () => {
+    expect(getFrontmatterNumber({ temperature: 'hot' }, 'temperature', 0.3)).toBe(0.3);
+  });
+
+  it('returns fallback when value is null', () => {
+    expect(getFrontmatterNumber({ temperature: null }, 'temperature', 0.4)).toBe(0.4);
+  });
+
+  it('returns fallback when value is a boolean', () => {
+    expect(getFrontmatterNumber({ enabled: true }, 'enabled', 0.2)).toBe(0.2);
+  });
+
+  it('returns 0 when the value is 0', () => {
+    expect(getFrontmatterNumber({ temperature: 0 }, 'temperature', 0.5)).toBe(0);
   });
 });

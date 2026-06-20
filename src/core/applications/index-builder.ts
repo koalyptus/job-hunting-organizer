@@ -3,10 +3,10 @@ import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { SLUG_PATTERN, extractDateFromSlug } from '../slug.js';
 import { readFrontmatter } from '../frontmatter.js';
-import { safeValidateMetaFrontmatter } from './meta-schema.js';
+import { safeValidateApplicationFrontmatter } from './meta-schema.js';
 import { debug } from '../debug.js';
 import { atomicWrite } from '../fs.js';
-import type { ApplicationEntry, ApplicationStatus } from '../types.js';
+import type { ApplicationEntry, ApplicationStatus } from './types.js';
 
 const log = debug('index-builder');
 
@@ -92,7 +92,7 @@ async function entryFromFolder(folderPath: string): Promise<ApplicationEntry | n
   }
   try {
     const { frontmatter } = await readFrontmatter(metaPath);
-    const result = safeValidateMetaFrontmatter(frontmatter as Record<string, unknown>);
+    const result = safeValidateApplicationFrontmatter(frontmatter as Record<string, unknown>);
     if (!result.success) {
       log(
         'invalid meta.md frontmatter in %s: %s',

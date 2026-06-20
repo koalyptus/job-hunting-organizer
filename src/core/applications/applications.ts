@@ -6,7 +6,7 @@ import { writeFrontmatter, readFrontmatter, mergeFrontmatter } from '../frontmat
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { getRootLogger } from '../logger.js';
-import { MetaFrontmatterSchema } from './meta-schema.js';
+import { ApplicationFrontmatterSchema } from './meta-schema.js';
 import { upsertIndexEntry, removeIndexEntry, readIndex, rebuildIndex } from './index-builder.js';
 import { replaceRegion } from '../markers.js';
 import { toIsoDateString, todayIso } from '../date.js';
@@ -15,9 +15,9 @@ import type {
   ApplicationStatus,
   CreateApplicationInput,
   UpdateApplicationInput,
-  MetaFrontmatter,
-  Frontmatter,
-} from '../types.js';
+  ApplicationFrontmatter,
+} from './types.js';
+import type { Frontmatter } from '../types.js';
 
 /**
  * The user-notes comment appended to new `jd.md` files.
@@ -66,11 +66,11 @@ function buildUpdates(
 }
 
 /**
- * Build an `ApplicationEntry` from a `MetaFrontmatter` object.
+ * Build an `ApplicationEntry` from a `ApplicationFrontmatter` object.
  * @param fm - The validated frontmatter.
  * @returns An `ApplicationEntry` suitable for the index.
  */
-function entryFromFrontmatter(fm: MetaFrontmatter): ApplicationEntry {
+function entryFromFrontmatter(fm: ApplicationFrontmatter): ApplicationEntry {
   return {
     slug: fm.slug,
     status: fm.status,
@@ -114,7 +114,7 @@ export async function createApplication(input: CreateApplicationInput): Promise<
 
     const appliedOn = input.appliedOn !== undefined ? toIsoDateString(input.appliedOn) : todayIso();
 
-    const fm: MetaFrontmatter = {
+    const fm: ApplicationFrontmatter = {
       slug,
       status: input.status ?? DEFAULT_STATUS,
       appliedOn,
@@ -189,7 +189,7 @@ export async function updateApplication(
       throw new Error(`failed to write meta.md for ${slug}`);
     }
 
-    const result = MetaFrontmatterSchema.safeParse(merged);
+    const result = ApplicationFrontmatterSchema.safeParse(merged);
     if (result.success) {
       await upsertIndexEntry(appliedDir, entryFromFrontmatter(result.data));
     } else {
@@ -206,13 +206,13 @@ export async function updateApplication(
  * Read an application's validated frontmatter.
  * @param appliedDir - The applied directory.
  * @param slug - The application slug.
- * @returns The validated `MetaFrontmatter` and the raw body text.
+ * @returns The validated `ApplicationFrontmatter` and the raw body text.
  * @throws If the application doesn't exist or frontmatter is invalid.
  */
 export async function readApplication(
   appliedDir: string,
   slug: string,
-): Promise<{ frontmatter: MetaFrontmatter; body: string }> {
+): Promise<{ frontmatter: ApplicationFrontmatter; body: string }> {
   const folder = join(appliedDir, slug);
   const metaPath = join(folder, 'meta.md');
 
@@ -221,7 +221,7 @@ export async function readApplication(
   }
 
   const { frontmatter, body } = await readFrontmatter(metaPath);
-  const result = MetaFrontmatterSchema.parse(frontmatter);
+  const result = ApplicationFrontmatterSchema.parse(frontmatter);
   return { frontmatter: result, body };
 }
 
@@ -297,7 +297,7 @@ export async function getEntryFromSlug(
   }
   try {
     const { frontmatter } = await readFrontmatter(metaPath);
-    const result = MetaFrontmatterSchema.safeParse(frontmatter);
+    const result = ApplicationFrontmatterSchema.safeParse(frontmatter);
     if (!result.success) {
       return null;
     }
