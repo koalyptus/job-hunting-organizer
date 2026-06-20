@@ -169,6 +169,51 @@ describe('chatComplete', () => {
       const callBody = JSON.parse(init?.body ?? '{}');
       expect(callBody.max_tokens).toBe(500);
     });
+
+    it('retries on 429 when maxRetries > 0', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      const errResponse = errJson(429, {
+        error: { message: 'Rate limit exceeded', type: 'rate_limit_error' },
+      });
+      fetch
+        .mockResolvedValueOnce(errResponse)
+        .mockResolvedValueOnce(errResponse)
+        .mockResolvedValueOnce(okJson(successBody));
+
+      const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {
+        maxRetries: 2,
+      });
+
+      expect(result.content).toBe('Hello!');
+      expect(fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('retries on 500 when maxRetries > 0', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      const errResponse = errJson(500, {
+        error: { message: 'Internal error', type: 'server_error' },
+      });
+      fetch.mockResolvedValueOnce(errResponse).mockResolvedValueOnce(okJson(successBody));
+
+      const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {
+        maxRetries: 1,
+      });
+
+      expect(result.content).toBe('Hello!');
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry 400 even with maxRetries > 0', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(
+        errJson(400, { error: { message: 'Bad request', type: 'invalid_request_error' } }),
+      );
+
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, { maxRetries: 3 }),
+      ).rejects.toThrow(BadRequestError);
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('error handling', () => {

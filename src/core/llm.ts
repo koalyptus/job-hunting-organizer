@@ -45,11 +45,12 @@ export async function chatComplete(
   const maxTokens = options.maxTokens;
   const jsonMode = options.jsonMode ?? false;
   const timeout = options.timeout ?? 300_000;
+  const maxRetries = options.maxRetries ?? 0;
 
   const client = new OpenAI({
     baseURL: normaliseBaseUrl(config.baseUrl),
     apiKey: config.apiKey || 'no-key',
-    maxRetries: 0,
+    maxRetries,
     timeout,
   });
 

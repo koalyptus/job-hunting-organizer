@@ -19,8 +19,8 @@
   - [x] 4c — Init wizard
   - [x] 4d — Tests & polish
 - [ ] **Phase 5** — JD extraction & `track`
-  - [ ] 5a — Data schemas & applications core
-  - [ ] 5b — JD fetch & extraction
+  - [x] 5a — Data schemas & applications core
+  - [x] 5b — JD fetch & extraction
   - [ ] 5c — Target role suggestion
   - [ ] 5d — jho track CLI
   - [ ] 5e — jho list

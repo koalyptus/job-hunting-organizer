@@ -11,7 +11,8 @@ import {
 } from '../config.js';
 import { validateName } from '../validate.js';
 import { acquireLock } from '../locks.js';
-import type { InitOptions, LlmConfig } from '../types.js';
+import type { InitOptions } from './types.js';
+import type { LlmConfig } from '../types.js';
 import {
   DEFAULT_CAMPAIGN,
   DEFAULT_LOG_LEVEL,

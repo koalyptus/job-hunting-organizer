@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { atomicWrite } from '../fs.js';
 import { getRootLogger } from '../logger.js';
-import type { Counters } from '../types.js';
+import type { Counters } from './types.js';
 
 /**
  * Filename of the counters file inside the applied directory.

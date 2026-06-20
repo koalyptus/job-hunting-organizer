@@ -1,12 +1,10 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import type { Logger } from 'pino';
 import { readCv } from './cv.js';
-import { parseFrontmatter } from './frontmatter.js';
 import { fetchGithubUser, fetchGithubRepos } from './github.js';
 import { readCachedCv, readCachedGithub, writeCachedCv, writeCachedGithub } from './kb.js';
 import { chatComplete } from './llm.js';
-import { getPackageRoot } from './package.js';
+import { loadPromptTemplate } from './prompts.js';
 import { resolveProfilePath } from './paths.js';
 import type { LlmConfig } from './types.js';
 
@@ -76,24 +74,6 @@ interface BuildProfileResult {
 }
 
 /**
- * Load and parse the profile-build prompt template from
- * `prompts/profile-build.md`. Returns the parsed frontmatter (with
- * `recommendedTemperature`) and the body (system message).
- * @returns The parsed frontmatter and body.
- */
-async function loadPromptTemplate(): Promise<{ temperature: number; body: string }> {
-  const root = getPackageRoot();
-  const promptPath = join(root, 'prompts', 'profile-build.md');
-  const raw = await readFile(promptPath, 'utf8');
-  const { frontmatter, body } = parseFrontmatter(raw);
-  const temperature =
-    typeof frontmatter['recommendedTemperature'] === 'number'
-      ? frontmatter['recommendedTemperature']
-      : 0.6;
-  return { temperature, body };
-}
-
-/**
  * Build a candidate profile by combining CV text, GitHub data, and an
  * LLM call. Returns the generated markdown content (no frontmatter).
  *
@@ -143,7 +123,7 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
   }
 
   // 3. Load prompt template
-  const { temperature, body: systemMessage } = await loadPromptTemplate();
+  const { temperature, body: systemMessage } = await loadPromptTemplate('profile-build');
 
   // 4. Build context for the LLM
   const repoSummary = repos

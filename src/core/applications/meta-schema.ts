@@ -6,7 +6,7 @@ import { toIsoDate, todayIso } from '../date.js';
  * Validates and defaults the YAML frontmatter that the tool manages.
  * User fields below the frontmatter are untouched (see PLAN §4).
  *
- * @see {@link MetaFrontmatter} for the TypeScript interface (inferred from this schema).
+ * @see {@link ApplicationFrontmatter} for the TypeScript interface (inferred from this schema).
  */
 
 /** Valid application lifecycle statuses. */
@@ -27,7 +27,7 @@ export const ApplicationStatusSchema = z.enum([
  * survive the file round-trip (preserved by `mergeFrontmatter` before
  * `writeFrontmatter`) but are stripped from the Zod-validated type.
  */
-export const MetaFrontmatterSchema = z.object({
+export const ApplicationFrontmatterSchema = z.object({
   /** Application slug (matches the folder name). */
   slug: z.string(),
   /** Current lifecycle status. Default: `'applied'`. */
@@ -55,18 +55,20 @@ export const MetaFrontmatterSchema = z.object({
   targetRole: z.string().default(''),
 });
 
-/** Inferred TypeScript type from {@link MetaFrontmatterSchema}. */
-type MetaFrontmatterParsed = z.infer<typeof MetaFrontmatterSchema>;
+/** Inferred TypeScript type from {@link ApplicationFrontmatterSchema}. */
+type ApplicationFrontmatterParsed = z.infer<typeof ApplicationFrontmatterSchema>;
 
 /**
  * Validate raw frontmatter against the schema. Extra keys are preserved
  * (not stripped) so user-defined fields survive the round-trip.
  * @param raw - The raw frontmatter object from `parseFrontmatter`.
- * @returns A fully-defaulted, validated `MetaFrontmatter` object.
+ * @returns A fully-defaulted, validated `ApplicationFrontmatter` object.
  * @throws {z.ZodError} if the data violates the schema (e.g. invalid status).
  */
-export function validateMetaFrontmatter(raw: Record<string, unknown>): MetaFrontmatterParsed {
-  return MetaFrontmatterSchema.parse(raw);
+export function validateApplicationFrontmatter(
+  raw: Record<string, unknown>,
+): ApplicationFrontmatterParsed {
+  return ApplicationFrontmatterSchema.parse(raw);
 }
 
 /**
@@ -75,10 +77,12 @@ export function validateMetaFrontmatter(raw: Record<string, unknown>): MetaFront
  * @param raw - The raw frontmatter object from `parseFrontmatter`.
  * @returns `{ success: true, data }` or `{ success: false, issues }`.
  */
-export function safeValidateMetaFrontmatter(
+export function safeValidateApplicationFrontmatter(
   raw: Record<string, unknown>,
-): { success: true; data: MetaFrontmatterParsed } | { success: false; issues: z.ZodIssue[] } {
-  const result = MetaFrontmatterSchema.safeParse(raw);
+):
+  | { success: true; data: ApplicationFrontmatterParsed }
+  | { success: false; issues: z.ZodIssue[] } {
+  const result = ApplicationFrontmatterSchema.safeParse(raw);
   if (result.success) {
     return { success: true, data: result.data };
   }
