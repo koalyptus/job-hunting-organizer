@@ -28,3 +28,16 @@ export interface ExtractedJd {
   /** Seniority level (e.g. `'senior'`, `'staff'`). */
   seniorityLevel?: string;
 }
+
+/**
+ * Result of an LLM-backed target-role suggestion.
+ * Returned by {@link suggestTargetRole}.
+ */
+export interface RoleSuggestion {
+  /** Slug of the best-matching target role, or empty string if no match. */
+  roleSlug: string;
+  /** Match confidence (0–1). 0 means no match found. */
+  confidence: number;
+  /** LLM reasoning for the match (or why none was found). */
+  reasoning: string;
+}

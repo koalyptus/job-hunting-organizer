@@ -21,7 +21,7 @@
 - [ ] **Phase 5** — JD extraction & `track`
   - [x] 5a — Data schemas & applications core
   - [x] 5b — JD fetch & extraction
-  - [ ] 5c — Target role suggestion
+  - [x] 5c — Target role suggestion
   - [ ] 5d — jho track CLI
   - [ ] 5e — jho list
   - [ ] 5f — core/stats & jho stats
