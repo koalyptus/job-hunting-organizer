@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Logger } from 'pino';
+import * as llmModule from '../../llm.js';
 import { stripHtml, extractJdFromText, extractJdFromUrl } from '../../jobs/extract.js';
 import type { ExtractedJd } from '../../jobs/types.js';
 import type { LlmConfig } from '../../types.js';
@@ -353,6 +354,47 @@ describe('extractJdFromText', () => {
     expect(result.benefits).toEqual(['Health insurance', 'Remote work']);
     expect(result.employmentType).toBe('full-time');
     expect(result.seniorityLevel).toBe('senior');
+  });
+
+  it('wraps non-Error throw as Error', async () => {
+    mockChatComplete.mockResolvedValueOnce({
+      content: '{"title":"x","company":"y"}',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+    const spy = vi.spyOn(llmModule, 'parseJsonResult').mockImplementationOnce(() => {
+      throw 'string error';
+    });
+
+    await expect(extractJdFromText('text', testLlmConfig)).rejects.toThrow(
+      /JD extraction failed after 3 attempts/,
+    );
+    spy.mockRestore();
+  });
+
+  it('logs error when logger provided and all retries fail', async () => {
+    const badResponse = {
+      content: JSON.stringify({ title: '', company: '' }),
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    };
+    mockChatComplete
+      .mockResolvedValueOnce(badResponse)
+      .mockResolvedValueOnce(badResponse)
+      .mockResolvedValueOnce(badResponse);
+    const log = { debug: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
+
+    await expect(extractJdFromText('text', testLlmConfig, log)).rejects.toThrow(
+      /JD extraction failed after 3 attempts/,
+    );
+    expect(log.error).toHaveBeenCalledWith(
+      expect.objectContaining({ attempts: 3 }),
+      'extract.failed',
+    );
   });
 });
 
