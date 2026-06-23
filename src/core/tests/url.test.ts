@@ -1,5 +1,48 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { extractJobIdFromUrl } from '../url.js';
+import { isUrl, extractJobIdFromUrl } from '../url.js';
+
+describe('isUrl', () => {
+  it('returns true for http URLs', () => {
+    expect(isUrl('http://example.com')).toBe(true);
+  });
+
+  it('returns true for https URLs', () => {
+    expect(isUrl('https://example.com')).toBe(true);
+  });
+
+  it('returns true for URLs with paths', () => {
+    expect(isUrl('https://example.com/job/123')).toBe(true);
+  });
+
+  it('returns true for URLs with query strings', () => {
+    expect(isUrl('https://example.com/job?jk=abc')).toBe(true);
+  });
+
+  it('returns false for undefined', () => {
+    expect(isUrl(undefined)).toBe(false);
+  });
+
+  it('returns false for empty string', () => {
+    expect(isUrl('')).toBe(false);
+  });
+
+  it('returns false for ftp URLs', () => {
+    expect(isUrl('ftp://example.com')).toBe(false);
+  });
+
+  it('returns false for non-URL strings', () => {
+    expect(isUrl('not a url')).toBe(false);
+  });
+
+  it('returns false for strings without protocol', () => {
+    expect(isUrl('example.com')).toBe(false);
+  });
+
+  it('is case insensitive for protocol', () => {
+    expect(isUrl('HTTP://example.com')).toBe(true);
+    expect(isUrl('HTTPS://example.com')).toBe(true);
+  });
+});
 
 describe('extractJobIdFromUrl (built-in patterns)', () => {
   const originalEnv = process.env.JHO_URL_PATTERNS;

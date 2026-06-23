@@ -4,15 +4,18 @@
  * `withdrawn` is a professional closing action, `abandoned` is a
  * self-reflection state (see PLAN §4 status semantics).
  */
-export type ApplicationStatus =
-  | 'applied'
-  | 'interview'
-  | 'offer'
-  | 'rejected'
-  | 'withdrawn'
-  | 'abandoned'
-  | 'ghosted'
-  | 'accepted';
+export const APPLICATION_STATUSES = [
+  'applied',
+  'interview',
+  'offer',
+  'rejected',
+  'withdrawn',
+  'abandoned',
+  'ghosted',
+  'accepted',
+] as const;
+
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
 /**
  * Zod-inferred frontmatter shape for `meta.md`. Every application folder
@@ -96,6 +99,8 @@ export interface CreateApplicationInput {
   site?: string;
   /** Original job posting URL (stored in frontmatter). */
   link?: string;
+  /** Raw job description text (written to jd.md fetched-jd region). */
+  description?: string;
 }
 
 /**

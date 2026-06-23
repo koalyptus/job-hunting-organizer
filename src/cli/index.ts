@@ -25,7 +25,7 @@ const VERSION = getPackageVersion();
 
 const program = new Command('jho')
   .version(VERSION)
-  .description('Local-first CLI for running a job-hunting campaign');
+  .description('Local-first CLI for running a AI assisted job-hunting campaign');
 
 // Global options
 for (const opt of globalOptions) {

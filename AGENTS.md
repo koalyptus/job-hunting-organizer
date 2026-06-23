@@ -220,6 +220,10 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 - Add blank lines before and after `if` statements for human readability. Always use braces (enforced by ESLint `curly` rule), even for short single-line guards.
 - Async functions should always return a value for clarity. Avoid `Promise<void>` where a meaningful return type is possible (e.g. `ensureRoot` returns `boolean` to indicate whether it created the directory).
 
+### Barrel files
+
+- Barrel `index.ts` files re-export only their own module's public API. Never re-export unrelated modules (e.g. `core/track/index.ts` must not re-export from `core/applications/`). Callers import directly from the source module they need.
+
 ### JSDoc
 
 - All **exported** symbols (functions, classes, interfaces, types) must have a JSDoc comment describing their purpose. The `@param` and `@returns` tags are used for non-trivial parameters and return values; `{@link}` references related types and functions.

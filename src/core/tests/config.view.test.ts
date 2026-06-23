@@ -9,13 +9,19 @@ import type { GlobalConfig } from '../types.js';
 const SAMPLE_GLOBAL: GlobalConfig = {
   version: 1,
   dataRoot: '/somewhere/jho',
-  llm: { baseUrl: 'https://api.example.com', apiKey: 'sk-secret-abc', model: 'gpt-x' },
+  llm: {
+    baseUrl: 'https://api.example.com',
+    apiKey: 'sk-secret-abc',
+    model: 'gpt-x',
+    timeoutMs: 300_000,
+  },
   github: { user: 'me', token: 'ghp-secret-xyz', repos: ['me/repo'] },
   calendar: {
     defaultProvider: 'ics',
     outlook: { tenantId: 'tenant', clientId: 'cid', clientSecret: 'cs-secret-123' },
   },
   logging: { level: 'info', file: '/tmp/jho.log', redactPaths: [] },
+  fetch: { timeoutMs: 30_000 },
 };
 
 describe('redactSecrets', () => {

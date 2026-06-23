@@ -151,7 +151,12 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const hasLlm = llm.baseUrl && llm.model;
   // apiKey is optional for local LLMs; fall back to default ('no-key') when empty
   const llmConfig: LlmConfig | undefined = hasLlm
-    ? { baseUrl: llm.baseUrl!, apiKey: llm.apiKey || DEFAULT_LLM_API_KEY, model: llm.model! }
+    ? {
+        baseUrl: llm.baseUrl!,
+        apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
+        model: llm.model!,
+        timeoutMs: existingConfig?.llm.timeoutMs ?? 600_000,
+      }
     : undefined;
 
   // --- Step 4: Calendar ---
@@ -178,6 +183,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
           baseUrl: llm.baseUrl || DEFAULT_LLM_BASE_URL,
           apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
           model: llm.model || DEFAULT_LLM_MODEL,
+          timeoutMs: currentConfig.llm.timeoutMs,
         },
         github: {
           user: github.user ?? '',

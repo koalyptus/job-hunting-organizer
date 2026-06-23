@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile, readdir } from 'node:fs/promises';
 import { atomicWrite, pathExists, withBackup } from '../fs.js';
 
 describe('pathExists', () => {
@@ -67,7 +67,6 @@ describe('atomicWrite', () => {
   it('does not leave tmp files behind on success', async () => {
     const target = join(workDir, 'clean.txt');
     await atomicWrite(target, 'ok');
-    const { readdir } = await import('node:fs/promises');
     const files = await readdir(workDir);
     expect(files).toEqual(['clean.txt']);
   });
@@ -108,7 +107,6 @@ describe('withBackup', () => {
     await withBackup(target, async () => {
       await writeFile(target, 'after');
     });
-    const { readdir } = await import('node:fs/promises');
     const files = await readdir(workDir);
     expect(files).toEqual(['f.txt']);
   });

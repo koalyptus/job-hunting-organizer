@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { runCommand } from '../helpers.js';
-import { trackCommand } from '../../commands/track.js';
 import { listCommand } from '../../commands/list.js';
 import { showCommand } from '../../commands/show.js';
 import { coverLetterCommand } from '../../commands/cover-letter.js';
@@ -15,13 +14,6 @@ import { mcpCommand } from '../../commands/mcp.js';
 import { profileCommand } from '../../commands/profile.js';
 
 describe('stub commands exit with correct phase messages', () => {
-  it('track exits with code 1 and mentions phase 5', async () => {
-    const { stderr, exitCode } = await runCommand(trackCommand, ['track']);
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain('not implemented yet');
-    expect(stderr).toContain('phase 5');
-  });
-
   it('list exits with code 1 and mentions phase 5', async () => {
     const { stderr, exitCode } = await runCommand(listCommand, ['list']);
     expect(exitCode).toBe(1);

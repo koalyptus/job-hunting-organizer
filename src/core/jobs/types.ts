@@ -15,8 +15,8 @@ export interface ExtractedJd {
   salary?: string;
   /** Classification tags (e.g. `['typescript', 'react']`). */
   tags?: string[];
-  /** Full job description as plain text. */
-  description?: string;
+  /** Full original job posting text (required). Stored for later reference. */
+  description: string;
   /** List of requirements. */
   requirements?: string[];
   /** List of qualifications / nice-to-haves. */
@@ -27,6 +27,12 @@ export interface ExtractedJd {
   employmentType?: string;
   /** Seniority level (e.g. `'senior'`, `'staff'`). */
   seniorityLevel?: string;
+  /**
+   * Raw text passed to the LLM for extraction. Populated by both
+   * {@link extractJdFromText} (paste/stdin) and {@link extractJdFromUrl}
+   * (URL fetch). Stored for later reference (e.g. `jd.md` fetched-jd region).
+   */
+  rawText?: string;
 }
 
 /**

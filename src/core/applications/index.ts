@@ -5,6 +5,7 @@ export {
   listApplications,
   deleteApplication,
   getEntryFromSlug,
+  appendNote,
 } from './applications.js';
 export {
   indexPath,

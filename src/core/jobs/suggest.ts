@@ -120,7 +120,16 @@ export async function suggestTargetRole(
 
     log?.debug({ attempt, title: jd.title, company: jd.company }, 'suggest.start');
 
-    const result = await chatComplete(messages, llmConfig, { jsonMode: true, temperature }, log);
+    const result = await chatComplete(
+      messages,
+      llmConfig,
+      {
+        jsonMode: true,
+        temperature,
+        timeout: llmConfig.timeoutMs,
+      },
+      log,
+    );
 
     try {
       const parsed = parseJsonResult(result.content, RoleSuggestionSchema);

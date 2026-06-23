@@ -300,7 +300,8 @@ Arguments:
 Options:
   --paste               paste job description from clipboard
   --stdin               read job description from stdin
-  --status <status>     initial status (default: "applied")
+  --status <status>     initial status (one of: applied, interview, offer,
+                        rejected, withdrawn, abandoned, ghosted, accepted)
   --salary <range>      salary or pay range
   --tag <tag>           add a tag (repeatable) (default: [])
   --note <text>         add a note

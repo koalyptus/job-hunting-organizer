@@ -50,14 +50,14 @@ describe('fetchWithFallback', () => {
 
   it('throws on non-2xx status', async () => {
     const fetch = vi.mocked(globalThis.fetch);
-    fetch.mockResolvedValueOnce(mockFetchResponse('Not Found', 404));
+    fetch.mockImplementation(() => Promise.resolve(mockFetchResponse('Not Found', 404)));
 
     await expect(fetchWithFallback('https://example.com/job/123')).rejects.toThrow(/HTTP 404/);
   });
 
   it('throws on network error', async () => {
     const fetch = vi.mocked(globalThis.fetch);
-    fetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+    fetch.mockRejectedValue(new TypeError('fetch failed'));
 
     await expect(fetchWithFallback('https://example.com/job/123')).rejects.toThrow('fetch failed');
   });
@@ -110,7 +110,7 @@ describe('fetchWithFallback', () => {
 
   it('includes response preview in error for non-2xx with body', async () => {
     const fetch = vi.mocked(globalThis.fetch);
-    fetch.mockResolvedValueOnce(mockFetchResponse('page not found', 404));
+    fetch.mockImplementation(() => Promise.resolve(mockFetchResponse('page not found', 404)));
 
     await expect(fetchWithFallback('https://example.com/job/123')).rejects.toThrow(
       /response preview: page not found/,
@@ -119,7 +119,7 @@ describe('fetchWithFallback', () => {
 
   it('omits response preview in error for non-2xx with empty body', async () => {
     const fetch = vi.mocked(globalThis.fetch);
-    fetch.mockResolvedValueOnce(mockFetchResponse('', 500));
+    fetch.mockImplementation(() => Promise.resolve(mockFetchResponse('', 500)));
 
     await expect(fetchWithFallback('https://example.com/job/123')).rejects.toThrow(
       /HTTP 500 Error fetching/,
@@ -134,7 +134,7 @@ describe('fetchWithFallback', () => {
     await fetchWithFallback('https://example.com/job/123', {}, log);
 
     expect(log.debug).toHaveBeenCalledWith(
-      { url: 'https://example.com/job/123', timeoutMs: 15_000 },
+      { url: 'https://example.com/job/123', timeoutMs: 30_000 },
       'fetch.start',
     );
     expect(log.debug).toHaveBeenCalledWith(

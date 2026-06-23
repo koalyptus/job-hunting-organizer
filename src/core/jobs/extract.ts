@@ -2,7 +2,7 @@ import type { Logger } from 'pino';
 import { convert } from 'html-to-text';
 import { chatComplete, parseJsonResult } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { fetchWithFallback } from '../fetch.js';
+import { fetchWithFallback, type FetchResult } from '../fetch.js';
 import { ExtractedJdSchema } from './jd-schema.js';
 import type { ExtractedJd } from './types.js';
 import type { LlmConfig } from '../types.js';
@@ -18,14 +18,21 @@ const JD_EXTRACT_TEMPERATURE = 0.1;
 
 /**
  * Strip HTML tags and decode entities using `html-to-text`. Skips
- * `<script>` and `<style>` elements. Returns clean plain text suitable
- * for LLM consumption.
+ * boilerplate elements (scripts, styles, nav, footer, header, etc.)
+ * that bloat the text without adding JD content. Returns clean plain
+ * text suitable for LLM consumption.
  */
 export function stripHtml(html: string): string {
   return convert(html, {
     selectors: [
       { selector: 'script', format: 'skip' },
       { selector: 'style', format: 'skip' },
+      { selector: 'nav', format: 'skip' },
+      { selector: 'footer', format: 'skip' },
+      { selector: 'header', format: 'skip' },
+      { selector: 'aside', format: 'skip' },
+      { selector: '.cookie', format: 'skip' },
+      { selector: '.sidebar', format: 'skip' },
       { selector: 'a', options: { linkBrackets: false, ignoreHref: true } },
     ],
     wordwrap: false,
@@ -47,7 +54,8 @@ async function loadPrompt(): Promise<{ systemPrompt: string; temperature: number
  * `jd-extract.md` prompt template with `jsonMode: true` and the
  * temperature from the prompt's `recommendedTemperature` frontmatter.
  * Retries up to {@link MAX_RETRIES} times when the LLM output fails
- * Zod validation.
+ * Zod validation. The returned `ExtractedJd` always includes `rawText`
+ * set to the input text.
  *
  * @throws after {@link MAX_RETRIES} + 1 attempts with the last validation error.
  */
@@ -77,12 +85,21 @@ export async function extractJdFromText(
 
     log?.debug({ attempt, textLength: text.length }, 'extract.start');
 
-    const result = await chatComplete(messages, llmConfig, { jsonMode: true, temperature }, log);
+    const result = await chatComplete(
+      messages,
+      llmConfig,
+      {
+        jsonMode: true,
+        temperature,
+        timeout: llmConfig.timeoutMs,
+      },
+      log,
+    );
 
     try {
-      const parsed = parseJsonResult(result.content, ExtractedJdSchema);
+      const parsed = parseJsonResult(result.content, ExtractedJdSchema) as ExtractedJd;
       log?.debug({ attempt, title: parsed.title, company: parsed.company }, 'extract.complete');
-      return parsed;
+      return { ...parsed, rawText: text };
     } catch (error: unknown) {
       lastError = error instanceof Error ? error : new Error(String(error));
       log?.warn({ attempt, error: lastError.message }, 'extract.validation_failed');
@@ -104,8 +121,17 @@ export async function extractJdFromUrl(
   url: string,
   llmConfig: LlmConfig,
   log?: Logger,
+  timeoutMs?: number,
 ): Promise<ExtractedJd> {
-  const fetchResult = await fetchWithFallback(url, {}, log);
+  let fetchResult: FetchResult;
+  try {
+    fetchResult = await fetchWithFallback(url, { timeoutMs }, log);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `${msg}\n\nTip: Some job sites block automated fetches. Try copying the job description and using:\n  jho track --paste`,
+    );
+  }
   const plainText = stripHtml(fetchResult.body);
-  return extractJdFromText(plainText, llmConfig, log);
+  return await extractJdFromText(plainText, llmConfig, log);
 }

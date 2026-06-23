@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import {
   readCollisionSuffix,
   readCounters,
@@ -126,15 +126,9 @@ describe('readCollisionSuffix', () => {
 
   it('does not modify the file on disk (pure read)', async () => {
     await writeFile(join(workDir, '.counters.json'), JSON.stringify({ a: 1 }), 'utf8');
-    const before = (await import('node:fs/promises')).readFile(
-      join(workDir, '.counters.json'),
-      'utf8',
-    );
+    const before = readFile(join(workDir, '.counters.json'), 'utf8');
     readCollisionSuffix('a', workDir);
-    const after = (await import('node:fs/promises')).readFile(
-      join(workDir, '.counters.json'),
-      'utf8',
-    );
+    const after = readFile(join(workDir, '.counters.json'), 'utf8');
     expect(await before).toEqual(await after);
   });
 });

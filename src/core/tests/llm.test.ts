@@ -13,18 +13,25 @@ const testConfig = {
   baseUrl: 'https://api.test.com/v1',
   apiKey: 'sk-test',
   model: 'gpt-4o',
+  timeoutMs: 300_000,
 };
 
 const testGlobalConfig = {
   version: 1 as const,
   dataRoot: '/tmp',
-  llm: { baseUrl: 'https://config.com/v1', apiKey: 'sk-config', model: 'gpt-4' },
+  llm: {
+    baseUrl: 'https://config.com/v1',
+    apiKey: 'sk-config',
+    model: 'gpt-4',
+    timeoutMs: 300_000,
+  },
   github: { user: '', token: '', repos: [] },
   calendar: {
     defaultProvider: 'ics' as const,
     outlook: { tenantId: '', clientId: '', clientSecret: '' },
   },
   logging: { level: 'info' as const, file: '', redactPaths: [] },
+  fetch: { timeoutMs: 30_000 },
 };
 
 function okJson(data: Record<string, unknown>): Response {
