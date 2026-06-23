@@ -54,6 +54,7 @@ const testLlmConfig = {
   baseUrl: 'https://api.test.com/v1',
   apiKey: 'sk-test',
   model: 'gpt-4o',
+  timeoutMs: 300_000,
 };
 
 const mockUser = {

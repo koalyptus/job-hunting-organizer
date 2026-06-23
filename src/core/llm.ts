@@ -5,6 +5,12 @@ import type { Logger } from 'pino';
 import { loadGlobalConfig } from './config.js';
 import type { GlobalConfig, LlmConfig, ChatCompleteOptions, ChatCompleteResult } from './types.js';
 
+/** Default timeout for LLM requests (10 minutes). */
+const DEFAULT_LLM_TIMEOUT_MS = 600_000;
+
+/** Default temperature for LLM requests. */
+const DEFAULT_TEMPERATURE = 0.6;
+
 /**
  * Normalise a base URL for the OpenAI-compatible API.
  * Appends `/v1` when missing so `http://localhost:11434` and
@@ -32,6 +38,7 @@ export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
     baseUrl: process.env['LLM_BASE_URL'] ?? config.llm.baseUrl,
     apiKey: process.env['LLM_API_KEY'] ?? config.llm.apiKey,
     model: process.env['LLM_MODEL'] ?? config.llm.model,
+    timeoutMs: config.llm.timeoutMs,
   };
 }
 
@@ -41,10 +48,10 @@ export async function chatComplete(
   options: ChatCompleteOptions = {},
   log?: Logger,
 ): Promise<ChatCompleteResult> {
-  const temperature = options.temperature ?? 0.6;
+  const temperature = options.temperature ?? DEFAULT_TEMPERATURE;
   const maxTokens = options.maxTokens;
   const jsonMode = options.jsonMode ?? false;
-  const timeout = options.timeout ?? 300_000;
+  const timeout = options.timeout ?? DEFAULT_LLM_TIMEOUT_MS;
   const maxRetries = options.maxRetries ?? 0;
 
   const client = new OpenAI({

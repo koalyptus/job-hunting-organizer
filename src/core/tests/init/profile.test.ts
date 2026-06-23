@@ -90,7 +90,12 @@ describe('handleProfile', () => {
       githubUser: 'testuser',
       githubToken: 'token',
       linkedinUrl: undefined,
-      llmConfig: { baseUrl: 'http://localhost:11434/v1', apiKey: 'key', model: 'model' },
+      llmConfig: {
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: 'key',
+        model: 'model',
+        timeoutMs: 300_000,
+      },
       nonInteractive: false,
     });
 
@@ -105,7 +110,12 @@ describe('handleProfile', () => {
       githubUser: 'testuser',
       githubToken: 'token',
       linkedinUrl: undefined,
-      llmConfig: { baseUrl: 'http://localhost:11434/v1', apiKey: 'key', model: 'model' },
+      llmConfig: {
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: 'key',
+        model: 'model',
+        timeoutMs: 300_000,
+      },
       nonInteractive: false,
     });
 

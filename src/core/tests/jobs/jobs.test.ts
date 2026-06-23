@@ -9,6 +9,7 @@ const testLlmConfig: LlmConfig = {
   baseUrl: 'https://api.test.com/v1',
   apiKey: 'sk-test',
   model: 'gpt-4o',
+  timeoutMs: 300_000,
 };
 
 const mockChatComplete = vi.fn();
@@ -40,6 +41,7 @@ function mockLlmResponse(jd: Partial<ExtractedJd>): void {
     content: JSON.stringify({
       title: 'Software Engineer',
       company: 'Test Corp',
+      description: 'Full job description text for the position.',
       ...jd,
     }),
     model: 'gpt-4o',
@@ -142,6 +144,7 @@ describe('extractJdFromText', () => {
     expect(result.location).toBe('Sydney');
     expect(result.salary).toBe('150k AUD');
     expect(result.tags).toEqual(['typescript', 'node']);
+    expect(result.rawText).toBe('Job posting text...');
   });
 
   it('handles partial JD (title + company only)', async () => {
@@ -185,14 +188,18 @@ describe('extractJdFromText', () => {
   it('retries on validation failure then succeeds', async () => {
     mockChatComplete
       .mockResolvedValueOnce({
-        content: JSON.stringify({ title: '', company: '' }),
+        content: JSON.stringify({ title: '', company: '', description: '' }),
         model: 'gpt-4o',
         finishReason: 'stop',
         usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
         durationMs: 200,
       })
       .mockResolvedValueOnce({
-        content: JSON.stringify({ title: 'Real Title', company: 'Real Corp' }),
+        content: JSON.stringify({
+          title: 'Real Title',
+          company: 'Real Corp',
+          description: 'Full job description.',
+        }),
         model: 'gpt-4o',
         finishReason: 'stop',
         usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
@@ -228,14 +235,18 @@ describe('extractJdFromText', () => {
   it('includes retry message in follow-up calls', async () => {
     mockChatComplete
       .mockResolvedValueOnce({
-        content: JSON.stringify({ title: '', company: '' }),
+        content: JSON.stringify({ title: '', company: '', description: '' }),
         model: 'gpt-4o',
         finishReason: 'stop',
         usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
         durationMs: 200,
       })
       .mockResolvedValueOnce({
-        content: JSON.stringify({ title: 'Fixed', company: 'Corp' }),
+        content: JSON.stringify({
+          title: 'Fixed',
+          company: 'Corp',
+          description: 'Fixed description.',
+        }),
         model: 'gpt-4o',
         finishReason: 'stop',
         usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
@@ -263,7 +274,11 @@ describe('extractJdFromText', () => {
         durationMs: 200,
       })
       .mockResolvedValueOnce({
-        content: JSON.stringify({ title: 'Fixed', company: 'Corp' }),
+        content: JSON.stringify({
+          title: 'Fixed',
+          company: 'Corp',
+          description: 'Fixed description.',
+        }),
         model: 'gpt-4o',
         finishReason: 'stop',
         usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
@@ -307,20 +322,24 @@ describe('extractJdFromText', () => {
   it('logs warning on each validation failure', async () => {
     mockChatComplete
       .mockResolvedValueOnce({
-        content: JSON.stringify({ title: '', company: '' }),
+        content: JSON.stringify({ title: '', company: '', description: '' }),
         model: 'gpt-4o',
         finishReason: 'stop',
         usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
         durationMs: 200,
       })
       .mockResolvedValueOnce({
-        content: JSON.stringify({ title: 'Fixed', company: 'Corp' }),
+        content: JSON.stringify({
+          title: 'Fixed',
+          company: 'Corp',
+          description: 'Fixed description.',
+        }),
         model: 'gpt-4o',
         finishReason: 'stop',
         usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
         durationMs: 200,
       });
-    const log = { debug: vi.fn(), warn: vi.fn() } as unknown as Logger;
+    const log = { debug: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
 
     await extractJdFromText('text', testLlmConfig, log);
 
@@ -421,7 +440,7 @@ describe('extractJdFromUrl', () => {
 
   it('throws on fetch failure', async () => {
     const fetch = vi.mocked(globalThis.fetch);
-    fetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+    fetch.mockRejectedValue(new TypeError('fetch failed'));
 
     await expect(extractJdFromUrl('https://example.com/job/123', testLlmConfig)).rejects.toThrow(
       'fetch failed',

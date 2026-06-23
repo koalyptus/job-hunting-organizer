@@ -48,6 +48,7 @@
   "dependencies": {
     "@clack/prompts": "^1.5.1",
     "cli-table3": "^0.6.5",
+    "clipboardy": "^4.0.0",
     "commander": "^15.0.0",
     "debug": "^4.4.1",
     "html-to-text": "^10.0.0",

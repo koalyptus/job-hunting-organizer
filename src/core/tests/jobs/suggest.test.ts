@@ -9,6 +9,7 @@ const testLlmConfig: LlmConfig = {
   baseUrl: 'https://api.test.com/v1',
   apiKey: 'sk-test',
   model: 'gpt-4o',
+  timeoutMs: 300_000,
 };
 
 const mockChatComplete = vi.fn();
@@ -218,7 +219,7 @@ describe('suggestTargetRole', () => {
   });
 
   it('formats JD without optional fields', async () => {
-    const minimalJd: ExtractedJd = { title: 'Dev', company: 'Co' };
+    const minimalJd: ExtractedJd = { title: 'Dev', company: 'Co', description: 'Job description.' };
     mockSuggestionResponse({});
 
     await suggestTargetRole(minimalJd, testRoles, testLlmConfig);
@@ -229,11 +230,15 @@ describe('suggestTargetRole', () => {
     expect(userMsg?.content).toContain('Company: Co');
     expect(userMsg?.content).not.toContain('Salary:');
     expect(userMsg?.content).not.toContain('Tags:');
-    expect(userMsg?.content).not.toContain('Description:');
   });
 
   it('formats JD with salary field', async () => {
-    const jdWithSalary: ExtractedJd = { title: 'Dev', company: 'Co', salary: '120k AUD' };
+    const jdWithSalary: ExtractedJd = {
+      title: 'Dev',
+      company: 'Co',
+      description: 'Job description.',
+      salary: '120k AUD',
+    };
     mockSuggestionResponse({});
 
     await suggestTargetRole(jdWithSalary, testRoles, testLlmConfig);

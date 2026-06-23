@@ -1,4 +1,4 @@
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { uniqueSlug } from '../slug.js';
@@ -136,7 +136,9 @@ export async function createApplication(input: CreateApplicationInput): Promise<
     if (!metaWritten) {
       throw new Error(`failed to write meta.md for ${slug}`);
     }
-    const jdContent = replaceRegion('', 'fetched-jd', '', { createIfMissing: true });
+    const jdContent = replaceRegion('', 'fetched-jd', input.description ?? '', {
+      createIfMissing: true,
+    });
     const jdWritten = await atomicWrite(
       join(folder, 'jd.md'),
       jdContent + '\n' + USER_NOTES_COMMENT + '\n',
@@ -305,4 +307,41 @@ export async function getEntryFromSlug(
   } catch {
     return null;
   }
+}
+
+/**
+ * Append a note to an application's `jd.md` file below the user notes marker.
+ * Creates the marker if it doesn't exist.
+ *
+ * @param appliedDir - The applied directory.
+ * @param slug - The application slug.
+ * @param note - The note text to append.
+ */
+export async function appendNote(appliedDir: string, slug: string, note: string): Promise<void> {
+  const folder = join(appliedDir, slug);
+  const jdPath = join(folder, 'jd.md');
+
+  if (!existsSync(folder)) {
+    throw new Error(`application not found: ${slug}`);
+  }
+
+  await acquireLock(folder, async () => {
+    let content = '';
+    if (existsSync(jdPath)) {
+      content = await readFile(jdPath, 'utf8');
+    }
+
+    // Add marker if it doesn't exist
+    if (!content.includes(USER_NOTES_COMMENT)) {
+      content = content.trimEnd() + '\n\n' + USER_NOTES_COMMENT + '\n';
+    }
+
+    // Append the note
+    content = content.trimEnd() + '\n' + note + '\n';
+
+    const written = await atomicWrite(jdPath, content);
+    if (!written) {
+      throw new Error(`failed to write jd.md for ${slug}`);
+    }
+  });
 }

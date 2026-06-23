@@ -87,11 +87,14 @@ export const GlobalConfigSchema = z.object({
       baseUrl: z.string().url().default('http://localhost:11434/v1'),
       apiKey: z.string().default('no-key'),
       model: z.string().default('llama3.1'),
+      /** Per-request timeout in milliseconds for LLM calls (default 10min). Increase for slow local models. */
+      timeoutMs: z.number().int().min(30_000).max(3_600_000).default(600_000),
     })
     .default({
       baseUrl: 'http://localhost:11434/v1',
       apiKey: 'no-key',
       model: 'llama3.1',
+      timeoutMs: 600_000,
     }),
   /**
    * Optional GitHub integration for `jho campaign init` profile
@@ -104,6 +107,16 @@ export const GlobalConfigSchema = z.object({
       repos: z.array(z.string()).default([]),
     })
     .default({ user: '', token: '', repos: [] }),
+  /**
+   * Fetch settings for JD extraction. `timeoutMs` controls how long
+   * each HTTP request waits before aborting (default 30s). Increase
+   * for slow sites or Cloudflare-challenged pages.
+   */
+  fetch: z
+    .object({
+      timeoutMs: z.number().int().min(5_000).max(120_000).default(30_000),
+    })
+    .default({ timeoutMs: 30_000 }),
   /** Calendar integration. ICS is the zero-config default. */
   calendar: z
     .object({

@@ -4,6 +4,14 @@
  */
 
 /**
+ * Detect whether a string looks like a URL (starts with http:// or https://).
+ * Returns false for undefined or empty strings.
+ */
+export function isUrl(value: string | undefined): boolean {
+  return value !== undefined && /^https?:\/\//i.test(value);
+}
+
+/**
  * Site-specific patterns for extracting a job-board ID from a posting URL.
  * The `name` is for diagnostics only; `group` is the capture index that
  * holds the ID. Patterns are tried in order; the first match wins.

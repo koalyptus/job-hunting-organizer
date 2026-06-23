@@ -22,7 +22,9 @@
   - [x] 5a — Data schemas & applications core
   - [x] 5b — JD fetch & extraction
   - [x] 5c — Target role suggestion
-  - [ ] 5d — jho track CLI
+  - [x] 5d — jho track CLI
+    - [ ] 5d1 — CLI logging integration
+    - [ ] 5d2 — `jho track <slug> --refresh` (re-fetch JD for existing application)
   - [ ] 5e — jho list
   - [ ] 5f — core/stats & jho stats
   - [ ] 5g — Tests, docs & polish
@@ -281,6 +283,31 @@ Split into sub-phases for incremental delivery.
 **Deliverable**: `jho track <url>` creates app with JD + suggested role. `jho track <slug> --status interview` updates existing app.
 
 **Commit**: `feat(cli): wire jho track with full pipeline and interactive prompts`
+
+#### 5d1 — CLI logging integration
+
+- Wire pino logger to CLI entry point (`src/cli/index.ts`): initialize root logger, set `JHO_LOG_FILE`
+- Pass logger to core functions: `runTrack({ log })`, `runInit({ log })`, `buildProfile({ log })`
+- Add `log.error()` in CLI catch blocks before `process.stderr.write()` for: `TrackError`, `InitError`, `ProfileReadError`, `RenameError`
+- Replace `console.warn` in `src/core/config.ts` (lines 96, 132) with pino logger
+- Add `log.debug()` to silent catches: profile read failure (track.ts:130), campaign config load (wizard.ts:74)
+- Log cancellation events at `debug` level: `TrackCancelled`, `InitCancelled`
+
+**Deliverable**: All errors appear in `<configHome>/jho.log`. CLI commands pass logger to core.
+
+**Commit**: `feat(cli): wire pino logger to CLI commands for error logging`
+
+#### 5d2 — `jho track <slug> --refresh` (re-fetch JD)
+
+- `src/core/track/track.ts` — add `refresh?: boolean` to `TrackOptions`; add `runTrackRefresh` function; wire in `runTrack` dispatch
+- `runTrackRefresh`: read existing app's `link` from `meta.md` frontmatter; call `extractJdFromUrl` (or `extractJdFromText` if `--paste`/`--stdin` is provided); update `jd.md` `fetched-jd` region via `replaceRegion`; write back via `atomicWrite`
+- `src/cli/commands/track.ts` — add `--refresh` option; pass `refresh` to `runTrack`; update `hasTrackUpdateFlags` to include `refresh`
+- Edge cases: no link in meta.md → `TrackError`; fetch failure → error includes paste hint; user notes below `<!-- jho:start:fetched-jd -->` preserved
+- Tests: re-fetch from URL, with `--paste`, with `--stdin`, no link stored, fetch failure, CLI option + help snapshot
+
+**Deliverable**: `jho track <slug> --refresh` re-fetches JD from stored URL. `--paste`/`--stdin` override source.
+
+**Commit**: `feat(track): --refresh flag to re-fetch JD for existing applications`
 
 #### 5e — `jho list` implementation
 

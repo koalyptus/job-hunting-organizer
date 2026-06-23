@@ -91,6 +91,8 @@ export interface LlmConfig {
   readonly apiKey: string;
   /** Model identifier, e.g. `gpt-4o-mini`. */
   readonly model: string;
+  /** Per-request timeout in milliseconds for LLM calls (default 300s). */
+  readonly timeoutMs: number;
 }
 
 /**
@@ -200,6 +202,8 @@ export interface GlobalConfig {
     apiKey: string;
     /** Model identifier, e.g. `gpt-4o-mini`. */
     model: string;
+    /** Per-request timeout in milliseconds for LLM calls (default 10min). */
+    timeoutMs: number;
   };
   /** Optional GitHub integration for `jho campaign init` profile building. */
   github: {
@@ -232,6 +236,11 @@ export interface GlobalConfig {
     file: string;
     /** JSON paths to redact in addition to the built-in secret list. */
     redactPaths: string[];
+  };
+  /** HTTP fetch settings. */
+  fetch: {
+    /** Timeout in milliseconds for each HTTP request (default 30s). */
+    timeoutMs: number;
   };
 }
 

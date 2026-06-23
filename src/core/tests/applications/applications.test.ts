@@ -10,8 +10,12 @@ import {
   listApplications,
   deleteApplication,
   getEntryFromSlug,
+  appendNote,
+  readIndex,
 } from '../../applications/index.js';
 import { todayIso } from '../../date.js';
+import * as fsModule from '../../fs.js';
+import { writeFrontmatter } from '../../frontmatter.js';
 
 const mockWarn = vi.fn();
 const mockDebug = vi.fn();
@@ -88,6 +92,24 @@ describe('createApplication', () => {
     expect(jd).toContain('<!-- jho:end:fetched-jd -->');
   });
 
+  it('writes description to jd.md fetched-jd region', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Engineer',
+      company: 'Bar',
+      description: 'We are looking for a senior engineer to build scalable systems.',
+    });
+    const jd = await readFile(join(appliedDir, slug, 'jd.md'), 'utf8');
+    expect(jd).toContain('We are looking for a senior engineer to build scalable systems.');
+  });
+
+  it('writes empty fetched-jd region when description is not provided', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Engineer', company: 'Bar' });
+    const jd = await readFile(join(appliedDir, slug, 'jd.md'), 'utf8');
+    const match = jd.match(/<!-- jho:start:fetched-jd -->\n(.*?)\n<!-- jho:end:fetched-jd -->/s);
+    expect(match?.[1]?.trim()).toBe('');
+  });
+
   it('updates the index file', async () => {
     const slug = await createApplication({
       appliedDir,
@@ -95,7 +117,6 @@ describe('createApplication', () => {
       company: 'Baz',
       appliedOn: '2026-06-03',
     });
-    const { readIndex } = await import('../../applications/index.js');
     const entries = await readIndex(appliedDir);
     expect(entries).toHaveLength(1);
     expect(entries[0]!.slug).toBe(slug);
@@ -187,9 +208,7 @@ describe('updateApplication', () => {
   it('preserves body text', async () => {
     const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
     const metaPath = join(appliedDir, slug, 'meta.md');
-    const { writeFrontmatter } = await import('../../frontmatter.js');
-    const { readApplication: readApp } = await import('../../applications/index.js');
-    const { frontmatter } = await readApp(appliedDir, slug);
+    const { frontmatter } = await readApplication(appliedDir, slug);
     await writeFrontmatter(
       metaPath,
       frontmatter as unknown as Record<string, unknown>,
@@ -197,7 +216,7 @@ describe('updateApplication', () => {
     );
 
     await updateApplication(appliedDir, slug, { status: 'offer' });
-    const { body: newBody } = await readApp(appliedDir, slug);
+    const { body: newBody } = await readApplication(appliedDir, slug);
     expect(newBody).toContain('My Notes');
     expect(newBody).toContain('Some text.');
   });
@@ -349,5 +368,80 @@ describe('getEntryFromSlug', () => {
   it('returns null for non-existent slug', async () => {
     const entry = await getEntryFromSlug(appliedDir, 'nonexistent');
     expect(entry).toBeNull();
+  });
+});
+
+describe('appendNote', () => {
+  const USER_NOTES_COMMENT = '<!-- user notes below this line are preserved on re-track -->';
+
+  it('throws if application folder does not exist', async () => {
+    await expect(appendNote(appliedDir, 'nonexistent', 'note')).rejects.toThrow(
+      'application not found: nonexistent',
+    );
+  });
+
+  it('creates jd.md with marker and note when jd.md does not exist', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    await appendNote(appliedDir, slug, 'my note');
+
+    const jdPath = join(appliedDir, slug, 'jd.md');
+    const content = await readFile(jdPath, 'utf8');
+
+    expect(content).toContain(USER_NOTES_COMMENT);
+    expect(content).toContain('my note');
+    expect(content.endsWith('my note\n')).toBe(true);
+  });
+
+  it('appends note below marker when jd.md already has content', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    const jdPath = join(appliedDir, slug, 'jd.md');
+    await writeFile(jdPath, '# Job Description\nSome content\n');
+
+    await appendNote(appliedDir, slug, 'referred by Alice');
+
+    const content = await readFile(jdPath, 'utf8');
+    expect(content).toContain('# Job Description');
+    expect(content).toContain(USER_NOTES_COMMENT);
+    expect(content).toContain('referred by Alice');
+    expect(content.indexOf(USER_NOTES_COMMENT)).toBeGreaterThan(
+      content.indexOf('# Job Description'),
+    );
+  });
+
+  it('does not duplicate marker when it already exists', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    const jdPath = join(appliedDir, slug, 'jd.md');
+    await writeFile(jdPath, `# JD\n${USER_NOTES_COMMENT}\nexisting note\n`);
+
+    await appendNote(appliedDir, slug, 'new note');
+
+    const content = await readFile(jdPath, 'utf8');
+    const markerCount = content.split(USER_NOTES_COMMENT).length - 1;
+    expect(markerCount).toBe(1);
+    expect(content).toContain('existing note');
+    expect(content).toContain('new note');
+  });
+
+  it('appends multiple notes sequentially', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+
+    await appendNote(appliedDir, slug, 'first note');
+    await appendNote(appliedDir, slug, 'second note');
+
+    const jdPath = join(appliedDir, slug, 'jd.md');
+    const content = await readFile(jdPath, 'utf8');
+
+    expect(content).toContain('first note');
+    expect(content).toContain('second note');
+    expect(content.indexOf('first note')).toBeLessThan(content.indexOf('second note'));
+  });
+
+  it('throws when atomicWrite fails', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    vi.spyOn(fsModule, 'atomicWrite').mockResolvedValue(false);
+
+    await expect(appendNote(appliedDir, slug, 'note')).rejects.toThrow(
+      `failed to write jd.md for ${slug}`,
+    );
   });
 });

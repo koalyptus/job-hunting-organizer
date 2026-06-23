@@ -2,7 +2,10 @@ import type { Logger } from 'pino';
 import { getPackageVersion } from './package.js';
 import { FETCH_TIMEOUT_MS } from './constants.js';
 
-const USER_AGENT = `jho/${getPackageVersion()}`;
+const JHO_UA = `jho/${getPackageVersion()}`;
+
+const BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
 
 /** Max characters of response body included in error messages. */
 const RESPONSE_PREVIEW_LENGTH = 200;
@@ -12,13 +15,9 @@ const RESPONSE_PREVIEW_LENGTH = 200;
  * Carries the raw response data needed by downstream consumers.
  */
 export interface FetchResult {
-  /** HTTP status code (e.g. 200, 404). */
   readonly status: number;
-  /** Response headers (lowercased keys). */
   readonly headers: Record<string, string>;
-  /** Raw response body as text (HTML or plain text). */
   readonly body: string;
-  /** Final URL after redirects. */
   readonly url: string;
 }
 
@@ -26,26 +25,19 @@ export interface FetchResult {
  * Options for {@link fetchWithFallback}.
  */
 export interface FetchWithFallbackOptions {
-  /** Request timeout in milliseconds. Default: {@link FETCH_TIMEOUT_MS}. */
   readonly timeoutMs?: number;
-  /** Additional headers to send with the request. */
   readonly headers?: Record<string, string>;
 }
 
-/**
- * Fetch a URL with a user-agent header, timeout, and redirect following.
- * Returns a {@link FetchResult} with status, headers, body, and final URL.
- *
- * @throws on network errors, non-2xx status codes, or timeouts.
- */
-export async function fetchWithFallback(
+async function attemptFetch(
   url: string,
-  options: FetchWithFallbackOptions = {},
+  userAgent: string,
+  options: FetchWithFallbackOptions,
   log?: Logger,
 ): Promise<FetchResult> {
   const timeoutMs = options.timeoutMs ?? FETCH_TIMEOUT_MS;
   const headers = {
-    'User-Agent': USER_AGENT,
+    'User-Agent': userAgent,
     Accept: 'text/html,application/xhtml+xml,text/plain,*/*',
     ...options.headers,
   };
@@ -64,13 +56,6 @@ export async function fetchWithFallback(
 
     const body = await response.text();
 
-    const result: FetchResult = {
-      status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
-      body,
-      url: response.url,
-    };
-
     if (!response.ok) {
       const snippet = body.slice(0, RESPONSE_PREVIEW_LENGTH);
       throw new Error(
@@ -81,13 +66,61 @@ export async function fetchWithFallback(
 
     log?.debug({ url, status: response.status, bodyLength: body.length }, 'fetch.complete');
 
-    return result;
+    return {
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      body,
+      url: response.url,
+    };
   } catch (error: unknown) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`Timeout fetching ${url} after ${timeoutMs}ms`);
+      const err = new Error(`Timeout fetching ${url} after ${timeoutMs}ms`);
+      err.name = 'AbortError';
+      throw err;
     }
     throw error;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * Fetch a URL with user-agent fallback, timeout, and redirect following.
+ *
+ * Tries the JHO UA first. On non-2xx or network error (but not timeout),
+ * retries once with a browser-like UA. If the caller provides a custom
+ * `User-Agent` header in options, only that UA is used (no fallback).
+ *
+ * Returns a {@link FetchResult} with status, headers, body, and final URL.
+ *
+ * @throws on network errors, non-2xx status codes, or timeouts.
+ */
+export async function fetchWithFallback(
+  url: string,
+  options: FetchWithFallbackOptions = {},
+  log?: Logger,
+): Promise<FetchResult> {
+  const uas = options.headers?.['User-Agent']
+    ? [options.headers['User-Agent']]
+    : [JHO_UA, BROWSER_UA];
+
+  try {
+    return await attemptFetch(url, uas[0]!, options, log);
+  } catch (firstErr) {
+    if (uas.length === 1) {
+      throw firstErr;
+    }
+    if (firstErr instanceof Error && firstErr.name === 'AbortError') {
+      throw firstErr;
+    }
+    log?.debug(
+      {
+        url,
+        error: firstErr instanceof Error ? firstErr.message : String(firstErr),
+        fallbackUserAgent: uas[1]!,
+      },
+      'fetch.retry',
+    );
+    return await attemptFetch(url, uas[1]!, options, log);
   }
 }

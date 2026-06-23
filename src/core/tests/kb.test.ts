@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { GithubUser, GithubRepo } from '../types.js';
 import { readCachedCv, writeCachedCv, readCachedGithub, writeCachedGithub } from '../kb.js';
@@ -52,7 +53,6 @@ describe('readCachedCv', () => {
 
   it('returns null for corrupted JSON', async () => {
     const cacheDir = join(workDir, 'knowledge-base');
-    const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'cv.json'), 'NOT JSON');
 
@@ -62,7 +62,6 @@ describe('readCachedCv', () => {
 
   it('reads a valid cache file', async () => {
     const cacheDir = join(workDir, 'knowledge-base');
-    const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(
       join(cacheDir, 'cv.json'),
@@ -114,7 +113,6 @@ describe('writeCachedCv', () => {
       fileName: 'cv.txt',
     });
 
-    const { existsSync } = await import('node:fs');
     expect(existsSync(join(workDir, 'knowledge-base', 'cv.json'))).toBe(true);
   });
 });
@@ -137,7 +135,6 @@ describe('readCachedGithub', () => {
 
   it('returns null for corrupted JSON', async () => {
     const cacheDir = join(workDir, 'knowledge-base', 'github');
-    const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'testuser.json'), '{bad');
 
@@ -147,7 +144,6 @@ describe('readCachedGithub', () => {
 
   it('reads a valid cache file', async () => {
     const cacheDir = join(workDir, 'knowledge-base', 'github');
-    const { mkdirSync, writeFileSync } = await import('node:fs');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(
       join(cacheDir, 'testuser.json'),
@@ -185,14 +181,12 @@ describe('writeCachedGithub', () => {
   it('creates parent directories automatically', async () => {
     await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos);
 
-    const { existsSync } = await import('node:fs');
     expect(existsSync(join(workDir, 'knowledge-base', 'github', 'testuser.json'))).toBe(true);
   });
 
   it('includes cachedAt timestamp', async () => {
     await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos);
 
-    const { readFileSync } = await import('node:fs');
     const raw = readFileSync(join(workDir, 'knowledge-base', 'github', 'testuser.json'), 'utf8');
     const parsed = JSON.parse(raw);
     expect(parsed.cachedAt).toBeDefined();
