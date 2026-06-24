@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { basename, dirname, extname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 // Default import carries the full namespace merge (including .symbols) that
 // TypeScript doesn't expose on named imports from CJS modules with NodeNext.
 import pino, { type Logger, type LoggerOptions } from 'pino';
@@ -39,13 +40,8 @@ const DEFAULT_REDACT_PATHS: readonly string[] = [
   ...SECRET_PATHS.map((s) => s.path.join('.')),
 ];
 
-/** The `pino` transport name used for pretty TTY output. */
-const TTY_TRANSPORT_TARGET = 'pino-pretty';
-
 /**
- * Detect whether a stream is attached to a terminal. Exported so
- * callers (and the tests) can use the same TTY probe the logger
- * uses internally to pick between pretty and JSON output.
+ * Detect whether a stream is attached to a terminal.
  * @param stream - A `WriteStream` like `process.stderr`.
  * @returns `true` only when the stream is a real TTY.
  */
@@ -55,15 +51,14 @@ export function isInteractive(stream: NodeJS.WriteStream | undefined): boolean {
 
 /**
  * Translate a {@link LoggerConfig} into the `pino` options shape.
- * The TTY path wires up `pino-pretty` so interactive terminals get
- * color, condensed timestamps, and no `pid` / `hostname` noise. The
- * non-TTY path emits JSON, which is what the CLI's `pino-pretty`
- * consumer expects when `--no-color` is set or stdout is piped.
+ * Logs are always written as JSON (no pretty-printing). Terminal output
+ * is never produced — the CLI reserves stdout for command results and
+ * stderr for user-facing errors.
  * @param config - Resolved logger config.
  * @returns A `pino` `LoggerOptions` object.
  */
 function buildOptions(config: LoggerConfig): LoggerOptions {
-  const options: LoggerOptions = {
+  return {
     level: config.level,
     redact: {
       paths: config.redactPaths.length > 0 ? [...config.redactPaths] : [...DEFAULT_REDACT_PATHS],
@@ -76,38 +71,27 @@ function buildOptions(config: LoggerConfig): LoggerOptions {
     },
     timestamp: pino.stdTimeFunctions.isoTime,
   };
-
-  // Only use pino-pretty transport when writing to the console (no file).
-  // When a file path is set we always write JSON — the pretty transport
-  // would override the file destination and log to stdout instead.
-  if (config.isTty && config.file === undefined) {
-    options.transport = {
-      target: TTY_TRANSPORT_TARGET,
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss.l',
-        ignore: 'pid,hostname',
-        singleLine: false,
-      },
-    };
-  }
-
-  return options;
 }
 
 /**
- * Build a `pino` {@link Logger} from a {@link LoggerConfig}. When
- * `config.file` is set the logger writes append-only to that file
- * (and only to the file) — useful for debugging a long-running MCP
- * session without polluting the TTY. When unset, pino picks the
- * default destination (stdout for the worker thread, but the CLI
- * redirects via `pino.final` if needed).
+ * Build a `pino` {@link Logger} from a {@link LoggerConfig}. When a
+ * `file` path is set the logger writes append-only JSON to that path
+ * (and only to the path) — useful for debugging a long-running MCP
+ * session or inspecting a CLI command's output after the fact. When
+ * `file` is undefined the logger is silenced (level `'silent'`) so no
+ * output reaches stdout or stderr.
+ *
+ * Terminal output for logs is intentionally never produced — see
+ * {@link buildOptions} for the rationale.
  * @param config - Resolved logger config.
  * @returns A configured `pino` logger.
  */
 export function createLogger(config: LoggerConfig): Logger {
   const options = buildOptions(config);
   if (config.file === undefined) {
+    // Silence the logger when there is no file destination. Without this
+    // guard pino defaults to stdout, which would pollute command output.
+    options.level = 'silent';
     return pino(options);
   }
   mkdirSync(dirname(config.file), { recursive: true });
@@ -122,26 +106,33 @@ export function createLogger(config: LoggerConfig): Logger {
 
 /**
  * Build a {@link LoggerConfig} by layering `overrides` on top of the
- * `JHO_LOG_LEVEL` / `JHO_LOG_FILE` environment variables and the
- * `process.stderr.isTTY` probe. Returns a fully-populated config the
- * caller can pass straight to {@link createLogger}.
+ * `JHO_LOG_LEVEL` / `JHO_LOG_FILE` environment variables. Returns a
+ * fully-populated config the caller can pass straight to
+ * {@link createLogger}.
+ *
+ * When `disableFileLogging` is `true` the final config's `file` field
+ * is forced to `undefined` (no file output) regardless of any other
+ * setting. When it is `false` (or absent) the file path is resolved
+ * from: override → `JHO_LOG_FILE` → `<configHome>/jho.log`.
  * @param overrides - Caller-supplied overrides (typically from the
  *   parsed `config.json`'s `logging` block).
  * @returns A `LoggerConfig` with all fields set.
  */
-export function defaultLoggerConfig(overrides: Partial<LoggerConfig> = {}): LoggerConfig {
+export function defaultLoggerConfig(
+  overrides: Partial<LoggerConfig & { disableFileLogging?: boolean }> = {},
+): LoggerConfig {
   const level = (overrides.level ??
     (process.env['JHO_LOG_LEVEL'] as LogLevel | undefined) ??
     'info') as LogLevel;
+
+  // disableFileLogging is a hard override — when true, suppress file output entirely.
   const explicitFile = overrides.file ?? process.env['JHO_LOG_FILE'];
-  // An empty string is treated the same as "not set" — use the default path.
-  // To truly disable file logging omit the `file` key entirely from config
-  // or unset `JHO_LOG_FILE`.
-  const file = explicitFile || `${resolveConfigHome()}/${DEFAULT_LOG_FILENAME}`;
-  const isTty = overrides.isTty ?? isInteractive(process.stderr);
+  const file = overrides.disableFileLogging
+    ? undefined
+    : explicitFile || `${resolveConfigHome()}/${DEFAULT_LOG_FILENAME}`;
+
   return {
     level,
-    isTty,
     ...(file ? { file } : {}),
     redactPaths: overrides.redactPaths ?? [],
     ...(overrides.correlationId !== undefined ? { correlationId: overrides.correlationId } : {}),
@@ -186,6 +177,11 @@ export function setRootLogger(logger: Logger): void {
  */
 export function childLogger(bindings: Record<string, unknown>, base?: Logger): Logger {
   return (base ?? getRootLogger()).child(bindings);
+}
+
+export function moduleLogger(metaUrl: string, base?: Logger): Logger {
+  const name = basename(fileURLToPath(metaUrl), extname(fileURLToPath(metaUrl)));
+  return childLogger({ module: name }, base);
 }
 
 /**

@@ -7,6 +7,7 @@ import {
   getDefaultCampaignName,
 } from './paths.js';
 import type { GlobalConfig, CampaignConfig } from './types.js';
+import { moduleLogger } from './logger/logger.js';
 import {
   GlobalConfigSchema,
   CampaignConfigSchema,
@@ -14,7 +15,8 @@ import {
   CURRENT_CAMPAIGN_CONFIG_VERSION,
 } from './config.schema.js';
 import { GLOBAL_MIGRATIONS, CAMPAIGN_MIGRATIONS, runMigrations } from './config.migrations.js';
-import { childLogger } from './logger/logger.js';
+
+const log = moduleLogger(import.meta.url);
 
 // Re-export for callers that import `getDefaultCampaignName` from
 // `./config.js`. The canonical definition lives in `./paths.ts` so
@@ -82,6 +84,7 @@ export function getConfigValue(
  */
 export function loadGlobalConfig(): GlobalConfig {
   if (_globalConfig !== null) {
+    log.debug('config.global.cache_hit');
     return _globalConfig;
   }
 
@@ -94,10 +97,7 @@ export function loadGlobalConfig(): GlobalConfig {
     rawConfig = JSON.parse(configContent);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-      childLogger({ module: 'config' }).warn(
-        { path: configPath, error: err },
-        'config.parse.failed',
-      );
+      log.warn({ path: configPath, error: err }, 'config.parse.failed');
     }
     rawConfig = {};
   }
@@ -121,6 +121,7 @@ export function loadGlobalConfig(): GlobalConfig {
 export function loadCampaignConfig(campaignName: string): CampaignConfig {
   const cacheKey = campaignName;
   if (_campaignConfigCache.has(cacheKey)) {
+    log.debug({ campaign: campaignName }, 'config.campaign.cache_hit');
     return _campaignConfigCache.get(cacheKey) as CampaignConfig;
   }
 
@@ -133,10 +134,7 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
     rawConfig = JSON.parse(configContent);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-      childLogger({ module: 'config' }).warn(
-        { path: configPath, error: err },
-        'config.parse.failed',
-      );
+      log.warn({ path: configPath, error: err }, 'config.parse.failed');
     }
     rawConfig = {};
   }
@@ -196,6 +194,7 @@ export function updateGlobalConfig(update: Partial<GlobalConfig>): void {
   writeFileSync(configPath, JSON.stringify(updated, null, 2), 'utf8');
 
   _globalConfig = null;
+  log.info({ path: configPath }, 'config.global.written');
 }
 
 /**
@@ -218,6 +217,7 @@ export function updateCampaignConfig(campaignName: string, update: Partial<Campa
   writeFileSync(configPath, JSON.stringify(updated, null, 2), 'utf8');
 
   _campaignConfigCache.delete(campaignName);
+  log.info({ campaign: campaignName }, 'config.campaign.written');
 }
 
 /**

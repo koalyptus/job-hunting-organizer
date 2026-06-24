@@ -1,5 +1,8 @@
 import lockfile, { type LockOptions } from 'proper-lockfile';
 import type { AcquireLockOptions } from './types.js';
+import { moduleLogger } from './logger/logger.js';
+
+const log = moduleLogger(import.meta.url);
 
 /**
  * Default retry and stale-detection knobs. Retries: 5 attempts with
@@ -58,14 +61,16 @@ export async function acquireLock<T>(
   options: AcquireLockOptions = {},
 ): Promise<T> {
   const opts = lockOptions(options);
+  log.info({ target }, 'lock.acquire');
   const release = await lockfile.lock(target, opts);
   try {
     return await fn();
   } finally {
     try {
       await release();
+      log.debug({ target }, 'lock.released');
     } catch {
-      // best effort
+      log.warn({ target }, 'lock.release.failed');
     }
   }
 }
@@ -98,6 +103,7 @@ export async function tryAcquireLock(
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code === 'ELOCKED' || code === 'EAGAIN') {
+      log.info({ target }, 'lock.contention');
       return null;
     }
     throw err;
@@ -109,7 +115,7 @@ export async function tryAcquireLock(
     try {
       await release();
     } catch {
-      // best effort
+      log.warn({ target }, 'lock.release.failed');
     }
   };
 }

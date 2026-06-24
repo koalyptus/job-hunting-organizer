@@ -20,6 +20,7 @@ export function initRootLogger(): void {
     createLogger(
       defaultLoggerConfig({
         level: globalConfig.logging?.level,
+        disableFileLogging: globalConfig.logging?.disableFileLogging,
         file: globalConfig.logging?.file,
         redactPaths: globalConfig.logging?.redactPaths,
         correlationId: 'cli',

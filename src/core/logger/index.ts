@@ -5,6 +5,7 @@ export {
   getRootLogger,
   setRootLogger,
   childLogger,
+  moduleLogger,
   closeLogger,
   logError,
 } from './logger.js';

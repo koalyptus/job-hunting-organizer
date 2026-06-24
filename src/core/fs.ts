@@ -1,7 +1,7 @@
 import { copyFile, mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { getRootLogger } from './logger/logger.js';
+import { getRootLogger, moduleLogger } from './logger/logger.js';
 import type { AtomicWriteOptions, WithBackupOptions } from './types.js';
 
 /**
@@ -113,16 +113,19 @@ export async function withBackup<T>(
   fn: () => Promise<T>,
   options: WithBackupOptions = {},
 ): Promise<T> {
+  const log = moduleLogger(import.meta.url);
   const { backupSuffix = '.bak' } = options;
   const exists = await pathExists(target);
   const backup = `${target}${backupSuffix}`;
   if (exists) {
+    log.debug({ target, backup }, 'withBackup.backup_created');
     await copyFile(target, backup);
   }
   try {
     return await fn();
   } catch (err) {
     if (exists) {
+      log.warn({ target, backup, error: (err as Error).message }, 'withBackup.restoring');
       await rm(target, { force: true });
       await rename(backup, target);
     }

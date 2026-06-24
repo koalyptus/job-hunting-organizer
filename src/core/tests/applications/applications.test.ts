@@ -17,18 +17,24 @@ import { todayIso } from '../../date.js';
 import * as fsModule from '../../fs.js';
 import { writeFrontmatter } from '../../frontmatter.js';
 
-const mockWarn = vi.fn();
-const mockDebug = vi.fn();
-const mockInfo = vi.fn();
-const mockError = vi.fn();
+const mockRootLogger = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  child: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    child: vi.fn(),
+  })),
+}));
 
 vi.mock('../../logger/logger.js', () => ({
-  getRootLogger: vi.fn(() => ({
-    debug: mockDebug,
-    info: mockInfo,
-    warn: mockWarn,
-    error: mockError,
-  })),
+  getRootLogger: vi.fn(() => mockRootLogger),
+  childLogger: vi.fn(() => mockRootLogger),
+  moduleLogger: vi.fn(() => mockRootLogger),
 }));
 
 let workDir: string;
@@ -248,7 +254,7 @@ describe('updateApplication', () => {
     await updateApplication(appliedDir, slug, { salary: '100k' });
 
     // Verify warning was logged
-    expect(mockWarn).toHaveBeenCalledWith(
+    expect(mockRootLogger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ slug }),
       'meta.md validation failed, index not updated',
     );

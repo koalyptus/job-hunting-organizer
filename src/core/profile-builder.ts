@@ -10,6 +10,13 @@ import type { LlmConfig } from './types.js';
 import { reviewRoles } from './roles.js';
 import { generateSkeletonProfile } from './init/skeleton.js';
 import { InitError } from './init/errors.js';
+import { moduleLogger } from './logger/logger.js';
+
+const fallbackLog = moduleLogger(import.meta.url);
+
+function log(opts: { log?: Logger }): Logger {
+  return opts.log ?? fallbackLog;
+}
 
 /**
  * Handle profile creation: copy, auto-build, or skeleton.
@@ -31,6 +38,7 @@ export async function handleProfile(opts: {
 
   if (opts.profileFlag) {
     // --profile: copy existing file
+    log(opts).info({ from: opts.profileFlag }, 'profile.copy.started');
     if (!(await pathExists(opts.profileFlag))) {
       throw new InitError(`Profile file not found: ${opts.profileFlag}`);
     }
@@ -42,10 +50,12 @@ export async function handleProfile(opts: {
     }
 
     clackLog.success(`Copied profile from ${opts.profileFlag}`);
+    log(opts).info({ from: opts.profileFlag }, 'profile.copy.completed');
     return '(copied)';
   }
 
   if (opts.llmConfig) {
+    log(opts).info({ hasCv: !!opts.cvPath, githubUser: opts.githubUser }, 'profile.build.started');
     // Auto-build profile (no logger — debug logs confuse end users)
     let profile;
     try {
@@ -83,10 +93,12 @@ export async function handleProfile(opts: {
       throw new Error(`failed to write profile to ${profilePath}`);
     }
     clackLog.success('Profile written');
+    log(opts).info({ profilePath }, 'profile.build.completed');
     return profileContent;
   }
 
   // Skeleton profile
+  log(opts).info('profile.skeleton.started');
   const skeleton = generateSkeletonProfile(opts.githubUser ?? '', opts.linkedinUrl ?? '');
   const skeletonWritten = await atomicWrite(profilePath, skeleton);
   if (!skeletonWritten) {
@@ -95,5 +107,6 @@ export async function handleProfile(opts: {
   clackLog.warn('Profile auto-generation skipped (LLM not configured)');
   clackLog.info(`A skeleton profile.md has been created at ${profilePath}`);
   clackLog.info('Edit it with your details, or re-run with an LLM configured to auto-generate.');
+  log(opts).info({ profilePath }, 'profile.skeleton.completed');
   return skeleton;
 }

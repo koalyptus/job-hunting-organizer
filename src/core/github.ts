@@ -27,6 +27,7 @@ async function githubFetch<T>(url: string, token?: string, log?: Logger): Promis
   try {
     response = await fetch(url, { headers: headers(token) });
   } catch (err) {
+    log?.warn({ url, error: (err as Error).message }, 'github.fetch.network_error');
     throw new Error(`Network error fetching ${url}: ${(err as Error).message}`);
   }
 
@@ -36,9 +37,11 @@ async function githubFetch<T>(url: string, token?: string, log?: Logger): Promis
 
   const remaining = response.headers.get('X-RateLimit-Remaining');
   if (remaining === '0') {
+    log?.warn({ url, status: response.status }, 'github.fetch.rate_limited');
     throw new Error('GitHub API rate limit exceeded');
   }
 
+  log?.warn({ url, status: response.status }, 'github.fetch.http_error');
   throw new Error(errorMessage(response.status, url));
 }
 

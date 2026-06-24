@@ -21,6 +21,7 @@ export const initCommand = new Command('init')
     const log = getRootLogger().child({ cmd: 'init', campaign: resolvedName });
 
     try {
+      log.info({ campaign: resolvedName }, 'init.started');
       await runInit({
         name: resolvedName,
         cv: opts.cv as string | undefined,
@@ -30,6 +31,7 @@ export const initCommand = new Command('init')
         yes: opts.yes as boolean | undefined,
         log,
       });
+      log.info({ campaign: resolvedName }, 'init.completed');
     } catch (err) {
       if (err instanceof InitCancelled) {
         log.debug('init.cancelled');

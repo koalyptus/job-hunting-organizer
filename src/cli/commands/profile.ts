@@ -14,8 +14,10 @@ const showCommand = new Command('show')
     const campaign = globals?.campaign ?? 'default';
     const log = getRootLogger().child({ cmd: 'profile.show', campaign });
     try {
+      log.info({ campaign }, 'profile.show.started');
       const content = await readProfile(resolveCampaignRoot(campaign));
       process.stdout.write(content);
+      log.info({ campaign }, 'profile.show.completed');
     } catch (err) {
       if (err instanceof ProfileReadError) {
         logError(log, err, 'profile.read.failed', { campaign });

@@ -22,10 +22,14 @@ import { logsCommand } from './commands/logs.js';
 import { helpCommand } from './commands/help.js';
 import { mcpCommand } from './commands/mcp.js';
 import { initRootLogger } from '../core/logger/root-logger.js';
+import { getRootLogger } from '../core/logger/logger.js';
 
 const VERSION = getPackageVersion();
 
 initRootLogger();
+
+const log = getRootLogger();
+log.info({ version: VERSION, args: process.argv.slice(2) }, 'cli.start');
 
 const program = new Command('jho')
   .version(VERSION)

@@ -86,11 +86,9 @@ export const DEFAULT_LOG_FILENAME = 'jho.log';
 export interface LoggerConfig {
   /** Minimum level to emit. */
   readonly level: LogLevel;
-  /** Whether the destination is a TTY (controls pretty-print). */
-  readonly isTty: boolean;
-  /** Optional file path to also write logs to. */
+  /** Optional file path to write JSON logs to. When undefined, no file is written. */
   readonly file?: string | undefined;
-  /** JSON paths whose values are replaced with `***` in log output. */
+  /** JSON paths whose values are replaced with `[REDACTED]` in log output. */
   readonly redactPaths: readonly string[];
   /** Optional correlation id stamped on every log line. */
   readonly correlationId?: string | undefined;
@@ -248,8 +246,10 @@ export interface GlobalConfig {
   logging: {
     /** Default level when `--verbose`/`--quiet` is not set. */
     level: LogLevel;
-    /** Default log file path. Empty string disables file logging; undefined uses the default path (`<configHome>/jho.log`). */
+    /** Default log file path. Absent or empty uses the default path (`<configHome>/jho.log`). */
     file?: string;
+    /** When true, suppress all file logging regardless of `file`. */
+    disableFileLogging?: boolean;
     /** JSON paths to redact in addition to the built-in secret list. */
     redactPaths: string[];
   };

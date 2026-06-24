@@ -15,6 +15,7 @@ export const renameCampaignCommand = new Command('rename-campaign')
     try {
       const oldName = resolveOldName(opts.from as string | undefined);
       log = getRootLogger().child({ cmd: 'rename-campaign', old: oldName, new: new_ });
+      log.info({ old: oldName, new: new_ }, 'rename-campaign.started');
       await renameCampaign(oldName, new_);
       process.stdout.write(`Renamed campaign "${oldName}" → "${new_}"\n`);
     } catch (err) {

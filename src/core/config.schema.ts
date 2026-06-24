@@ -142,6 +142,7 @@ export const GlobalConfigSchema = z.object({
   logging: z
     .object({
       level: z.enum(ALL_LOG_LEVELS as [LogLevel, ...LogLevel[]]).default('info'),
+      disableFileLogging: z.boolean().default(false),
       file: z.string().optional(),
       redactPaths: z
         .array(z.string())
@@ -158,6 +159,7 @@ export const GlobalConfigSchema = z.object({
     })
     .default({
       level: 'info',
+      disableFileLogging: false,
       redactPaths: [
         '*.apiKey',
         '*.token',

@@ -18,13 +18,13 @@ const mockGlobalConfig = {
   github: { user: '', token: '', repos: [] },
   calendar: { defaultProvider: 'ics', outlook: { tenantId: '', clientId: '', clientSecret: '' } },
   fetch: { timeoutMs: 30_000 },
-  logging: { level: 'info', redactPaths: [] },
+  logging: { level: 'info', disableFileLogging: false, redactPaths: [] },
 };
 
 let testRootLogger: Logger;
 
 beforeAll(() => {
-  testRootLogger = loggerModule.createLogger({ level: 'silent', isTty: false, redactPaths: [] });
+  testRootLogger = loggerModule.createLogger({ level: 'silent', redactPaths: [] });
 });
 
 afterAll(() => {
@@ -98,7 +98,7 @@ describe('initRootLogger', () => {
   });
 
   it('createLogger returns a valid logger with debug method', () => {
-    const log = loggerModule.createLogger({ level: 'silent', isTty: false, redactPaths: [] });
+    const log = loggerModule.createLogger({ level: 'silent', redactPaths: [] });
     expect(log).toBeDefined();
     expect(typeof log.debug).toBe('function');
     expect(typeof log.info).toBe('function');

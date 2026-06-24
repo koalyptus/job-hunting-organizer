@@ -91,7 +91,11 @@ export function roleAbbr(title: string, maxWords = 3, maxLen = 24): string {
  */
 export function companySlug(company: string, maxLen = 32): string {
   const sanitized = sanitizeToken(company, maxLen);
-  return sanitized.length > 0 ? sanitized : 'unknown';
+  if (sanitized.length === 0) {
+    getRootLogger().debug({ company }, 'slug.company.fallback_unknown');
+    return 'unknown';
+  }
+  return sanitized;
 }
 
 /**
@@ -144,6 +148,7 @@ export async function uniqueSlug(
 
   const next = current + 1;
   counters[base] = next;
+  getRootLogger().debug({ base, suffix: next }, 'slug.collision');
   const written = await writeCountersAsync(appliedDir, counters);
   if (!written) {
     getRootLogger().debug({ slug: `${base}-${next}` }, 'failed to persist collision counter');

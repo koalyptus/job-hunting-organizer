@@ -33,6 +33,7 @@ export const logsCommand = new Command('logs')
     }
 
     if (!existsSync(logFile)) {
+      log.warn({ file: logFile }, 'logs.file.missing');
       process.stderr.write(`No log file at ${logFile}\n`);
       process.stderr.write(
         '(Logs are only written when commands produce output. Run a command first.)\n',

@@ -48,6 +48,7 @@ export const trackCommand = new Command('track')
     }
 
     const isCreate = text !== undefined || isUrl(urlOrSlug);
+    log.debug({ isCreate }, 'track.mode');
 
     try {
       const status = validateTrackStatus(opts.status as string | undefined);
@@ -81,6 +82,7 @@ export const trackCommand = new Command('track')
         const campaignRoot = resolveCampaignRoot(campaign);
         const appliedDir = resolveAppliedDir(campaignRoot);
         const appPath = join(appliedDir, resultSlug);
+        log.info({ slug: resultSlug, campaign }, 'track.create.completed');
         clackLog.info(`
 Created application: ${appPath}
 
@@ -123,8 +125,10 @@ Next steps:
         const appPath = join(appliedDir, result.slug);
 
         if (!result.changed) {
+          log.info({ slug: result.slug }, 'track.update.no-changes');
           clackLog.info(`No changes to apply for ${result.slug}.`);
         } else {
+          log.info({ slug: result.slug, changed: true }, 'track.update.completed');
           clackLog.info(`
 Updated application: ${appPath}
 

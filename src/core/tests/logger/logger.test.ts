@@ -12,6 +12,7 @@ import {
   defaultLoggerConfig,
   getRootLogger,
   isInteractive,
+  moduleLogger,
   setRootLogger,
 } from '../../logger/logger.js';
 import { resolveConfigHome } from '../../paths.js';
@@ -62,31 +63,29 @@ describe('defaultLoggerConfig', () => {
     }
   });
 
-  it('defaults to info level and TTY detection off in test env', () => {
+  it('defaults to info level', () => {
     delete process.env['JHO_LOG_LEVEL'];
     delete process.env['JHO_LOG_FILE'];
-    const cfg = defaultLoggerConfig({ isTty: false });
+    const cfg = defaultLoggerConfig({});
     expect(cfg.level).toBe('info');
-    expect(cfg.isTty).toBe(false);
   });
 
   it('honours JHO_LOG_LEVEL', () => {
     process.env['JHO_LOG_LEVEL'] = 'debug';
-    const cfg = defaultLoggerConfig({ isTty: false });
+    const cfg = defaultLoggerConfig({});
     expect(cfg.level).toBe('debug');
   });
 
   it('honours overrides', () => {
-    const cfg = defaultLoggerConfig({ level: 'warn', isTty: true, redactPaths: ['x'] });
+    const cfg = defaultLoggerConfig({ level: 'warn', redactPaths: ['x'] });
     expect(cfg.level).toBe('warn');
-    expect(cfg.isTty).toBe(true);
     expect(cfg.redactPaths).toEqual(['x']);
   });
 });
 
 describe('createLogger', () => {
   it('returns a working logger with redaction enabled', () => {
-    const log = createLogger({ level: 'info', isTty: false, redactPaths: ['apiKey'] });
+    const log = createLogger({ level: 'info', redactPaths: ['apiKey'] });
     expect(typeof log.info).toBe('function');
     // just exercise that redact paths are accepted without throwing
     log.info({ apiKey: 'secret' }, 'redacted');
@@ -96,23 +95,29 @@ describe('createLogger', () => {
   it('includes the correlation id when provided', () => {
     const log = createLogger({
       level: 'info',
-      isTty: false,
       redactPaths: [],
       correlationId: 'cid-123',
     });
     expect(typeof log.info).toBe('function');
   });
+
+  it('silences logger when no file path is set', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    // Should not produce output to stdout/stderr
+    log.info('should be silent');
+    log.error('should also be silent');
+  });
 });
 
 describe('childLogger', () => {
   it('derives a child with bindings', () => {
-    const root = createLogger({ level: 'info', isTty: false, redactPaths: [] });
+    const root = createLogger({ level: 'info', redactPaths: [] });
     const child = childLogger({ component: 'test' }, root);
     expect(typeof child.info).toBe('function');
   });
 
   it('uses the root logger by default', () => {
-    setRootLogger(createLogger({ level: 'info', isTty: false, redactPaths: [] }));
+    setRootLogger(createLogger({ level: 'info', redactPaths: [] }));
     const child = childLogger({ component: 'default' });
     expect(typeof child.info).toBe('function');
     expect(getRootLogger()).toBeDefined();
@@ -133,26 +138,37 @@ describe('defaultLoggerConfig - file logging', () => {
   it('defaults to config home / jho.log when no override', () => {
     delete process.env['JHO_CONFIG_HOME'];
     process.env['JHO_CONFIG_HOME'] = '/tmp/test-config-home';
-    const cfg = defaultLoggerConfig({ isTty: false });
+    const cfg = defaultLoggerConfig({});
     // resolveConfigHome normalizes the path for the current OS
     expect(cfg.file).toBe(`${resolveConfigHome()}/${DEFAULT_LOG_FILENAME}`);
   });
 
   it('honours JHO_LOG_FILE env var', () => {
     process.env['JHO_LOG_FILE'] = '/custom/path.log';
-    const cfg = defaultLoggerConfig({ isTty: false });
+    const cfg = defaultLoggerConfig({});
     expect(cfg.file).toBe('/custom/path.log');
   });
 
   it('honours file override', () => {
-    const cfg = defaultLoggerConfig({ isTty: false, file: '/override/path.log' });
+    const cfg = defaultLoggerConfig({ file: '/override/path.log' });
     expect(cfg.file).toBe('/override/path.log');
   });
 
   it('empty string uses default path', () => {
-    const cfg = defaultLoggerConfig({ isTty: false, file: '' });
+    const cfg = defaultLoggerConfig({ file: '' });
     // Empty string should resolve to default path
     expect(cfg.file).toBe(`${resolveConfigHome()}/${DEFAULT_LOG_FILENAME}`);
+  });
+
+  it('disableFileLogging suppresses file path', () => {
+    const cfg = defaultLoggerConfig({ disableFileLogging: true, file: '/should/be/ignored.log' });
+    expect(cfg.file).toBeUndefined();
+  });
+
+  it('disableFileLogging suppresses default path', () => {
+    process.env['JHO_LOG_FILE'] = '/custom/path.log';
+    const cfg = defaultLoggerConfig({ disableFileLogging: true });
+    expect(cfg.file).toBeUndefined();
   });
 });
 
@@ -174,7 +190,7 @@ describe('createLogger - file output', () => {
 
   it('writes to file when file path provided', () => {
     const logFile = resolve(tempDir, 'test.log');
-    const log = createLogger({ level: 'info', isTty: false, redactPaths: [], file: logFile });
+    const log = createLogger({ level: 'info', redactPaths: [], file: logFile });
     loggers.push(log);
     log.info('test message');
     log.error('error message');
@@ -182,25 +198,47 @@ describe('createLogger - file output', () => {
 
   it('creates parent directories automatically', () => {
     const logFile = resolve(tempDir, 'nested', 'deep', 'test.log');
-    const log = createLogger({ level: 'info', isTty: false, redactPaths: [], file: logFile });
+    const log = createLogger({ level: 'info', redactPaths: [], file: logFile });
     loggers.push(log);
     log.info('test message');
   });
 
   it('does not create file when file is undefined', () => {
-    const log = createLogger({ level: 'info', isTty: false, redactPaths: [] });
+    const log = createLogger({ level: 'info', redactPaths: [] });
     log.info('no file');
-    // Should not throw
+    // Should not throw and should not write to stdout/stderr
   });
 
-  it('writes JSON to file (not console) when isTty and file are both set', () => {
+  it('writes JSON to file despite isTty', () => {
     const logFile = resolve(tempDir, 'tty-test.log');
-    const log = createLogger({ level: 'info', isTty: true, redactPaths: [], file: logFile });
+    const log = createLogger({ level: 'info', redactPaths: [], file: logFile });
     loggers.push(log);
-    log.info('tty+file test');
+    log.info('file-only test');
     log.flush();
+  });
+});
 
-    // Creating a second logger reading the file would need a sync read.
-    // For now just verify the file exists and has content (it was written).
+describe('moduleLogger', () => {
+  it('returns a logger with module binding derived from the file URL', () => {
+    const log = moduleLogger('file:///C:/src/core/foo.ts');
+    expect(typeof log.info).toBe('function');
+    expect(typeof log.debug).toBe('function');
+    expect(typeof log.error).toBe('function');
+  });
+
+  it('derives the correct name from a cross-platform path', () => {
+    const log = moduleLogger('file:///C:/Users/user/project/src/core/locks.ts');
+    expect(typeof log.info).toBe('function');
+  });
+
+  it('handles file URL with multiple dots in the name', () => {
+    const log = moduleLogger('file:///C:/src/core/my.util.test.ts');
+    expect(typeof log.info).toBe('function');
+  });
+
+  it('accepts a custom base logger', () => {
+    const base = createLogger({ level: 'info', redactPaths: [] });
+    const log = moduleLogger('file:///C:/src/core/custom.ts', base);
+    expect(typeof log.info).toBe('function');
   });
 });
