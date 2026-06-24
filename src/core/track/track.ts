@@ -232,7 +232,8 @@ export async function prepareTrack(opts: TrackOptions): Promise<TrackSummary> {
   try {
     const profile = await readProfile(campaignRoot);
     targetRoles = parseTargetRoles(profile);
-  } catch {
+  } catch (err) {
+    log?.debug({ err }, 'profile.read.failed');
     // No profile — proceed without role suggestion
   }
 
@@ -341,7 +342,8 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
   try {
     const profile = await readProfile(campaignRoot);
     targetRoles = parseTargetRoles(profile);
-  } catch {
+  } catch (err) {
+    log?.debug({ err }, 'profile.read.failed');
     // No profile — proceed without role suggestion
   }
 

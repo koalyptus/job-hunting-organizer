@@ -112,6 +112,9 @@ jho doctor              # diagnose the campaign
 jho repair              # attempt auto-repair
 jho stats [--role <slug>] [--since <date|7d|30d|90d>] [--json]
   # campaign snapshot: counts by status / role / site, funnel, this-month delta
+jho logs [--tail <n>] [--level <level>] [--json] [--path]
+  # pretty-print the log file (JSON -> human-readable); --json for raw lines,
+  # --path for the file location. Log file is always JSON (for jq/grep/aggregators).
 jho help [<cmd>|<topic>]
 jho mcp                 # start MCP server
 ```

@@ -18,10 +18,14 @@ import { prepareCommand } from './commands/prepare.js';
 import { doctorCommand } from './commands/doctor.js';
 import { repairCommand } from './commands/repair.js';
 import { statsCommand } from './commands/stats.js';
+import { logsCommand } from './commands/logs.js';
 import { helpCommand } from './commands/help.js';
 import { mcpCommand } from './commands/mcp.js';
+import { initRootLogger } from '../core/logger/root-logger.js';
 
 const VERSION = getPackageVersion();
+
+initRootLogger();
 
 const program = new Command('jho')
   .version(VERSION)
@@ -50,6 +54,7 @@ program.addCommand(prepareCommand);
 program.addCommand(doctorCommand);
 program.addCommand(repairCommand);
 program.addCommand(statsCommand);
+program.addCommand(logsCommand);
 program.addCommand(helpCommand);
 program.addCommand(mcpCommand);
 

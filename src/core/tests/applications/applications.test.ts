@@ -22,7 +22,7 @@ const mockDebug = vi.fn();
 const mockInfo = vi.fn();
 const mockError = vi.fn();
 
-vi.mock('../../logger.js', () => ({
+vi.mock('../../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: mockDebug,
     info: mockInfo,

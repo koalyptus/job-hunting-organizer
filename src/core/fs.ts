@@ -1,7 +1,7 @@
 import { copyFile, mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { getRootLogger } from './logger.js';
+import { getRootLogger } from './logger/logger.js';
 import type { AtomicWriteOptions, WithBackupOptions } from './types.js';
 
 /**

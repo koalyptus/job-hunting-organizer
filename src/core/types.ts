@@ -62,7 +62,23 @@ export interface PackageJson {
  * Pino-compatible log levels. `silent` is included so users can disable
  * logging entirely via config.
  */
-export type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
+const LOG_LEVEL_VALUES = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
+
+export type LogLevel = (typeof LOG_LEVEL_VALUES)[number];
+
+/**
+ * All log levels including `silent` (for config schema).
+ */
+export const ALL_LOG_LEVELS: readonly LogLevel[] = LOG_LEVEL_VALUES;
+
+/**
+ * Log levels that can be used as filter thresholds (excludes `silent`
+ * which disables logging entirely).
+ */
+export const FILTERABLE_LOG_LEVELS: readonly LogLevel[] = LOG_LEVEL_VALUES.slice(0, -1);
+
+/** Default log filename placed inside the config home directory. */
+export const DEFAULT_LOG_FILENAME = 'jho.log';
 
 /**
  * Runtime configuration for the logger factory in `core/logger.ts`.
@@ -232,8 +248,8 @@ export interface GlobalConfig {
   logging: {
     /** Default level when `--verbose`/`--quiet` is not set. */
     level: LogLevel;
-    /** Default log file path. Empty means "stderr only". */
-    file: string;
+    /** Default log file path. Empty string disables file logging; undefined uses the default path (`<configHome>/jho.log`). */
+    file?: string;
     /** JSON paths to redact in addition to the built-in secret list. */
     redactPaths: string[];
   };

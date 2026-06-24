@@ -14,6 +14,7 @@ import {
   CURRENT_CAMPAIGN_CONFIG_VERSION,
 } from './config.schema.js';
 import { GLOBAL_MIGRATIONS, CAMPAIGN_MIGRATIONS, runMigrations } from './config.migrations.js';
+import { childLogger } from './logger/logger.js';
 
 // Re-export for callers that import `getDefaultCampaignName` from
 // `./config.js`. The canonical definition lives in `./paths.ts` so
@@ -93,7 +94,10 @@ export function loadGlobalConfig(): GlobalConfig {
     rawConfig = JSON.parse(configContent);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.warn(`Warning: Could not parse global config at ${configPath}:`, err);
+      childLogger({ module: 'config' }).warn(
+        { path: configPath, error: err },
+        'config.parse.failed',
+      );
     }
     rawConfig = {};
   }
@@ -129,7 +133,10 @@ export function loadCampaignConfig(campaignName: string): CampaignConfig {
     rawConfig = JSON.parse(configContent);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.warn(`Warning: Could not parse campaign config at ${configPath}:`, err);
+      childLogger({ module: 'config' }).warn(
+        { path: configPath, error: err },
+        'config.parse.failed',
+      );
     }
     rawConfig = {};
   }

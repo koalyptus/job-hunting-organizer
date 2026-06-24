@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { resolveDataRoot } from './paths.js';
+import { ALL_LOG_LEVELS, type LogLevel } from './types.js';
 
 /**
  * Current version of the global config schema. Bumped on any
@@ -140,8 +141,8 @@ export const GlobalConfigSchema = z.object({
    */
   logging: z
     .object({
-      level: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-      file: z.string().default(''),
+      level: z.enum(ALL_LOG_LEVELS as [LogLevel, ...LogLevel[]]).default('info'),
+      file: z.string().optional(),
       redactPaths: z
         .array(z.string())
         .default([
@@ -157,7 +158,6 @@ export const GlobalConfigSchema = z.object({
     })
     .default({
       level: 'info',
-      file: '',
       redactPaths: [
         '*.apiKey',
         '*.token',

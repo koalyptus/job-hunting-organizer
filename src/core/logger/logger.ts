@@ -1,7 +1,12 @@
-import { createWriteStream, type WriteStream } from 'node:fs';
-import { pino, type Logger, type LoggerOptions } from 'pino';
-import type { LogLevel, LoggerConfig } from './types.js';
-import { SECRET_PATHS } from './config.view.js';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+// Default import carries the full namespace merge (including .symbols) that
+// TypeScript doesn't expose on named imports from CJS modules with NodeNext.
+import pino, { type Logger, type LoggerOptions } from 'pino';
+import { DEFAULT_LOG_FILENAME, type LogLevel, type LoggerConfig } from '../types.js';
+import { SECRET_PATHS } from '../config.view.js';
+import { resolveConfigHome } from '../paths.js';
+import { getPackageVersion } from '../package.js';
 
 /**
  * Default redaction paths applied when the user config has an empty
@@ -66,12 +71,16 @@ function buildOptions(config: LoggerConfig): LoggerOptions {
     },
     base: {
       pid: process.pid,
+      service: { name: 'jho', version: getPackageVersion() },
       ...(config.correlationId !== undefined ? { cid: config.correlationId } : {}),
     },
     timestamp: pino.stdTimeFunctions.isoTime,
   };
 
-  if (config.isTty) {
+  // Only use pino-pretty transport when writing to the console (no file).
+  // When a file path is set we always write JSON — the pretty transport
+  // would override the file destination and log to stdout instead.
+  if (config.isTty && config.file === undefined) {
     options.transport = {
       target: TTY_TRANSPORT_TARGET,
       options: {
@@ -101,8 +110,14 @@ export function createLogger(config: LoggerConfig): Logger {
   if (config.file === undefined) {
     return pino(options);
   }
-  const stream: WriteStream = createWriteStream(config.file, { flags: 'a' });
-  return pino(options, stream);
+  mkdirSync(dirname(config.file), { recursive: true });
+  // Use pino.destination with sync: true so writes are flushed to disk
+  // before `log.error()` returns. This is critical for short-lived CLI
+  // commands that log an error and immediately process.exit() — without
+  // sync mode the file might never be created because the WriteStream
+  // opens lazily and the process terminates before the buffer is flushed.
+  const dest = pino.destination({ dest: config.file, sync: true, mkdir: false });
+  return pino(options, dest);
 }
 
 /**
@@ -118,12 +133,16 @@ export function defaultLoggerConfig(overrides: Partial<LoggerConfig> = {}): Logg
   const level = (overrides.level ??
     (process.env['JHO_LOG_LEVEL'] as LogLevel | undefined) ??
     'info') as LogLevel;
-  const file = overrides.file ?? process.env['JHO_LOG_FILE'];
+  const explicitFile = overrides.file ?? process.env['JHO_LOG_FILE'];
+  // An empty string is treated the same as "not set" — use the default path.
+  // To truly disable file logging omit the `file` key entirely from config
+  // or unset `JHO_LOG_FILE`.
+  const file = explicitFile || `${resolveConfigHome()}/${DEFAULT_LOG_FILENAME}`;
   const isTty = overrides.isTty ?? isInteractive(process.stderr);
   return {
     level,
     isTty,
-    ...(file !== undefined ? { file } : {}),
+    ...(file ? { file } : {}),
     redactPaths: overrides.redactPaths ?? [],
     ...(overrides.correlationId !== undefined ? { correlationId: overrides.correlationId } : {}),
   };
@@ -167,4 +186,60 @@ export function setRootLogger(logger: Logger): void {
  */
 export function childLogger(bindings: Record<string, unknown>, base?: Logger): Logger {
   return (base ?? getRootLogger()).child(bindings);
+}
+
+/**
+ * Gracefully shut down a pino logger: flush pending writes and close the
+ * underlying stream. Intended for test teardown; production use should let
+ * the process exit or call {@link setRootLogger} with a fresh logger.
+ * @param log - The logger to close.
+ */
+export function closeLogger(log: Logger): void {
+  log.flush();
+  // The Logger type has no symbol index, but pino.symbols.streamSym is a
+  // documented API for reaching the internal destination stream.
+  const stream = (log as unknown as Record<symbol, unknown>)[pino.symbols.streamSym] as
+    | { destroy?: () => void }
+    | undefined;
+  stream?.destroy?.();
+}
+
+/**
+ * Standardized error logging shape. Logs an error with a consistent
+ * structure for observability: type, code, message, and stack.
+ * @param log - Logger instance.
+ * @param err - Error to log (Error instance or plain object).
+ * @param msg - Human-readable message describing the failure context.
+ * @param bindings - Additional context (e.g. { cmd: 'track', campaign: 'default' }).
+ */
+export function logError(
+  log: Logger,
+  err: unknown,
+  msg: string,
+  bindings: Record<string, unknown> = {},
+): void {
+  const errorInfo: Record<string, unknown> = {};
+  // Check for Error instance first, then check for error-like objects
+  const isErrorInstance = err instanceof Error;
+  const ctorName = (err && typeof err === 'object' && err.constructor?.name) as string | undefined;
+  const isErrorLike = err && typeof err === 'object' && ('name' in err || 'message' in err);
+
+  if (isErrorInstance || ctorName === 'Error' || ctorName?.endsWith('Error')) {
+    const e = err as Error;
+    errorInfo.type = e.name ?? ctorName ?? 'Error';
+    errorInfo.code = (e as NodeJS.ErrnoException).code ?? undefined;
+    errorInfo.message = e.message;
+    if (e.stack) {
+      errorInfo.stack = e.stack;
+    }
+  } else if (isErrorLike) {
+    errorInfo.type = (err as Record<string, unknown>).name ?? 'UnknownError';
+    errorInfo.code = (err as Record<string, unknown>).code ?? undefined;
+    errorInfo.message = (err as Record<string, unknown>).message ?? String(err);
+  } else {
+    errorInfo.type = 'UnknownError';
+    errorInfo.message = String(err);
+  }
+  // Use 'error' instead of 'err' to avoid pino's special Error serialization
+  log.error({ error: errorInfo, ...bindings }, msg);
 }

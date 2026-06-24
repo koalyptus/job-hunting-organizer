@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { resolveCampaignRoot } from '../../core/paths.js';
 import { readProfile, ProfileReadError } from '../../core/profile.js';
 import type { GlobalOpts } from '../options.js';
+import { getRootLogger, logError } from '../../core/logger/logger.js';
 
 /**
  * `jho profile show` — print the current profile.
@@ -11,11 +12,13 @@ const showCommand = new Command('show')
   .action(async function () {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
     const campaign = globals?.campaign ?? 'default';
+    const log = getRootLogger().child({ cmd: 'profile.show', campaign });
     try {
       const content = await readProfile(resolveCampaignRoot(campaign));
       process.stdout.write(content);
     } catch (err) {
       if (err instanceof ProfileReadError) {
+        logError(log, err, 'profile.read.failed', { campaign });
         process.stderr.write(`jho profile show: ${err.message}\n`);
         process.exit(1);
       }

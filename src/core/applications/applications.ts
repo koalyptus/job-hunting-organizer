@@ -5,7 +5,7 @@ import { uniqueSlug } from '../slug.js';
 import { writeFrontmatter, readFrontmatter, mergeFrontmatter } from '../frontmatter.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
-import { getRootLogger } from '../logger.js';
+import { getRootLogger } from '../logger/logger.js';
 import { ApplicationFrontmatterSchema } from './meta-schema.js';
 import { upsertIndexEntry, removeIndexEntry, readIndex, rebuildIndex } from './index-builder.js';
 import { replaceRegion } from '../markers.js';

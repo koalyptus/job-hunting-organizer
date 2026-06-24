@@ -1,5 +1,6 @@
 import { copyFile } from 'node:fs/promises';
 import { log as clackLog } from '@clack/prompts';
+import type { Logger } from 'pino';
 import { resolveProfilePath } from './paths.js';
 import { pathExists, atomicWrite } from './fs.js';
 import { buildProfile } from './profile.js';
@@ -24,6 +25,7 @@ export async function handleProfile(opts: {
   linkedinUrl: string | undefined;
   llmConfig: LlmConfig | undefined;
   nonInteractive: boolean;
+  log?: Logger;
 }): Promise<string> {
   const profilePath = resolveProfilePath(opts.campaignRoot);
 
@@ -58,6 +60,7 @@ export async function handleProfile(opts: {
             linkedinUrl: opts.linkedinUrl,
             llmConfig: opts.llmConfig!,
             campaignRoot: opts.campaignRoot,
+            log: opts.log,
           }),
         'Profile build failed',
       );

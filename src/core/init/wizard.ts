@@ -28,6 +28,7 @@ import { promptCalendar } from './calendar.js';
 import { createDirectories } from '../directories.js';
 import { handleProfile } from '../profile-builder.js';
 import { InitCancelled, InitError } from './errors.js';
+import { childLogger } from '../logger/logger.js';
 
 /**
  * Run the init wizard. Called from the CLI command.
@@ -36,6 +37,7 @@ import { InitCancelled, InitError } from './errors.js';
  */
 export async function runInit(opts: InitOptions): Promise<void> {
   const name = opts.name ?? DEFAULT_CAMPAIGN;
+  const log = opts.log ?? childLogger({ cmd: 'init' });
 
   const validationError = validateName(name);
 
@@ -71,7 +73,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
     const campaignConfig = loadCampaignConfig(name);
     existingCvPath = campaignConfig.cv?.path || undefined;
     existingLinkedinUrl = campaignConfig.linkedin?.url || undefined;
-  } catch {
+  } catch (err) {
+    log.debug({ err }, 'campaign.config.load.failed');
     // Campaign directory doesn't exist yet (first init).
   }
 
@@ -230,6 +233,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
         linkedinUrl,
         llmConfig,
         nonInteractive: opts.yes ?? false,
+        log,
       });
     },
     { retries: 3 },

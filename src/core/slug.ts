@@ -14,7 +14,7 @@ import { formatDateUtc, parseDateOrNow, MONTH_ABBR } from './date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
 import { readCountersAsync, writeCountersAsync } from './applications/counters.js';
-import { getRootLogger } from './logger.js';
+import { getRootLogger } from './logger/logger.js';
 import type { SlugBuildInput, SlugOptions } from './types.js';
 
 /**

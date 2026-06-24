@@ -76,6 +76,10 @@ jho retro --aggregate
 
 # 8. Get a snapshot of the campaign (counts, funnel, this-month delta)
 jho stats
+
+# 9. Read the log file (pretty-printed; log file is always JSON for tools)
+jho logs --tail 50
+jho logs --json | jq 'select(.level == 50)'    # pipe to jq for filtering
 ```
 
 > **Tip**: you can omit the slug and just `cd` into the application folder — `jho show`, `jho cover-letter`, `jho answer`, `jho interview ...`, `jho prepare`, and `jho retro` all infer the slug from the current directory.
