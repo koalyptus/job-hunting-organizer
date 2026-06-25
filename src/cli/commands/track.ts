@@ -20,6 +20,7 @@ import { UserInputError } from '../errors.js';
 import { withSpinner } from '../../core/spinner.js';
 import { APPLICATION_STATUSES } from '../../core/applications/types.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { userError } from '../output.js';
 
 /**
  * `jho track <url>` — record a new application (or update by slug).
@@ -147,19 +148,19 @@ Next steps:
       if (err instanceof TrackError) {
         logError(log, err, 'track.failed', { campaign });
         log.flush();
-        process.stderr.write(`error: ${err.message}\n`);
+        userError(err.message);
         process.exit(1);
       }
       if (err instanceof SlugMissingError) {
         logError(log, err, 'track.slug-missing', { campaign });
         log.flush();
-        process.stderr.write(`error: ${err.message}\n`);
+        userError(err.message);
         process.exit(1);
       }
       if (err instanceof UserInputError) {
         logError(log, err, 'track.user-input-error', { campaign });
         log.flush();
-        process.stderr.write(`error: ${err.message}\n`);
+        userError(err.message);
         process.exit(1);
       }
       throw err;

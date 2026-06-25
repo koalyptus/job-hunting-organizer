@@ -217,7 +217,9 @@ export function logError(
   const errorInfo: Record<string, unknown> = {};
   // Check for Error instance first, then check for error-like objects
   const isErrorInstance = err instanceof Error;
-  const ctorName = (err && typeof err === 'object' && err.constructor?.name) as string | undefined;
+  const ctorName = (err && typeof err === 'object' ? err.constructor?.name : undefined) as
+    | string
+    | undefined;
   const isErrorLike = err && typeof err === 'object' && ('name' in err || 'message' in err);
 
   if (isErrorInstance || ctorName === 'Error' || ctorName?.endsWith('Error')) {

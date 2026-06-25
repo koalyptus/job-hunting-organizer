@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { loadGlobalConfig } from '../../core/config.js';
 import { resolveConfigHome, resolveConfigPath } from '../../core/paths.js';
 import { redactSecrets } from '../../core/config.view.js';
+import { userInfo, userError } from '../output.js';
 
 /**
  * `jho config [show|path]` — show or print the path of the global config.
@@ -23,12 +24,12 @@ export const configCommand = new Command('config')
         break;
       }
       case 'edit': {
-        process.stderr.write('jho config edit: not implemented yet\n');
+        userInfo('jho config edit: not implemented yet');
         process.exit(1);
         break;
       }
       default:
-        process.stderr.write(`jho config: unknown subcommand: ${subcommand}\n`);
+        userError(`jho config: unknown subcommand: ${subcommand}`);
         process.exit(1);
     }
   });

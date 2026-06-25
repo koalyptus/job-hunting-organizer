@@ -1,5 +1,5 @@
 import { Writable } from 'node:stream';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -12,6 +12,7 @@ import {
   defaultLoggerConfig,
   getRootLogger,
   isInteractive,
+  logError,
   moduleLogger,
   setRootLogger,
 } from '../../logger/logger.js';
@@ -240,5 +241,96 @@ describe('moduleLogger', () => {
     const base = createLogger({ level: 'info', redactPaths: [] });
     const log = moduleLogger('file:///C:/src/core/custom.ts', base);
     expect(typeof log.info).toBe('function');
+  });
+});
+
+describe('logError', () => {
+  it('logs an Error instance with type, message, and stack', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = new Error('test failure');
+
+    logError(log, err, 'operation failed', { cmd: 'test' });
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect(args.error).toBeDefined();
+    expect((args.error as Record<string, unknown>).type).toBe('Error');
+    expect((args.error as Record<string, unknown>).message).toBe('test failure');
+    expect((args.error as Record<string, unknown>).stack).toBeTypeOf('string');
+    expect(args.cmd).toBe('test');
+    expect(args).not.toHaveProperty('err');
+  });
+
+  it('logs a NodeJS.ErrnoException with code', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+
+    logError(log, err, 'file not found');
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect((args.error as Record<string, unknown>).code).toBe('ENOENT');
+  });
+
+  it('logs an error-like object with name and message', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = { name: 'ValidationError', message: 'invalid input', code: 'ERR_BAD_REQUEST' };
+
+    logError(log, err, 'validation failed');
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect((args.error as Record<string, unknown>).type).toBe('ValidationError');
+    expect((args.error as Record<string, unknown>).message).toBe('invalid input');
+    expect((args.error as Record<string, unknown>).code).toBe('ERR_BAD_REQUEST');
+  });
+
+  it('logs an error-like object without name as UnknownError', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = { message: 'something broke' };
+
+    logError(log, err, 'no name');
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect((args.error as Record<string, unknown>).type).toBe('UnknownError');
+    expect((args.error as Record<string, unknown>).message).toBe('something broke');
+  });
+
+  it('logs a plain string as UnknownError', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+
+    logError(log, 'just a string', 'handled');
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect((args.error as Record<string, unknown>).type).toBe('UnknownError');
+    expect((args.error as Record<string, unknown>).message).toBe('just a string');
+  });
+
+  it('uses default empty bindings when none provided', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = new Error('bare call');
+
+    logError(log, err, 'no bindings');
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect(args.error).toBeDefined();
+    expect(args).not.toHaveProperty('undefined');
+  });
+
+  it('includes additional bindings', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+
+    logError(log, new Error('x'), 'with extra', { campaign: 'default', userId: 42 });
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect(args.campaign).toBe('default');
+    expect(args.userId).toBe(42);
   });
 });

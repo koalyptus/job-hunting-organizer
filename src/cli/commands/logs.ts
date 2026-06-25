@@ -2,9 +2,10 @@ import { Command } from 'commander';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { resolveConfigHome } from '../../core/paths.js';
-import { getRootLogger } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { DEFAULT_LOG_FILENAME, FILTERABLE_LOG_LEVELS } from '../../core/types.js';
 import { validateLevelOption, validateTailOption } from '../validate.js';
+import { userError, userInfo } from '../output.js';
 // pino-pretty is a peer dep of pino. We use its prettyFactory to format
 // individual JSON log lines for human reading.
 import { prettyFactory } from 'pino-pretty';
@@ -34,10 +35,7 @@ export const logsCommand = new Command('logs')
 
     if (!existsSync(logFile)) {
       log.warn({ file: logFile }, 'logs.file.missing');
-      process.stderr.write(`No log file at ${logFile}\n`);
-      process.stderr.write(
-        '(Logs are only written when commands produce output. Run a command first.)\n',
-      );
+      userInfo('No log file at ${logFile}\n(Run a command first.)');
       process.exit(1);
     }
 
@@ -45,14 +43,20 @@ export const logsCommand = new Command('logs')
     if (opts.tail !== undefined) {
       const tailError = validateTailOption(String(opts.tail));
       if (tailError !== null) {
-        throw new Error(tailError);
+        const err = new Error(tailError);
+        logError(log, err, 'logs.option.invalid', { option: 'tail', value: String(opts.tail) });
+        userError(tailError);
+        process.exit(1);
       }
     }
 
     if (opts.level !== undefined) {
       const levelError = validateLevelOption(opts.level);
       if (levelError !== null) {
-        throw new Error(levelError);
+        const err = new Error(levelError);
+        logError(log, err, 'logs.option.invalid', { option: 'level', value: opts.level });
+        userError(levelError);
+        process.exit(1);
       }
     }
 

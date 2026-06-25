@@ -3,6 +3,7 @@ import { resolveCampaignRoot } from '../../core/paths.js';
 import { readProfile, ProfileReadError } from '../../core/profile.js';
 import type { GlobalOpts } from '../options.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { userError, userInfo } from '../output.js';
 
 /**
  * `jho profile show` — print the current profile.
@@ -21,7 +22,7 @@ const showCommand = new Command('show')
     } catch (err) {
       if (err instanceof ProfileReadError) {
         logError(log, err, 'profile.read.failed', { campaign });
-        process.stderr.write(`jho profile show: ${err.message}\n`);
+        userError(err.message);
         process.exit(1);
       }
       throw err;
@@ -31,10 +32,10 @@ const showCommand = new Command('show')
 showCommand.addHelpText(
   'after',
   `
-Examples:
-  $ jho profile show                        # default campaign
-  $ jho --campaign freelance profile show   # specific campaign
-`,
+  Examples:
+    $ jho profile show                        # default campaign
+    $ jho --campaign freelance profile show   # specific campaign
+  `,
 );
 
 /**
@@ -45,7 +46,7 @@ const rebuildCommand = new Command('rebuild')
   .option('--cv <path>', 'path to CV file')
   .option('--github <user>', 'GitHub username')
   .action(() => {
-    process.stderr.write('jho profile rebuild: not implemented yet (planned: phase 4c)\n');
+    userInfo('jho profile rebuild: not implemented yet (planned: phase 4c)');
     process.exit(1);
   });
 
@@ -60,8 +61,8 @@ export const profileCommand = new Command('profile')
 profileCommand.addHelpText(
   'after',
   `
-Examples:
-  $ jho profile show         # print the profile
-  $ jho profile rebuild      # regenerate from CV + GitHub
-`,
+    Examples:
+      $ jho profile show         # print the profile
+      $ jho profile rebuild      # regenerate from CV + GitHub
+    `,
 );
