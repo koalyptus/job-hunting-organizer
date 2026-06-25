@@ -16,9 +16,12 @@ import {
   TrackError,
   TrackCancelled,
 } from '../../core/track/index.js';
+import { ApplicationNotFoundError } from '../../core/applications/index.js';
 import { UserInputError } from '../errors.js';
 import { withSpinner } from '../../core/spinner.js';
 import { APPLICATION_STATUSES } from '../../core/applications/types.js';
+import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { userError } from '../output.js';
 
 /**
  * `jho track <url>` — record a new application (or update by slug).
@@ -37,6 +40,7 @@ export const trackCommand = new Command('track')
   .action(async function (urlOrSlug: string | undefined, opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
     const campaign = resolveCampaignName(globals?.campaign);
+    const log = getRootLogger().child({ cmd: 'track', campaign });
     let text: string | undefined;
 
     if (opts.paste === true) {
@@ -46,6 +50,7 @@ export const trackCommand = new Command('track')
     }
 
     const isCreate = text !== undefined || isUrl(urlOrSlug);
+    log.debug({ isCreate }, 'track.mode');
 
     try {
       const status = validateTrackStatus(opts.status as string | undefined);
@@ -79,6 +84,7 @@ export const trackCommand = new Command('track')
         const campaignRoot = resolveCampaignRoot(campaign);
         const appliedDir = resolveAppliedDir(campaignRoot);
         const appPath = join(appliedDir, resultSlug);
+        log.info({ slug: resultSlug, campaign }, 'track.create.completed');
         clackLog.info(`
 Created application: ${appPath}
 
@@ -121,8 +127,10 @@ Next steps:
         const appPath = join(appliedDir, result.slug);
 
         if (!result.changed) {
+          log.info({ slug: result.slug }, 'track.update.no-changes');
           clackLog.info(`No changes to apply for ${result.slug}.`);
         } else {
+          log.info({ slug: result.slug, changed: true }, 'track.update.completed');
           clackLog.info(`
 Updated application: ${appPath}
 
@@ -134,19 +142,32 @@ Next steps:
       }
     } catch (err) {
       if (err instanceof TrackCancelled) {
+        log.debug('track.cancelled');
         clackLog.info('Tracking cancelled.');
         process.exit(0);
       }
       if (err instanceof TrackError) {
-        process.stderr.write(`error: ${err.message}\n`);
+        logError(log, err, 'track.failed', { campaign });
+        log.flush();
+        userError(err.message);
         process.exit(1);
       }
       if (err instanceof SlugMissingError) {
-        process.stderr.write(`error: ${err.message}\n`);
+        logError(log, err, 'track.slug-missing', { campaign });
+        log.flush();
+        userError(err.message);
         process.exit(1);
       }
       if (err instanceof UserInputError) {
-        process.stderr.write(`error: ${err.message}\n`);
+        logError(log, err, 'track.user-input-error', { campaign });
+        log.flush();
+        userError(err.message);
+        process.exit(1);
+      }
+      if (err instanceof ApplicationNotFoundError) {
+        logError(log, err, 'track.application-not-found', { campaign });
+        log.flush();
+        userError(err.message);
         process.exit(1);
       }
       throw err;

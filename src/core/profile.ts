@@ -6,6 +6,7 @@ import { readCachedCv, readCachedGithub, writeCachedCv, writeCachedGithub } from
 import { chatComplete } from './llm.js';
 import { loadPromptTemplate } from './prompts.js';
 import { resolveProfilePath } from './paths.js';
+import { getRootLogger } from './logger/logger.js';
 import type { LlmConfig } from './types.js';
 
 /**
@@ -29,6 +30,7 @@ export async function readProfile(campaignRoot: string): Promise<string> {
   try {
     return await readFile(profilePath, 'utf8');
   } catch {
+    getRootLogger().warn({ path: profilePath }, 'profile.read.missing');
     throw new ProfileReadError(
       `no profile found at ${profilePath}\nRun \`jho init\` to create one.`,
     );

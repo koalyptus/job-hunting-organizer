@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { userInfo } from '../output.js';
 
 /**
  * `jho prepare [<slug>|<url>]` — pre-interview prep plan.
@@ -13,7 +14,7 @@ export const prepareCommand = new Command('prepare')
   .option('--days <n>', 'number of days until the interview', '7')
   .option('--json', 'output as JSON')
   .action(() => {
-    process.stderr.write('jho prepare: not implemented yet (planned: phase 7)\n');
+    userInfo('jho prepare: not implemented yet (planned: phase 7)');
     process.exit(1);
   });
 

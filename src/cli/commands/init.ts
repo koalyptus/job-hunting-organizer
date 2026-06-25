@@ -3,6 +3,7 @@ import { log as clackLog } from '@clack/prompts';
 import { runInit } from '../../core/init/index.js';
 import { InitCancelled, InitError } from '../../core/init/errors.js';
 import { resolveCampaignName } from '../../core/paths.js';
+import { getRootLogger, logError } from '../../core/logger/logger.js';
 
 /**
  * `jho init [<name>]` — campaign creation wizard.
@@ -17,8 +18,10 @@ export const initCommand = new Command('init')
   .option('--yes', 'non-interactive mode (use env vars/defaults)')
   .action(async function (name: string | undefined, opts) {
     const resolvedName = resolveCampaignName(name);
+    const log = getRootLogger().child({ cmd: 'init', campaign: resolvedName });
 
     try {
+      log.info({ campaign: resolvedName }, 'init.started');
       await runInit({
         name: resolvedName,
         cv: opts.cv as string | undefined,
@@ -26,13 +29,17 @@ export const initCommand = new Command('init')
         github: opts.github as string | undefined,
         profile: opts.profile as string | undefined,
         yes: opts.yes as boolean | undefined,
+        log,
       });
+      log.info({ campaign: resolvedName }, 'init.completed');
     } catch (err) {
       if (err instanceof InitCancelled) {
+        log.debug('init.cancelled');
         clackLog.info('Init cancelled.');
         process.exit(0);
       }
       if (err instanceof InitError) {
+        logError(log, err, 'init.failed', { campaign: resolvedName });
         process.stderr.write(`error: ${err.message}\n`);
         process.exit(1);
       }

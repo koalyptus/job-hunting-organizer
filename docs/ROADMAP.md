@@ -23,8 +23,9 @@
   - [x] 5b — JD fetch & extraction
   - [x] 5c — Target role suggestion
   - [x] 5d — jho track CLI
-    - [ ] 5d1 — CLI logging integration
+    - [x] 5d1 — CLI logging integration (incl. `disableFileLogging` config flag)
     - [ ] 5d2 — `jho track <slug> --refresh` (re-fetch JD for existing application)
+    - [ ] 5d3 — `--verbose` CLI flag (enables terminal output for a single run)
   - [ ] 5e — jho list
   - [ ] 5f — core/stats & jho stats
   - [ ] 5g — Tests, docs & polish

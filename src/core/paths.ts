@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathExists } from './fs.js';
+import { getRootLogger } from './logger/logger.js';
 import { SLUG_PATTERN } from './slug.js';
 
 /**
@@ -195,6 +196,7 @@ export async function findConfigPath(root: string): Promise<string | null> {
 export async function ensureRoot(root: string): Promise<boolean> {
   if (!(await pathExists(root))) {
     await mkdir(root, { recursive: true });
+    getRootLogger().debug({ root }, 'ensureRoot.created');
     return true;
   }
   return false;

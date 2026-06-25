@@ -112,6 +112,9 @@ jho doctor              # diagnose the campaign
 jho repair              # attempt auto-repair
 jho stats [--role <slug>] [--since <date|7d|30d|90d>] [--json]
   # campaign snapshot: counts by status / role / site, funnel, this-month delta
+jho logs [--tail <n>] [--level <level>] [--json] [--path]
+  # pretty-print the log file (JSON -> human-readable); --json for raw lines,
+  # --path for the file location. Log file is always JSON (for jq/grep/aggregators).
 jho help [<cmd>|<topic>]
 jho mcp                 # start MCP server
 ```
@@ -163,12 +166,32 @@ Each tool-managed file has a `.toolhash` sidecar. If the file's current hash dif
 
 ## Logging conventions
 
-- Logs go to **stderr** only. **stdout** is reserved for command output.
-- By default, logs are also appended to `<config home>/jho.log` (append-only, no rotation). Override the path via `JHO_LOG_FILE` env var or `logging.file` in `config.json`. Set `logging.file: ""` to disable file logging entirely.
+The codebase has three output channels, each serving a different audience. Mixing them is **expected** — they're layered, not redundant.
+
+### Output channels
+
+| Channel                             | Purpose                           | Audience                     | Destination                             | When to use                                                                              |
+| ----------------------------------- | --------------------------------- | ---------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **`@clack/prompts` (`clackLog.*`)** | Styled interactive UI             | User in a wizard/flow        | Terminal (with `✔ ✖ ⚠` symbols, colors) | `wizard.ts`, `profile-builder.ts`, `roles.ts`, `prompts.ts`, interactive cancel messages |
+| **`process.stderr.write(...)`**     | Plain user-facing errors/messages | User running the CLI         | stderr (plain text)                     | Stub commands, validation failures, `error: ...` lines in `cli/commands/*.ts`            |
+| **`log.*` (pino)**                  | Structured diagnostics            | Developer/operator debugging | File by default (or silenced)           | Throughout `src/core/` for observability — never use to talk to the user                 |
+
+### Decision tree
+
+1. Are you in an **interactive wizard** and want styled output? → `clackLog.info/warn/success`
+2. Are you **reporting an error to the user** (plain text, non-styled)? → `process.stderr.write('error: ...')` + `process.exit(1)`
+3. Are you **logging a lifecycle event for debugging**? → `log.info/debug/warn/error`
+
+### Pino specifics
+
+- By default, logs are appended to `<config home>/jho.log` (append-only, no rotation). Override the path via `JHO_LOG_FILE` env var or `logging.file` in `config.json`. Suppress file logging entirely with `logging.disableFileLogging: true`.
+- **No terminal output ever** by default — stdout is reserved for command output (so pipes like `jho list --json | jq .` keep working), and pino logs go to file only.
 - No user content is logged (no CV / JD / cover letter / Q&A text). Metadata only (slugs, model, tokens, duration).
-- MCP server logs are JSON. CLI logs are pretty (TTY) or JSON (non-TTY).
+- MCP server logs are JSON. CLI logs are JSON (always written to file, never to terminal by default).
+- When `--verbose` is passed (see Phase 5d3), the logger switches to terminal output (pretty in TTY, JSON otherwise) at `debug` level for that single run, temporarily overriding `disableFileLogging`.
 - Every log line carries a correlation id; MCP reuses the JSON-RPC request id.
 - Secrets in config are redacted by default; `jho config show --reveal` shows all (with confirmation).
+- Use `moduleLogger(import.meta.url)` instead of `childLogger({ module: '...' })` at module scope — it's rename-proof (the `module` binding derives from the file path).
 
 ## Eval philosophy
 
@@ -197,7 +220,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 5 — JD extraction & `track`. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 5a (schemas & tracker), 5b (JD fetch), 5c (target role), 5d (track CLI), 5e (list), 5f (stats), 5g (tests & docs).
+Phase 5 — JD extraction & `track`. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 5a (schemas & tracker), 5b (JD fetch), 5c (target role), 5d (track CLI), 5d2 (track update with disableFileLogging config), 5d3 (--verbose flag), 5e (list), 5f (stats), 5g (tests & docs).
 
 ## Cross-platform conventions
 

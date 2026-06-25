@@ -1,5 +1,5 @@
 import ora from 'ora';
-import { isInteractive } from './logger.js';
+import { isInteractive } from './logger/logger.js';
 
 /**
  * Minimal interface for the subset of `Ora` we actually use.

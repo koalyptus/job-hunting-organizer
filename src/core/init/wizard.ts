@@ -28,6 +28,7 @@ import { promptCalendar } from './calendar.js';
 import { createDirectories } from '../directories.js';
 import { handleProfile } from '../profile-builder.js';
 import { InitCancelled, InitError } from './errors.js';
+import { childLogger } from '../logger/logger.js';
 
 /**
  * Run the init wizard. Called from the CLI command.
@@ -36,12 +37,15 @@ import { InitCancelled, InitError } from './errors.js';
  */
 export async function runInit(opts: InitOptions): Promise<void> {
   const name = opts.name ?? DEFAULT_CAMPAIGN;
+  const log = opts.log ?? childLogger({ cmd: 'init' });
 
   const validationError = validateName(name);
 
   if (validationError) {
     throw new InitError(`invalid campaign name "${name}" — hint: ${validationError}`);
   }
+
+  log.info({ campaign: name }, 'init.wizard.started');
 
   const campaignRoot = resolveCampaignRoot(name);
   const dataRoot = resolveDataRoot();
@@ -71,7 +75,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
     const campaignConfig = loadCampaignConfig(name);
     existingCvPath = campaignConfig.cv?.path || undefined;
     existingLinkedinUrl = campaignConfig.linkedin?.url || undefined;
-  } catch {
+  } catch (err) {
+    log.debug({ err }, 'campaign.config.load.failed');
     // Campaign directory doesn't exist yet (first init).
   }
 
@@ -197,7 +202,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
         logging: {
           ...currentConfig.logging,
           level: DEFAULT_LOG_LEVEL,
-          file: '',
+          disableFileLogging: currentConfig.logging?.disableFileLogging ?? false,
           redactPaths: currentConfig.logging?.redactPaths ?? [],
         },
       });
@@ -230,12 +235,14 @@ export async function runInit(opts: InitOptions): Promise<void> {
         linkedinUrl,
         llmConfig,
         nonInteractive: opts.yes ?? false,
+        log,
       });
     },
     { retries: 3 },
   );
 
   // --- Step 9: Summary ---
+  log.info({ campaign: name }, 'init.wizard.completed');
   clackLog.success(`Campaign "${name}" created`);
   clackLog.info(`
   Profile: ${resolveProfilePath(campaignRoot)}

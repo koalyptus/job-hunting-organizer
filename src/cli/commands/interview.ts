@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { userInfo } from '../output.js';
 
 /**
  * `jho interview [<slug>] <subcommand>` — manage the interview pipeline.
@@ -18,12 +19,12 @@ const addCmd = new Command('add')
   .option('--provider <provider>', 'calendar provider (ics, outlook)', 'ics')
   .option('--title <title>', 'interview title')
   .action(() => {
-    process.stderr.write('jho interview add: not implemented yet (planned: phase 7)\n');
+    userInfo('jho interview add: not implemented yet (planned: phase 7)');
     process.exit(1);
   });
 
 const listCmd = new Command('list').description('List interviews for an application').action(() => {
-  process.stderr.write('jho interview list: not implemented yet (planned: phase 7)\n');
+  userInfo('jho interview list: not implemented yet (planned: phase 7)');
   process.exit(1);
 });
 
@@ -32,7 +33,7 @@ const markCmd = new Command('mark')
   .argument('<n>', 'interview number (from list)')
   .requiredOption('--status <status>', 'new status (passed, failed, no-show, rescheduled, pending)')
   .action(() => {
-    process.stderr.write('jho interview mark: not implemented yet (planned: phase 7)\n');
+    userInfo('jho interview mark: not implemented yet (planned: phase 7)');
     process.exit(1);
   });
 
@@ -41,7 +42,7 @@ const notesCmd = new Command('notes')
   .argument('<n>', 'interview number (from list)')
   .requiredOption('--append <text>', 'notes to append')
   .action(() => {
-    process.stderr.write('jho interview notes: not implemented yet (planned: phase 7)\n');
+    userInfo('jho interview notes: not implemented yet (planned: phase 7)');
     process.exit(1);
   });
 

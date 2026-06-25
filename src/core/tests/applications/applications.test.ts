@@ -12,23 +12,30 @@ import {
   getEntryFromSlug,
   appendNote,
   readIndex,
+  ApplicationNotFoundError,
 } from '../../applications/index.js';
 import { todayIso } from '../../date.js';
 import * as fsModule from '../../fs.js';
 import { writeFrontmatter } from '../../frontmatter.js';
 
-const mockWarn = vi.fn();
-const mockDebug = vi.fn();
-const mockInfo = vi.fn();
-const mockError = vi.fn();
-
-vi.mock('../../logger.js', () => ({
-  getRootLogger: vi.fn(() => ({
-    debug: mockDebug,
-    info: mockInfo,
-    warn: mockWarn,
-    error: mockError,
+const mockRootLogger = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  child: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    child: vi.fn(),
   })),
+}));
+
+vi.mock('../../logger/logger.js', () => ({
+  getRootLogger: vi.fn(() => mockRootLogger),
+  childLogger: vi.fn(() => mockRootLogger),
+  moduleLogger: vi.fn(() => mockRootLogger),
 }));
 
 let workDir: string;
@@ -232,7 +239,7 @@ describe('updateApplication', () => {
   it('throws when application does not exist', async () => {
     await expect(
       updateApplication(appliedDir, 'nonexistent', { status: 'interview' }),
-    ).rejects.toThrow('application not found');
+    ).rejects.toThrow(ApplicationNotFoundError);
   });
 
   it('logs warning when validation fails and skips index update', async () => {
@@ -248,7 +255,7 @@ describe('updateApplication', () => {
     await updateApplication(appliedDir, slug, { salary: '100k' });
 
     // Verify warning was logged
-    expect(mockWarn).toHaveBeenCalledWith(
+    expect(mockRootLogger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ slug }),
       'meta.md validation failed, index not updated',
     );
@@ -279,7 +286,7 @@ describe('readApplication', () => {
 
   it('throws when application does not exist', async () => {
     await expect(readApplication(appliedDir, 'nonexistent')).rejects.toThrow(
-      'application not found',
+      ApplicationNotFoundError,
     );
   });
 });
@@ -376,7 +383,7 @@ describe('appendNote', () => {
 
   it('throws if application folder does not exist', async () => {
     await expect(appendNote(appliedDir, 'nonexistent', 'note')).rejects.toThrow(
-      'application not found: nonexistent',
+      ApplicationNotFoundError,
     );
   });
 

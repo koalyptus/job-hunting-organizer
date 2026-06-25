@@ -1,3 +1,5 @@
+import type { Logger } from 'pino';
+
 /**
  * Options for the `jho init` wizard. Passed from the CLI layer to
  * {@link runInit} in `core/init.ts`.
@@ -15,4 +17,6 @@ export interface InitOptions {
   readonly profile?: string;
   /** Non-interactive mode: use env vars/defaults, skip all prompts. */
   readonly yes?: boolean;
+  /** Optional pino logger. */
+  readonly log?: Logger;
 }

@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { campaignConfigCommand } from './campaign-config.js';
+import { userInfo } from '../output.js';
 
 /**
  * `jho campaign <subcommand>` — operations on a campaign.
@@ -19,7 +20,7 @@ for (const [name, phase] of [
 ] as const) {
   campaignCommand.addCommand(
     new Command(name).action(() => {
-      process.stderr.write(`jho campaign ${name}: not implemented yet (planned: phase ${phase})\n`);
+      userInfo(`jho campaign ${name}: not implemented yet (planned: phase ${phase})`);
       process.exit(1);
     }),
   );

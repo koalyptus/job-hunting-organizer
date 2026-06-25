@@ -62,7 +62,23 @@ export interface PackageJson {
  * Pino-compatible log levels. `silent` is included so users can disable
  * logging entirely via config.
  */
-export type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
+const LOG_LEVEL_VALUES = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
+
+export type LogLevel = (typeof LOG_LEVEL_VALUES)[number];
+
+/**
+ * All log levels including `silent` (for config schema).
+ */
+export const ALL_LOG_LEVELS: readonly LogLevel[] = LOG_LEVEL_VALUES;
+
+/**
+ * Log levels that can be used as filter thresholds (excludes `silent`
+ * which disables logging entirely).
+ */
+export const FILTERABLE_LOG_LEVELS: readonly LogLevel[] = LOG_LEVEL_VALUES.slice(0, -1);
+
+/** Default log filename placed inside the config home directory. */
+export const DEFAULT_LOG_FILENAME = 'jho.log';
 
 /**
  * Runtime configuration for the logger factory in `core/logger.ts`.
@@ -70,11 +86,9 @@ export type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' |
 export interface LoggerConfig {
   /** Minimum level to emit. */
   readonly level: LogLevel;
-  /** Whether the destination is a TTY (controls pretty-print). */
-  readonly isTty: boolean;
-  /** Optional file path to also write logs to. */
+  /** Optional file path to write JSON logs to. When undefined, no file is written. */
   readonly file?: string | undefined;
-  /** JSON paths whose values are replaced with `***` in log output. */
+  /** JSON paths whose values are replaced with `[REDACTED]` in log output. */
   readonly redactPaths: readonly string[];
   /** Optional correlation id stamped on every log line. */
   readonly correlationId?: string | undefined;
@@ -232,8 +246,10 @@ export interface GlobalConfig {
   logging: {
     /** Default level when `--verbose`/`--quiet` is not set. */
     level: LogLevel;
-    /** Default log file path. Empty means "stderr only". */
-    file: string;
+    /** Default log file path. Absent or empty uses the default path (`<configHome>/jho.log`). */
+    file?: string;
+    /** When true, suppress all file logging regardless of `file`. */
+    disableFileLogging?: boolean;
     /** JSON paths to redact in addition to the built-in secret list. */
     redactPaths: string[];
   };

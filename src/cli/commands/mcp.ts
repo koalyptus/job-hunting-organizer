@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { userInfo } from '../output.js';
 
 /**
  * `jho mcp` — start the MCP server.
@@ -6,7 +7,7 @@ import { Command } from 'commander';
 export const mcpCommand = new Command('mcp')
   .description('Start the MCP server (stdio transport)')
   .action(() => {
-    process.stderr.write('jho mcp: not implemented yet (planned: phase 8)\n');
+    userInfo('jho mcp: not implemented yet (planned: phase 8)');
     process.exit(1);
   });
 

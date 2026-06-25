@@ -3,6 +3,7 @@ import { loadCampaignConfig } from '../../core/config.js';
 import { resolveCampaignRoot, resolveConfigPath } from '../../core/paths.js';
 import { redactSecrets } from '../../core/config.view.js';
 import type { GlobalOpts } from '../options.js';
+import { userInfo, userError } from '../output.js';
 
 /**
  * `jho campaign config [show|path]` — show or print the path of the
@@ -27,12 +28,12 @@ export const campaignConfigCommand = new Command('config')
         break;
       }
       case 'edit': {
-        process.stderr.write('jho campaign config edit: not implemented yet\n');
+        userInfo('jho campaign config edit: not implemented yet');
         process.exit(1);
         break;
       }
       default:
-        process.stderr.write(`jho campaign config: unknown subcommand: ${subcommand}\n`);
+        userError(`jho campaign config: unknown subcommand: ${subcommand}`);
         process.exit(1);
     }
   });

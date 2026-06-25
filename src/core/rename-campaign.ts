@@ -4,7 +4,7 @@ import { resolveCampaignRoot, resolveDataRoot, findCampaignFromCwd, isUnder } fr
 import { pathExists } from './fs.js';
 import { acquireLock } from './locks.js';
 import { clearConfigCache } from './config.js';
-import { childLogger } from './logger.js';
+import { childLogger } from './logger/logger.js';
 import { validateName } from './validate.js';
 
 const log = childLogger({ cmd: 'rename-campaign' });

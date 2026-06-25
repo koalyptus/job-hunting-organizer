@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { collectTags } from '../options.js';
+import { userInfo } from '../output.js';
 
 /**
  * `jho list` — list all applications.
@@ -11,7 +12,7 @@ export const listCommand = new Command('list')
   .option('--role <role>', 'filter by target role')
   .option('--json', 'output as JSON')
   .action(() => {
-    process.stderr.write('jho list: not implemented yet (planned: phase 5)\n');
+    userInfo('jho list: not implemented yet (planned: phase 5)');
     process.exit(1);
   });
 

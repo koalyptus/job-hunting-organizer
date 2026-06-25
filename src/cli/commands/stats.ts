@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { userInfo } from '../output.js';
 
 /**
  * `jho stats` — campaign snapshot.
@@ -10,7 +11,7 @@ export const statsCommand = new Command('stats')
   .option('--include-notes', 'include LLM-extracted abandonment reasons (costs tokens)')
   .option('--json', 'output as JSON')
   .action(() => {
-    process.stderr.write('jho stats: not implemented yet (planned: phase 5)\n');
+    userInfo('jho stats: not implemented yet (planned: phase 5)');
     process.exit(1);
   });
 

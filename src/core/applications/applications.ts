@@ -5,7 +5,7 @@ import { uniqueSlug } from '../slug.js';
 import { writeFrontmatter, readFrontmatter, mergeFrontmatter } from '../frontmatter.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
-import { getRootLogger } from '../logger.js';
+import { getRootLogger, moduleLogger } from '../logger/logger.js';
 import { ApplicationFrontmatterSchema } from './meta-schema.js';
 import { upsertIndexEntry, removeIndexEntry, readIndex, rebuildIndex } from './index-builder.js';
 import { replaceRegion } from '../markers.js';
@@ -18,6 +18,21 @@ import type {
   ApplicationFrontmatter,
 } from './types.js';
 import type { Frontmatter } from '../types.js';
+
+/**
+ * Thrown when an application folder or its `meta.md` is not found.
+ */
+export class ApplicationNotFoundError extends Error {
+  /**
+   * @param slug - The application slug that was not found.
+   */
+  constructor(slug: string) {
+    super(`application not found: ${slug}`);
+    this.name = 'ApplicationNotFoundError';
+  }
+}
+
+const appLog = moduleLogger(import.meta.url);
 
 /**
  * The user-notes comment appended to new `jd.md` files.
@@ -96,6 +111,8 @@ function entryFromFrontmatter(fm: ApplicationFrontmatter): ApplicationEntry {
  */
 export async function createApplication(input: CreateApplicationInput): Promise<string> {
   const { appliedDir } = input;
+  const log = appLog;
+  log.info({ company: input.company, title: input.title }, 'application.create.start');
   await mkdir(appliedDir, { recursive: true });
 
   return acquireLock(appliedDir, async () => {
@@ -150,6 +167,7 @@ export async function createApplication(input: CreateApplicationInput): Promise<
     const entry = entryFromFrontmatter(fm);
     await upsertIndexEntry(appliedDir, entry);
 
+    log.info({ slug, company: input.company, title: input.title }, 'application.created');
     return slug;
   });
 }
@@ -170,12 +188,15 @@ export async function updateApplication(
   slug: string,
   patch: UpdateApplicationInput,
 ): Promise<boolean> {
+  const log = appLog;
   const folder = join(appliedDir, slug);
   const metaPath = join(folder, 'meta.md');
 
   if (!existsSync(metaPath)) {
-    throw new Error(`application not found: ${slug}`);
+    throw new ApplicationNotFoundError(slug);
   }
+
+  log.info({ slug, patch: Object.keys(patch) }, 'application.update.start');
 
   await acquireLock(folder, async () => {
     const { frontmatter, body } = await readFrontmatter(metaPath);
@@ -201,6 +222,7 @@ export async function updateApplication(
       );
     }
   });
+  log.info({ slug }, 'application.update.completed');
   return true;
 }
 
@@ -219,7 +241,7 @@ export async function readApplication(
   const metaPath = join(folder, 'meta.md');
 
   if (!existsSync(metaPath)) {
-    throw new Error(`application not found: ${slug}`);
+    throw new ApplicationNotFoundError(slug);
   }
 
   const { frontmatter, body } = await readFrontmatter(metaPath);
@@ -322,7 +344,7 @@ export async function appendNote(appliedDir: string, slug: string, note: string)
   const jdPath = join(folder, 'jd.md');
 
   if (!existsSync(folder)) {
-    throw new Error(`application not found: ${slug}`);
+    throw new ApplicationNotFoundError(slug);
   }
 
   await acquireLock(folder, async () => {
