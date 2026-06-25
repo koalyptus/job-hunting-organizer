@@ -12,6 +12,7 @@ import {
   getEntryFromSlug,
   appendNote,
   readIndex,
+  ApplicationNotFoundError,
 } from '../../applications/index.js';
 import { todayIso } from '../../date.js';
 import * as fsModule from '../../fs.js';
@@ -238,7 +239,7 @@ describe('updateApplication', () => {
   it('throws when application does not exist', async () => {
     await expect(
       updateApplication(appliedDir, 'nonexistent', { status: 'interview' }),
-    ).rejects.toThrow('application not found');
+    ).rejects.toThrow(ApplicationNotFoundError);
   });
 
   it('logs warning when validation fails and skips index update', async () => {
@@ -285,7 +286,7 @@ describe('readApplication', () => {
 
   it('throws when application does not exist', async () => {
     await expect(readApplication(appliedDir, 'nonexistent')).rejects.toThrow(
-      'application not found',
+      ApplicationNotFoundError,
     );
   });
 });
@@ -382,7 +383,7 @@ describe('appendNote', () => {
 
   it('throws if application folder does not exist', async () => {
     await expect(appendNote(appliedDir, 'nonexistent', 'note')).rejects.toThrow(
-      'application not found: nonexistent',
+      ApplicationNotFoundError,
     );
   });
 

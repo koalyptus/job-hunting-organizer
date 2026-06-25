@@ -16,6 +16,7 @@ import {
   TrackError,
   TrackCancelled,
 } from '../../core/track/index.js';
+import { ApplicationNotFoundError } from '../../core/applications/index.js';
 import { UserInputError } from '../errors.js';
 import { withSpinner } from '../../core/spinner.js';
 import { APPLICATION_STATUSES } from '../../core/applications/types.js';
@@ -159,6 +160,12 @@ Next steps:
       }
       if (err instanceof UserInputError) {
         logError(log, err, 'track.user-input-error', { campaign });
+        log.flush();
+        userError(err.message);
+        process.exit(1);
+      }
+      if (err instanceof ApplicationNotFoundError) {
+        logError(log, err, 'track.application-not-found', { campaign });
         log.flush();
         userError(err.message);
         process.exit(1);

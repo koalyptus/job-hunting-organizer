@@ -6,6 +6,7 @@ export {
   deleteApplication,
   getEntryFromSlug,
   appendNote,
+  ApplicationNotFoundError,
 } from './applications.js';
 export {
   indexPath,

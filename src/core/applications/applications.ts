@@ -19,6 +19,19 @@ import type {
 } from './types.js';
 import type { Frontmatter } from '../types.js';
 
+/**
+ * Thrown when an application folder or its `meta.md` is not found.
+ */
+export class ApplicationNotFoundError extends Error {
+  /**
+   * @param slug - The application slug that was not found.
+   */
+  constructor(slug: string) {
+    super(`application not found: ${slug}`);
+    this.name = 'ApplicationNotFoundError';
+  }
+}
+
 const appLog = moduleLogger(import.meta.url);
 
 /**
@@ -180,7 +193,7 @@ export async function updateApplication(
   const metaPath = join(folder, 'meta.md');
 
   if (!existsSync(metaPath)) {
-    throw new Error(`application not found: ${slug}`);
+    throw new ApplicationNotFoundError(slug);
   }
 
   log.info({ slug, patch: Object.keys(patch) }, 'application.update.start');
@@ -228,7 +241,7 @@ export async function readApplication(
   const metaPath = join(folder, 'meta.md');
 
   if (!existsSync(metaPath)) {
-    throw new Error(`application not found: ${slug}`);
+    throw new ApplicationNotFoundError(slug);
   }
 
   const { frontmatter, body } = await readFrontmatter(metaPath);
@@ -331,7 +344,7 @@ export async function appendNote(appliedDir: string, slug: string, note: string)
   const jdPath = join(folder, 'jd.md');
 
   if (!existsSync(folder)) {
-    throw new Error(`application not found: ${slug}`);
+    throw new ApplicationNotFoundError(slug);
   }
 
   await acquireLock(folder, async () => {
