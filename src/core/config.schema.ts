@@ -88,14 +88,14 @@ export const GlobalConfigSchema = z.object({
       baseUrl: z.string().url().default('http://localhost:11434/v1'),
       apiKey: z.string().default('no-key'),
       model: z.string().default('llama3.1'),
-      /** Per-request timeout in milliseconds for LLM calls (default 10min). Increase for slow local models. */
-      timeoutMs: z.number().int().min(30_000).max(3_600_000).default(600_000),
+      /** Per-request timeout in milliseconds for LLM calls (default 20min). Increase for slow local models. */
+      timeoutMs: z.number().int().min(30_000).max(3_600_000).default(1_200_000),
     })
     .default({
       baseUrl: 'http://localhost:11434/v1',
       apiKey: 'no-key',
       model: 'llama3.1',
-      timeoutMs: 600_000,
+      timeoutMs: 1_200_000,
     }),
   /**
    * Optional GitHub integration for `jho campaign init` profile

@@ -27,13 +27,13 @@ import { promptLlm, loadExistingConfig } from './llm.js';
 import { promptCalendar } from './calendar.js';
 import { createDirectories } from '../directories.js';
 import { handleProfile } from '../profile-builder.js';
-import { InitCancelled, InitError, InitInvalidNameError } from './errors.js';
+import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
 
 /**
  * Run the init wizard. Called from the CLI command.
  * @throws {InitCancelled} if the user cancels any prompt.
- * @throws {InitError} on validation or file errors.
+ * @throws {InitInvalidNameError} if the campaign name is invalid.
  */
 export async function runInit(opts: InitOptions): Promise<void> {
   const name = opts.name ?? DEFAULT_CAMPAIGN;
@@ -160,7 +160,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
         baseUrl: llm.baseUrl!,
         apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
         model: llm.model!,
-        timeoutMs: existingConfig?.llm.timeoutMs ?? 600_000,
+        timeoutMs: existingConfig?.llm.timeoutMs ?? 1_200_000,
       }
     : undefined;
 
