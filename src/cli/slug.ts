@@ -6,9 +6,7 @@ import { resolveCampaignRoot, resolveAppliedDir, findSlugFromCwd } from '../core
  */
 export class SlugMissingError extends Error {
   constructor() {
-    super(
-      'missing <slug> argument\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)',
-    );
+    super('missing <slug> argument');
     this.name = 'SlugMissingError';
   }
 }

@@ -8,7 +8,9 @@ import { trackCommand } from '../../commands/track.js';
 import * as trackCore from '../../../core/track/track.js';
 import * as clipboardModule from '../../clipboard.js';
 import * as stdinModule from '../../stdin.js';
-import { TrackError, TrackCancelled } from '../../../core/track/errors.js';
+import { TrackError, TrackCancelled, NoLinkStoredError } from '../../../core/track/errors.js';
+import { SlugMissingError } from '../../slug.js';
+import { ApplicationNotFoundError } from '../../../core/applications/index.js';
 import type { TrackSummary } from '../../../core/track/track.js';
 import type * as TrackCoreModule from '../../../core/track/track.js';
 
@@ -17,6 +19,7 @@ vi.mock('../../../core/track/track.js', async (importOriginal) => {
   return {
     ...actual,
     runTrack: vi.fn(),
+    runTrackRefresh: vi.fn(),
     prepareTrack: vi.fn(),
     confirmAndCreate: vi.fn(),
   };
@@ -249,6 +252,36 @@ describe('track command', () => {
       );
     });
 
+    it('shows "no changes" when result.changed is false', async () => {
+      vi.mocked(trackCore.runTrack).mockResolvedValue({
+        slug: '2026-Jun-21-SE-TestCo',
+        changed: false,
+      });
+
+      const { stdout, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--status',
+        'interview',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('No changes to apply for 2026-Jun-21-SE-TestCo.');
+    });
+
+    it('shows "no changes" when no update flags provided', async () => {
+      const { stdout, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('No changes to apply for 2026-Jun-21-SE-TestCo.');
+      expect(trackCore.runTrack).not.toHaveBeenCalled();
+    });
+
     it('handles TrackCancelled', async () => {
       vi.mocked(trackCore.runTrack).mockRejectedValue(new TrackCancelled());
 
@@ -421,6 +454,164 @@ describe('track command', () => {
       expect(stdout).toContain('jho track https://example.com/job/123');
       expect(stdout).toContain('--paste');
       expect(stdout).toContain('--stdin');
+      expect(stdout).toContain('--refresh');
+    });
+  });
+
+  describe('--refresh', () => {
+    it('refreshes JD from stored URL', async () => {
+      vi.mocked(trackCore.runTrackRefresh).mockResolvedValue({
+        slug: '2026-Jun-21-SE-TestCo',
+        changed: true,
+      });
+
+      const { stdout, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--refresh',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Refreshed JD:');
+      expect(stdout).toContain('2026-Jun-21-SE-TestCo');
+      expect(trackCore.runTrackRefresh).toHaveBeenCalledWith(
+        expect.objectContaining({
+          campaign: 'default',
+          slug: '2026-Jun-21-SE-TestCo',
+          yes: true,
+        }),
+      );
+    });
+
+    it('passes --paste text to refresh', async () => {
+      vi.mocked(clipboardModule.readClipboard).mockResolvedValue('New JD from clipboard');
+      vi.mocked(trackCore.runTrackRefresh).mockResolvedValue({
+        slug: '2026-Jun-21-SE-TestCo',
+        changed: true,
+      });
+
+      const { exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--refresh',
+        '--paste',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(trackCore.runTrackRefresh).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'New JD from clipboard',
+        }),
+      );
+    });
+
+    it('passes --stdin text to refresh', async () => {
+      vi.mocked(stdinModule.readStdin).mockResolvedValue('New JD from stdin');
+      vi.mocked(trackCore.runTrackRefresh).mockResolvedValue({
+        slug: '2026-Jun-21-SE-TestCo',
+        changed: true,
+      });
+
+      const { exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--refresh',
+        '--stdin',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(trackCore.runTrackRefresh).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'New JD from stdin',
+        }),
+      );
+    });
+
+    it('handles TrackError during refresh with paste hint', async () => {
+      vi.mocked(trackCore.runTrackRefresh).mockRejectedValue(
+        new TrackError('Failed to refresh JD: fetch failed'),
+      );
+
+      const { stderr, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--refresh',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Failed to refresh JD');
+      expect(stderr).toContain('--refresh --paste');
+    });
+
+    it('handles NoLinkStoredError during refresh with hint', async () => {
+      vi.mocked(trackCore.runTrackRefresh).mockRejectedValue(
+        new NoLinkStoredError('2026-Jun-21-SE-TestCo'),
+      );
+
+      const { stderr, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--refresh',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('no link stored for');
+      expect(stderr).toContain('--paste');
+    });
+
+    it('skips paste hint when TrackError during refresh with --paste', async () => {
+      vi.mocked(trackCore.runTrackRefresh).mockRejectedValue(
+        new TrackError('Failed to refresh JD: extract failed'),
+      );
+
+      const { stderr, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--refresh',
+        '--paste',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Failed to refresh JD');
+      expect(stderr).not.toContain('--refresh --paste');
+    });
+  });
+
+  describe('error handling', () => {
+    it('handles SlugMissingError', async () => {
+      vi.mocked(trackCore.runTrack).mockRejectedValue(new SlugMissingError());
+
+      const { stderr, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--status',
+        'interview',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('missing <slug> argument');
+    });
+
+    it('handles ApplicationNotFoundError', async () => {
+      vi.mocked(trackCore.runTrack).mockRejectedValue(
+        new ApplicationNotFoundError('2026-Jun-21-SE-TestCo'),
+      );
+
+      const { stderr, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--status',
+        'interview',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('application not found');
     });
   });
 });

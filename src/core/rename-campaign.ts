@@ -17,10 +17,38 @@ export class RenameError extends Error {
   }
 }
 
+/** Rejection when the campaign could not be inferred from cwd or --from. */
+export class InferCampaignError extends RenameError {
+  constructor() {
+    super('could not infer campaign from cwd');
+    this.name = 'InferCampaignError';
+  }
+}
+
+/** Rejection when the new campaign name fails validation. */
+export class InvalidNameError extends RenameError {
+  /** The human-readable validation failure reason. */
+  reason: string;
+
+  constructor(name: string, reason: string) {
+    super(`invalid campaign name "${name}"`);
+    this.name = 'InvalidNameError';
+    this.reason = reason;
+  }
+}
+
+/** Rejection when renaming the campaign the user is currently inside. */
+export class SelfRenameError extends RenameError {
+  constructor(oldName: string) {
+    super(`refusing to rename campaign "${oldName}" while cwd is inside it`);
+    this.name = 'SelfRenameError';
+  }
+}
+
 /**
  * Resolve the old campaign name from the `--from` flag or cwd inference.
  * @returns The resolved old campaign name.
- * @throws {RenameError} if the name cannot be determined.
+ * @throws {InferCampaignError} if the name cannot be determined.
  */
 export function resolveOldName(fromFlag: string | undefined): string {
   const oldName = fromFlag?.trim() || undefined;
@@ -30,9 +58,7 @@ export function resolveOldName(fromFlag: string | undefined): string {
 
   const inferred = findCampaignFromCwd(process.cwd(), resolveDataRoot());
   if (!inferred) {
-    throw new RenameError(
-      'could not infer campaign from cwd\nhint: pass the campaign name explicitly with --from, or run from inside the campaign folder',
-    );
+    throw new InferCampaignError();
   }
   return inferred;
 }
@@ -40,12 +66,14 @@ export function resolveOldName(fromFlag: string | undefined): string {
 /**
  * Rename a campaign folder. Validates the new name, acquires a lock,
  * and performs an atomic rename.
- * @throws {RenameError} on validation or pre-flight failures.
+ * @throws {InvalidNameError} on validation failures.
+ * @throws {SelfRenameError} if cwd is inside the campaign.
+ * @throws {RenameError} on other pre-flight failures.
  */
 export async function renameCampaign(oldName: string, newName: string): Promise<void> {
   const validationError = validateName(newName);
   if (validationError) {
-    throw new RenameError(`invalid campaign name "${newName}"\nhint: ${validationError}`);
+    throw new InvalidNameError(newName, validationError);
   }
 
   const oldPath = resolveCampaignRoot(oldName);
@@ -53,9 +81,7 @@ export async function renameCampaign(oldName: string, newName: string): Promise<
 
   // Self-foot-gun: refuse if cwd is inside the campaign being renamed
   if (isUnder(process.cwd(), oldPath)) {
-    throw new RenameError(
-      `cannot rename the campaign you are currently in\nhint: cd out of campaigns/${oldName} first`,
-    );
+    throw new SelfRenameError(oldName);
   }
 
   // Pre-flight: source must exist (no lock needed)

@@ -35,6 +35,6 @@ describe('readProfile', () => {
     const campaignRoot = join(testHome, 'empty');
     await mkdir(campaignRoot, { recursive: true });
 
-    await expect(readProfile(campaignRoot)).rejects.toThrow('jho init');
+    await expect(readProfile(campaignRoot)).rejects.toThrow('no profile found');
   });
 });

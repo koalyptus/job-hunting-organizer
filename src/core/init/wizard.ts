@@ -27,7 +27,7 @@ import { promptLlm, loadExistingConfig } from './llm.js';
 import { promptCalendar } from './calendar.js';
 import { createDirectories } from '../directories.js';
 import { handleProfile } from '../profile-builder.js';
-import { InitCancelled, InitError } from './errors.js';
+import { InitCancelled, InitError, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
 
 /**
@@ -42,7 +42,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const validationError = validateName(name);
 
   if (validationError) {
-    throw new InitError(`invalid campaign name "${name}" — hint: ${validationError}`);
+    throw new InitInvalidNameError(name, validationError);
   }
 
   log.info({ campaign: name }, 'init.wizard.started');

@@ -9,19 +9,22 @@ import { isUrl } from '../../core/url.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
   runTrack,
+  runTrackRefresh,
   prepareTrack,
   confirmAndCreate,
   validateTrackStatus,
   hasTrackUpdateFlags,
   TrackError,
   TrackCancelled,
+  NoLinkStoredError,
+  InvalidStatusError,
 } from '../../core/track/index.js';
-import { ApplicationNotFoundError } from '../../core/applications/index.js';
-import { UserInputError } from '../errors.js';
-import { withSpinner } from '../../core/spinner.js';
 import { APPLICATION_STATUSES } from '../../core/applications/types.js';
+import { ApplicationNotFoundError } from '../../core/applications/index.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError } from '../output.js';
+import { UserInputError } from '../errors.js';
+import { withSpinner } from '../../core/spinner.js';
 
 /**
  * `jho track <url>` — record a new application (or update by slug).
@@ -36,6 +39,7 @@ export const trackCommand = new Command('track')
   .option('--tag <tag>', 'add a tag (repeatable)', collectTags, [])
   .option('--note <text>', 'add a note')
   .option('--target-role <role>', 'target role for the application')
+  .option('--refresh', 're-fetch job description from stored URL')
   .option('-y, --yes', 'skip confirmation prompts')
   .action(async function (urlOrSlug: string | undefined, opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
@@ -54,6 +58,37 @@ export const trackCommand = new Command('track')
 
     try {
       const status = validateTrackStatus(opts.status as string | undefined);
+
+      // Refresh mode takes precedence over create mode
+      if (opts.refresh) {
+        const slug = resolveSlug(urlOrSlug, campaign);
+        const result = await withSpinner(
+          'Refreshing job description...',
+          'Job description refreshed',
+          () =>
+            runTrackRefresh({
+              campaign,
+              slug,
+              text,
+              yes: opts.yes as boolean | undefined,
+            }),
+          'Failed',
+        );
+
+        const campaignRoot = resolveCampaignRoot(campaign);
+        const appliedDir = resolveAppliedDir(campaignRoot);
+        const appPath = join(appliedDir, result.slug);
+
+        log.info({ slug: result.slug, changed: result.changed }, 'track.refresh.completed');
+        clackLog.info(`
+Refreshed JD: ${appPath}
+
+Next steps:
+  jho show ${result.slug}          # view application details
+  jho cover-letter ${result.slug}  # generate a tailored cover letter
+`);
+        return;
+      }
 
       if (isCreate) {
         // Create mode: extract JD with spinner, then confirm and create
@@ -146,16 +181,37 @@ Next steps:
         clackLog.info('Tracking cancelled.');
         process.exit(0);
       }
+      if (err instanceof NoLinkStoredError) {
+        logError(log, err, 'track.no-link', { campaign });
+        log.flush();
+        userError(`${err.message}\nhint: use \`jho track <slug> --paste\` to paste a JD`);
+        process.exit(1);
+      }
+      if (err instanceof InvalidStatusError) {
+        logError(log, err, 'track.invalid-status', { campaign });
+        log.flush();
+        userError(`${err.message}\nhint: use one of: ${APPLICATION_STATUSES.join(', ')}`);
+        process.exit(1);
+      }
       if (err instanceof TrackError) {
         logError(log, err, 'track.failed', { campaign });
         log.flush();
-        userError(err.message);
+        let message = err.message;
+        if (err.message === 'missing slug') {
+          message += `\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`;
+        }
+        if (opts.refresh && !opts.paste && !opts.stdin) {
+          message += `\n\nTip: Some job sites block automated fetches. Try:\n  jho track <slug> --refresh --paste`;
+        }
+        userError(message);
         process.exit(1);
       }
       if (err instanceof SlugMissingError) {
         logError(log, err, 'track.slug-missing', { campaign });
         log.flush();
-        userError(err.message);
+        userError(
+          `${err.message}\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`,
+        );
         process.exit(1);
       }
       if (err instanceof UserInputError) {
@@ -193,6 +249,8 @@ Examples:
   $ jho track --paste                                      # paste JD from clipboard
   $ jho track --stdin < job.txt                            # read JD from stdin
   $ jho track 2026-Jan-15-frontend-acme-12345 --status interview  # update existing
+  $ jho track 2026-Jan-15-frontend-acme-12345 --refresh   # re-fetch JD from stored URL
+  $ jho track 2026-Jan-15-frontend-acme-12345 --refresh --paste  # replace JD with clipboard
   $ jho --campaign freelance track https://example.com/job/123   # specific campaign
 `,
 );

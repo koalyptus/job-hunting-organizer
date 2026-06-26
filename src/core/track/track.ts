@@ -6,6 +6,9 @@
  * This module is reusable from both the CLI and the MCP server.
  */
 import type { Logger } from 'pino';
+import { join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { isUrl } from '../url.js';
 import { getConfig } from '../config.js';
@@ -20,12 +23,14 @@ import {
   readApplication,
   appendNote,
 } from '../applications/applications.js';
-import { TrackError, TrackCancelled } from './errors.js';
+import { TrackError, TrackCancelled, NoLinkStoredError, InvalidStatusError } from './errors.js';
 import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
 import type { ExtractedJd, RoleSuggestion } from '../jobs/types.js';
 import { APPLICATION_STATUSES } from '../applications/types.js';
 import type { ApplicationStatus } from '../applications/types.js';
 import type { TargetRole } from '../types.js';
+import { replaceRegion } from '../markers.js';
+import { atomicWrite } from '../fs.js';
 
 /**
  * Unified options for {@link runTrack}. The function determines
@@ -55,6 +60,8 @@ interface TrackOptions {
   note?: string;
   /** Skip confirmation prompts. */
   yes?: boolean;
+  /** Re-fetch JD from stored URL (update mode). */
+  refresh?: boolean;
   /** Optional pino logger. */
   log?: Logger;
 }
@@ -70,9 +77,7 @@ export function validateTrackStatus(status: string | undefined): ApplicationStat
   }
 
   if (!APPLICATION_STATUSES.includes(status as ApplicationStatus)) {
-    throw new TrackError(
-      `invalid status "${status}"\nhint: use one of: ${APPLICATION_STATUSES.join(', ')}`,
-    );
+    throw new InvalidStatusError(status);
   }
 
   return status as ApplicationStatus;
@@ -183,12 +188,21 @@ export interface TrackResult {
  *
  * - **Create mode**: URL or text provided → extract JD → suggest role → confirm → create.
  * - **Update mode**: slug provided → read → diff → confirm → update.
+ * - **Refresh mode**: slug provided with --refresh → re-fetch JD from stored URL → update jd.md.
  *
  * @throws {TrackCancelled} when the user cancels the confirmation.
  * @throws {TrackError} on extraction, suggestion, creation, or update failure.
  */
 export async function runTrack(opts: TrackOptions): Promise<TrackResult> {
-  const { url, text, slug } = opts;
+  const { url, text, slug, refresh } = opts;
+
+  // Refresh mode: re-fetch JD for existing application
+  if (refresh) {
+    if (!slug) {
+      throw new TrackError('missing slug');
+    }
+    return runTrackRefresh(opts);
+  }
 
   const isCreate = text !== undefined || isUrl(url);
 
@@ -198,9 +212,7 @@ export async function runTrack(opts: TrackOptions): Promise<TrackResult> {
   }
 
   if (!slug) {
-    throw new TrackError(
-      'missing <slug> argument\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)',
-    );
+    throw new TrackError('missing slug');
   }
 
   return runTrackUpdate(opts);
@@ -423,11 +435,7 @@ async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
   const appliedDir = resolveAppliedDir(campaignRoot);
 
   // Read current state
-  const app = await readApplication(appliedDir, slug).catch(() => {
-    throw new TrackError(
-      `application not found: ${slug}\nhint: check your slug, or run \`jho list\` to see your applications`,
-    );
-  });
+  const app = await readApplication(appliedDir, slug);
   const { frontmatter } = app;
 
   // Build patch from flags
@@ -490,6 +498,86 @@ async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
   if (note) {
     await appendNote(appliedDir, slug, note);
   }
+
+  return { slug, changed: true };
+}
+
+/**
+ * Run the track-refresh workflow: read existing app → re-fetch JD →
+ * update jd.md fetched-jd region → confirm → write back.
+ *
+ * The user notes below the `<!-- jho:end:fetched-jd -->` marker are preserved.
+ *
+ * @throws {TrackCancelled} when the user cancels the confirmation.
+ * @throws {TrackError} on fetch, extraction, or write failure.
+ */
+export async function runTrackRefresh(opts: TrackOptions): Promise<TrackResult> {
+  const { campaign, slug, text, yes, log } = opts;
+
+  if (!slug) {
+    throw new TrackError('missing slug');
+  }
+
+  const campaignRoot = resolveCampaignRoot(campaign);
+  const appliedDir = resolveAppliedDir(campaignRoot);
+
+  // Read current application state
+  const app = await readApplication(appliedDir, slug);
+  const { frontmatter } = app;
+
+  // Get the link from the stored application
+  const link = frontmatter.link;
+  if (!link) {
+    throw new NoLinkStoredError(slug);
+  }
+
+  // Load LLM config
+  const { global } = getConfig(campaign);
+  const llmConfig = defaultLlmConfig(global);
+
+  // Extract JD from URL or provided text
+  let jd: ExtractedJd;
+  try {
+    if (text) {
+      jd = await extractJdFromText(text, llmConfig, log);
+    } else {
+      jd = await extractJdFromUrl(link, llmConfig, log, global.fetch?.timeoutMs);
+    }
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    throw new TrackError(`Failed to refresh JD: ${msg}`);
+  }
+
+  // Confirm unless --yes
+  if (!yes) {
+    const confirmed = await confirmTrackUpdate(slug, frontmatter.status, [
+      `re-fetch JD from ${text ? 'pasted text' : link}`,
+    ]);
+    if (!confirmed) {
+      throw new TrackCancelled();
+    }
+  }
+
+  // Read current jd.md content
+  const folder = join(campaignRoot, 'applied', slug);
+  const jdPath = join(folder, 'jd.md');
+  let jdContent = '';
+  if (existsSync(jdPath)) {
+    jdContent = await readFile(jdPath, 'utf8');
+  }
+
+  // Replace the fetched-jd region with the new description
+  const updatedJdContent = replaceRegion(jdContent, 'fetched-jd', jd.description ?? '', {
+    createIfMissing: true,
+  });
+
+  // Write back jd.md
+  const written = await atomicWrite(jdPath, updatedJdContent);
+  if (!written) {
+    throw new TrackError(`failed to write jd.md for ${slug}`);
+  }
+
+  log?.info({ slug, link }, 'track.refresh.completed');
 
   return { slug, changed: true };
 }

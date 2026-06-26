@@ -1,5 +1,12 @@
 import { Command } from 'commander';
-import { resolveOldName, renameCampaign, RenameError } from '../../core/rename-campaign.js';
+import {
+  resolveOldName,
+  renameCampaign,
+  RenameError,
+  InferCampaignError,
+  InvalidNameError,
+  SelfRenameError,
+} from '../../core/rename-campaign.js';
 import { getRootLogger } from '../../core/logger/logger.js';
 import { userError, userSuccess } from '../output.js';
 import type { Logger } from 'pino';
@@ -21,6 +28,20 @@ export const renameCampaignCommand = new Command('rename-campaign')
       userSuccess(`Renamed campaign "${oldName}" → "${new_}"`);
       process.exit(0);
     } catch (err) {
+      if (err instanceof SelfRenameError) {
+        userError(`${err.message}\ncd out of the campaign folder first`);
+        process.exit(1);
+      }
+      if (err instanceof InvalidNameError) {
+        userError(`${err.message} — hint: ${err.reason}`);
+        process.exit(1);
+      }
+      if (err instanceof InferCampaignError) {
+        userError(
+          `${err.message}\nhint: pass the campaign name explicitly with --from, or run from inside the campaign folder`,
+        );
+        process.exit(1);
+      }
       if (err instanceof RenameError) {
         userError(err.message);
         process.exit(1);

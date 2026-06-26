@@ -128,9 +128,7 @@ export async function extractJdFromUrl(
     fetchResult = await fetchWithFallback(url, { timeoutMs }, log);
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `${msg}\n\nTip: Some job sites block automated fetches. Try copying the job description and using:\n  jho track --paste`,
-    );
+    throw new Error(msg);
   }
   const plainText = stripHtml(fetchResult.body);
   return await extractJdFromText(plainText, llmConfig, log);
