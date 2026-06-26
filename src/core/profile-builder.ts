@@ -75,7 +75,12 @@ export async function handleProfile(opts: {
         'Profile build failed',
       );
     } catch (err) {
-      throw new InitError(`Profile build failed: ${(err as Error).message ?? 'unknown error'}`);
+      const msg = (err as Error).message ?? 'unknown error';
+      const isTimeout = /timed?\s*out/i.test(msg);
+      const hint = isTimeout
+        ? ' — the LLM request timed out. Increase llm.timeoutMs in config.json, or use a faster model'
+        : '';
+      throw new InitError(`Profile build failed: ${msg}${hint}`);
     }
 
     let profileContent = profile.content;

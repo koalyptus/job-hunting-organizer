@@ -105,7 +105,7 @@ export interface LlmConfig {
   readonly apiKey: string;
   /** Model identifier, e.g. `gpt-4o-mini`. */
   readonly model: string;
-  /** Per-request timeout in milliseconds for LLM calls (default 300s). */
+  /** Per-request timeout in milliseconds for LLM calls (default 1200s). */
   readonly timeoutMs: number;
 }
 
@@ -164,10 +164,13 @@ export interface ChatCompleteOptions {
   readonly jsonMode?: boolean;
   /** AbortSignal for cancellation. */
   readonly signal?: AbortSignal;
-  /** Request timeout in milliseconds. Default: `120_000`. */
+  /** Request timeout in milliseconds. Default: `1_200_000`. */
   readonly timeout?: number;
   /** Max retries on transient errors (429, 5xx, network). Default: `0`. */
   readonly maxRetries?: number;
+  /** Custom fetch implementation. Default: a `node:http`/`node:https`-based
+   *  function that bypasses undici's 300-second internal timeout cap. */
+  readonly fetch?: typeof globalThis.fetch;
 }
 
 /**
@@ -216,7 +219,7 @@ export interface GlobalConfig {
     apiKey: string;
     /** Model identifier, e.g. `gpt-4o-mini`. */
     model: string;
-    /** Per-request timeout in milliseconds for LLM calls (default 10min). */
+    /** Per-request timeout in milliseconds for LLM calls (default 20min). */
     timeoutMs: number;
   };
   /** Optional GitHub integration for `jho campaign init` profile building. */

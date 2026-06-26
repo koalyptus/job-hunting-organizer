@@ -27,3 +27,31 @@ export class TrackError extends Error {
     this.name = 'TrackError';
   }
 }
+
+/**
+ * Thrown when `jho track <slug> --refresh` is used but the application
+ * has no `link` stored in its metadata. The CLI layer should suggest
+ * using --paste as an alternative.
+ */
+export class NoLinkStoredError extends TrackError {
+  constructor(slug: string) {
+    super(`no link stored for ${slug}`);
+    this.name = 'NoLinkStoredError';
+  }
+}
+
+/**
+ * Thrown when an invalid status value is provided. The kind field
+ * holds the invalid value so the CLI layer can include accepted values
+ * in its error message.
+ */
+export class InvalidStatusError extends TrackError {
+  /** The invalid status value. */
+  kind: string;
+
+  constructor(status: string) {
+    super(`invalid status "${status}"`);
+    this.name = 'InvalidStatusError';
+    this.kind = status;
+  }
+}

@@ -107,7 +107,7 @@ describe('rename-campaign command', () => {
     try {
       const { stderr, exitCode } = await run('personal');
       expect(exitCode).toBe(1);
-      expect(stderr).toContain('cannot rename');
+      expect(stderr).toContain('refusing to rename');
     } finally {
       process.chdir(origCwd);
     }
@@ -148,7 +148,7 @@ describe('rename-campaign command', () => {
     try {
       const { stderr, exitCode } = await run('personal', '--from', 'freelance');
       expect(exitCode).toBe(1);
-      expect(stderr).toContain('cannot rename');
+      expect(stderr).toContain('refusing to rename');
     } finally {
       process.chdir(origCwd);
     }

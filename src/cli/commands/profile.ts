@@ -22,7 +22,7 @@ const showCommand = new Command('show')
     } catch (err) {
       if (err instanceof ProfileReadError) {
         logError(log, err, 'profile.read.failed', { campaign });
-        userError(err.message);
+        userError(`${err.message}\nRun \`jho init\` to create one.`);
         process.exit(1);
       }
       throw err;

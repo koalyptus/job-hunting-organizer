@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { runTrack, prepareTrack, confirmAndCreate } from './track.js';
-import { TrackError, TrackCancelled } from './errors.js';
+import { runTrack, runTrackRefresh, prepareTrack, confirmAndCreate } from './track.js';
+import { TrackError, TrackCancelled, NoLinkStoredError } from './errors.js';
 import { extractJdFromUrl, extractJdFromText } from '../jobs/extract.js';
 import { suggestTargetRole } from '../jobs/suggest.js';
 import { readProfile } from '../profile.js';
@@ -12,6 +12,7 @@ import {
   appendNote,
 } from '../applications/applications.js';
 import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
+import type { ApplicationFrontmatter } from '../applications/types.js';
 
 vi.mock('../config.js', () => ({
   getConfig: vi.fn(() => ({
@@ -57,6 +58,17 @@ vi.mock('./prompts.js', () => ({
   confirmTrackUpdate: vi.fn(() => Promise.resolve(true)),
 }));
 
+vi.mock('../markers.js', () => ({
+  replaceRegion: vi.fn(
+    (_content, _name, newContent) =>
+      `<!-- jho:start:fetched-jd -->\n${newContent}\n<!-- jho:end:fetched-jd -->`,
+  ),
+}));
+
+vi.mock('../fs.js', () => ({
+  atomicWrite: vi.fn(() => Promise.resolve(true)),
+}));
+
 describe('runTrack', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -68,7 +80,7 @@ describe('runTrack', () => {
     });
 
     it('throws TrackError with hint message', async () => {
-      await expect(runTrack({ campaign: 'default' })).rejects.toThrow('missing <slug> argument');
+      await expect(runTrack({ campaign: 'default' })).rejects.toThrow('missing slug');
     });
   });
 
@@ -332,7 +344,7 @@ describe('runTrack', () => {
           status: 'interview',
           yes: true,
         }),
-      ).rejects.toThrow('missing <slug> argument');
+      ).rejects.toThrow('missing slug');
     });
 
     it('appends note on update when provided', async () => {
@@ -412,8 +424,9 @@ describe('runTrack', () => {
       vi.restoreAllMocks();
     });
 
-    it('throws TrackError for non-existent application', async () => {
-      vi.mocked(readApplication).mockRejectedValue(new Error('not found'));
+    it('propagates readApplication errors without wrapping', async () => {
+      const err = new Error('not found');
+      vi.mocked(readApplication).mockRejectedValue(err);
       vi.mocked(confirmTrackUpdate).mockResolvedValue(true);
 
       await expect(
@@ -423,7 +436,7 @@ describe('runTrack', () => {
           status: 'interview',
           yes: true,
         }),
-      ).rejects.toThrow(TrackError);
+      ).rejects.toThrow('not found');
 
       await expect(
         runTrack({
@@ -432,20 +445,7 @@ describe('runTrack', () => {
           status: 'interview',
           yes: true,
         }),
-      ).rejects.toThrow(/application not found/);
-    });
-
-    it('suggests jho list in error message', async () => {
-      vi.mocked(readApplication).mockRejectedValue(new Error('not found'));
-
-      await expect(
-        runTrack({
-          campaign: 'default',
-          slug: 'non-existent-slug',
-          status: 'interview',
-          yes: true,
-        }),
-      ).rejects.toThrow(/jho list/);
+      ).rejects.not.toThrow(TrackError);
     });
   });
 
@@ -685,5 +685,134 @@ describe('confirmAndCreate', () => {
     });
 
     expect(appendNote).toHaveBeenCalledOnce();
+  });
+});
+
+describe('runTrackRefresh', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const createMockFrontmatter = (overrides: Partial<ApplicationFrontmatter> = {}) => ({
+    slug: '2026-Jun-21-SE-test-co',
+    status: 'applied' as const,
+    appliedOn: '2026-06-21',
+    title: 'Engineer',
+    company: 'TestCo',
+    location: 'Remote',
+    site: 'Seek',
+    link: 'https://example.com/job/123',
+    salary: '',
+    tags: [] as string[],
+    targetRole: '',
+    ...overrides,
+  });
+
+  it('refreshes JD from stored URL', async () => {
+    vi.mocked(readApplication).mockResolvedValue({
+      frontmatter: createMockFrontmatter(),
+      body: '',
+    });
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'Updated description',
+    });
+
+    const result = await runTrackRefresh({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      yes: true,
+    });
+
+    expect(result.slug).toBe('2026-Jun-21-SE-test-co');
+    expect(result.changed).toBe(true);
+    expect(extractJdFromUrl).toHaveBeenCalledWith(
+      'https://example.com/job/123',
+      expect.any(Object),
+      undefined,
+      undefined,
+    );
+  });
+
+  it('refreshes JD with pasted text', async () => {
+    vi.mocked(readApplication).mockResolvedValue({
+      frontmatter: createMockFrontmatter(),
+      body: '',
+    });
+    vi.mocked(extractJdFromText).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'Pasted description',
+    });
+
+    const result = await runTrackRefresh({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      text: 'Pasted JD content',
+      yes: true,
+    });
+
+    expect(result.slug).toBe('2026-Jun-21-SE-test-co');
+    expect(result.changed).toBe(true);
+    expect(extractJdFromText).toHaveBeenCalledWith(
+      'Pasted JD content',
+      expect.any(Object),
+      undefined,
+    );
+  });
+
+  it('throws NoLinkStoredError when no link stored', async () => {
+    vi.mocked(readApplication).mockResolvedValue({
+      frontmatter: createMockFrontmatter({ link: '' }),
+      body: '',
+    });
+
+    await expect(
+      runTrackRefresh({
+        campaign: 'default',
+        slug: '2026-Jun-21-SE-test-co',
+        yes: true,
+      }),
+    ).rejects.toThrow(NoLinkStoredError);
+  });
+
+  it('throws TrackError on fetch failure', async () => {
+    vi.mocked(readApplication).mockResolvedValue({
+      frontmatter: createMockFrontmatter(),
+      body: '',
+    });
+    vi.mocked(extractJdFromUrl).mockRejectedValue(new Error('Fetch failed'));
+
+    await expect(
+      runTrackRefresh({
+        campaign: 'default',
+        slug: '2026-Jun-21-SE-test-co',
+        yes: true,
+      }),
+    ).rejects.toThrow('Failed to refresh JD: Fetch failed');
+  });
+
+  it('throws TrackCancelled when user cancels', async () => {
+    vi.mocked(readApplication).mockResolvedValue({
+      frontmatter: createMockFrontmatter(),
+      body: '',
+    });
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'Updated description',
+    });
+    vi.mocked(confirmTrackUpdate).mockResolvedValue(false);
+
+    await expect(
+      runTrackRefresh({
+        campaign: 'default',
+        slug: '2026-Jun-21-SE-test-co',
+      }),
+    ).rejects.toThrow(TrackCancelled);
   });
 });

@@ -306,6 +306,7 @@ Options:
   --tag <tag>           add a tag (repeatable) (default: [])
   --note <text>         add a note
   --target-role <role>  target role for the application
+  --refresh             re-fetch job description from stored URL
   -y, --yes             skip confirmation prompts
   -h, --help            display help for command
 "

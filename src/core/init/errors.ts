@@ -27,3 +27,19 @@ export class InitError extends Error {
     this.name = 'InitError';
   }
 }
+
+/**
+ * Thrown when the campaign name fails validation.
+ * The validation reason is available as the {@link reason} property
+ * so the CLI layer can add a hint without parsing the message.
+ */
+export class InitInvalidNameError extends InitError {
+  /** The human-readable validation failure reason. */
+  reason: string;
+
+  constructor(name: string, reason: string) {
+    super(`invalid campaign name "${name}"`);
+    this.name = 'InitInvalidNameError';
+    this.reason = reason;
+  }
+}

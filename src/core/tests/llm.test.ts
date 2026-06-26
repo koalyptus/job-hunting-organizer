@@ -16,6 +16,13 @@ const testConfig = {
   timeoutMs: 300_000,
 };
 
+/** Shared test options that inject the mocked global fetch. */
+const testChatOpts: { fetch: typeof globalThis.fetch } = {
+  get fetch() {
+    return globalThis.fetch as unknown as typeof globalThis.fetch;
+  },
+};
+
 const testGlobalConfig = {
   version: 1 as const,
   dataRoot: '/tmp',
@@ -71,7 +78,11 @@ describe('chatComplete', () => {
       const fetch = vi.mocked(globalThis.fetch);
       fetch.mockResolvedValueOnce(okJson(successBody));
 
-      const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig);
+      const result = await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        testConfig,
+        testChatOpts,
+      );
 
       expect(result.content).toBe('Hello!');
       expect(result.model).toBe('gpt-4o');
@@ -82,7 +93,11 @@ describe('chatComplete', () => {
       const fetch = vi.mocked(globalThis.fetch);
       fetch.mockResolvedValueOnce(okJson(successBody));
 
-      const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig);
+      const result = await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        testConfig,
+        testChatOpts,
+      );
 
       expect(result.usage).toEqual({
         promptTokens: 10,
@@ -108,6 +123,7 @@ describe('chatComplete', () => {
       );
 
       await chatComplete([{ role: 'user', content: 'Return JSON' }], testConfig, {
+        ...testChatOpts,
         jsonMode: true,
       });
 
@@ -131,9 +147,9 @@ describe('chatComplete', () => {
         }),
       );
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
-        'empty or unexpected response',
-      );
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow('empty or unexpected response');
     });
 
     it('throws when choices is missing from response', async () => {
@@ -147,9 +163,9 @@ describe('chatComplete', () => {
         }),
       );
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
-        'empty or unexpected response',
-      );
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow('empty or unexpected response');
     });
 
     it('handles response without usage', async () => {
@@ -161,7 +177,11 @@ describe('chatComplete', () => {
         }),
       );
 
-      const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig);
+      const result = await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        testConfig,
+        testChatOpts,
+      );
 
       expect(result.usage).toEqual({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
     });
@@ -170,7 +190,10 @@ describe('chatComplete', () => {
       const fetch = vi.mocked(globalThis.fetch);
       fetch.mockResolvedValueOnce(okJson(successBody));
 
-      await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, { maxTokens: 500 });
+      await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {
+        ...testChatOpts,
+        maxTokens: 500,
+      });
 
       const [, init] = fetch.mock.calls[0] as [unknown, { body?: string }];
       const callBody = JSON.parse(init?.body ?? '{}');
@@ -188,6 +211,7 @@ describe('chatComplete', () => {
         .mockResolvedValueOnce(okJson(successBody));
 
       const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {
+        ...testChatOpts,
         maxRetries: 2,
       });
 
@@ -203,6 +227,7 @@ describe('chatComplete', () => {
       fetch.mockResolvedValueOnce(errResponse).mockResolvedValueOnce(okJson(successBody));
 
       const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {
+        ...testChatOpts,
         maxRetries: 1,
       });
 
@@ -217,7 +242,10 @@ describe('chatComplete', () => {
       );
 
       await expect(
-        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, { maxRetries: 3 }),
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {
+          ...testChatOpts,
+          maxRetries: 3,
+        }),
       ).rejects.toThrow(BadRequestError);
       expect(fetch).toHaveBeenCalledTimes(1);
     });
@@ -230,9 +258,9 @@ describe('chatComplete', () => {
         errJson(401, { error: { message: 'Invalid API key', type: 'invalid_request_error' } }),
       );
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
-        AuthenticationError,
-      );
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow(AuthenticationError);
     });
 
     it('throws RateLimitError on 429', async () => {
@@ -241,9 +269,9 @@ describe('chatComplete', () => {
         errJson(429, { error: { message: 'Rate limit exceeded', type: 'rate_limit_error' } }),
       );
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
-        RateLimitError,
-      );
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow(RateLimitError);
     });
 
     it('throws BadRequestError on 400', async () => {
@@ -252,9 +280,9 @@ describe('chatComplete', () => {
         errJson(400, { error: { message: 'Bad request', type: 'invalid_request_error' } }),
       );
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
-        BadRequestError,
-      );
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow(BadRequestError);
     });
 
     it('throws InternalServerError on 500', async () => {
@@ -263,16 +291,18 @@ describe('chatComplete', () => {
         errJson(500, { error: { message: 'Internal error', type: 'server_error' } }),
       );
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
-        InternalServerError,
-      );
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow(InternalServerError);
     });
 
     it('throws on fetch network failure', async () => {
       const fetch = vi.mocked(globalThis.fetch);
       fetch.mockRejectedValueOnce(new TypeError('fetch failed'));
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow();
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow();
     });
 
     it('throws on abort signal', async () => {
@@ -281,7 +311,9 @@ describe('chatComplete', () => {
         Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }),
       );
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow();
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow();
     });
 
     it('throws ConflictError on 409', async () => {
@@ -290,9 +322,9 @@ describe('chatComplete', () => {
         errJson(409, { error: { message: 'Conflict', type: 'conflict_error' } }),
       );
 
-      await expect(chatComplete([{ role: 'user', content: 'Hi' }], testConfig)).rejects.toThrow(
-        ConflictError,
-      );
+      await expect(
+        chatComplete([{ role: 'user', content: 'Hi' }], testConfig, testChatOpts),
+      ).rejects.toThrow(ConflictError);
     });
   });
 
@@ -302,11 +334,18 @@ describe('chatComplete', () => {
       fetch.mockResolvedValueOnce(okJson(successBody));
 
       const log = { info: vi.fn() };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {}, log as any);
+      await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        testConfig,
+        { ...testChatOpts },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        log as any,
+      );
 
-      expect(log.info).toHaveBeenCalledOnce();
-      expect(log.info).toHaveBeenCalledWith(
+      expect(log.info).toHaveBeenCalledTimes(2);
+      expect(log.info).toHaveBeenNthCalledWith(1, expect.any(Object), 'llm.chatComplete.created');
+      expect(log.info).toHaveBeenNthCalledWith(
+        2,
         expect.objectContaining({
           model: 'gpt-4o',
           promptTokens: 10,

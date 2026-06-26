@@ -1,3 +1,5 @@
+import http from 'node:http';
+import https from 'node:https';
 import type { Logger } from 'pino';
 import { getPackageVersion } from './package.js';
 import { FETCH_TIMEOUT_MS } from './constants.js';
@@ -123,4 +125,122 @@ export async function fetchWithFallback(
     );
     return await attemptFetch(url, uas[1]!, options, log);
   }
+}
+
+/**
+ * Create a WHATWG-compatible `fetch` function backed by Node.js built-in
+ * `http`/`https` modules instead of the global fetch (which uses undici
+ * with a 300-second internal timeout cap).
+ *
+ * This is intended for **LLM API calls** where the response can take many
+ * minutes (non-streaming). Use {@link fetchWithFallback} for short-lived
+ * fetches (JD pages, etc.).
+ *
+ * The returned fetch respects the {@link AbortSignal} passed in `init.signal`
+ * (the OpenAI SDK supplies its own timeout signal). It does **not** support
+ * streaming (`ReadableStream`) bodies.
+ *
+ * @param timeoutMs - Inactivity timeout in milliseconds (no AbortSignal guard).
+ */
+export function createLlmFetch(
+  timeoutMs: number,
+): (input: string | URL | Request, init?: RequestInit) => Promise<Response> {
+  return (input, init) => nodeHttpFetch(input, init, timeoutMs);
+}
+
+/**
+ * Minimal WHATWG-compatible fetch using Node.js built-in HTTP/HTTPS modules.
+ *
+ * - Parses the URL, dispatches to `http.request` / `https.request`
+ * - Writes `init.body` (string) on POST/PUT
+ * - Respects `init.signal` abort
+ * - Returns a standard {@link Response} object
+ */
+async function nodeHttpFetch(
+  input: string | URL | Request,
+  init: RequestInit | undefined,
+  timeoutMs: number,
+): Promise<Response> {
+  const url =
+    typeof input === 'string'
+      ? new URL(input)
+      : new URL(input instanceof Request ? input.url : input.href);
+  const isHttps = url.protocol === 'https:';
+  const mod = isHttps ? https : http;
+
+  return new Promise<Response>((resolve, reject) => {
+    const options: http.RequestOptions = {
+      hostname: url.hostname,
+      port: url.port ? Number(url.port) : isHttps ? 443 : 80,
+      path: url.pathname + url.search,
+      method: init?.method ?? 'GET',
+      // OpenAI SDK always passes plain objects; type assertion avoids
+      // complex HeadersInit → Record<string, string> conversion.
+      headers: init?.headers as Record<string, string> | undefined,
+    };
+
+    const req = mod.request(options, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (chunk: Buffer) => chunks.push(chunk));
+      res.on('end', () => {
+        const body = Buffer.concat(chunks).toString('utf-8');
+        const flatHeaders: Record<string, string> = {};
+        for (const [key, value] of Object.entries(res.headers)) {
+          if (value !== undefined) {
+            flatHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
+          }
+        }
+        resolve(
+          new Response(body, {
+            status: res.statusCode ?? 200,
+            statusText: res.statusMessage ?? '',
+            headers: flatHeaders,
+          }),
+        );
+      });
+    });
+
+    // Safety-net timeout in case no AbortSignal is passed.
+    const timeoutId = setTimeout(() => {
+      req.destroy(new Error(`LLM request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    req.on('error', (err) => {
+      clearTimeout(timeoutId);
+      reject(err);
+    });
+
+    req.on('close', () => {
+      clearTimeout(timeoutId);
+    });
+
+    // Respect the caller's timeout signal (the OpenAI SDK supplies its own).
+    if (init?.signal) {
+      if (init.signal.aborted) {
+        req.destroy(
+          init.signal.reason instanceof Error
+            ? (init.signal.reason as Error)
+            : new DOMException('The operation was aborted', 'AbortError'),
+        );
+        return;
+      }
+      init.signal.addEventListener(
+        'abort',
+        () => {
+          const reason = init!.signal!.reason;
+          req.destroy(
+            reason instanceof Error
+              ? (reason as Error)
+              : new DOMException('The operation was aborted', 'AbortError'),
+          );
+        },
+        { once: true },
+      );
+    }
+
+    if (init?.body != null) {
+      req.write(init.body.toString());
+    }
+    req.end();
+  });
 }

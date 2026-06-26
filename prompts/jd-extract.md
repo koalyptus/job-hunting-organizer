@@ -1,8 +1,13 @@
 ---
-version: 3
+version: 5
 recommendedModel: gpt-4o-mini
 recommendedTemperature: 0.1
 changelog: |
+  v5 — add specific cleanup instructions for boilerplate that slips through
+       HTML stripping (accessibility skip links, sign-in prompts, salary widgets,
+       report-job sections, action buttons)
+  v4 — rewrite description field instruction to prevent LLMs from copying
+       the description text as the field value
   v3 — fix schema example to avoid LLM copying descriptive text as values
   v2 — make description required; clarify it stores the full original text
   v1 — initial JD extraction prompt
@@ -13,7 +18,10 @@ extract structured fields and return them as JSON.
 
 ## Input
 
-The user message contains the raw text of a job posting (HTML already stripped).
+The user message contains the raw text of a job posting (HTML already stripped
+of tags). Some non-job boilerplate may remain (accessibility skip links,
+sign-in / register prompts, "report this job" sections, salary comparison
+widgets, job-action buttons like "Apply" or "Save").
 
 ## Output format
 
@@ -21,10 +29,13 @@ Return **only** a JSON object with these fields:
 
 - `title` (string, required): The job title.
 - `company` (string, required): The company name. Use "unknown" if not stated.
-- `description` (string, required): The **full original job posting text**. Do not
-  summarize or shorten it — copy the entire JD content, cleaned up (remove ads,
-  navigation, boilerplate) but preserving all job-related sections. This stores
-  the raw source for later reference.
+- `description` (string, required): Copy the FULL job posting text from the
+  input into this field. Remove non-job content such as: accessibility skip
+  links, sign-in/register prompts, "report this job" sections, salary
+  comparison widgets, "what can I earn" sidebars, "view all jobs" links,
+  action buttons ("Apply", "Save"), and job-posting metadata (posted date,
+  reference number). Preserve all job-related sections verbatim — do not
+  summarize or shorten.
 - `location` (string, optional): Freeform location text.
 - `salary` (string, optional): Salary or pay range.
 - `tags` (array of strings, optional): 3–8 lowercase classification keywords
@@ -38,9 +49,11 @@ Return **only** a JSON object with these fields:
 ## Rules
 
 1. `title`, `company`, and `description` are the only required fields.
-2. `description` must be the full original text — do not summarize or shorten it.
-   Clean up formatting (remove ads, navigation, boilerplate) but preserve all
-   job-related content. This field stores the raw source for later reference.
+2. `description` must contain the actual job posting text — copy it verbatim.
+   Strip non-job boilerplate: accessibility skip links, sign-in/register prompts,
+   "report this job" sections, salary widgets, action buttons, and job-posting
+   metadata. Keep all job-related content (role description, requirements,
+   benefits, company description, how to apply).
 3. `requirements`, `qualifications`, and `benefits` are structured extractions
    pulled FROM the description — they are not a replacement for it.
 4. Do not invent information not present in the input text.

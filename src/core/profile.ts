@@ -31,9 +31,7 @@ export async function readProfile(campaignRoot: string): Promise<string> {
     return await readFile(profilePath, 'utf8');
   } catch {
     getRootLogger().warn({ path: profilePath }, 'profile.read.missing');
-    throw new ProfileReadError(
-      `no profile found at ${profilePath}\nRun \`jho init\` to create one.`,
-    );
+    throw new ProfileReadError(`no profile found at ${profilePath}`);
   }
 }
 

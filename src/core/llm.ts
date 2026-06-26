@@ -3,10 +3,11 @@ import { performance } from 'node:perf_hooks';
 import type { z } from 'zod';
 import type { Logger } from 'pino';
 import { loadGlobalConfig } from './config.js';
+import { createLlmFetch } from './fetch.js';
 import type { GlobalConfig, LlmConfig, ChatCompleteOptions, ChatCompleteResult } from './types.js';
 
-/** Default timeout for LLM requests (10 minutes). */
-const DEFAULT_LLM_TIMEOUT_MS = 600_000;
+/** Default timeout for LLM requests (20 minutes). */
+const DEFAULT_LLM_TIMEOUT_MS = 1_200_000;
 
 /** Default temperature for LLM requests. */
 const DEFAULT_TEMPERATURE = 0.6;
@@ -54,11 +55,22 @@ export async function chatComplete(
   const timeout = options.timeout ?? DEFAULT_LLM_TIMEOUT_MS;
   const maxRetries = options.maxRetries ?? 0;
 
+  log?.info(
+    {
+      rawTimeoutOption: options.timeout,
+      resolvedTimeout: timeout,
+      model: config.model,
+      baseUrl: config.baseUrl,
+    },
+    'llm.chatComplete.created',
+  );
+
   const client = new OpenAI({
     baseURL: normaliseBaseUrl(config.baseUrl),
     apiKey: config.apiKey || 'no-key',
     maxRetries,
     timeout,
+    fetch: options.fetch ?? createLlmFetch(timeout),
   });
 
   const start = performance.now();

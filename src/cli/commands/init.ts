@@ -1,9 +1,10 @@
 import { Command } from 'commander';
 import { log as clackLog } from '@clack/prompts';
 import { runInit } from '../../core/init/index.js';
-import { InitCancelled, InitError } from '../../core/init/errors.js';
+import { InitCancelled, InitError, InitInvalidNameError } from '../../core/init/errors.js';
 import { resolveCampaignName } from '../../core/paths.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { userError } from '../output.js';
 
 /**
  * `jho init [<name>]` — campaign creation wizard.
@@ -38,9 +39,14 @@ export const initCommand = new Command('init')
         clackLog.info('Init cancelled.');
         process.exit(0);
       }
+      if (err instanceof InitInvalidNameError) {
+        logError(log, err, 'init.invalid-name', { campaign: resolvedName });
+        userError(`${err.message} — hint: ${err.reason}`);
+        process.exit(1);
+      }
       if (err instanceof InitError) {
         logError(log, err, 'init.failed', { campaign: resolvedName });
-        process.stderr.write(`error: ${err.message}\n`);
+        userError(err.message);
         process.exit(1);
       }
       throw err;
