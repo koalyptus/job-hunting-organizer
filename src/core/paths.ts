@@ -1,10 +1,11 @@
-import { existsSync, realpathSync } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { mkdir, readdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathExists } from './fs.js';
 import { getRootLogger } from './logger/logger.js';
 import { SLUG_PATTERN } from './slug.js';
+import type { CampaignListing } from './types.js';
 
 /**
  * Default name of the campaign data root folder under the user's home
@@ -119,6 +120,17 @@ export function getDefaultCampaignName(): string {
 }
 
 /**
+ * Resolve the absolute path of the campaigns parent directory (the folder
+ * that holds all campaign subdirectories).
+ * @param dataRoot - The absolute path of the campaign data root (from
+ *   {@link resolveDataRoot}).
+ * @returns `<dataRoot>/campaigns/`.
+ */
+export function resolveCampaignsRoot(dataRoot: string): string {
+  return resolve(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME);
+}
+
+/**
  * Resolve the absolute path of a campaign's root directory.
  * @param campaignName - The campaign folder name. Default: the value of
  *   `JHO_DEFAULT_CAMPAIGN`, or `'default'`.
@@ -126,7 +138,7 @@ export function getDefaultCampaignName(): string {
  */
 export function resolveCampaignRoot(campaignName: string = getDefaultCampaignName()): string {
   const dataRoot = resolveDataRoot();
-  return resolve(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, campaignName);
+  return resolve(resolveCampaignsRoot(dataRoot), campaignName);
 }
 
 /**
@@ -294,7 +306,7 @@ export function findCampaignFromCwd(cwd: string, dataRoot: string): string | nul
   if (!existsSync(dataRoot)) {
     return null;
   }
-  const campaignsRoot = resolve(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME);
+  const campaignsRoot = resolveCampaignsRoot(dataRoot);
   if (!existsSync(campaignsRoot)) {
     return null;
   }
@@ -320,4 +332,43 @@ export function findCampaignFromCwd(cwd: string, dataRoot: string): string | nul
  */
 export function resolveCampaignName(explicitName: string | undefined): string {
   return explicitName ?? findCampaignFromCwd(process.cwd(), resolveDataRoot()) ?? 'default';
+}
+
+/**
+ * List all campaigns found under the data root. Reads each campaign's
+ * `.index.json` to determine the application count. Campaigns without
+ * an index file get a count of 0.
+ *
+ * @param dataRoot - The absolute path of the campaign data root (from
+ *   {@link resolveDataRoot}).
+ * @returns A sorted array of `CampaignListing` (alphabetical by name).
+ */
+export async function listCampaigns(dataRoot: string): Promise<CampaignListing[]> {
+  const campaignsRoot = resolveCampaignsRoot(dataRoot);
+  if (!existsSync(campaignsRoot)) {
+    return [];
+  }
+
+  const entries = await readdir(campaignsRoot, { withFileTypes: true });
+  const dirs = entries.filter((e) => e.isDirectory() && !e.name.startsWith('.'));
+
+  const indexFilename = '.index.json';
+  const results: CampaignListing[] = [];
+  for (const dir of dirs) {
+    const indexFile = join(campaignsRoot, dir.name, DEFAULT_APPLIED_DIRNAME, indexFilename);
+    let count = 0;
+    try {
+      const raw = readFileSync(indexFile, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        count = parsed.length;
+      }
+    } catch {
+      // Missing or unreadable index → count 0
+    }
+    results.push({ name: dir.name, applicationCount: count });
+  }
+
+  results.sort((a, b) => a.name.localeCompare(b.name));
+  return results;
 }

@@ -109,7 +109,10 @@ Global config: ${configPath}
 
 `;
   return (
-    header + (useMd ? formatMarkdownTable(OWNERSHIP_ROWS) : formatConsoleTable(OWNERSHIP_ROWS))
+    header +
+    (useMd
+      ? formatMarkdownTable(OWNERSHIP_ROWS)
+      : formatConsoleTable(OWNERSHIP_ROWS, options.colorize))
   );
 }
 
@@ -130,15 +133,20 @@ const DEFAULT_COL_WIDTHS: readonly number[] = [30, 26, 20, 36];
  * @param rows - The rows to render.
  * @returns The rendered table followed by a single newline.
  */
-function formatConsoleTable(rows: readonly OwnershipRow[]): string {
+function formatConsoleTable(
+  rows: readonly OwnershipRow[],
+  colorize?: { bold: (text: string) => string; cyan: (text: string) => string },
+): string {
+  const b = colorize?.bold ?? ((s: string) => s);
+  const c = colorize?.cyan ?? ((s: string) => s);
   const table = new Table({
-    head: [...COLUMNS],
+    head: COLUMNS.map((h) => b(h)),
     wordWrap: true,
     colWidths: [...DEFAULT_COL_WIDTHS],
     style: { head: [], border: [] },
   });
   for (const r of rows) {
-    table.push([r.file, r.toolWrites, r.editFreely, r.onYourEdit]);
+    table.push([c(r.file), r.toolWrites, r.editFreely, r.onYourEdit]);
   }
   return `${table.toString()}\n`;
 }
@@ -152,18 +160,18 @@ function formatConsoleTable(rows: readonly OwnershipRow[]): string {
  */
 function formatMarkdownTable(rows: readonly OwnershipRow[]): string {
   const widths = [
-    Math.max(COLUMNS[0]?.length ?? 0, ...rows.map((r) => r.file.length)),
-    Math.max(COLUMNS[1]?.length ?? 0, ...rows.map((r) => r.toolWrites.length)),
-    Math.max(COLUMNS[2]?.length ?? 0, ...rows.map((r) => r.editFreely.length)),
-    Math.max(COLUMNS[3]?.length ?? 0, ...rows.map((r) => r.onYourEdit.length)),
+    Math.max(COLUMNS[0]!.length, ...rows.map((r) => r.file.length)),
+    Math.max(COLUMNS[1]!.length, ...rows.map((r) => r.toolWrites.length)),
+    Math.max(COLUMNS[2]!.length, ...rows.map((r) => r.editFreely.length)),
+    Math.max(COLUMNS[3]!.length, ...rows.map((r) => r.onYourEdit.length)),
   ];
   const pad = (s: string, n: number): string => s + ' '.repeat(Math.max(0, n - s.length));
   const lines: string[] = [];
-  lines.push(`| ${COLUMNS.map((c, i) => pad(c, widths[i] ?? 0)).join(' | ')} |`);
+  lines.push(`| ${COLUMNS.map((c, i) => pad(c, widths[i]!)).join(' | ')} |`);
   lines.push(`| ${widths.map(() => '---').join(' | ')} |`);
   for (const r of rows) {
     const cells = [r.file, r.toolWrites, r.editFreely, r.onYourEdit];
-    lines.push(`| ${cells.map((c, i) => pad(c, widths[i] ?? 0)).join(' | ')} |`);
+    lines.push(`| ${cells.map((c, i) => pad(c, widths[i]!)).join(' | ')} |`);
   }
   return `${lines.join('\n')}\n`;
 }

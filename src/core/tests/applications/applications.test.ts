@@ -322,9 +322,28 @@ describe('listApplications', () => {
     await createApplication({ appliedDir, title: 'Eng1', company: 'A', tags: ['typescript'] });
     await createApplication({ appliedDir, title: 'Eng2', company: 'B', tags: ['python'] });
 
-    const entries = await listApplications(appliedDir, { tag: 'typescript' });
+    const entries = await listApplications(appliedDir, { tags: ['typescript'] });
     expect(entries).toHaveLength(1);
     expect(entries[0]!.tags).toContain('typescript');
+  });
+
+  it('filters by multiple tags (AND)', async () => {
+    await createApplication({
+      appliedDir,
+      title: 'Eng1',
+      company: 'A',
+      tags: ['typescript', 'react'],
+    });
+    await createApplication({
+      appliedDir,
+      title: 'Eng2',
+      company: 'B',
+      tags: ['typescript', 'node'],
+    });
+
+    const entries = await listApplications(appliedDir, { tags: ['typescript', 'react'] });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.title).toBe('Eng1');
   });
 
   it('returns empty array for non-existent directory', async () => {

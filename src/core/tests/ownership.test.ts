@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { OWNERSHIP_ROWS, renderOwnership } from '../ownership.js';
 
+const ESC = '\u001b';
+
 describe('OWNERSHIP_ROWS', () => {
   it('has no duplicate file entries', () => {
     const seen = new Set<string>();
@@ -61,5 +63,31 @@ describe('renderOwnership', () => {
   it('includes the config path in the header', () => {
     const out = renderOwnership({ configPath: '/path/to/config.json' });
     expect(out).toContain('/path/to/config.json');
+  });
+
+  it('applies colorize to console table headers and file column', () => {
+    const bold = (s: string) => `${ESC}[1m${s}${ESC}[22m`;
+    const cyan = (s: string) => `${ESC}[36m${s}${ESC}[39m`;
+    const out = renderOwnership({
+      configPath: '/tmp/cfg.json',
+      colorize: { bold, cyan },
+    });
+    // Headers wrapped with bold
+    expect(out).toContain(`${ESC}[1mFile${ESC}[22m`);
+    expect(out).toContain(`${ESC}[1mTool writes${ESC}[22m`);
+    // File column wrapped with cyan
+    expect(out).toContain(`${ESC}[36mmeta.md (the metadata fields${ESC}[39m`);
+  });
+
+  it('ignores colorize in markdown mode', () => {
+    const bold = (s: string) => `${ESC}[1m${s}${ESC}[22m`;
+    const cyan = (s: string) => `${ESC}[36m${s}${ESC}[39m`;
+    const out = renderOwnership({
+      markdown: true,
+      configPath: '/tmp/cfg.json',
+      colorize: { bold, cyan },
+    });
+    // Markdown output has no ANSI codes
+    expect(out).not.toContain(ESC);
   });
 });

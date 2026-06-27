@@ -62,6 +62,8 @@ export interface ApplicationEntry {
   company: string;
   /** Job board or source site. */
   site: string;
+  /** Freeform location text. */
+  location: string;
   /** Slug of the target role (empty string if unassigned). */
   targetRole: string;
   /** Application date as ISO date string. */
