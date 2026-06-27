@@ -92,6 +92,7 @@ function entryFromFrontmatter(fm: ApplicationFrontmatter): ApplicationEntry {
     title: fm.title,
     company: fm.company,
     site: fm.site,
+    location: fm.location,
     targetRole: fm.targetRole,
     appliedOn: fm.appliedOn,
     tags: fm.tags,
@@ -262,7 +263,7 @@ export async function listApplications(
   filters?: {
     status?: ApplicationStatus;
     targetRole?: string;
-    tag?: string;
+    tags?: string[];
   },
 ): Promise<ApplicationEntry[]> {
   let entries = await readIndex(appliedDir);
@@ -277,8 +278,8 @@ export async function listApplications(
     if (filters.targetRole) {
       entries = entries.filter((e) => e.targetRole === filters.targetRole);
     }
-    if (filters.tag) {
-      entries = entries.filter((e) => e.tags.includes(filters.tag!));
+    if (filters.tags && filters.tags.length > 0) {
+      entries = entries.filter((e) => filters.tags!.every((t) => e.tags.includes(t)));
     }
   }
 

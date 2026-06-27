@@ -256,6 +256,8 @@ export interface GlobalConfig {
     /** JSON paths to redact in addition to the built-in secret list. */
     redactPaths: string[];
   };
+  /** When false, disable ANSI colour output. Respects `NO_COLOR` env var and `--no-color` CLI flag. */
+  color?: boolean;
   /** HTTP fetch settings. */
   fetch: {
     /** Timeout in milliseconds for each HTTP request (default 30s). */
@@ -408,6 +410,28 @@ export interface RenderOwnershipOptions {
    * `config.json`). Useful for tests.
    */
   readonly configPath?: string;
+  /**
+   * Optional color functions for console table styling. Each is a simple
+   * `(text: string) => string` wrapper (e.g. `chalk.bold`, `chalk.cyan`).
+   * When provided, the column headers are wrapped with `colorize.bold` and
+   * the file column with `colorize.cyan`. Ignored in markdown mode.
+   */
+  readonly colorize?: {
+    readonly bold: (text: string) => string;
+    readonly cyan: (text: string) => string;
+  };
+}
+
+/**
+ * A campaign as returned by {@link listCampaigns}. Name is the folder
+ * basename under `<dataRoot>/campaigns/`; the application count is the
+ * number of entries in `.index.json` (0 if missing or unreadable).
+ */
+export interface CampaignListing {
+  /** Campaign folder name (e.g. `'default'`, `'freelance'`). */
+  readonly name: string;
+  /** Number of tracked applications in the campaign. */
+  readonly applicationCount: number;
 }
 
 /** GitHub user profile returned by `GET /users/{username}`. */

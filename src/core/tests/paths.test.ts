@@ -15,8 +15,10 @@ import {
   findSlugFromCwd,
   isUnder,
   isWindows,
+  listCampaigns,
   resolveAppliedDir,
   resolveCampaignRoot,
+  resolveCampaignsRoot,
   resolveCampaignName,
   resolveConfigHome,
   resolveConfigPath,
@@ -86,6 +88,13 @@ describe('resolveConfigHome', () => {
     delete process.env['JHO_CONFIG_HOME'];
     const result = resolveConfigHome();
     expect(result.endsWith(sep + DEFAULT_CONFIG_HOMEDIR)).toBe(true);
+  });
+});
+
+describe('resolveCampaignsRoot', () => {
+  it('joins <dataRoot>/campaigns/', () => {
+    const result = resolveCampaignsRoot('/tmp/jho-test');
+    expect(result).toBe(resolve('/tmp/jho-test', 'campaigns'));
   });
 });
 
@@ -344,5 +353,84 @@ describe('resolveCampaignName', () => {
     const campaignsRoot = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME);
     process.chdir(campaignsRoot);
     expect(resolveCampaignName(undefined)).toBe('default');
+  });
+});
+
+describe('listCampaigns', () => {
+  let dataRoot: string;
+
+  beforeEach(async () => {
+    dataRoot = await mkdtemp(join(tmpdir(), 'jho-list-camps-'));
+  });
+
+  afterEach(async () => {
+    await rm(dataRoot, { recursive: true, force: true });
+  });
+
+  it('returns empty array when data root does not exist', async () => {
+    const entries = await listCampaigns('/nonexistent/path');
+    expect(entries).toEqual([]);
+  });
+
+  it('returns empty array when no campaigns/ dir exists', async () => {
+    await mkdir(dataRoot, { recursive: true });
+    const entries = await listCampaigns(dataRoot);
+    expect(entries).toEqual([]);
+  });
+
+  it('returns campaigns with zero count when no index file', async () => {
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'default'), { recursive: true });
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'), { recursive: true });
+
+    const entries = await listCampaigns(dataRoot);
+    expect(entries).toHaveLength(2);
+    expect(entries[0]!.name).toBe('default');
+    expect(entries[0]!.applicationCount).toBe(0);
+    expect(entries[1]!.name).toBe('freelance');
+    expect(entries[1]!.applicationCount).toBe(0);
+  });
+
+  it('reads application count from .index.json', async () => {
+    const appliedDir = join(
+      dataRoot,
+      DEFAULT_CAMPAIGNS_DIRNAME,
+      'default',
+      DEFAULT_APPLIED_DIRNAME,
+    );
+    await mkdir(appliedDir, { recursive: true });
+    await writeFile(
+      join(appliedDir, '.index.json'),
+      JSON.stringify([{ slug: '2026-Jun-01-test-co' }, { slug: '2026-Jun-02-test-co' }], null, 2) +
+        '\n',
+    );
+
+    const entries = await listCampaigns(dataRoot);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.name).toBe('default');
+    expect(entries[0]!.applicationCount).toBe(2);
+  });
+
+  it('ignores hidden directories', async () => {
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'default'), { recursive: true });
+    await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, '.hidden'), { recursive: true });
+
+    const entries = await listCampaigns(dataRoot);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.name).toBe('default');
+  });
+
+  it('handles corrupt index file gracefully', async () => {
+    const appliedDir = join(
+      dataRoot,
+      DEFAULT_CAMPAIGNS_DIRNAME,
+      'default',
+      DEFAULT_APPLIED_DIRNAME,
+    );
+    await mkdir(appliedDir, { recursive: true });
+    await writeFile(join(appliedDir, '.index.json'), 'not-json');
+
+    const entries = await listCampaigns(dataRoot);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.applicationCount).toBe(0);
   });
 });

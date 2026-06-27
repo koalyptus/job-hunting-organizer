@@ -23,6 +23,8 @@ import { helpCommand } from './commands/help.js';
 import { mcpCommand } from './commands/mcp.js';
 import { initRootLogger } from '../core/logger/root-logger.js';
 import { getRootLogger } from '../core/logger/logger.js';
+import { loadGlobalConfig } from '../core/config.js';
+import { initColors } from './colors.js';
 
 const VERSION = getPackageVersion();
 
@@ -39,6 +41,14 @@ const program = new Command('jho')
 for (const opt of globalOptions) {
   program.addOption(opt);
 }
+
+// Initialise colour support before any command action runs
+program.hook('preAction', (thisCommand) => {
+  const parent = thisCommand.parent;
+  const globals = parent?.opts<{ color?: boolean }>() ?? {};
+  const configColor = loadGlobalConfig().color;
+  initColors(globals.color, configColor);
+});
 
 // Register all commands
 program.addCommand(configCommand);

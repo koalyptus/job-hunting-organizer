@@ -149,12 +149,13 @@ Commands:
 exports[`command --help output > list has consistent help output 1`] = `
 "Usage: list [options]
 
-List all applications
+List campaigns, or applications within a campaign
 
 Options:
-  --status <status>  filter by status
-  --tag <tag>        filter by tag (repeatable) (default: [])
-  --role <role>      filter by target role
+  --status <status>  filter by status (requires --campaign)
+  --tag <tag>        filter by tag, repeatable (requires --campaign) (default:
+                     [])
+  --role <role>      filter by target role (requires --campaign)
   --json             output as JSON
   -h, --help         display help for command
 "

@@ -33,6 +33,7 @@ function makeEntry(overrides: Partial<ApplicationEntry> = {}): ApplicationEntry 
     title: 'Software Engineer',
     company: 'Foo Inc',
     site: 'Seek',
+    location: '',
     targetRole: 'senior-backend-engineer',
     appliedOn: '2026-06-03',
     tags: ['typescript'],

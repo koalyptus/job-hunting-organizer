@@ -9,6 +9,7 @@ import {
 } from '../../core/rename-campaign.js';
 import { getRootLogger } from '../../core/logger/logger.js';
 import { userError, userSuccess } from '../output.js';
+import { bold, cyan } from '../colors.js';
 import type { Logger } from 'pino';
 
 /**
@@ -25,7 +26,7 @@ export const renameCampaignCommand = new Command('rename-campaign')
       log = getRootLogger().child({ cmd: 'rename-campaign', old: oldName, new: new_ });
       log.info({ old: oldName, new: new_ }, 'rename-campaign.started');
       await renameCampaign(oldName, new_);
-      userSuccess(`Renamed campaign "${oldName}" → "${new_}"`);
+      userSuccess(`Renamed campaign ${bold(cyan(oldName))} → ${bold(cyan(new_))}`);
       process.exit(0);
     } catch (err) {
       if (err instanceof SelfRenameError) {
