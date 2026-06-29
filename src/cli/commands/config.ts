@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { loadGlobalConfig } from '../../core/config.js';
 import { resolveConfigHome, resolveConfigPath } from '../../core/paths.js';
 import { redactSecrets } from '../../core/config.view.js';
-import { userInfo, userError } from '../output.js';
+import { userWarn, userError, userOutput } from '../output.js';
 
 /**
  * `jho config [show|path]` — show or print the path of the global config.
@@ -16,15 +16,15 @@ export const configCommand = new Command('config')
       case 'show': {
         const body = loadGlobalConfig();
         const value = opts.reveal ? body : redactSecrets(body);
-        process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+        userOutput(JSON.stringify(value, null, 2));
         break;
       }
       case 'path': {
-        process.stdout.write(`${resolveConfigPath(resolveConfigHome())}\n`);
+        userOutput(resolveConfigPath(resolveConfigHome()));
         break;
       }
       case 'edit': {
-        userInfo('jho config edit: not implemented yet');
+        userWarn('jho config edit: not implemented yet');
         process.exit(1);
         break;
       }

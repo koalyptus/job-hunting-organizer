@@ -15,7 +15,7 @@ import {
   listCampaigns,
 } from '../../core/paths.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
-import { userSuccess, userError } from '../output.js';
+import { userOutput, userError } from '../output.js';
 import { cliColorize } from '../colors.js';
 
 /**
@@ -42,7 +42,7 @@ export const statsCommand = new Command('stats')
         const campaigns = await listCampaigns(dataRoot);
 
         if (campaigns.length === 0) {
-          userSuccess('No campaigns found.');
+          userOutput('No campaigns found.');
           return;
         }
 
@@ -60,13 +60,13 @@ export const statsCommand = new Command('stats')
         }
 
         if (opts.json) {
-          userSuccess(JSON.stringify(results, null, 2));
+          userOutput(JSON.stringify(results, null, 2));
           return;
         }
 
-        process.stdout.write('Campaign stats:\n');
+        userOutput('Campaign stats:');
         for (const { name, stats } of results) {
-          process.stdout.write(`${renderCompactStats(name, stats, cliColorize)}\n`);
+          userOutput(`${renderCompactStats(name, stats, cliColorize)}`);
         }
       } else {
         // Single campaign mode
@@ -79,16 +79,16 @@ export const statsCommand = new Command('stats')
         });
 
         if (opts.json) {
-          userSuccess(JSON.stringify(stats, null, 2));
+          userOutput(JSON.stringify(stats, null, 2));
           return;
         }
 
         if (stats.total === 0) {
-          userSuccess('No applications found.');
+          userOutput('No applications found.');
           return;
         }
 
-        process.stdout.write(`${renderFullStats(explicitCampaign, stats, cliColorize)}\n`);
+        userOutput(`${renderFullStats(explicitCampaign, stats, cliColorize)}`);
       }
     } catch (err) {
       if (err instanceof InvalidSinceError) {

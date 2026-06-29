@@ -5,7 +5,7 @@ import { resolveConfigHome } from '../../core/paths.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { DEFAULT_LOG_FILENAME, FILTERABLE_LOG_LEVELS } from '../../core/types.js';
 import { validateLevelOption, validateTailOption } from '../validate.js';
-import { userError, userInfo } from '../output.js';
+import { userError, userWarn, userOutput } from '../output.js';
 // pino-pretty is a peer dep of pino. We use its prettyFactory to format
 // individual JSON log lines for human reading.
 import { prettyFactory } from 'pino-pretty';
@@ -29,13 +29,13 @@ export const logsCommand = new Command('logs')
     const logFile = globals?.logFile ?? resolve(configHome, DEFAULT_LOG_FILENAME);
 
     if (opts.path) {
-      process.stdout.write(`${logFile}\n`);
+      userOutput(logFile);
       return;
     }
 
     if (!existsSync(logFile)) {
       log.warn({ file: logFile }, 'logs.file.missing');
-      userInfo('No log file at ${logFile}\n(Run a command first.)');
+      userWarn('No log file at ${logFile}\n(Run a command first.)');
       process.exit(1);
     }
 
@@ -72,7 +72,7 @@ export const logsCommand = new Command('logs')
     }
 
     if (opts.json) {
-      process.stdout.write(`${lines.join('\n')}\n`);
+      userOutput(lines.join('\n'));
       log.debug({ file: logFile, count: lines.length }, 'logs.printed.json');
       return;
     }
@@ -88,7 +88,7 @@ export const logsCommand = new Command('logs')
 
     for (const line of lines) {
       const pretty = format(line);
-      process.stdout.write(`${pretty}\n`);
+      userOutput(pretty);
     }
 
     log.debug({ file: logFile, count: lines.length }, 'logs.printed');

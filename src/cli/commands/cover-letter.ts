@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { userInfo } from '../output.js';
+import { userWarn } from '../output.js';
 
 /**
  * `jho cover-letter [<slug>|<url>]` — generate a tailored cover letter.
@@ -12,7 +12,7 @@ export const coverLetterCommand = new Command('cover-letter')
   .option('--paste', 'copy to clipboard')
   .option('--out <path>', 'write to a file')
   .action(() => {
-    userInfo('jho cover-letter: not implemented yet (planned: phase 6)');
+    userWarn('jho cover-letter: not implemented yet (planned: phase 6)');
     process.exit(1);
   });
 
