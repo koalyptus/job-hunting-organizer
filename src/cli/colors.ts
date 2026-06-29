@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import type { Colorize } from '../core/types.js';
 
 let noColor = false;
 
@@ -45,3 +46,6 @@ export function statusColor(s: string): string {
       return s;
   }
 }
+
+/** Pre-built `Colorize` object using the CLI's colour helpers. */
+export const cliColorize: Colorize = { bold, cyan, dim, green, yellow, red, statusColor };

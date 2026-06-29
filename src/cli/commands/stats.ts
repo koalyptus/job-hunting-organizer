@@ -7,7 +7,7 @@ import {
   StatsError,
   InvalidSinceError,
 } from '../../core/stats/index.js';
-import type { CampaignStats, Colorize } from '../../core/types.js';
+import type { CampaignStats } from '../../core/types.js';
 import {
   resolveCampaignRoot,
   resolveAppliedDir,
@@ -16,9 +16,7 @@ import {
 } from '../../core/paths.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userSuccess, userError } from '../output.js';
-import { bold, cyan, dim, green, yellow, red, statusColor } from '../colors.js';
-
-const cliColorize: Colorize = { bold, cyan, dim, green, yellow, red, statusColor };
+import { cliColorize } from '../colors.js';
 
 /**
  * `jho stats` — campaign snapshot.

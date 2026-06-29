@@ -1,9 +1,6 @@
 import { Command } from 'commander';
 import { renderOwnership } from '../../core/ownership.js';
-import { bold, cyan, dim, green, yellow, red, statusColor } from '../colors.js';
-import type { Colorize } from '../../core/types.js';
-
-const cliColorize: Colorize = { bold, cyan, dim, green, yellow, red, statusColor };
+import { cliColorize } from '../colors.js';
 
 /**
  * `jho ownership [--markdown]` — print the file ownership table.
