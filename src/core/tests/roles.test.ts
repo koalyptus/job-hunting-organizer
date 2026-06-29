@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { text, select, isCancel } from '@clack/prompts';
 import { reviewRoles } from '../roles.js';
+import { InitCancelled } from '../init/errors.js';
 import type { TargetRole } from '../types.js';
 
 vi.mock('@clack/prompts', () => ({
@@ -156,6 +157,102 @@ describe('reviewRoles', () => {
     vi.mocked(isCancel).mockReturnValueOnce(false).mockReturnValueOnce(true); // cancel role selection
 
     // Second iteration: accept
+    vi.mocked(select).mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('throws InitCancelled when action is cancelled', async () => {
+    vi.mocked(isCancel).mockReturnValueOnce(true);
+
+    await expect(reviewRoles(mockRoles)).rejects.toThrow(InitCancelled);
+  });
+
+  it('skips edit when slug is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(true); // slug cancel
+
+    vi.mocked(select).mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('skips edit when title is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(false) // slug ok
+      .mockReturnValueOnce(true); // title cancel
+
+    vi.mocked(text).mockResolvedValueOnce('new-slug');
+    vi.mocked(select).mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('skips edit when priority is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(false) // slug ok
+      .mockReturnValueOnce(false) // title ok
+      .mockReturnValueOnce(true); // priority cancel
+
+    vi.mocked(text).mockResolvedValueOnce('new-slug').mockResolvedValueOnce('New Title');
+    vi.mocked(select).mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('skips edit when level is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(false) // slug ok
+      .mockReturnValueOnce(false) // title ok
+      .mockReturnValueOnce(false) // priority ok
+      .mockReturnValueOnce(true); // level cancel
+
+    vi.mocked(text).mockResolvedValueOnce('new-slug').mockResolvedValueOnce('New Title');
+    vi.mocked(select).mockResolvedValueOnce('primary');
+    vi.mocked(select).mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('skips add when slug is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('add');
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(true); // slug cancel
+
+    vi.mocked(select).mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toHaveLength(2);
+  });
+
+  it('continues loop on cancel during edit role selection', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit');
+    vi.mocked(isCancel).mockReturnValueOnce(false).mockReturnValueOnce(true);
+
     vi.mocked(select).mockResolvedValueOnce('accept');
 
     const result = await reviewRoles(mockRoles);

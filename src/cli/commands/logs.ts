@@ -63,8 +63,30 @@ export const logsCommand = new Command('logs')
     const content = readFileSync(logFile, 'utf8');
     const allLines = content.split('\n').filter((line) => line.trim() !== '');
 
+    // Apply --level filter (minimum level: include entries >= minLevel)
+    let filteredLines = allLines;
+    if (opts.level !== undefined) {
+      const levelMap: Record<string, number> = {
+        fatal: 60,
+        error: 50,
+        warn: 40,
+        info: 30,
+        debug: 20,
+        trace: 10,
+      };
+      const minLevel = levelMap[opts.level.toLowerCase()] ?? 30;
+      filteredLines = allLines.filter((line) => {
+        try {
+          const entry = JSON.parse(line) as { level?: number };
+          return typeof entry.level === 'number' && entry.level >= minLevel;
+        } catch {
+          return false;
+        }
+      });
+    }
+
     // Apply --tail
-    const lines = opts.tail !== undefined ? allLines.slice(-opts.tail) : allLines;
+    const lines = opts.tail !== undefined ? filteredLines.slice(-opts.tail) : filteredLines;
 
     if (lines.length === 0) {
       log.debug({ file: logFile }, 'logs.printed.empty');

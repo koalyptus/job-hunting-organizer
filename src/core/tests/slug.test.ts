@@ -1,6 +1,63 @@
-import { describe, expect, it } from 'vitest';
-import { buildSlug, companySlug, roleAbbr } from '../slug.js';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdirSync } from 'node:fs';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import {
+  buildSlug,
+  companySlug,
+  roleAbbr,
+  extractDateFromSlug,
+  SLUG_PATTERN,
+  uniqueSlug,
+} from '../slug.js';
 import { validateSlug } from '../validate.js';
+
+vi.mock('../../logger/logger.js', () => ({
+  getRootLogger: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  })),
+}));
+
+describe('SLUG_PATTERN', () => {
+  it('matches well-formed slugs', () => {
+    expect(SLUG_PATTERN.test('2026-Jun-03-SE-Nuage-92448554')).toBe(true);
+    expect(SLUG_PATTERN.test('2026-Jan-15-senior-engineer-foo-123')).toBe(true);
+  });
+
+  it('rejects slugs without proper date prefix', () => {
+    expect(SLUG_PATTERN.test('jun-03-SE-Nuage')).toBe(false);
+    expect(SLUG_PATTERN.test('2026-13-01-SE-Nuage')).toBe(false);
+    expect(SLUG_PATTERN.test('2026-jun-03-SE-Nuage')).toBe(false);
+  });
+
+  it('rejects empty or short strings', () => {
+    expect(SLUG_PATTERN.test('')).toBe(false);
+    expect(SLUG_PATTERN.test('2026')).toBe(false);
+  });
+});
+
+describe('extractDateFromSlug', () => {
+  it('extracts date from a valid slug', () => {
+    expect(extractDateFromSlug('2026-Jun-03-SE-Nuage-92448554')).toBe('20260603');
+  });
+
+  it('extracts date with different months', () => {
+    expect(extractDateFromSlug('2026-Jan-15-SE-Foo')).toBe('20260115');
+    expect(extractDateFromSlug('2026-Dec-25-SE-Bar')).toBe('20261225');
+  });
+
+  it('returns empty string for invalid slug format', () => {
+    expect(extractDateFromSlug('not-a-slug')).toBe('');
+  });
+
+  it('returns empty string for invalid month abbreviation', () => {
+    expect(extractDateFromSlug('2026-Foo-03-SE')).toBe('');
+  });
+});
 
 describe('roleAbbr', () => {
   it('takes the first 2-3 words, lowercased and sanitized', () => {
@@ -26,6 +83,16 @@ describe('roleAbbr', () => {
 
   it('treats & as "and"', () => {
     expect(roleAbbr('Research & Development Lead')).toBe('research-and-development');
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(roleAbbr('')).toBe('');
+  });
+
+  it('truncates and strips trailing hyphens for very long single word', () => {
+    const result = roleAbbr('Supercalifragilisticexpialidocious', 1, 10);
+    expect(result.length).toBeLessThanOrEqual(10);
+    expect(result).not.toMatch(/-$/);
   });
 });
 
@@ -72,6 +139,64 @@ describe('buildSlug', () => {
   it('falls back to "unknown" for missing title/company', () => {
     const slug = buildSlug({ appliedOn: '2026-06-03T00:00:00Z' });
     expect(slug).toBe('2026-Jun-03-unknown-unknown');
+  });
+});
+
+describe('uniqueSlug', () => {
+  let testDir: string;
+
+  beforeEach(async () => {
+    testDir = await mkdtemp(join(tmpdir(), 'jho-slug-unique-'));
+    mkdirSync(join(testDir, 'applied'), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(testDir, { recursive: true, force: true });
+  });
+
+  it('returns base slug when no collision exists', async () => {
+    const result = await uniqueSlug(
+      { title: 'Engineer', company: 'Foo', appliedOn: '2026-06-03T00:00:00Z' },
+      join(testDir, 'applied'),
+    );
+    expect(result).toBe('2026-Jun-03-engineer-foo');
+  });
+
+  it('appends -1 when folder already exists', async () => {
+    const appliedDir = join(testDir, 'applied');
+    const baseSlug = '2026-Jun-03-engineer-foo';
+    mkdirSync(join(appliedDir, baseSlug), { recursive: true });
+
+    const result = await uniqueSlug(
+      { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
+      appliedDir,
+    );
+    expect(result).toBe(`${baseSlug}-1`);
+  });
+
+  it('increments counter on subsequent collisions', async () => {
+    const appliedDir = join(testDir, 'applied');
+    const baseSlug = '2026-Jun-03-engineer-foo';
+
+    const result1 = await uniqueSlug(
+      { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
+      appliedDir,
+    );
+    expect(result1).toBe(baseSlug);
+
+    mkdirSync(join(appliedDir, baseSlug), { recursive: true });
+
+    const result2 = await uniqueSlug(
+      { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
+      appliedDir,
+    );
+    expect(result2).toBe(`${baseSlug}-1`);
+
+    const result3 = await uniqueSlug(
+      { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
+      appliedDir,
+    );
+    expect(result3).toBe(`${baseSlug}-2`);
   });
 });
 
