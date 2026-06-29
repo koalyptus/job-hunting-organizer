@@ -87,3 +87,22 @@ export function parseDateOrNow(input: string | Date | undefined): Date {
   }
   return d;
 }
+
+/**
+ * Parse a `--since` value into a `Date`. Accepts ISO date strings and
+ * relative durations: `7d`, `30d`, `90d` (days before `now`).
+ * @param value - The since value from the CLI.
+ * @param now - Reference time for relative parsing (default: `new Date()`).
+ * @returns A `Date` representing the lower bound (inclusive).
+ * @throws {Error} If `value` cannot be parsed.
+ */
+export function parseSince(value: string, now?: Date): Date {
+  const relativeMatch = /^(\d+)d$/.exec(value);
+  if (relativeMatch) {
+    const days = parseInt(relativeMatch[1]!, 10);
+    const d = now ? new Date(now) : new Date();
+    d.setUTCDate(d.getUTCDate() - days);
+    return d;
+  }
+  return parseDateOrNow(value);
+}

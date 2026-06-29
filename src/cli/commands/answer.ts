@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { userWarn } from '../output.js';
 
 /**
  * `jho answer [<slug>] "<question>"` — tailor an answer.
@@ -11,7 +12,7 @@ export const answerCommand = new Command('answer')
   .option('--image <path>', 'include a screenshot or image')
   .option('--stdin', 'read the question from stdin')
   .action(() => {
-    process.stderr.write('jho answer: not implemented yet (planned: phase 6)\n');
+    userWarn('jho answer: not implemented yet (planned: phase 6)');
     process.exit(1);
   });
 

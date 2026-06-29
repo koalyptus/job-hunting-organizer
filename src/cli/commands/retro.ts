@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { userWarn } from '../output.js';
 
 /**
  * `jho retro [<slug>]` — post-mortem for failed interviews.
@@ -14,7 +15,7 @@ export const retroCommand = new Command('retro')
   .option('--role <slug>', 'scope to a single target role (with --aggregate)')
   .option('--include-abandoned', 'also count weak topics from abandoned apps')
   .action(() => {
-    process.stderr.write('jho retro: not implemented yet (planned: phase 7)\n');
+    userWarn('jho retro: not implemented yet (planned: phase 7)');
     process.exit(1);
   });
 

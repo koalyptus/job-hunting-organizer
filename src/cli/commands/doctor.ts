@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { userInfo } from '../output.js';
+import { userWarn } from '../output.js';
 
 /**
  * `jho doctor [<slug>]` — diagnose the campaign.
@@ -9,7 +9,7 @@ export const doctorCommand = new Command('doctor')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .option('--all', 'run all checks including optional ones')
   .action(() => {
-    userInfo('jho doctor: not implemented yet (planned: phase 7)');
+    userWarn('jho doctor: not implemented yet (planned: phase 7)');
     process.exit(1);
   });
 

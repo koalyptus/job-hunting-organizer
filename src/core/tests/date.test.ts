@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateUtc, parseDateOrNow, toIsoDateString } from '../date.js';
+import { formatDateUtc, parseDateOrNow, parseSince, toIsoDateString } from '../date.js';
 
 describe('formatDateUtc', () => {
   it('formats a UTC date as YYYY-MMM-DD', () => {
@@ -61,5 +61,42 @@ describe('toIsoDateString', () => {
 
   it('passes through an ISO date-only string', () => {
     expect(toIsoDateString('2026-06-03')).toBe('2026-06-03');
+  });
+});
+
+describe('parseSince', () => {
+  const now = new Date(Date.UTC(2026, 5, 28)); // 2026-06-28
+
+  it('parses a relative duration like 7d', () => {
+    const d = parseSince('7d', now);
+    expect(d.toISOString()).toBe('2026-06-21T00:00:00.000Z');
+  });
+
+  it('parses 30d', () => {
+    const d = parseSince('30d', now);
+    expect(d.toISOString()).toBe('2026-05-29T00:00:00.000Z');
+  });
+
+  it('parses 90d', () => {
+    const d = parseSince('90d', now);
+    expect(d.toISOString()).toBe('2026-03-30T00:00:00.000Z');
+  });
+
+  it('parses 1d', () => {
+    const d = parseSince('1d', now);
+    expect(d.toISOString()).toBe('2026-06-27T00:00:00.000Z');
+  });
+
+  it('parses an ISO date string', () => {
+    const d = parseSince('2026-01-15', now);
+    expect(d.toISOString()).toBe('2026-01-15T00:00:00.000Z');
+  });
+
+  it('throws on an invalid string', () => {
+    expect(() => parseSince('invalid', now)).toThrow(/invalid date/);
+  });
+
+  it('throws on an empty string', () => {
+    expect(() => parseSince('', now)).toThrow(/invalid date/);
   });
 });

@@ -283,7 +283,8 @@ Show a campaign snapshot: counts by status, role, site, funnel
 
 Options:
   --role <role>    filter stats by target role
-  --since <date>   only count applications since a date
+  --since <date>   only count applications since a date (ISO or relative: 7d,
+                   30d, 90d)
   --include-notes  include LLM-extracted abandonment reasons (costs tokens)
   --json           output as JSON
   -h, --help       display help for command

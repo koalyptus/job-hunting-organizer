@@ -3,7 +3,7 @@ import { resolveCampaignRoot } from '../../core/paths.js';
 import { readProfile, ProfileReadError } from '../../core/profile.js';
 import type { GlobalOpts } from '../options.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
-import { userError, userInfo } from '../output.js';
+import { userError, userWarn, userOutput } from '../output.js';
 
 /**
  * `jho profile show` — print the current profile.
@@ -17,7 +17,7 @@ const showCommand = new Command('show')
     try {
       log.info({ campaign }, 'profile.show.started');
       const content = await readProfile(resolveCampaignRoot(campaign));
-      process.stdout.write(content);
+      userOutput(content);
       log.info({ campaign }, 'profile.show.completed');
     } catch (err) {
       if (err instanceof ProfileReadError) {
@@ -46,7 +46,7 @@ const rebuildCommand = new Command('rebuild')
   .option('--cv <path>', 'path to CV file')
   .option('--github <user>', 'GitHub username')
   .action(() => {
-    userInfo('jho profile rebuild: not implemented yet (planned: phase 4c)');
+    userWarn('jho profile rebuild: not implemented yet (planned: phase 4c)');
     process.exit(1);
   });
 

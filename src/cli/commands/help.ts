@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { userInfo } from '../output.js';
+import { userWarn } from '../output.js';
 
 /**
  * `jho help [<cmd>|<topic>]` — show help for a command or topic.
@@ -8,7 +8,7 @@ export const helpCommand = new Command('help')
   .description('Show help for a command or topic')
   .argument('[subject]', 'command or topic to get help on')
   .action(() => {
-    userInfo('jho help: not implemented yet (planned: phase 4d)');
+    userWarn('jho help: not implemented yet (planned: phase 4d)');
     process.exit(1);
   });
 

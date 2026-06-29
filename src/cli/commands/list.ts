@@ -8,26 +8,8 @@ import {
 } from '../../core/list/index.js';
 import { APPLICATION_STATUSES } from '../../core/applications/types.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
-import { userSuccess, userError } from '../output.js';
-import { bold, cyan, dim, green, red, yellow } from '../colors.js';
-
-function statusColor(s: string): string {
-  switch (s) {
-    case 'interview':
-      return yellow(s);
-    case 'offer':
-    case 'accepted':
-      return green(s);
-    case 'rejected':
-      return red(s);
-    case 'withdrawn':
-    case 'abandoned':
-    case 'ghosted':
-      return dim(s);
-    default:
-      return s;
-  }
-}
+import { userOutput, userError } from '../output.js';
+import { bold, cyan, dim, statusColor } from '../colors.js';
 
 /**
  * `jho list` — list campaigns (no arg) or applications (with --campaign).
@@ -48,20 +30,20 @@ export const listCommand = new Command('list')
         const { campaigns } = await runListCampaigns();
 
         if (opts.json) {
-          userSuccess(JSON.stringify(campaigns, null, 2));
+          userOutput(JSON.stringify(campaigns, null, 2));
           return;
         }
 
         if (campaigns.length === 0) {
-          userSuccess('No campaigns found.');
+          userOutput('No campaigns found.');
           return;
         }
 
         const maxNameLen = Math.max(...campaigns.map((c) => c.name.length));
-        process.stdout.write(`${bold('Campaigns:')}\n`);
+        userOutput(`${bold('Campaigns:')}`);
         for (const c of campaigns) {
           const apps = `${c.applicationCount} ${c.applicationCount === 1 ? 'application' : 'applications'}`;
-          process.stdout.write(`  ${cyan(c.name.padEnd(maxNameLen))}  ${apps}\n`);
+          userOutput(`  ${cyan(c.name.padEnd(maxNameLen))}  ${apps}`);
         }
       } else {
         const { entries } = await runListApplications(explicitCampaign, {
@@ -71,29 +53,29 @@ export const listCommand = new Command('list')
         });
 
         if (opts.json) {
-          userSuccess(JSON.stringify(entries, null, 2));
+          userOutput(JSON.stringify(entries, null, 2));
           return;
         }
 
         if (entries.length === 0) {
-          userSuccess('No applications found.');
+          userOutput('No applications found.');
           return;
         }
 
         for (let i = 0; i < entries.length; i++) {
           if (i > 0) {
-            process.stdout.write('\n');
+            userOutput('');
           }
           const e = entries[i]!;
-          process.stdout.write(`${cyan(e.slug)}\n`);
-          process.stdout.write(`  ${dim('Title:')} ${e.title ?? ''}\n`);
-          process.stdout.write(`  ${dim('Company:')} ${e.company ?? ''}\n`);
-          process.stdout.write(`  ${dim('Location:')} ${e.location ?? ''}\n`);
-          process.stdout.write(`  ${dim('Status:')} ${statusColor(e.status ?? '')}\n`);
-          process.stdout.write(`  ${dim('Applied on:')} ${e.appliedOn ?? ''}\n`);
+          userOutput(`${cyan(e.slug)}`);
+          userOutput(`  ${dim('Title:')} ${e.title ?? ''}`);
+          userOutput(`  ${dim('Company:')} ${e.company ?? ''}`);
+          userOutput(`  ${dim('Location:')} ${e.location ?? ''}`);
+          userOutput(`  ${dim('Status:')} ${statusColor(e.status ?? '')}`);
+          userOutput(`  ${dim('Applied on:')} ${e.appliedOn ?? ''}`);
         }
         const apps = entries.length === 1 ? 'application' : 'applications';
-        process.stdout.write(`${entries.length} ${apps}\n`);
+        userOutput(`${entries.length} ${apps}`);
       }
     } catch (err) {
       if (err instanceof InvalidListStatusError) {

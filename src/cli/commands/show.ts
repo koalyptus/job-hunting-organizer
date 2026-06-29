@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { userInfo } from '../output.js';
+import { userWarn } from '../output.js';
 
 /**
  * `jho show [<slug>]` — show one application.
@@ -9,7 +9,7 @@ export const showCommand = new Command('show')
   .description('Show one application (slug inferred from cwd if omitted)')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .action(() => {
-    userInfo('jho show: not implemented yet (planned: phase 7)');
+    userWarn('jho show: not implemented yet (planned: phase 7)');
     process.exit(1);
   });
 

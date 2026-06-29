@@ -3,7 +3,7 @@ import { loadCampaignConfig } from '../../core/config.js';
 import { resolveCampaignRoot, resolveConfigPath } from '../../core/paths.js';
 import { redactSecrets } from '../../core/config.view.js';
 import type { GlobalOpts } from '../options.js';
-import { userInfo, userError } from '../output.js';
+import { userWarn, userError, userOutput } from '../output.js';
 
 /**
  * `jho campaign config [show|path]` — show or print the path of the
@@ -20,15 +20,15 @@ export const campaignConfigCommand = new Command('config')
       case 'show': {
         const body = loadCampaignConfig(campaign);
         const value = opts.reveal ? body : redactSecrets(body);
-        process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+        userOutput(JSON.stringify(value, null, 2));
         break;
       }
       case 'path': {
-        process.stdout.write(`${resolveConfigPath(resolveCampaignRoot(campaign))}\n`);
+        userOutput(resolveConfigPath(resolveCampaignRoot(campaign)));
         break;
       }
       case 'edit': {
-        userInfo('jho campaign config edit: not implemented yet');
+        userWarn('jho campaign config edit: not implemented yet');
         process.exit(1);
         break;
       }

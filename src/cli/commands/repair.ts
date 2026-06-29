@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { userWarn } from '../output.js';
 
 /**
  * `jho repair [<slug>]` — attempt auto-repair.
@@ -10,7 +11,7 @@ export const repairCommand = new Command('repair')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .option('--all', 'attempt all possible repairs')
   .action(() => {
-    process.stderr.write('jho repair: not implemented yet (planned: phase 7)\n');
+    userWarn('jho repair: not implemented yet (planned: phase 7)');
     process.exit(1);
   });
 

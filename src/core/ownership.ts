@@ -1,6 +1,7 @@
 import Table from 'cli-table3';
 import { resolveConfigHome, DEFAULT_CONFIG_FILENAME } from './paths.js';
 import type { OwnershipRow, RenderOwnershipOptions } from './types.js';
+import { resolveStyle } from './types.js';
 
 // Static ownership table from AGENTS.md. Kept in code (not a doc) so that
 // `jho ownership` always shows the same rules the tool actually enforces.
@@ -135,18 +136,17 @@ const DEFAULT_COL_WIDTHS: readonly number[] = [30, 26, 20, 36];
  */
 function formatConsoleTable(
   rows: readonly OwnershipRow[],
-  colorize?: { bold: (text: string) => string; cyan: (text: string) => string },
+  colorize?: RenderOwnershipOptions['colorize'],
 ): string {
-  const b = colorize?.bold ?? ((s: string) => s);
-  const c = colorize?.cyan ?? ((s: string) => s);
+  const style = resolveStyle(colorize);
   const table = new Table({
-    head: COLUMNS.map((h) => b(h)),
+    head: COLUMNS.map((h) => style.bold(h)),
     wordWrap: true,
     colWidths: [...DEFAULT_COL_WIDTHS],
     style: { head: [], border: [] },
   });
   for (const r of rows) {
-    table.push([c(r.file), r.toolWrites, r.editFreely, r.onYourEdit]);
+    table.push([style.cyan(r.file), r.toolWrites, r.editFreely, r.onYourEdit]);
   }
   return `${table.toString()}\n`;
 }

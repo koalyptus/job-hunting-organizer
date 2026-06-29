@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import type { Colorize } from '../core/types.js';
 
 let noColor = false;
 
@@ -22,3 +23,29 @@ export const green = (text: string): string => (noColor ? text : chalk.green(tex
 export const yellow = (text: string): string => (noColor ? text : chalk.yellow(text));
 export const red = (text: string): string => (noColor ? text : chalk.red(text));
 export const blue = (text: string): string => (noColor ? text : chalk.blue(text));
+
+/**
+ * Apply a colour to an application status string for terminal output.
+ * @param s - The status value (e.g. `'interview'`, `'rejected'`).
+ * @returns The status wrapped in the appropriate chalk colour.
+ */
+export function statusColor(s: string): string {
+  switch (s) {
+    case 'interview':
+      return yellow(s);
+    case 'offer':
+    case 'accepted':
+      return green(s);
+    case 'rejected':
+      return red(s);
+    case 'withdrawn':
+    case 'abandoned':
+    case 'ghosted':
+      return dim(s);
+    default:
+      return s;
+  }
+}
+
+/** Pre-built `Colorize` object using the CLI's colour helpers. */
+export const cliColorize: Colorize = { bold, cyan, dim, green, yellow, red, statusColor };
