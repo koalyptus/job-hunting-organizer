@@ -2,8 +2,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { GithubUser, GithubRepo } from '../types.js';
+import * as fsMod from '../fs.js';
 import { readCachedCv, writeCachedCv, readCachedGithub, writeCachedGithub } from '../kb.js';
 
 const mockUser = {
@@ -79,6 +80,23 @@ describe('readCachedCv', () => {
     expect(result!.format).toBe('text');
     expect(result!.fileName).toBe('cv.txt');
   });
+
+  it('calls log.info when logger provided', async () => {
+    const cacheDir = join(workDir, 'knowledge-base');
+    mkdirSync(cacheDir, { recursive: true });
+    writeFileSync(
+      join(cacheDir, 'cv.json'),
+      JSON.stringify({ text: 'content', format: 'text', fileName: 'cv.txt' }),
+    );
+
+    const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
+    await readCachedCv(workDir, mockLog as never);
+
+    expect(mockLog.info).toHaveBeenCalledWith(
+      expect.objectContaining({ cachePath: expect.stringContaining('cv.json') }),
+      'kb.cv.read',
+    );
+  });
 });
 
 describe('writeCachedCv', () => {
@@ -114,6 +132,37 @@ describe('writeCachedCv', () => {
     });
 
     expect(existsSync(join(workDir, 'knowledge-base', 'cv.json'))).toBe(true);
+  });
+
+  it('calls log.info when logger provided', async () => {
+    const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
+    await writeCachedCv(
+      workDir,
+      { text: 'content', format: 'text', fileName: 'cv.txt' },
+      mockLog as never,
+    );
+
+    expect(mockLog.info).toHaveBeenCalledWith(
+      expect.objectContaining({ cachePath: expect.stringContaining('cv.json') }),
+      'kb.cv.write',
+    );
+  });
+
+  it('calls log.warn when atomicWrite fails', async () => {
+    const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
+
+    const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
+    await writeCachedCv(
+      workDir,
+      { text: 'content', format: 'text', fileName: 'cv.txt' },
+      mockLog as never,
+    );
+
+    expect(mockLog.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ cachePath: expect.stringContaining('cv.json') }),
+      'kb.cv.write.failed',
+    );
+    spy.mockRestore();
   });
 });
 
@@ -155,6 +204,26 @@ describe('readCachedGithub', () => {
     expect(result!.user.login).toBe('testuser');
     expect(result!.repos).toHaveLength(1);
   });
+
+  it('calls log.info when logger provided', async () => {
+    const cacheDir = join(workDir, 'knowledge-base', 'github');
+    mkdirSync(cacheDir, { recursive: true });
+    writeFileSync(
+      join(cacheDir, 'testuser.json'),
+      JSON.stringify({ user: mockUser, repos: mockRepos, cachedAt: new Date().toISOString() }),
+    );
+
+    const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
+    await readCachedGithub(workDir, 'testuser', mockLog as never);
+
+    expect(mockLog.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cachePath: expect.stringContaining('testuser.json'),
+        username: 'testuser',
+      }),
+      'kb.github.read',
+    );
+  });
 });
 
 describe('writeCachedGithub', () => {
@@ -191,5 +260,34 @@ describe('writeCachedGithub', () => {
     const parsed = JSON.parse(raw);
     expect(parsed.cachedAt).toBeDefined();
     expect(new Date(parsed.cachedAt).getTime()).toBeGreaterThan(0);
+  });
+
+  it('calls log.info when logger provided', async () => {
+    const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
+    await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos, mockLog as never);
+
+    expect(mockLog.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cachePath: expect.stringContaining('testuser.json'),
+        username: 'testuser',
+      }),
+      'kb.github.write',
+    );
+  });
+
+  it('calls log.warn when atomicWrite fails', async () => {
+    const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
+
+    const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
+    await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos, mockLog as never);
+
+    expect(mockLog.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cachePath: expect.stringContaining('testuser.json'),
+        username: 'testuser',
+      }),
+      'kb.github.write.failed',
+    );
+    spy.mockRestore();
   });
 });

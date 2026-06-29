@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { text, select, confirm, password } from '@clack/prompts';
+import { text, select, confirm, password, isCancel } from '@clack/prompts';
 import { clearConfigCache } from '../../../core/config.js';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
@@ -532,5 +532,246 @@ describe('init command', () => {
       await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
     );
     expect(campaignConfig.cv.path).toBe(cvPath);
+  });
+
+  it('re-inits without prompt in --yes mode when campaign exists', async () => {
+    const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+    await mkdir(join(campaignDir, 'applied'), { recursive: true });
+
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // LinkedIn
+      .mockResolvedValueOnce('') // CV
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run('--yes');
+    expect(exitCode).toBe(0);
+
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it('uses existing LinkedIn URL from campaign config', async () => {
+    const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+    await mkdir(campaignDir, { recursive: true });
+    await writeFile(
+      join(campaignDir, 'config.json'),
+      JSON.stringify({
+        version: 1,
+        profile: { path: join(campaignDir, 'profile.md') },
+        cv: { path: '' },
+        linkedin: { url: 'https://linkedin.com/in/existing' },
+        applied: { dir: join(campaignDir, 'applied') },
+        knowledgeBase: { dir: join(campaignDir, 'knowledge-base') },
+      }),
+    );
+
+    vi.mocked(confirm).mockResolvedValueOnce(true); // Confirm overwrite
+    vi.mocked(text)
+      .mockResolvedValueOnce('https://linkedin.com/in/existing') // LinkedIn (accept existing)
+      .mockResolvedValueOnce('') // CV
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run();
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(await readFile(join(campaignDir, 'config.json'), 'utf8'));
+    expect(campaignConfig.linkedin.url).toBe('https://linkedin.com/in/existing');
+  });
+
+  it('uses existing CV path from campaign config', async () => {
+    const cvPath = join(testHome, 'existing-cv.pdf');
+    await writeFile(cvPath, 'fake cv');
+
+    const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+    await mkdir(campaignDir, { recursive: true });
+    await writeFile(
+      join(campaignDir, 'config.json'),
+      JSON.stringify({
+        version: 1,
+        profile: { path: join(campaignDir, 'profile.md') },
+        cv: { path: cvPath },
+        linkedin: { url: '' },
+        applied: { dir: join(campaignDir, 'applied') },
+        knowledgeBase: { dir: join(campaignDir, 'knowledge-base') },
+      }),
+    );
+
+    vi.mocked(confirm).mockResolvedValueOnce(true); // Confirm overwrite
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // LinkedIn
+      .mockResolvedValueOnce(cvPath) // CV (accept existing)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run();
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(await readFile(join(campaignDir, 'config.json'), 'utf8'));
+    expect(campaignConfig.cv.path).toBe(cvPath);
+  });
+
+  it('skips invalid CV in --yes mode', async () => {
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // LinkedIn
+      .mockResolvedValueOnce('/nonexistent/cv.pdf') // CV (invalid)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run('--yes');
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.cv.path).toBe('');
+  });
+
+  it('prompts for retry on invalid CV path', async () => {
+    const validCv = join(testHome, 'valid-cv.pdf');
+    await writeFile(validCv, 'fake cv');
+
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // LinkedIn
+      .mockResolvedValueOnce('/nonexistent/cv.pdf') // CV (invalid)
+      .mockResolvedValueOnce(validCv) // CV retry (valid)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run();
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.cv.path).toBe(validCv);
+  });
+
+  it('skips CV on retry cancel', async () => {
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // LinkedIn
+      .mockResolvedValueOnce('/nonexistent/cv.pdf') // CV (invalid)
+      .mockResolvedValueOnce('') // CV retry (empty = skip)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run();
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.cv.path).toBe('');
+  });
+
+  it('uses existing CV path in --yes mode from campaign config', async () => {
+    const cvPath = join(testHome, 'existing-cv.pdf');
+    await writeFile(cvPath, 'fake cv');
+
+    const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+    await mkdir(campaignDir, { recursive: true });
+    await writeFile(
+      join(campaignDir, 'config.json'),
+      JSON.stringify({
+        version: 1,
+        profile: { path: join(campaignDir, 'profile.md') },
+        cv: { path: cvPath },
+        linkedin: { url: '' },
+        applied: { dir: join(campaignDir, 'applied') },
+        knowledgeBase: { dir: join(campaignDir, 'knowledge-base') },
+      }),
+    );
+
+    vi.mocked(confirm).mockResolvedValueOnce(true); // Confirm overwrite
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run('--yes');
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(await readFile(join(campaignDir, 'config.json'), 'utf8'));
+    expect(campaignConfig.cv.path).toBe(cvPath);
+  });
+
+  it('cancels on LinkedIn prompt cancel', async () => {
+    vi.mocked(isCancel).mockReturnValueOnce(true);
+
+    const { exitCode } = await run();
+    expect(exitCode).toBe(0);
+  });
+
+  it('skips invalid CV in --yes mode from --cv flag', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run('--yes', '--cv', '/nonexistent/cv.pdf');
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(
+      await readFile(join(testHome, 'data', 'campaigns', 'default', 'config.json'), 'utf8'),
+    );
+    expect(campaignConfig.cv.path).toBe('');
+  });
+
+  it('uses existing LinkedIn URL in --yes mode from campaign config', async () => {
+    const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+    await mkdir(campaignDir, { recursive: true });
+    await writeFile(
+      join(campaignDir, 'config.json'),
+      JSON.stringify({
+        version: 1,
+        profile: { path: join(campaignDir, 'profile.md') },
+        cv: { path: '' },
+        linkedin: { url: 'https://linkedin.com/in/existing' },
+        applied: { dir: join(campaignDir, 'applied') },
+        knowledgeBase: { dir: join(campaignDir, 'knowledge-base') },
+      }),
+    );
+
+    vi.mocked(confirm).mockResolvedValueOnce(true); // Confirm overwrite
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce(''); // LLM
+    vi.mocked(select).mockResolvedValueOnce('ics');
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run('--yes');
+    expect(exitCode).toBe(0);
+
+    const campaignConfig = JSON.parse(await readFile(join(campaignDir, 'config.json'), 'utf8'));
+    expect(campaignConfig.linkedin.url).toBe('https://linkedin.com/in/existing');
+  });
+
+  it('cancels on CV prompt cancel', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // LinkedIn (empty)
+      .mockResolvedValueOnce('/some/path.pdf'); // CV
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // LinkedIn
+      .mockReturnValueOnce(true); // CV
+
+    const { exitCode } = await run();
+    expect(exitCode).toBe(0);
   });
 });

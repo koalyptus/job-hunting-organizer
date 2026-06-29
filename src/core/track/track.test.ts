@@ -12,6 +12,8 @@ import {
   appendNote,
 } from '../applications/applications.js';
 import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
+import { replaceRegion } from '../markers.js';
+import { atomicWrite } from '../fs.js';
 import type { ApplicationFrontmatter } from '../applications/types.js';
 
 vi.mock('../config.js', () => ({
@@ -814,5 +816,71 @@ describe('runTrackRefresh', () => {
         slug: '2026-Jun-21-SE-test-co',
       }),
     ).rejects.toThrow(TrackCancelled);
+  });
+
+  it('throws TrackError when slug is missing in refresh mode', async () => {
+    await expect(
+      runTrack({
+        campaign: 'default',
+        refresh: true,
+      }),
+    ).rejects.toThrow('missing slug');
+  });
+
+  it('throws TrackError when slug is missing in runTrackRefresh', async () => {
+    await expect(
+      runTrackRefresh({
+        campaign: 'default',
+      }),
+    ).rejects.toThrow('missing slug');
+  });
+
+  it('handles missing jd.md file gracefully', async () => {
+    vi.mocked(readApplication).mockResolvedValue({
+      frontmatter: createMockFrontmatter(),
+      body: '',
+    });
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'Updated description',
+    });
+    vi.mocked(replaceRegion).mockReturnValue(
+      '<!-- jho:start:fetched-jd -->\nUpdated description\n<!-- jho:end:fetched-jd -->',
+    );
+
+    const result = await runTrackRefresh({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      yes: true,
+    });
+
+    expect(result.changed).toBe(true);
+    expect(replaceRegion).toHaveBeenCalledWith('', 'fetched-jd', 'Updated description', {
+      createIfMissing: true,
+    });
+  });
+
+  it('throws TrackError when atomicWrite fails', async () => {
+    vi.mocked(readApplication).mockResolvedValue({
+      frontmatter: createMockFrontmatter(),
+      body: '',
+    });
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'Updated description',
+    });
+    vi.mocked(atomicWrite).mockResolvedValue(false);
+
+    await expect(
+      runTrackRefresh({
+        campaign: 'default',
+        slug: '2026-Jun-21-SE-test-co',
+        yes: true,
+      }),
+    ).rejects.toThrow('failed to write jd.md');
   });
 });

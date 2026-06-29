@@ -103,4 +103,71 @@ describe('logs command', () => {
     // Empty file -> empty output (pino-pretty produces nothing for empty input)
     expect(result.stdout).toBe('');
   });
+
+  it('--level filters by minimum level', async () => {
+    const entries = [
+      { level: 10, time: Date.now(), msg: 'trace entry' },
+      { level: 20, time: Date.now(), msg: 'debug entry' },
+      { level: 30, time: Date.now(), msg: 'info entry' },
+      { level: 40, time: Date.now(), msg: 'warn entry' },
+      { level: 50, time: Date.now(), msg: 'error entry' },
+    ];
+    await writeFile(logFile, `${entries.map((e) => JSON.stringify(e)).join('\n')}\n`, 'utf8');
+
+    const result = await runCommand(logsCommand, ['logs', '--json', '--level', 'warn']);
+    expect(result.exitCode).toBe(0);
+    // --level is a minimum filter: includes warn (40) and error (50)
+    expect(result.stdout).toContain('"msg":"warn entry"');
+    expect(result.stdout).toContain('"msg":"error entry"');
+    // Excludes info (30), debug (20), trace (10)
+    expect(result.stdout).not.toContain('"msg":"info entry"');
+    expect(result.stdout).not.toContain('"msg":"debug entry"');
+    expect(result.stdout).not.toContain('"msg":"trace entry"');
+  });
+
+  it('--level rejects invalid level', async () => {
+    const entry = { level: 30, time: Date.now(), msg: 'test' };
+    await writeFile(logFile, `${JSON.stringify(entry)}\n`, 'utf8');
+
+    const result = await runCommand(logsCommand, ['logs', '--level', 'invalid']);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('--level must be one of');
+  });
+
+  it('--tail rejects non-numeric value', async () => {
+    const entry = { level: 30, time: Date.now(), msg: 'test' };
+    await writeFile(logFile, `${JSON.stringify(entry)}\n`, 'utf8');
+
+    const result = await runCommand(logsCommand, ['logs', '--tail', 'abc']);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('--tail must be a positive integer');
+  });
+
+  it('--tail rejects zero', async () => {
+    const entry = { level: 30, time: Date.now(), msg: 'test' };
+    await writeFile(logFile, `${JSON.stringify(entry)}\n`, 'utf8');
+
+    const result = await runCommand(logsCommand, ['logs', '--tail', '0']);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('--tail must be a positive integer');
+  });
+
+  it('--tail rejects negative number', async () => {
+    const entry = { level: 30, time: Date.now(), msg: 'test' };
+    await writeFile(logFile, `${JSON.stringify(entry)}\n`, 'utf8');
+
+    const result = await runCommand(logsCommand, ['logs', '--tail', '-5']);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('--tail must be a positive integer');
+  });
+
+  it('pretty-prints INFO level entries', async () => {
+    const entry = { level: 30, time: Date.now(), msg: 'info message' };
+    await writeFile(logFile, `${JSON.stringify(entry)}\n`, 'utf8');
+
+    const result = await runCommand(logsCommand, ['logs']);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('INFO');
+    expect(result.stdout).toContain('info message');
+  });
 });
