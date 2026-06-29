@@ -1,4 +1,5 @@
 import type { paths } from '@octokit/openapi-types';
+import type { ApplicationStatus } from './applications/types.js';
 
 /** Supported calendar providers. */
 export type CalendarProvider = 'ics' | 'outlook' | 'none';
@@ -416,10 +417,7 @@ export interface RenderOwnershipOptions {
    * When provided, the column headers are wrapped with `colorize.bold` and
    * the file column with `colorize.cyan`. Ignored in markdown mode.
    */
-  readonly colorize?: {
-    readonly bold: (text: string) => string;
-    readonly cyan: (text: string) => string;
-  };
+  readonly colorize?: Colorize;
 }
 
 /**
@@ -434,6 +432,47 @@ export interface CampaignListing {
   readonly applicationCount: number;
 }
 
+/**
+ * Stats for a single campaign, derived from `.index.json` and `meta.md`
+ * bodies. Returned by {@link computeStats} in `core/stats.ts`.
+ */
+export interface CampaignStats {
+  /** Total applications counted (after filters). */
+  readonly total: number;
+  /** Counts grouped by lifecycle status. All 8 statuses are present (zero if none). */
+  readonly byStatus: Record<ApplicationStatus, number>;
+  /** Counts grouped by target role slug. Key `''` represents unassigned apps. */
+  readonly byRole: Record<string, number>;
+  /** Counts grouped by site. Key `''` represents apps with no site. */
+  readonly bySite: Record<string, number>;
+  /** Funnel snapshot: applied → interview → offer → accepted. */
+  readonly funnel: {
+    readonly applied: number;
+    readonly interview: number;
+    readonly offer: number;
+    readonly accepted: number;
+  };
+  /** Delta for the current calendar month (UTC). */
+  readonly thisMonth: {
+    readonly applied: number;
+    readonly rejected: number;
+    readonly offer: number;
+    readonly withdrawn: number;
+  };
+  /** Earliest `appliedOn` date in the result set (ISO). Undefined when total is 0. */
+  readonly since?: string;
+}
+
+/**
+ * Options for {@link computeStats} in `core/stats.ts`.
+ */
+export interface StatsOptions {
+  /** Filter by target role slug. */
+  readonly targetRole?: string;
+  /** Filter by date: ISO date string or relative duration (`7d`, `30d`, `90d`). */
+  readonly since?: string;
+}
+
 /** GitHub user profile returned by `GET /users/{username}`. */
 export type GithubUser =
   paths['/users/{username}']['get']['responses'][200]['content']['application/json'];
@@ -446,3 +485,46 @@ export type GithubRepo =
  * Actions available in the target roles review loop during `jho init`.
  */
 export type RoleAction = 'accept' | 'edit' | 'add' | 'delete';
+
+/**
+ * Optional color functions for console output. Each is a
+ * `(text: string) => string` wrapper (e.g. `chalk.bold`).
+ * When provided, the output is colorized. When omitted, plain
+ * text is returned.
+ */
+export interface Colorize {
+  /** Bold styling (used for headers and labels). */
+  readonly bold: (text: string) => string;
+  /** Dim styling (used for percentages and funnel arrows). */
+  readonly dim: (text: string) => string;
+  /** Cyan styling (used for role names and campaign names). */
+  readonly cyan: (text: string) => string;
+  /** Green styling (used for positive deltas and accepted). */
+  readonly green: (text: string) => string;
+  /** Yellow styling (used for interview status). */
+  readonly yellow: (text: string) => string;
+  /** Red styling (used for negative deltas and rejected). */
+  readonly red: (text: string) => string;
+  /** Status-specific colour (applied, interview, offer, etc.). */
+  readonly statusColor: (text: string) => string;
+}
+
+const identity = <T>(t: T) => t;
+const noStyle: Colorize = {
+  bold: identity,
+  dim: identity,
+  cyan: identity,
+  green: identity,
+  yellow: identity,
+  red: identity,
+  statusColor: identity,
+};
+
+/**
+ * Return the given {@link Colorize} or a no-op fallback that
+ * returns plain text.  Callers can use `style.fn(text)` instead of
+ * `colorize ? colorize.fn(text) : text`.
+ */
+export function resolveStyle(colorize?: Colorize): Colorize {
+  return colorize ?? noStyle;
+}

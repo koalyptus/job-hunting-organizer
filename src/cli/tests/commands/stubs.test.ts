@@ -7,7 +7,6 @@ import { retroCommand } from '../../commands/retro.js';
 import { prepareCommand } from '../../commands/prepare.js';
 import { doctorCommand } from '../../commands/doctor.js';
 import { repairCommand } from '../../commands/repair.js';
-import { statsCommand } from '../../commands/stats.js';
 import { helpCommand } from '../../commands/help.js';
 import { mcpCommand } from '../../commands/mcp.js';
 import { profileCommand } from '../../commands/profile.js';
@@ -60,13 +59,6 @@ describe('stub commands exit with correct phase messages', () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain('not implemented yet');
     expect(stderr).toContain('phase 7');
-  });
-
-  it('stats exits with code 1 and mentions phase 5', async () => {
-    const { stderr, exitCode } = await runCommand(statsCommand, ['stats']);
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain('not implemented yet');
-    expect(stderr).toContain('phase 5');
   });
 
   it('help exits with code 1 and mentions phase 4d', async () => {

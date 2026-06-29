@@ -1,6 +1,9 @@
 import { Command } from 'commander';
 import { renderOwnership } from '../../core/ownership.js';
-import { bold, cyan } from '../colors.js';
+import { bold, cyan, dim, green, yellow, red, statusColor } from '../colors.js';
+import type { Colorize } from '../../core/types.js';
+
+const cliColorize: Colorize = { bold, cyan, dim, green, yellow, red, statusColor };
 
 /**
  * `jho ownership [--markdown]` — print the file ownership table.
@@ -12,7 +15,7 @@ export const ownershipCommand = new Command('ownership')
     process.stdout.write(
       renderOwnership({
         markdown: opts.markdown as boolean | undefined,
-        colorize: { bold, cyan },
+        colorize: cliColorize,
       }),
     );
   });

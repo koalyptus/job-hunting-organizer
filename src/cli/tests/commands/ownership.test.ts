@@ -25,9 +25,10 @@ describe('renderOwnership', () => {
   it('applies colorize functions when provided', () => {
     const bold = (s: string) => `${ESC}[1m${s}${ESC}[22m`;
     const cyan = (s: string) => `${ESC}[36m${s}${ESC}[39m`;
+    const noop = (s: string) => s;
     const out = renderOwnership({
       configPath: '/tmp/cfg.json',
-      colorize: { bold, cyan },
+      colorize: { bold, cyan, dim: noop, green: noop, yellow: noop, red: noop, statusColor: noop },
     });
     // Headers are bold
     expect(out).toContain(`${ESC}[1mFile${ESC}[22m`);

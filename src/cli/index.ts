@@ -44,8 +44,7 @@ for (const opt of globalOptions) {
 
 // Initialise colour support before any command action runs
 program.hook('preAction', (thisCommand) => {
-  const parent = thisCommand.parent;
-  const globals = parent?.opts<{ color?: boolean }>() ?? {};
+  const globals = thisCommand.opts<{ color?: boolean }>();
   const configColor = loadGlobalConfig().color;
   initColors(globals.color, configColor);
 });

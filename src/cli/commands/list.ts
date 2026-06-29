@@ -9,25 +9,7 @@ import {
 import { APPLICATION_STATUSES } from '../../core/applications/types.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userSuccess, userError } from '../output.js';
-import { bold, cyan, dim, green, red, yellow } from '../colors.js';
-
-function statusColor(s: string): string {
-  switch (s) {
-    case 'interview':
-      return yellow(s);
-    case 'offer':
-    case 'accepted':
-      return green(s);
-    case 'rejected':
-      return red(s);
-    case 'withdrawn':
-    case 'abandoned':
-    case 'ghosted':
-      return dim(s);
-    default:
-      return s;
-  }
-}
+import { bold, cyan, dim, statusColor } from '../colors.js';
 
 /**
  * `jho list` — list campaigns (no arg) or applications (with --campaign).
