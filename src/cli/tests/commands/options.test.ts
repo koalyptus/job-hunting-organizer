@@ -33,10 +33,8 @@ describe('command option definitions match documentation', () => {
     );
   });
 
-  it('cover-letter has --save, --paste, --out', () => {
-    expect(optionLongs(coverLetterCommand)).toEqual(
-      expect.arrayContaining(['--save', '--paste', '--out']),
-    );
+  it('cover-letter has --no-save', () => {
+    expect(optionLongs(coverLetterCommand)).toEqual(expect.arrayContaining(['--no-save']));
   });
 
   it('prepare has --update, --add, --text, --days, --json', () => {

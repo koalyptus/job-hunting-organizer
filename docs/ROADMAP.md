@@ -29,7 +29,11 @@
   - [ ] 5e — jho list
   - [ ] 5f — core/stats & jho stats
   - [ ] 5g — Tests, docs & polish
-- [ ] **Phase 6** — Cover letter & Q&A
+- [x] **Phase 6** — Cover letter & Q&A
+  - [x] 6a — Cover letter core
+  - [x] 6b — Q&A core
+  - [x] 6c — CLI commands (cover-letter + answer)
+  - [x] 6d — Tests, docs & polish
 - [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro)
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
@@ -350,15 +354,45 @@ Split into sub-phases for incremental delivery.
 
 ## Phase 6 — Cover letter & Q&A generation
 
-**Scope**:
+Split into sub-phases for incremental delivery.
 
-- `core/cover-letter.ts` — `generateCoverLetter(slug)` with backup
-- `core/application-qa.ts` — `answerQuestion(slug, question, image?)`
-- `prompts/cover-letter.md`, `prompts/application-qa.md`
-- `jho cover-letter`, `jho answer` (text + image)
-- Tests
+#### 6a — Cover letter core
 
-**Deliverable**: Cover letters and tailored Q&A answers.
+- `src/core/types.ts` — add `CoverLetterInput`, `CoverLetterResult` interfaces
+- `prompts/cover-letter.md` — Tier 2 prompt (temperature 0.6, refusal detection, 200–600 words)
+- `src/core/cover-letter.ts` — `generateCoverLetter(opts)` orchestrator: reads app + profile + JD, calls LLM, writes `cover-letter.md` with marker-aware `replaceRegion`
+- Tests: happy path, target role matching, missing application, LLM failure, user notes preservation
+
+**Commit**: `feat(cover-letter): core orchestrator with LLM generation and marker-aware write`
+
+#### 6b — Q&A core
+
+- `src/core/types.ts` — add `QaInput`, `QaResult` interfaces
+- `prompts/application-qa.md` — Tier 2 prompt (temperature 0.6, refusal detection, 50–400 words)
+- `src/core/application-qa.ts` — `answerQuestion(opts)` orchestrator: reads app + profile + JD, supports multimodal (images), appends to `qa.md` (append-only H2 sections)
+- Tests: happy path, image question, append to existing, missing application, LLM failure
+
+**Commit**: `feat(qa): core orchestrator with LLM generation and append-only qa.md writer`
+
+#### 6c — CLI commands
+
+- `src/cli/commands/cover-letter.ts` — replace stub: slug or URL, default stdout + save, `--no-save`, `--out`, `--paste`
+- `src/cli/commands/answer.ts` — replace stub: slug + question, default stdout + append, `--no-save`, `--stdin`, `--image`
+- CLI tests, help snapshots updated
+
+**Commit**: `feat(cli): wire jho cover-letter and jho answer commands`
+
+#### 6d — Tests & polish
+
+- Core tests: `cover-letter.test.ts`, `application-qa.test.ts`
+- CLI tests: stub tests updated, option tests updated
+- Help snapshots updated
+- `docs/ROADMAP.md` Phase 6 status checked
+- `AGENTS.md` updated
+
+**Commit**: `test: Phase 6 tests, docs update`
+
+**Deliverable**: `jho cover-letter` generates tailored cover letters. `jho answer` tailors answers to application questions. Both print to stdout and save to the application folder by default.
 
 **Commit**: `feat(generation): cover letter and application Q&A`
 

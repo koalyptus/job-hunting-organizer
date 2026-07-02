@@ -29,6 +29,8 @@ export {
   validateApplicationFrontmatter,
   safeValidateApplicationFrontmatter,
 } from './meta-schema.js';
+export { generateCoverLetter, CoverLetterError } from './cover-letter.js';
+export { answerQuestion, AnswerError } from './application-qa.js';
 export type {
   ApplicationEntry,
   ApplicationStatus,

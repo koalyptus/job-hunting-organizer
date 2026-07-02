@@ -1,4 +1,5 @@
 import type { paths } from '@octokit/openapi-types';
+import type { Logger } from 'pino';
 import type { ApplicationStatus } from './applications/types.js';
 
 /** Supported calendar providers. */
@@ -519,6 +520,68 @@ const noStyle: Colorize = {
   red: identity,
   statusColor: identity,
 };
+
+/**
+ * Options for {@link generateCoverLetter} in `core/cover-letter.ts`.
+ */
+export interface CoverLetterOptions {
+  /** Application slug (resolved by CLI via cwd inference or explicit arg). */
+  readonly slug: string;
+  /** Campaign name. */
+  readonly campaign: string;
+  /** Skip overwrite confirmation prompt. */
+  readonly skipConfirmation?: boolean;
+  /** If true, print to stdout only (skip file write). */
+  readonly noSave?: boolean;
+  /** Optional pino logger. */
+  readonly log?: Logger;
+}
+
+/**
+ * Result of a successful {@link generateCoverLetter} call.
+ */
+export interface CoverLetterResult {
+  /** The generated cover letter markdown content. */
+  readonly content: string;
+  /** Approximate word count. */
+  readonly wordCount: number;
+  /** The model identifier that produced the response. */
+  readonly model: string;
+  /** Wall-clock duration of the LLM request in milliseconds. */
+  readonly durationMs: number;
+}
+
+/**
+ * Options for {@link answerQuestion} in `core/application-qa.ts`.
+ */
+export interface AnswerOptions {
+  /** Application slug (resolved by CLI via cwd inference or explicit arg). */
+  readonly slug: string;
+  /** Campaign name. */
+  readonly campaign: string;
+  /** The question to answer. */
+  readonly question: string;
+  /** Optional image file path (screenshot of the question). */
+  readonly imagePath?: string;
+  /** If true, print to stdout only (skip file write). */
+  readonly noSave?: boolean;
+  /** Optional pino logger. */
+  readonly log?: Logger;
+}
+
+/**
+ * Result of a successful {@link answerQuestion} call.
+ */
+export interface AnswerResult {
+  /** The generated answer text. */
+  readonly answer: string;
+  /** Approximate word count. */
+  readonly wordCount: number;
+  /** The model identifier that produced the response. */
+  readonly model: string;
+  /** Wall-clock duration of the LLM request in milliseconds. */
+  readonly durationMs: number;
+}
 
 /**
  * Return the given {@link Colorize} or a no-op fallback that
