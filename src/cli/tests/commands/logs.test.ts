@@ -23,7 +23,24 @@ describe('logs command', () => {
     } else {
       process.env['JHO_CONFIG_HOME'] = originalConfigHome;
     }
-    await rm(tempDir, { recursive: true, force: true });
+    if (process.platform === 'win32') {
+      // On Windows, the pino file destination may hold the log file open
+      // briefly after the command completes, causing rm to fail with
+      // ENOTEMPTY. Retry with exponential backoff.
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          await rm(tempDir, { recursive: true, force: true });
+          break;
+        } catch (err: unknown) {
+          if (attempt === 4 || (err as NodeJS.ErrnoException).code !== 'ENOTEMPTY') {
+            throw err;
+          }
+          await new Promise((r) => setTimeout(r, 50 * 2 ** attempt));
+        }
+      }
+    } else {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('--path prints the log file location', async () => {
