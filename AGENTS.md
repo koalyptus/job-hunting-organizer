@@ -103,8 +103,8 @@ jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X
 jho list [--status s] [--tag t] [--role <slug>] [--json]
   # list all applications; filters are AND-combined
 jho show [<slug>]       # slug is optional; inferred from cwd if omitted
-jho cover-letter [<slug>|url] [--save] [--paste] [--out <path>]
-                                  # slug optional (cwd inference); url always explicit
+jho cover-letter [<slug>] [--no-save]
+                                  # slug optional (cwd inference)
 jho cover-letter show [<slug>]   # display existing cover letter
 jho answer  [<slug>] "<question>" | --image <path> | --stdin
                                   # slug optional (cwd inference)

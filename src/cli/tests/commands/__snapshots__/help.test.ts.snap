@@ -70,12 +70,12 @@ Options:
 `;
 
 exports[`command --help output > cover-letter has consistent help output 1`] = `
-"Usage: cover-letter [options] [command] [slugOrUrl]
+"Usage: cover-letter [options] [command] [slug]
 
 Generate or show cover letters (slug inferred from cwd if omitted)
 
 Arguments:
-  slugOrUrl    application slug or job posting URL
+  slug         application slug
 
 Options:
   --no-save    print to stdout only (skip file write)

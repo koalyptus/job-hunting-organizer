@@ -376,7 +376,7 @@ Split into sub-phases for incremental delivery.
 
 #### 6c — CLI commands
 
-- `src/cli/commands/cover-letter.ts` — replace stub: slug or URL, default stdout + save, `--no-save`, `--out`, `--paste`
+- `src/cli/commands/cover-letter.ts` — replace stub: slug, default stdout + save, `--no-save`
 - `src/cli/commands/answer.ts` — replace stub: slug + question, default stdout + append, `--no-save`, `--stdin`, `--image`
 - CLI tests, help snapshots updated
 

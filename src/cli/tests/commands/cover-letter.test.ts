@@ -6,10 +6,6 @@ import { clearConfigCache } from '../../../core/config.js';
 import { runCommand } from '../helpers.js';
 import { coverLetterCommand } from '../../commands/cover-letter.js';
 import * as coverLetterCore from '../../../core/applications/cover-letter.js';
-import * as urlModule from '../../../core/url.js';
-import * as extractModule from '../../../core/jobs/extract.js';
-import * as profileModule from '../../../core/profile.js';
-import * as llmModule from '../../../core/llm.js';
 import { CoverLetterError } from '../../../core/applications/cover-letter.js';
 
 vi.mock('../../../core/applications/cover-letter.js', async (importOriginal) => {
@@ -19,35 +15,6 @@ vi.mock('../../../core/applications/cover-letter.js', async (importOriginal) => 
     generateCoverLetter: vi.fn(),
   };
 });
-
-vi.mock('../../../core/url.js', () => ({
-  isUrl: vi.fn(),
-}));
-
-vi.mock('../../../core/jobs/extract.js', () => ({
-  extractJdFromUrl: vi.fn(),
-}));
-
-vi.mock('../../../core/profile.js', () => ({
-  readProfile: vi.fn(),
-}));
-
-vi.mock('../../../core/llm.js', () => ({
-  defaultLlmConfig: vi.fn(() => ({
-    baseUrl: 'http://localhost:11434/v1',
-    apiKey: 'test-key',
-    model: 'test-model',
-    timeoutMs: 300_000,
-  })),
-  chatComplete: vi.fn(),
-}));
-
-vi.mock('../../../core/prompts.js', () => ({
-  loadPromptTemplate: vi.fn(async () => ({
-    body: 'You are a cover letter writer.',
-    temperature: 0.6,
-  })),
-}));
 
 vi.mock('../../../core/spinner.js', () => ({
   withSpinner: vi.fn((_msg: string, _success: string, fn: () => Promise<unknown>) => fn()),
@@ -97,9 +64,6 @@ describe('cover-letter command', () => {
         knowledgeBase: { dir: '' },
       }),
     );
-
-    // Set up default mocks
-    vi.mocked(urlModule.isUrl).mockReturnValue(false);
   });
 
   afterEach(async () => {
@@ -175,69 +139,6 @@ describe('cover-letter command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Cover letter content.');
       expect(stderr).not.toContain('cover-letter.md written');
-    });
-  });
-
-  describe('URL mode', () => {
-    it('generates cover letter from URL', async () => {
-      vi.mocked(urlModule.isUrl).mockReturnValue(true);
-      vi.mocked(extractModule.extractJdFromUrl).mockResolvedValue({
-        title: 'Software Engineer',
-        company: 'Acme Corp',
-        location: 'Remote',
-        description: 'Job description here.',
-      });
-      vi.mocked(profileModule.readProfile).mockResolvedValue('# Profile\n\nExperienced engineer.');
-      vi.mocked(llmModule.chatComplete).mockResolvedValue({
-        content: 'Dear Acme Corp,\n\nI am interested...',
-        model: 'test-model',
-        usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
-        finishReason: 'stop',
-        durationMs: 100,
-      });
-
-      const { stdout, exitCode } = await runCommand(coverLetterCommand, [
-        'cover-letter',
-        'https://example.com/job/123',
-      ]);
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toContain('Dear Acme Corp');
-      expect(extractModule.extractJdFromUrl).toHaveBeenCalled();
-      expect(profileModule.readProfile).toHaveBeenCalled();
-      expect(llmModule.chatComplete).toHaveBeenCalled();
-    });
-
-    it('exits with error when JD fetch fails', async () => {
-      vi.mocked(urlModule.isUrl).mockReturnValue(true);
-      vi.mocked(extractModule.extractJdFromUrl).mockRejectedValue(new Error('Failed to fetch JD'));
-
-      const { stderr, exitCode } = await runCommand(coverLetterCommand, [
-        'cover-letter',
-        'https://example.com/job/123',
-      ]);
-
-      expect(exitCode).toBe(1);
-      expect(stderr).toContain('Failed to fetch JD');
-    });
-
-    it('exits with error when profile read fails', async () => {
-      vi.mocked(urlModule.isUrl).mockReturnValue(true);
-      vi.mocked(extractModule.extractJdFromUrl).mockResolvedValue({
-        title: 'Software Engineer',
-        company: 'Acme Corp',
-        location: 'Remote',
-        description: 'Job description here.',
-      });
-      vi.mocked(profileModule.readProfile).mockRejectedValue(new Error('Profile not found'));
-
-      const { stderr, exitCode } = await runCommand(coverLetterCommand, [
-        'cover-letter',
-        'https://example.com/job/123',
-      ]);
-
-      expect(exitCode).toBe(1);
-      expect(stderr).toContain('Profile not found');
     });
   });
 
