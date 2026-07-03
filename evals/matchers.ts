@@ -10,6 +10,8 @@
  */
 import { expect } from 'vitest';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { getConfig } from '../src/core/config.js';
+import { chatComplete } from '../src/core/llm.js';
 
 /**
  * Timeout for eval tests that make LLM calls. Centralized so you only
@@ -36,7 +38,6 @@ async function resolveLlmConfig(): Promise<{
   timeoutMs: number;
 }> {
   try {
-    const { getConfig } = await import('../src/core/config.js');
     const cfg = getConfig();
     const llm = cfg.global.llm;
     if (llm?.baseUrl && llm?.model) {
@@ -94,8 +95,6 @@ Rubric:
     { role: 'user', content: userMessage },
   ];
 
-  // Import chatComplete dynamically to avoid circular deps
-  const { chatComplete } = await import('../src/core/llm.js');
   const result = await chatComplete(messages, config, { temperature: 0.1 });
 
   // Parse the JSON response

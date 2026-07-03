@@ -12,6 +12,9 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { loadCases } from './cases.js';
+import { loadPromptTemplate } from '../../src/core/prompts.js';
+import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
+import { isRefusal } from '../../src/core/generation-utils.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -55,10 +58,6 @@ async function generate(opts: {
   profile: string;
   targetRole?: string;
 }): Promise<string> {
-  const { loadPromptTemplate } = await import('../../src/core/prompts.js');
-  const { chatComplete } = await import('../../src/core/llm.js');
-  const { defaultLlmConfig } = await import('../../src/core/llm.js');
-
   const prompt = await loadPromptTemplate('cover-letter');
 
   const userMessage = `--- Job description ---\n${opts.jd}\n\n--- Candidate profile ---\n${opts.profile}${opts.targetRole ? `\n\n--- Target role ---\n${opts.targetRole}` : ''}`;
@@ -72,26 +71,6 @@ async function generate(opts: {
   const result = await chatComplete(messages, config, { temperature: 0.3 });
 
   return result.content;
-}
-
-/**
- * Refusal detection — matches the production isRefusal in generation-utils.ts.
- */
-function isRefusal(text: string): boolean {
-  const lower = text.toLowerCase();
-  return (
-    lower.includes('i cannot') ||
-    lower.includes("i can't") ||
-    lower.includes("i'm unable") ||
-    lower.includes('i am unable') ||
-    lower.includes('profile is empty') ||
-    lower.includes('profile missing') ||
-    lower.includes('no profile provided') ||
-    lower.includes('no candidate profile') ||
-    lower.includes("i don't have access to your profile") ||
-    lower.includes('i cannot generate') ||
-    lower.includes('unable to generate')
-  );
 }
 
 describe('cover letter eval', () => {

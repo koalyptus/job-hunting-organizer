@@ -23,9 +23,18 @@ export function extractJdContent(jdContent: string): string {
  */
 export const REFUSAL_PATTERNS: readonly RegExp[] = [
   /I cannot/i,
+  /I can't/i,
+  /I'm unable/i,
+  /I am unable/i,
   /I'm just an AI/i,
   /as a language model/i,
   /as an AI assistant/i,
+  /profile is empty/i,
+  /profile missing/i,
+  /no profile provided/i,
+  /no candidate profile/i,
+  /I don't have access to your profile/i,
+  /unable to generate/i,
 ];
 
 /**

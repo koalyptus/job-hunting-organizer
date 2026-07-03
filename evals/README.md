@@ -139,13 +139,9 @@ Before trusting the LLM judge, calibrate against human labels:
 
 ## Troubleshooting
 
-### promptfoo not found
+### LLM evals timing out
 
-The LLM-based evals require `promptfoo`. Install it:
-
-```sh
-npm install --save-dev promptfoo
-```
+Each eval test makes 2+ LLM calls (generation + judging). If your local LLM is slow, increase the timeout in `evals/matchers.ts` (`EVAL_TIMEOUT_MS`, default 10 minutes).
 
 ### Evals running in CI
 
