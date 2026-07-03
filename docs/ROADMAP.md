@@ -34,6 +34,7 @@
   - [x] 6b — Q&A core
   - [x] 6c — CLI commands (cover-letter + answer)
   - [x] 6d — Tests, docs & polish
+  - [ ] 6e — Steer: custom LLM instructions per command
 - [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro)
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
@@ -395,6 +396,24 @@ Split into sub-phases for incremental delivery.
 **Deliverable**: `jho cover-letter` generates tailored cover letters. `jho answer` tailors answers to application questions. Both print to stdout and save to the application folder by default.
 
 **Commit**: `feat(generation): cover letter and application Q&A`
+
+#### 6e — Steer: custom LLM instructions per command
+
+- `src/core/types.ts` — add `steer?: string` to `CoverLetterOptions`, `AnswerOptions`
+- `src/core/markers.ts` — add `extractSteer()` and `replaceSteer()` helpers for `<!-- jho:steer: -->` markers
+- `src/core/track/track.ts` — add `steer?: string` to `TrackOptions`, `ConfirmAndCreateOptions`; write steer to `jd.md` marker
+- `src/core/applications/cover-letter.ts` — read steer from `cover-letter.md`, combine with CLI steer, append `## Additional instructions` to user message, write back
+- `src/core/applications/application-qa.ts` — use steer in user message, write `- Steer:` line to `qa.md` entry
+- `src/cli/commands/track.ts` — add `--steer <text>` option
+- `src/cli/commands/cover-letter.ts` — add `--steer <text>` option
+- `src/cli/commands/answer.ts` — add `--steer <text>` option
+- `prompts/cover-letter.md` — add rule: follow additional instructions when present
+- `prompts/application-qa.md` — add rule: follow additional instructions when present
+- Tests: steer marker extraction/replacement, steer in user message, steer in qa.md entry, CLI option parsing
+
+**Commit**: `feat(steer): custom LLM instructions per command`
+
+**Deliverable**: `jho track --steer` stores JD instructions in `jd.md`. `jho cover-letter --steer` customizes cover letter generation. `jho answer --steer` customizes per-question answers.
 
 ---
 

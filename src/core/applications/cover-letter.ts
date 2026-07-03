@@ -14,7 +14,7 @@ import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../profile.js';
 import { parseTargetRoles } from '../target-roles.js';
 import { readApplication } from './applications.js';
-import { replaceRegion } from '../markers.js';
+import { replaceRegion, extractSteer, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
@@ -98,11 +98,19 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
     ].join('\n');
   }
 
+  // Read existing cover-letter.md to extract stored steer
+  const coverLetterPath = join(appFolder, 'cover-letter.md');
+  const existingCoverLetter = await readFile(coverLetterPath, 'utf8').catch(() => '');
+  const existingSteer = extractSteer(existingCoverLetter);
+
+  // Use provided steer or fall back to existing steer
+  const steer = opts.steer ?? existingSteer;
+
   // Load prompt
   const { body: systemPrompt, temperature } = await loadPromptTemplate(PROMPT_NAME);
 
   // Build user message
-  const userMessage = [
+  const messageParts = [
     '## Job description',
     '',
     `Title: ${frontmatter.title}`,
@@ -122,7 +130,23 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
     '## Target role',
     '',
     roleSummary,
-  ].join('\n');
+  ];
+
+  // Add steer section if present
+  if (steer) {
+    messageParts.push(
+      '',
+      '---',
+      '',
+      '## Additional instructions',
+      '',
+      'Follow these instructions as priority:',
+      '',
+      steer,
+    );
+  }
+
+  const userMessage = messageParts.join('\n');
 
   // Call LLM
   let result;
@@ -152,14 +176,18 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
 
   // Write to cover-letter.md (skip if noSave)
   if (!opts.noSave) {
-    const coverLetterPath = join(appFolder, 'cover-letter.md');
     await acquireLock(appFolder, async () => {
-      const existingContent = await readFile(coverLetterPath, 'utf8').catch(() => '');
-      const newContent = replaceRegion(existingContent, 'cover-letter', content, {
+      let fileContent = await readFile(coverLetterPath, 'utf8').catch(() => '');
+      fileContent = replaceRegion(fileContent, 'cover-letter', content, {
         createIfMissing: true,
       });
 
-      const written = await atomicWrite(coverLetterPath, newContent);
+      // Write steer marker if steer was provided (overwrites existing)
+      if (opts.steer !== undefined) {
+        fileContent = replaceSteer(fileContent, opts.steer);
+      }
+
+      const written = await atomicWrite(coverLetterPath, fileContent);
       if (!written) {
         throw new CoverLetterError(`Failed to write cover-letter.md`);
       }

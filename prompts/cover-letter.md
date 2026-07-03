@@ -54,3 +54,6 @@ The cover letter must:
    "I am excited to", "I am confident that". Instead, state concrete facts and let
    the reader draw their own conclusions. Compare "I built X that handled Y requests/sec"
    to "I am passionate about building high-performance systems".
+9. **Additional instructions.** When an "Additional instructions" section is present
+   in the user message, follow those instructions as priority. They may refine tone,
+   emphasis, length, or content focus.

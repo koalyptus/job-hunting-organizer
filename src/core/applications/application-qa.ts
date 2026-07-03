@@ -60,7 +60,7 @@ function resolveSource(imagePath?: string): string {
  * @throws {AnswerError} on generation failure.
  */
 export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult> {
-  const { slug, campaign, question, imagePath, log } = opts;
+  const { slug, campaign, question, imagePath, steer, log } = opts;
 
   const campaignRoot = resolveCampaignRoot(campaign);
   const appliedDir = resolveAppliedDir(campaignRoot);
@@ -99,6 +99,43 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
   // Load prompt
   const { body: systemPrompt, temperature } = await loadPromptTemplate(PROMPT_NAME);
 
+  // Build message parts with steer
+  const messageParts = [
+    '## Job description',
+    '',
+    `Title: ${frontmatter.title}`,
+    `Company: ${frontmatter.company}`,
+    `Location: ${frontmatter.location}`,
+    '',
+    jdText,
+    '',
+    '---',
+    '',
+    '## Candidate profile',
+    '',
+    profile,
+    '',
+    '---',
+    '',
+    '## Question',
+    '',
+    question,
+  ];
+
+  // Add steer section if present
+  if (steer) {
+    messageParts.push(
+      '',
+      '---',
+      '',
+      '## Additional instructions',
+      '',
+      'Follow these instructions as priority:',
+      '',
+      steer,
+    );
+  }
+
   // Build messages (support multimodal for images)
   const messages: ChatCompletionMessageParam[] = [{ role: 'system', content: systemPrompt }];
 
@@ -127,27 +164,7 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
       content: [
         {
           type: 'text',
-          text: [
-            '## Job description',
-            '',
-            `Title: ${frontmatter.title}`,
-            `Company: ${frontmatter.company}`,
-            `Location: ${frontmatter.location}`,
-            '',
-            jdText,
-            '',
-            '---',
-            '',
-            '## Candidate profile',
-            '',
-            profile,
-            '',
-            '---',
-            '',
-            '## Question',
-            '',
-            question,
-          ].join('\n'),
+          text: messageParts.join('\n'),
         },
         {
           type: 'image_url',
@@ -160,27 +177,7 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
   } else {
     messages.push({
       role: 'user',
-      content: [
-        '## Job description',
-        '',
-        `Title: ${frontmatter.title}`,
-        `Company: ${frontmatter.company}`,
-        `Location: ${frontmatter.location}`,
-        '',
-        jdText,
-        '',
-        '---',
-        '',
-        '## Candidate profile',
-        '',
-        profile,
-        '',
-        '---',
-        '',
-        '## Question',
-        '',
-        question,
-      ].join('\n'),
+      content: messageParts.join('\n'),
     });
   }
 
@@ -214,6 +211,7 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
       `## ${timestamp} — "${question}" [${imageLabel}]`,
       '',
       `- Source: ${source}`,
+      ...(steer ? [`- Steer: ${steer}`] : []),
       `- Answer:`,
       `  > ${answer.split('\n').join('\n  > ')}`,
       '',

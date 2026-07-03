@@ -44,6 +44,12 @@ const END_LINE_RE = /^<!-- jho:end:([a-z0-9-]+) -->\s*$/;
 const SECTION_LINE_RE = /^<!-- jho:([a-z0-9-]+) [^>]+-->\s*$/;
 
 /**
+ * Matches a steer marker line: `<!-- jho:steer: ... -->`.
+ * Group 1 is the steer text (trimmed).
+ */
+const STEER_LINE_RE = /^<!-- jho:steer: (.+?) -->\s*$/;
+
+/**
  * Thrown when a document contains malformed marker regions (mismatched
  * start/end names, end without start, or unclosed start markers).
  */
@@ -192,4 +198,67 @@ export function findSectionMarker(
     }
   }
   return null;
+}
+
+/**
+ * Extract the steer instruction from a file's content. Looks for a
+ * `<!-- jho:steer: ... -->` marker line and returns the text.
+ * @param content - The full file content.
+ * @returns The steer text, or an empty string if no steer marker is found.
+ */
+export function extractSteer(content: string): string {
+  const lines = content.split(/\r?\n/);
+  for (const line of lines) {
+    const m = line.match(STEER_LINE_RE);
+    if (m) {
+      return m[1] ?? '';
+    }
+  }
+  return '';
+}
+
+/**
+ * Replace or insert a steer marker in a file's content. If a steer
+ * marker already exists, it is replaced. If not, the marker is inserted
+ * after the first `jho:end:...` marker found, or at the end of the
+ * file if no region markers exist.
+ *
+ * When `steer` is empty, the existing steer marker is removed.
+ *
+ * @param content - The full file content.
+ * @param steer - The new steer text. Empty string removes the marker.
+ * @returns The rewritten file content.
+ */
+export function replaceSteer(content: string, steer: string): string {
+  const lines = content.split(/\r?\n/);
+
+  // Find existing steer line
+  const steerIdx = lines.findIndex((l) => STEER_LINE_RE.test(l));
+
+  if (steer === '') {
+    // Remove existing steer marker
+    if (steerIdx !== -1) {
+      lines.splice(steerIdx, 1);
+    }
+    return lines.join('\n');
+  }
+
+  const newSteerLine = `<!-- jho:steer: ${steer} -->`;
+
+  if (steerIdx !== -1) {
+    // Replace existing steer marker
+    lines[steerIdx] = newSteerLine;
+    return lines.join('\n');
+  }
+
+  // Insert after the first jho:end:... marker
+  const endIdx = lines.findIndex((l) => END_LINE_RE.test(l));
+  if (endIdx !== -1) {
+    lines.splice(endIdx + 1, 0, newSteerLine);
+    return lines.join('\n');
+  }
+
+  // No region markers — append at the end
+  const trimmed = content.replace(/\s*$/, '');
+  return `${trimmed}\n${newSteerLine}\n`;
 }

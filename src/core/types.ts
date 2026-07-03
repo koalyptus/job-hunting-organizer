@@ -533,6 +533,12 @@ export interface CoverLetterOptions {
   readonly skipConfirmation?: boolean;
   /** If true, print to stdout only (skip file write). */
   readonly noSave?: boolean;
+  /**
+   * Custom instructions for the LLM. When provided, overwrites any
+   * existing steer in `cover-letter.md`. When omitted, the existing
+   * steer (if any) is preserved.
+   */
+  readonly steer?: string;
   /** Optional pino logger. */
   readonly log?: Logger;
 }
@@ -563,6 +569,11 @@ export interface AnswerOptions {
   readonly question: string;
   /** Optional image file path (screenshot of the question). */
   readonly imagePath?: string;
+  /**
+   * Custom instructions for the LLM. Stored with the Q&A entry
+   * in `qa.md` for reference. Each answer has its own steer.
+   */
+  readonly steer?: string;
   /** If true, print to stdout only (skip file write). */
   readonly noSave?: boolean;
   /** Optional pino logger. */

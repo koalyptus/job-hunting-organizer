@@ -39,6 +39,7 @@ export const trackCommand = new Command('track')
   .option('--tag <tag>', 'add a tag (repeatable)', collectTags, [])
   .option('--note <text>', 'add a note')
   .option('--target-role <role>', 'target role for the application')
+  .option('--steer <text>', 'instructions to guide the LLM output')
   .option('--refresh', 're-fetch job description from stored URL')
   .option('-y, --yes', 'skip confirmation prompts')
   .action(async function (urlOrSlug: string | undefined, opts) {
@@ -113,6 +114,7 @@ Next steps:
           tags: (opts.tag as string[] | undefined) ?? [],
           note: opts.note as string | undefined,
           targetRole: opts.targetRole as string | undefined,
+          steer: opts.steer as string | undefined,
           yes: opts.yes as boolean | undefined,
         });
 
@@ -152,6 +154,7 @@ Next steps:
               tags: (opts.tag as string[] | undefined) ?? [],
               note: opts.note as string | undefined,
               targetRole: opts.targetRole as string | undefined,
+              steer: opts.steer as string | undefined,
               yes: opts.yes as boolean | undefined,
             }),
           'Failed',

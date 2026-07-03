@@ -413,6 +413,141 @@ describe('answerQuestion', () => {
       }
     }
   });
+
+  it('includes steer in the user message when provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Answer with steer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Tell me about your experience.',
+      steer: 'Focus on TypeScript projects only',
+    });
+
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user')?.content ?? '';
+    expect(userMessage).toContain('## Additional instructions');
+    expect(userMessage).toContain('Focus on TypeScript projects only');
+  });
+
+  it('writes steer line to qa.md entry when steer is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Answer with steer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Tell me about your experience.',
+      steer: 'Emphasize React skills',
+    });
+
+    const qaContent = await readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'qa.md'), 'utf8');
+    expect(qaContent).toContain('- Steer: Emphasize React skills');
+  });
+
+  it('does not write steer line when no steer is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Answer without steer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Tell me about your experience.',
+    });
+
+    const qaContent = await readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'qa.md'), 'utf8');
+    expect(qaContent).not.toContain('- Steer:');
+  });
+
+  it('does not include Additional instructions section when no steer is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Answer without steer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Tell me about your experience.',
+    });
+
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user')?.content ?? '';
+    expect(userMessage).not.toContain('## Additional instructions');
+  });
+
+  it('each answer stores its own steer independently', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // First answer with steer
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'First answer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'First question?',
+      steer: 'First steer',
+    });
+
+    // Second answer with different steer
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Second answer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Second question?',
+      steer: 'Second steer',
+    });
+
+    const qaContent = await readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'qa.md'), 'utf8');
+    expect(qaContent).toContain('- Steer: First steer');
+    expect(qaContent).toContain('- Steer: Second steer');
+  });
 });
 
 describe('readQa', () => {

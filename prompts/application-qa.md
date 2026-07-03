@@ -47,3 +47,6 @@ The answer must:
    short explanation of what's missing instead of an answer.
 6. Do not fabricate company-specific information unless it is present in the JD text.
 7. Do not include the candidate's name or contact info — the caller adds those.
+8. **Additional instructions.** When an "Additional instructions" section is present
+   in the user message, follow those instructions as priority. They may refine tone,
+   emphasis, or content focus.

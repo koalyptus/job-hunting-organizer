@@ -13,6 +13,7 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { isUrl } from '../url.js';
 import { getConfig } from '../config.js';
 import { defaultLlmConfig } from '../llm.js';
+import { moduleLogger } from '../logger/logger.js';
 import { readProfile } from '../profile.js';
 import { parseTargetRoles } from '../target-roles.js';
 import { extractJdFromUrl, extractJdFromText } from '../jobs/extract.js';
@@ -29,8 +30,10 @@ import type { ExtractedJd, RoleSuggestion } from '../jobs/types.js';
 import { APPLICATION_STATUSES } from '../applications/types.js';
 import type { ApplicationStatus } from '../applications/types.js';
 import type { TargetRole } from '../types.js';
-import { replaceRegion } from '../markers.js';
+import { replaceRegion, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
+
+const log = moduleLogger(import.meta.url);
 
 /**
  * Unified options for {@link runTrack}. The function determines
@@ -58,6 +61,11 @@ interface TrackOptions {
   targetRole?: string;
   /** Note to append to jd.md. */
   note?: string;
+  /**
+   * Custom LLM instructions for JD extraction. When provided, overwrites
+   * any existing steer in `jd.md`.
+   */
+  steer?: string;
   /** Skip confirmation prompts. */
   yes?: boolean;
   /** Re-fetch JD from stored URL (update mode). */
@@ -92,14 +100,34 @@ export function hasTrackUpdateFlags(opts: {
   tag?: string[] | undefined;
   note?: unknown;
   targetRole?: unknown;
+  steer?: unknown;
 }): boolean {
   return (
     opts.status !== undefined ||
     opts.salary !== undefined ||
     (opts.tag !== undefined && opts.tag.length > 0) ||
     opts.note !== undefined ||
-    opts.targetRole !== undefined
+    opts.targetRole !== undefined ||
+    opts.steer !== undefined
   );
+}
+
+/**
+ * Write a steer marker to the application's jd.md file. This is a
+ * shared helper used by the three code paths that write steer:
+ * confirmAndCreate, runTrackCreate, and runTrackUpdate.
+ */
+async function writeSteerToJd(appliedDir: string, slug: string, steer: string): Promise<void> {
+  const appFolder = join(appliedDir, slug);
+  const jdPath = join(appFolder, 'jd.md');
+  let jdContent = '';
+  try {
+    jdContent = await readFile(jdPath, 'utf8');
+  } catch (err) {
+    log.debug({ slug, err }, 'jd.md not found when writing steer; creating fresh file');
+  }
+  const updatedJd = replaceSteer(jdContent, steer);
+  await atomicWrite(jdPath, updatedJd);
 }
 
 /**
@@ -136,6 +164,11 @@ export interface ConfirmAndCreateOptions {
   targetRole?: string;
   /** Note to append to jd.md. */
   note?: string;
+  /**
+   * Custom LLM instructions for JD extraction. When provided, overwrites
+   * any existing steer in `jd.md`.
+   */
+  steer?: string;
   /** Skip confirmation prompt. */
   yes?: boolean;
 }
@@ -295,6 +328,7 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
     tags,
     targetRole,
     note,
+    steer,
     yes,
   } = opts;
 
@@ -329,6 +363,11 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
     await appendNote(appliedDir, slug, note);
   }
 
+  // Write steer to jd.md if provided
+  if (steer) {
+    await writeSteerToJd(appliedDir, slug, steer);
+  }
+
   return slug;
 }
 
@@ -336,7 +375,7 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
  * Run the track-create workflow: extract JD → suggest role → confirm → create.
  */
 async function runTrackCreate(opts: TrackOptions): Promise<string> {
-  const { campaign, url, text, status, salary, tags, targetRole, note, yes, log } = opts;
+  const { campaign, url, text, status, salary, tags, targetRole, note, steer, yes, log } = opts;
 
   if (!url && !text) {
     throw new TrackError('No URL or text provided');
@@ -413,6 +452,11 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
     await appendNote(appliedDir, slug, note);
   }
 
+  // Write steer to jd.md if provided
+  if (steer) {
+    await writeSteerToJd(appliedDir, slug, steer);
+  }
+
   return slug;
 }
 
@@ -425,7 +469,7 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
  * "no changes to apply".
  */
 async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
-  const { campaign, slug, status, salary, tags, targetRole, note, yes } = opts;
+  const { campaign, slug, status, salary, tags, targetRole, note, steer, yes } = opts;
 
   if (!slug) {
     throw new TrackError('missing slug');
@@ -465,6 +509,7 @@ async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
     patch.tags !== undefined,
     patch.targetRole !== undefined,
     note !== undefined,
+    steer !== undefined,
   ].some(Boolean);
 
   if (!hasChanges) {
@@ -485,6 +530,9 @@ async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
     if (note) {
       changes.push(`note +${note}`);
     }
+    if (steer !== undefined) {
+      changes.push(`steer → ${steer}`);
+    }
     const confirmed = await confirmTrackUpdate(slug, frontmatter.status, changes);
     if (!confirmed) {
       throw new TrackCancelled();
@@ -497,6 +545,11 @@ async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
   // Append note if provided
   if (note) {
     await appendNote(appliedDir, slug, note);
+  }
+
+  // Write steer to jd.md if provided
+  if (steer) {
+    await writeSteerToJd(appliedDir, slug, steer);
   }
 
   return { slug, changed: true };

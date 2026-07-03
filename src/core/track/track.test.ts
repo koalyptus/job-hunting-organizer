@@ -12,7 +12,7 @@ import {
   appendNote,
 } from '../applications/applications.js';
 import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
-import { replaceRegion } from '../markers.js';
+import { replaceRegion, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
 import type { ApplicationFrontmatter } from '../applications/types.js';
 
@@ -65,6 +65,7 @@ vi.mock('../markers.js', () => ({
     (_content, _name, newContent) =>
       `<!-- jho:start:fetched-jd -->\n${newContent}\n<!-- jho:end:fetched-jd -->`,
   ),
+  replaceSteer: vi.fn((_content, steer) => (steer ? `<!-- jho:steer: ${steer} -->` : '')),
 }));
 
 vi.mock('../fs.js', () => ({
@@ -882,5 +883,61 @@ describe('runTrackRefresh', () => {
         yes: true,
       }),
     ).rejects.toThrow('failed to write jd.md');
+  });
+});
+
+describe('steer functionality', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('writes steer to jd.md via replaceSteer in create mode', async () => {
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'desc',
+    });
+
+    await runTrack({
+      campaign: 'default',
+      url: 'https://example.com/job/123',
+      steer: 'Focus on remote roles',
+      yes: true,
+    });
+
+    expect(replaceSteer).toHaveBeenCalledWith(expect.any(String), 'Focus on remote roles');
+  });
+
+  it('writes steer to jd.md via replaceSteer in update mode', async () => {
+    await runTrack({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      steer: 'Updated steer instructions',
+      yes: true,
+    });
+
+    expect(replaceSteer).toHaveBeenCalledWith(expect.any(String), 'Updated steer instructions');
+  });
+
+  it('does not call replaceSteer when steer is undefined', async () => {
+    await runTrack({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      yes: true,
+    });
+
+    expect(replaceSteer).not.toHaveBeenCalled();
+  });
+
+  it('considers steer as a change in update mode', async () => {
+    await runTrack({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      steer: 'New steer',
+      yes: true,
+    });
+
+    expect(updateApplication).toHaveBeenCalled();
   });
 });
