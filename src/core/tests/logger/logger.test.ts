@@ -1,13 +1,12 @@
 import { Writable } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import type { Logger } from 'pino';
 import { DEFAULT_LOG_FILENAME } from '../../types.js';
 import {
   childLogger,
-  closeLogger,
   createLogger,
   defaultLoggerConfig,
   getRootLogger,
@@ -17,6 +16,7 @@ import {
   setRootLogger,
 } from '../../logger/logger.js';
 import { resolveConfigHome } from '../../paths.js';
+import { cleanupTempDir } from '../cleanup.js';
 
 function silentWritable(): Writable {
   const w = new Writable({
@@ -182,11 +182,7 @@ describe('createLogger - file output', () => {
   });
 
   afterEach(() => {
-    for (const log of loggers) {
-      closeLogger(log);
-    }
-    loggers.length = 0;
-    return rm(tempDir, { recursive: true, force: true });
+    return cleanupTempDir(tempDir, [...loggers]);
   });
 
   it('writes to file when file path provided', () => {

@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import pino from 'pino';
 import { DEFAULT_LOG_FILENAME } from '../../../core/types.js';
-import { closeLogger, getRootLogger, setRootLogger } from '../../../core/logger/logger.js';
+import { cleanupTempDir } from '../../../core/tests/cleanup.js';
+import { getRootLogger, setRootLogger } from '../../../core/logger/logger.js';
 import { logsCommand } from '../../commands/logs.js';
 import { runCommand } from '../helpers.js';
 
@@ -25,18 +26,11 @@ describe('logs command', () => {
     } else {
       process.env['JHO_CONFIG_HOME'] = originalConfigHome;
     }
-    // Close the pino file destination before rm — on Windows, the open
-    // file handle prevents directory deletion (EPERM / ENOTEMPTY).
-    // Only close if the logger has a file destination (not stdout).
+    // Close the pino file destination held by the root logger singleton
+    // before rm — on Windows Node 20, the open handle prevents deletion.
     const old = getRootLogger();
-    const stream = (old as unknown as Record<symbol, unknown>)[pino.symbols.streamSym] as
-      | { file?: string | null }
-      | undefined;
     setRootLogger(pino({ level: 'silent' }));
-    if (stream?.file != null) {
-      closeLogger(old);
-    }
-    await rm(tempDir, { recursive: true, force: true });
+    await cleanupTempDir(tempDir, [old]);
   });
 
   it('--path prints the log file location', async () => {
