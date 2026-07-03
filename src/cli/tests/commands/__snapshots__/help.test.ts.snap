@@ -15,9 +15,10 @@ Options:
 `;
 
 exports[`command --help output > answer has consistent help output 1`] = `
-"Usage: answer [options] [slug] [question]
+"Usage: answer [options] [command] [slug] [question]
 
-Tailor an answer to a question (slug inferred from cwd if omitted)
+Generate or show answers to application questions (slug inferred from cwd if
+omitted)
 
 Arguments:
   slug            application slug (inferred from cwd if omitted)
@@ -26,7 +27,11 @@ Arguments:
 Options:
   --image <path>  include a screenshot or image
   --stdin         read the question from stdin
+  --no-save       print to stdout only (skip file write)
   -h, --help      display help for command
+
+Commands:
+  show [slug]     Show existing Q&A entries (slug inferred from cwd if omitted)
 "
 `;
 
@@ -65,18 +70,19 @@ Options:
 `;
 
 exports[`command --help output > cover-letter has consistent help output 1`] = `
-"Usage: cover-letter [options] [slugOrUrl]
+"Usage: cover-letter [options] [command] [slug]
 
-Generate a tailored cover letter (slug inferred from cwd if omitted)
+Generate or show cover letters (slug inferred from cwd if omitted)
 
 Arguments:
-  slugOrUrl     application slug or job posting URL
+  slug         application slug
 
 Options:
-  --save        save to cover-letter.md in the application folder
-  --paste       copy to clipboard
-  --out <path>  write to a file
-  -h, --help    display help for command
+  --no-save    print to stdout only (skip file write)
+  -h, --help   display help for command
+
+Commands:
+  show [slug]  Show an existing cover letter (slug inferred from cwd if omitted)
 "
 `;
 

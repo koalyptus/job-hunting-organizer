@@ -13,6 +13,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export interface TargetRolesCase {
   /** Human-readable test name. */
   readonly name: string;
+  /** Why this case exists — what edge behavior it covers. */
+  readonly description: string;
+  /** Tags for filtering: 'happy-path', 'edge-case', 'regression', etc. */
+  readonly tags: readonly string[];
+  /** If true, reserved for validation only — never touched by --update. */
+  readonly holdout: boolean;
   /** Markdown body (everything after frontmatter). */
   readonly input: string;
   /**
@@ -30,6 +36,9 @@ function loadFixture(filename: string): TargetRole[] {
 export const cases: TargetRolesCase[] = [
   {
     name: 'single primary role with all fields',
+    description: 'Full role definition with all optional fields populated',
+    tags: ['happy-path'],
+    holdout: false,
     input: `## Summary
 
 Senior engineer with 10 years of experience.
@@ -54,6 +63,9 @@ Senior engineer with 10 years of experience.
   },
   {
     name: 'single secondary role with minimal fields',
+    description: 'Role with only required fields (level and stack)',
+    tags: ['happy-path', 'edge-case'],
+    holdout: false,
     input: `## Target roles
 
 ### devops-engineer — DevOps Engineer [secondary]
@@ -64,6 +76,9 @@ Senior engineer with 10 years of experience.
   },
   {
     name: 'multiple roles with mixed priorities',
+    description: 'Three roles with primary, secondary, and stretch priorities',
+    tags: ['happy-path'],
+    holdout: true,
     input: `## About
 
 Full-stack engineer based in Melbourne.
@@ -98,6 +113,9 @@ Full-stack engineer based in Melbourne.
   },
   {
     name: 'no target roles section returns empty array',
+    description: 'Profile without a Target roles section should parse to empty array',
+    tags: ['edge-case'],
+    holdout: false,
     input: `## Summary
 
 Just a summary with no target roles section.
@@ -114,9 +132,19 @@ Just a summary with no target roles section.
  * Load all expected outputs from their fixture files.
  * Called once by the test runner to build the case list.
  */
-export function loadCases(): { name: string; input: string; expected: TargetRole[] }[] {
+export function loadCases(): {
+  name: string;
+  description: string;
+  tags: readonly string[];
+  holdout: boolean;
+  input: string;
+  expected: TargetRole[];
+}[] {
   return cases.map((c) => ({
     name: c.name,
+    description: c.description,
+    tags: c.tags,
+    holdout: c.holdout,
     input: c.input,
     expected: loadFixture(c.fixture),
   }));

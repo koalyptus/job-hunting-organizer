@@ -19,6 +19,14 @@ showCommand.addHelpText(
 The slug is optional. When omitted, it is inferred from the current directory
 — run from inside an application folder (e.g. cd applied/<slug>) to skip it.
 
+Planned flags (Phase 7):
+  --jd              Show the job description
+  --meta            Show application metadata
+  --cover-letter    Show the cover letter
+  --qa              Show Q&A entries
+  --interviews      Show interview entries
+  (no flag)         Shows a summary with all sections
+
 Examples:
   $ jho show                                                  # infer slug from cwd
   $ jho show 2026-Jan-15-frontend-acme-12345                  # explicit slug

@@ -646,8 +646,8 @@ jho track --stdin                   # read JD from stdin pipe
 jho list [--status s] [--tag t] [--role <slug>] [--json]
 jho show [<slug>]         # slug is optional; inferred from cwd if omitted
 
-jho cover-letter [<slug>|url] [--save] [--paste] [--out <path>]
-                                  # slug optional (cwd inference); url always explicit
+jho cover-letter [<slug>] [--no-save]
+                                  # slug optional (cwd inference)
 jho answer  [<slug>] "<question>" | --image <path> | --stdin
                                   # slug optional (cwd inference)
 

@@ -49,6 +49,8 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       ├── types.ts    # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
 │   ├── applications.ts  # application CRUD: create, update, read, list; writes meta.md + jd.md + index
 │       ├── jobs.ts     # JD fetch, extraction (single LLM call), target-role suggestion
+│       ├── cover-letter.ts  # cover letter generation (LLM-backed, marker-aware write)
+│       ├── application-qa.ts  # Q&A answer generation (LLM-backed, append-only qa.md)
 │       ├── stats.ts    # campaign snapshot: counts by status/role/site, funnel, this-month delta
 │       ├── index-builder.ts  # build/update applied/.index.json from folder listing
 │       ├── meta-schema.ts    # Zod schema for meta.md frontmatter
@@ -101,8 +103,12 @@ jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X
 jho list [--status s] [--tag t] [--role <slug>] [--json]
   # list all applications; filters are AND-combined
 jho show [<slug>]       # slug is optional; inferred from cwd if omitted
-jho cover-letter [<slug>] # generate a tailored cover letter
-jho answer [<slug>] "..." # tailor an answer (text or screenshot)
+jho cover-letter [<slug>] [--no-save]
+                                  # slug optional (cwd inference)
+jho cover-letter show [<slug>]   # display existing cover letter
+jho answer  [<slug>] "<question>" | --image <path> | --stdin
+                                  # slug optional (cwd inference)
+jho answer show [<slug>]         # display existing Q&A entries
 jho interview [<slug>] {add,list,mark,notes}
 jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile)
 jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan
@@ -133,11 +139,13 @@ jho mcp                 # start MCP server
 
 ## Prompts (versioned LLM templates)
 
-| Prompt             | Phase | Purpose                                        |
-| ------------------ | ----- | ---------------------------------------------- |
-| `profile-build.md` | 3d    | Generate profile.md from CV + GitHub           |
-| `jd-extract.md`    | 5b    | Extract structured JD from raw text (Tier 1)   |
-| `suggest-role.md`  | 5c    | Suggest best-matching target role from profile |
+| Prompt              | Phase | Purpose                                        |
+| ------------------- | ----- | ---------------------------------------------- |
+| `profile-build.md`  | 3d    | Generate profile.md from CV + GitHub           |
+| `jd-extract.md`     | 5b    | Extract structured JD from raw text (Tier 1)   |
+| `suggest-role.md`   | 5c    | Suggest best-matching target role from profile |
+| `cover-letter.md`   | 6a    | Generate tailored cover letter (Tier 2)        |
+| `application-qa.md` | 6b    | Tailor answer to application question (Tier 2) |
 
 ## File ownership model
 
@@ -220,7 +228,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 5 — JD extraction & `track`. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 5a (schemas & tracker), 5b (JD fetch), 5c (target role), 5d (track CLI), 5d2 (track update with disableFileLogging config), 5d3 (--verbose flag), 5e (list), 5f (stats), 5g (tests & docs).
+Phase 6 — Cover letter & Q&A. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 6a (cover letter core), 6b (Q&A core), 6c (CLI commands), 6d (tests & docs).
 
 ## Cross-platform conventions
 

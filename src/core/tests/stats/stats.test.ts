@@ -413,10 +413,15 @@ describe('computeStats', () => {
 
   it('filters by since (relative 7d)', async () => {
     const now = new Date();
-    const y = now.getUTCFullYear();
-    const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const recent = `${y}-${m}-25`;
-    const old = `${y}-${m}-01`;
+
+    // Create dates: one definitely >7 days old, one within last 7 days
+    const eightDaysAgo = new Date(now);
+    eightDaysAgo.setUTCDate(now.getUTCDate() - 8);
+    const old = eightDaysAgo.toISOString().slice(0, 10); // YYYY-MM-DD
+
+    const oneDayAgo = new Date(now);
+    oneDayAgo.setUTCDate(now.getUTCDate() - 1);
+    const recent = oneDayAgo.toISOString().slice(0, 10); // YYYY-MM-DD
 
     await writeIndex([
       {

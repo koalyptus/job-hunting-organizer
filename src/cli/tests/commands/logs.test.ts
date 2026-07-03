@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import pino from 'pino';
 import { DEFAULT_LOG_FILENAME } from '../../../core/types.js';
+import { cleanupTempDir } from '../../../core/tests/cleanup.js';
+import { getRootLogger, setRootLogger } from '../../../core/logger/logger.js';
 import { logsCommand } from '../../commands/logs.js';
 import { runCommand } from '../helpers.js';
 
@@ -23,7 +26,11 @@ describe('logs command', () => {
     } else {
       process.env['JHO_CONFIG_HOME'] = originalConfigHome;
     }
-    await rm(tempDir, { recursive: true, force: true });
+    // Close the pino file destination held by the root logger singleton
+    // before rm — on Windows Node 20, the open handle prevents deletion.
+    const old = getRootLogger();
+    setRootLogger(pino({ level: 'silent' }));
+    await cleanupTempDir(tempDir, [old]);
   });
 
   it('--path prints the log file location', async () => {
