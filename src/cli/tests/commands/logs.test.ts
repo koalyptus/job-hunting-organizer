@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import pino from 'pino';
 import { DEFAULT_LOG_FILENAME } from '../../../core/types.js';
+import { closeLogger, getRootLogger, setRootLogger } from '../../../core/logger/logger.js';
 import { logsCommand } from '../../commands/logs.js';
 import { runCommand } from '../helpers.js';
 
@@ -23,24 +25,18 @@ describe('logs command', () => {
     } else {
       process.env['JHO_CONFIG_HOME'] = originalConfigHome;
     }
-    if (process.platform === 'win32') {
-      // On Windows, the pino file destination may hold the log file open
-      // briefly after the command completes, causing rm to fail with
-      // ENOTEMPTY. Retry with exponential backoff.
-      for (let attempt = 0; attempt < 5; attempt++) {
-        try {
-          await rm(tempDir, { recursive: true, force: true });
-          break;
-        } catch (err: unknown) {
-          if (attempt === 4 || (err as NodeJS.ErrnoException).code !== 'ENOTEMPTY') {
-            throw err;
-          }
-          await new Promise((r) => setTimeout(r, 50 * 2 ** attempt));
-        }
-      }
-    } else {
-      await rm(tempDir, { recursive: true, force: true });
+    // Close the pino file destination before rm — on Windows, the open
+    // file handle prevents directory deletion (EPERM / ENOTEMPTY).
+    // Only close if the logger has a file destination (not stdout).
+    const old = getRootLogger();
+    const stream = (old as unknown as Record<symbol, unknown>)[pino.symbols.streamSym] as
+      | { file?: string | null }
+      | undefined;
+    setRootLogger(pino({ level: 'silent' }));
+    if (stream?.file != null) {
+      closeLogger(old);
     }
+    await rm(tempDir, { recursive: true, force: true });
   });
 
   it('--path prints the log file location', async () => {
