@@ -227,6 +227,29 @@ describe('parseInterviewsFile', () => {
     expect(entries).toHaveLength(0);
   });
 
+  it('assigns contiguous indices when a malformed heading is skipped', () => {
+    const content = [
+      '# Interviews — SE @ Foo',
+      '',
+      '## 2026-06-10 10:00 — Technical',
+      '',
+      '- Type: technical',
+      '- Duration: 60 min',
+      '',
+      '## 2026-06-17 14:00 — HR screen [completed]',
+      '',
+      '- Type: hr',
+      '- Duration: 30 min',
+      '- Status: completed',
+      '',
+    ].join('\n');
+
+    const entries = parseInterviewsFile(content);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.index).toBe(1);
+    expect(entries[0]!.title).toBe('HR screen');
+  });
+
   it('uses default duration for non-matching value', () => {
     const content = [
       '# Interviews — SE @ Foo',
@@ -346,7 +369,7 @@ describe('addInterview', () => {
     });
 
     const entries = await listInterviews(appliedDir, slug);
-    expect(entries[0]!.type).toBe('technical');
+    expect(entries[0]!.type).toBe('other');
     expect(entries[0]!.duration).toBe(60);
     expect(entries[0]!.status).toBe('scheduled');
   });
@@ -661,6 +684,21 @@ describe('appendInterviewNotes', () => {
 
     const entries = await listInterviews(appliedDir, slug);
     expect(entries[0]!.notes).toMatch(/Initial prep done; Review patterns/);
+  });
+  it('inserts Notes line before next section when middle section has no Notes', async () => {
+    // Add a third section so that section 2 (no Notes) is in the middle
+    await addInterview(appliedDir, slug, { when: '2026-06-24 09:00', type: 'final' });
+
+    await appendInterviewNotes(appliedDir, slug, {
+      sectionNumber: 2,
+      notes: 'Added to middle section',
+    });
+
+    const entries = await listInterviews(appliedDir, slug);
+    expect(entries[1]!.notes).toContain('Added to middle section');
+    // Section 1 and 3 should not have these notes
+    expect(entries[0]!.notes).not.toContain('Added to middle section');
+    expect(entries[2]!.notes).not.toContain('Added to middle section');
   });
 });
 

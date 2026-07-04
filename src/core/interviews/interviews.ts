@@ -115,8 +115,8 @@ export function parseInterviewsFile(content: string): InterviewEntry[] {
         const entry = parseSectionToEntry(currentHeading, body, sectionCount);
         if (entry) {
           entries.push(entry);
+          sectionCount++;
         }
-        sectionCount++;
       }
       currentHeading = headingMatch[1]!;
       currentStartIndex = i;
@@ -239,7 +239,7 @@ function buildNewFileContent(title: string, company: string, section: string): s
  * Build the H2 section markdown for an interview entry.
  */
 function buildSection(input: AddInterviewInput): string {
-  const type = input.type ?? 'technical';
+  const type = input.type ?? 'other';
   const status = input.status ?? 'scheduled';
   const duration = input.duration ?? DEFAULT_INTERVIEW_DURATION_MINUTES;
   const title = input.title ?? getTypeLabel(type);
@@ -396,6 +396,7 @@ export async function markInterviewStatus(
   appliedDir: string,
   slug: string,
   input: MarkInterviewInput,
+  externalLog?: Logger,
 ): Promise<boolean> {
   if (!INTERVIEW_STATUSES.includes(input.status)) {
     throw new InterviewError(`invalid interview status: ${input.status}`);
@@ -446,7 +447,7 @@ export async function markInterviewStatus(
       throw new InterviewError(`failed to write interviews.md for ${slug}`);
     }
 
-    log.info(
+    (externalLog ?? log).info(
       { slug, sectionNumber: input.sectionNumber, status: input.status },
       'interview.status.updated',
     );
@@ -455,8 +456,7 @@ export async function markInterviewStatus(
 }
 
 /**
- * Remove any `.trimEnd()` output, clean whitespace from trailing semicolons,
- * and append new notes to the `- Notes:` line of a specific interview section.
+ * Append text to the `- Notes:` line of an interview section.
  *
  * If no `- Notes:` line exists in the section, one is created.
  *
@@ -470,6 +470,7 @@ export async function appendInterviewNotes(
   appliedDir: string,
   slug: string,
   input: AppendNotesInput,
+  externalLog?: Logger,
 ): Promise<boolean> {
   const interviewsPath = join(appliedDir, slug, 'interviews.md');
 
@@ -515,14 +516,16 @@ export async function appendInterviewNotes(
       const m = line.match(FIELD_PATTERN);
       if (m && m[1] === 'Notes') {
         notesLineIndex = i;
+        break;
       }
     }
 
     if (notesLineIndex !== -1) {
       // Append to existing Notes line
       const existingNotes = lines[notesLineIndex]!.replace(/^- Notes:\s*/, '');
+      const TRAILING_PUNCTUATION = ['.', '!', '?', ':', ';', ')'];
       const needsSep =
-        existingNotes && !existingNotes.endsWith(';') && !existingNotes.endsWith('.');
+        existingNotes && !TRAILING_PUNCTUATION.some((p) => existingNotes.endsWith(p));
       const separator = needsSep ? '; ' : ' ';
       lines[notesLineIndex] = `- Notes: ${existingNotes}${separator}${input.notes}`;
     } else {
@@ -537,7 +540,10 @@ export async function appendInterviewNotes(
       throw new InterviewError(`failed to write interviews.md for ${slug}`);
     }
 
-    log.info({ slug, sectionNumber: input.sectionNumber }, 'interview.notes.appended');
+    (externalLog ?? log).info(
+      { slug, sectionNumber: input.sectionNumber },
+      'interview.notes.appended',
+    );
     return true;
   });
 }
