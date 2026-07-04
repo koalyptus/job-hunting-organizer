@@ -24,5 +24,22 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  rmSync(globalTestDir, { recursive: true, force: true });
+  // On Windows Node 20, pino file destinations may hold file handles
+  // briefly after close, causing rmSync to fail with ENOTEMPTY.
+  // Retry with exponential backoff on those errors.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      rmSync(globalTestDir, { recursive: true, force: true });
+      return;
+    } catch (err: unknown) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (attempt === 4 || (code !== 'ENOTEMPTY' && code !== 'EPERM')) {
+        throw err;
+      }
+      // Synchronous wait via Atomics (setup file must stay sync)
+      const buf = new SharedArrayBuffer(4);
+      const view = new Int32Array(buf);
+      Atomics.wait(view, 0, 0, 50 * 2 ** attempt);
+    }
+  }
 });
