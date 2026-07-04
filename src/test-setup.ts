@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdtempSync } from 'node:fs';
-import { afterEach } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { afterEach, afterAll } from 'vitest';
 
 /**
  * Global test setup: ensures JHO_CONFIG_HOME and JHO_DATA always point
@@ -21,4 +21,8 @@ afterEach(() => {
   // This catches tests that modify env vars without restoring them.
   process.env['JHO_CONFIG_HOME'] = join(globalTestDir, '.jho');
   process.env['JHO_DATA'] = join(globalTestDir, 'data');
+});
+
+afterAll(() => {
+  rmSync(globalTestDir, { recursive: true, force: true });
 });

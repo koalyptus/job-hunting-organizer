@@ -32,6 +32,7 @@ import type { ApplicationStatus } from '../applications/types.js';
 import type { TargetRole } from '../types.js';
 import { replaceRegion, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
+import { acquireLock } from '../locks.js';
 
 const log = moduleLogger(import.meta.url);
 
@@ -120,14 +121,17 @@ export function hasTrackUpdateFlags(opts: {
 async function writeSteerToJd(appliedDir: string, slug: string, steer: string): Promise<void> {
   const appFolder = join(appliedDir, slug);
   const jdPath = join(appFolder, 'jd.md');
-  let jdContent = '';
-  try {
-    jdContent = await readFile(jdPath, 'utf8');
-  } catch (err) {
-    log.debug({ slug, err }, 'jd.md not found when writing steer; creating fresh file');
-  }
-  const updatedJd = replaceSteer(jdContent, steer);
-  await atomicWrite(jdPath, updatedJd);
+
+  await acquireLock(appFolder, async () => {
+    let jdContent = '';
+    try {
+      jdContent = await readFile(jdPath, 'utf8');
+    } catch (err) {
+      log.debug({ slug, err }, 'jd.md not found when writing steer; creating fresh file');
+    }
+    const updatedJd = replaceSteer(jdContent, steer);
+    await atomicWrite(jdPath, updatedJd);
+  });
 }
 
 /**

@@ -292,6 +292,13 @@ describe('replaceSteer', () => {
     expect(updated).toContain('<!-- jho:steer: Focus on remote & hybrid roles (50%+ remote) -->');
   });
 
+  it('handles steer text containing -->', () => {
+    const content = 'some text\n';
+    const updated = replaceSteer(content, 'use --> arrows');
+    expect(updated).toContain('<!-- jho:steer: use --> arrows -->');
+    expect(extractSteer(updated)).toBe('use --> arrows');
+  });
+
   it('removes steer when empty string is provided', () => {
     const content = [
       '<!-- jho:start:fetched-jd -->',

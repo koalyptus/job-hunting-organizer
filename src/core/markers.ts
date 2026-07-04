@@ -47,7 +47,7 @@ const SECTION_LINE_RE = /^<!-- jho:([a-z0-9-]+) [^>]+-->\s*$/;
  * Matches a steer marker line: `<!-- jho:steer: ... -->`.
  * Group 1 is the steer text (trimmed).
  */
-const STEER_LINE_RE = /^<!-- jho:steer: (.+?) -->\s*$/;
+const STEER_LINE_RE = /^<!-- jho:steer: (.+) -->\s*$/;
 
 /**
  * Thrown when a document contains malformed marker regions (mismatched

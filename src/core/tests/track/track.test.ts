@@ -72,6 +72,10 @@ vi.mock('../../fs.js', () => ({
   atomicWrite: vi.fn(() => Promise.resolve(true)),
 }));
 
+vi.mock('../../locks.js', () => ({
+  acquireLock: vi.fn(async (_target, fn) => fn()),
+}));
+
 describe('runTrack', () => {
   beforeEach(() => {
     vi.clearAllMocks();
