@@ -74,6 +74,7 @@ export const answerCommand = new Command('answer')
   .argument('[question]', 'question to answer (or use --stdin)')
   .option('--image <path>', 'include a screenshot or image')
   .option('--stdin', 'read the question from stdin')
+  .option('--steer <text>', 'instructions to guide this answer')
   .option('--no-save', 'print to stdout only (skip file write)')
   .addCommand(showCommand)
   .action(async function (slug: string | undefined, question: string | undefined, opts) {
@@ -107,6 +108,7 @@ export const answerCommand = new Command('answer')
             campaign,
             question: resolvedQuestion!,
             imagePath: opts.image as string | undefined,
+            steer: opts.steer as string | undefined,
             noSave: opts.save === false,
           }),
         'Failed to generate answer',

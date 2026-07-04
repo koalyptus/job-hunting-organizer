@@ -98,16 +98,19 @@ jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
 jho track <url> --paste # paste JD from clipboard, extract, create application
 jho track <url> --stdin # read JD from stdin pipe, extract, create application
-jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X]
+jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X] [--steer X]
   # update existing application by slug (or cwd-inferred)
+  # --steer: custom LLM instructions for JD extraction (stored in jd.md)
 jho list [--status s] [--tag t] [--role <slug>] [--json]
   # list all applications; filters are AND-combined
 jho show [<slug>]       # slug is optional; inferred from cwd if omitted
-jho cover-letter [<slug>] [--no-save]
+jho cover-letter [<slug>] [--no-save] [--steer <text>]
                                   # slug optional (cwd inference)
+                                  # --steer: custom LLM instructions (overwrites stored steer)
 jho cover-letter show [<slug>]   # display existing cover letter
-jho answer  [<slug>] "<question>" | --image <path> | --stdin
+jho answer  [<slug>] "<question>" | --image <path> | --stdin [--steer <text>]
                                   # slug optional (cwd inference)
+                                  # --steer: custom LLM instructions for this answer
 jho answer show [<slug>]         # display existing Q&A entries
 jho interview [<slug>] {add,list,mark,notes}
 jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile)
@@ -156,9 +159,10 @@ jho mcp                 # start MCP server
 | `meta.md` (the metadata fields at the top)          | yes (rewrites from the job ad + your current status)                          | yes (add your own key:value lines)                  | your extra fields are kept; the rest is rewritten               |
 | `meta.md` (everything below the metadata fields)    | never                                                                         | yes                                                 | kept exactly as you wrote it                                    |
 | `jd.md` (the auto-fetched job ad, at the top)       | yes (replaces it when you re-run `jho track`)                                 | no (the tool owns this section)                     | your edits are lost on the next `jho track`                     |
+| `jd.md` (`<!-- jho:steer: -->` marker)              | when you run `jho track --steer`                                              | yes (edit the marker directly)                      | overwritten by `--steer`; no flag preserves existing            |
 | `jd.md` (everything below the auto-fetched section) | never                                                                         | yes                                                 | kept when you re-run `jho track`                                |
-| `cover-letter.md`                                   | when you re-run `jho cover-letter`                                            | yes                                                 | asks before overwriting on the next regenerate                  |
-| `qa.md`                                             | appends new entries; never rewrites old ones                                  | yes                                                 | older entries stay as you wrote them                            |
+| `cover-letter.md`                                   | when you re-run `jho cover-letter`; includes `<!-- jho:steer: -->` marker     | yes                                                 | asks before overwriting; steer overwritten by `--steer`         |
+| `qa.md`                                             | appends new entries; `- Steer:` line per entry when `--steer` provided        | yes                                                 | older entries stay as you wrote them; steer stored per-entry    |
 | `interviews.md`                                     | appends new entries; updates the current status line                          | yes (except the current status line)                | change the status with `jho interview mark`                     |
 | `retro.md`                                          | appends a new section per retro                                               | yes (your notes and checklists inside a section)    | older retro sections stay as you wrote them                     |
 | `prep.md`                                           | rewrites on `--update`; appends topics on `--add`                             | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
@@ -228,7 +232,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 6 — Cover letter & Q&A. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 6a (cover letter core), 6b (Q&A core), 6c (CLI commands), 6d (tests & docs).
+Phase 6 — Cover letter & Q&A. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 6a (cover letter core), 6b (Q&A core), 6c (CLI commands), 6d (tests & docs), 6e (steer: custom LLM instructions).
 
 ## Cross-platform conventions
 

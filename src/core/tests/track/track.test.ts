@@ -1,49 +1,49 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { runTrack, runTrackRefresh, prepareTrack, confirmAndCreate } from './track.js';
-import { TrackError, TrackCancelled, NoLinkStoredError } from './errors.js';
-import { extractJdFromUrl, extractJdFromText } from '../jobs/extract.js';
-import { suggestTargetRole } from '../jobs/suggest.js';
-import { readProfile } from '../profile.js';
-import { parseTargetRoles } from '../target-roles.js';
+import { runTrack, runTrackRefresh, prepareTrack, confirmAndCreate } from '../../track/track.js';
+import { TrackError, TrackCancelled, NoLinkStoredError } from '../../track/errors.js';
+import { extractJdFromUrl, extractJdFromText } from '../../jobs/extract.js';
+import { suggestTargetRole } from '../../jobs/suggest.js';
+import { readProfile } from '../../profile.js';
+import { parseTargetRoles } from '../../target-roles.js';
 import {
   createApplication,
   updateApplication,
   readApplication,
   appendNote,
-} from '../applications/applications.js';
-import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
-import { replaceRegion } from '../markers.js';
-import { atomicWrite } from '../fs.js';
-import type { ApplicationFrontmatter } from '../applications/types.js';
+} from '../../applications/applications.js';
+import { confirmTrackSummary, confirmTrackUpdate } from '../../track/prompts.js';
+import { replaceRegion, replaceSteer } from '../../markers.js';
+import { atomicWrite } from '../../fs.js';
+import type { ApplicationFrontmatter } from '../../applications/types.js';
 
-vi.mock('../config.js', () => ({
+vi.mock('../../config.js', () => ({
   getConfig: vi.fn(() => ({
     global: { llm: { baseUrl: 'http://test', apiKey: 'key', model: 'model' } },
   })),
 }));
 
-vi.mock('../llm.js', () => ({
+vi.mock('../../llm.js', () => ({
   defaultLlmConfig: vi.fn(() => ({ baseUrl: 'http://test', apiKey: 'key', model: 'model' })),
 }));
 
-vi.mock('../profile.js', () => ({
+vi.mock('../../profile.js', () => ({
   readProfile: vi.fn(),
 }));
 
-vi.mock('../target-roles.js', () => ({
+vi.mock('../../target-roles.js', () => ({
   parseTargetRoles: vi.fn(() => []),
 }));
 
-vi.mock('../jobs/extract.js', () => ({
+vi.mock('../../jobs/extract.js', () => ({
   extractJdFromUrl: vi.fn(),
   extractJdFromText: vi.fn(),
 }));
 
-vi.mock('../jobs/suggest.js', () => ({
+vi.mock('../../jobs/suggest.js', () => ({
   suggestTargetRole: vi.fn(),
 }));
 
-vi.mock('../applications/applications.js', () => ({
+vi.mock('../../applications/applications.js', () => ({
   createApplication: vi.fn(() => Promise.resolve('2026-Jun-21-SE-test-co')),
   updateApplication: vi.fn(),
   readApplication: vi.fn(() =>
@@ -55,20 +55,25 @@ vi.mock('../applications/applications.js', () => ({
   appendNote: vi.fn(),
 }));
 
-vi.mock('./prompts.js', () => ({
+vi.mock('../../track/prompts.js', () => ({
   confirmTrackSummary: vi.fn(() => Promise.resolve(true)),
   confirmTrackUpdate: vi.fn(() => Promise.resolve(true)),
 }));
 
-vi.mock('../markers.js', () => ({
+vi.mock('../../markers.js', () => ({
   replaceRegion: vi.fn(
     (_content, _name, newContent) =>
       `<!-- jho:start:fetched-jd -->\n${newContent}\n<!-- jho:end:fetched-jd -->`,
   ),
+  replaceSteer: vi.fn((_content, steer) => (steer ? `<!-- jho:steer: ${steer} -->` : '')),
 }));
 
-vi.mock('../fs.js', () => ({
+vi.mock('../../fs.js', () => ({
   atomicWrite: vi.fn(() => Promise.resolve(true)),
+}));
+
+vi.mock('../../locks.js', () => ({
+  acquireLock: vi.fn(async (_target, fn) => fn()),
 }));
 
 describe('runTrack', () => {
@@ -882,5 +887,61 @@ describe('runTrackRefresh', () => {
         yes: true,
       }),
     ).rejects.toThrow('failed to write jd.md');
+  });
+});
+
+describe('steer functionality', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('writes steer to jd.md via replaceSteer in create mode', async () => {
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'desc',
+    });
+
+    await runTrack({
+      campaign: 'default',
+      url: 'https://example.com/job/123',
+      steer: 'Focus on remote roles',
+      yes: true,
+    });
+
+    expect(replaceSteer).toHaveBeenCalledWith(expect.any(String), 'Focus on remote roles');
+  });
+
+  it('writes steer to jd.md via replaceSteer in update mode', async () => {
+    await runTrack({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      steer: 'Updated steer instructions',
+      yes: true,
+    });
+
+    expect(replaceSteer).toHaveBeenCalledWith(expect.any(String), 'Updated steer instructions');
+  });
+
+  it('does not call replaceSteer when steer is undefined', async () => {
+    await runTrack({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      yes: true,
+    });
+
+    expect(replaceSteer).not.toHaveBeenCalled();
+  });
+
+  it('considers steer as a change in update mode', async () => {
+    await runTrack({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      steer: 'New steer',
+      yes: true,
+    });
+
+    expect(updateApplication).toHaveBeenCalled();
   });
 });

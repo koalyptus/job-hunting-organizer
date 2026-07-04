@@ -186,6 +186,7 @@ Body: user-owned (untouched by tool).
 ## 2026-06-04 09:21 — "<question>" [text|image:<filename>]
 
 - Source: application form | email | verbal
+- Steer: custom LLM instructions (optional, only when --steer was provided)
 - Answer:
   > <tailored answer>
 ```
@@ -198,6 +199,8 @@ Body: user-owned (untouched by tool).
 ... tool-managed fetched JD ...
 
 <!-- jho:end:fetched-jd -->
+
+<!-- jho:steer: custom LLM instructions for this application (optional) -->
 
 <!-- user notes below this line are preserved on re-track -->
 ```
@@ -560,9 +563,9 @@ The two layers are *additive*, not an override cascade. `jho config` shows the g
 | --------------------- | --------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------- |
 | `meta.md` frontmatter | yes (rebuild from JD + state)                                                     | yes                        | round-tripped, custom fields preserved                     |
 | `meta.md` body        | never                                                                             | yes                        | preserved verbatim                                         |
-| `jd.md`               | above `jho:start:fetched-jd`                                                      | below `jho:end:fetched-jd` | preserved on re-track                                      |
-| `cover-letter.md`     | on regenerate                                                                     | freely                     | prompts on next regenerate                                 |
-| `qa.md`               | appends only                                                                      | freely                     | prior entries untouched                                    |
+| `jd.md`               | above `jho:start:fetched-jd`; `<!-- jho:steer: -->` marker                        | below `jho:end:fetched-jd` | preserved on re-track; steer overwritten by `--steer`      |
+| `cover-letter.md`     | on regenerate; `<!-- jho:steer: -->` marker                                       | freely                     | prompts on next regenerate; steer overwritten by `--steer` |
+| `qa.md`               | appends only; `- Steer:` line per entry                                           | freely                     | prior entries untouched; steer stored per-entry            |
 | `interviews.md`       | appends, `Status:` line updates                                                   | freely (except `Status:`)  | mark status via `jho interview mark`                       |
 | `retro.md`            | appends new H2 sections; updates `Status:` of a section if interview is re-marked | freely (checklists, notes) | prior retros untouched                                     |
 | `prep.md`             | regenerates whole file on `--update`; appends user-added topics on `--add`        | freely                     | prompts on overwrite; user edits preserved unless accepted |
@@ -635,6 +638,7 @@ jho track --paste                    # read JD from clipboard (via clipboardy)
 jho track --stdin                   # read JD from stdin pipe
   flags: --status s --salary r --tag t,t --note text
          --target-role <slug>          # set the target role slug (from profile ## Target roles)
+         --steer <text>                # custom LLM instructions for JD extraction (stored in jd.md)
          --yes --verbose --quiet
   # Create mode (URL or --paste/--stdin): fetch JD, extract via LLM, suggest target role,
   #   prompt to confirm, create application folder with meta.md + jd.md.
@@ -646,10 +650,12 @@ jho track --stdin                   # read JD from stdin pipe
 jho list [--status s] [--tag t] [--role <slug>] [--json]
 jho show [<slug>]         # slug is optional; inferred from cwd if omitted
 
-jho cover-letter [<slug>] [--no-save]
+jho cover-letter [<slug>] [--no-save] [--steer <text>]
                                   # slug optional (cwd inference)
-jho answer  [<slug>] "<question>" | --image <path> | --stdin
+                                  # --steer: custom LLM instructions (overwrites stored steer)
+jho answer  [<slug>] "<question>" | --image <path> | --stdin [--steer <text>]
                                   # slug optional (cwd inference)
+                                  # --steer: custom LLM instructions for this answer
 
 jho interview [<slug>] add    --when "..." --type technical --duration 60
                               [--interviewer "..."] [--location "..."]

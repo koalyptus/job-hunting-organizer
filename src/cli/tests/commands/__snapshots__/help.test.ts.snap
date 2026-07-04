@@ -27,6 +27,7 @@ Arguments:
 Options:
   --image <path>  include a screenshot or image
   --stdin         read the question from stdin
+  --steer <text>  instructions to guide this answer
   --no-save       print to stdout only (skip file write)
   -h, --help      display help for command
 
@@ -75,14 +76,16 @@ exports[`command --help output > cover-letter has consistent help output 1`] = `
 Generate or show cover letters (slug inferred from cwd if omitted)
 
 Arguments:
-  slug         application slug
+  slug            application slug
 
 Options:
-  --no-save    print to stdout only (skip file write)
-  -h, --help   display help for command
+  --no-save       print to stdout only (skip file write)
+  --steer <text>  instructions to guide the cover letter generation
+  -h, --help      display help for command
 
 Commands:
-  show [slug]  Show an existing cover letter (slug inferred from cwd if omitted)
+  show [slug]     Show an existing cover letter (slug inferred from cwd if
+                  omitted)
 "
 `;
 
@@ -314,6 +317,7 @@ Options:
   --tag <tag>           add a tag (repeatable) (default: [])
   --note <text>         add a note
   --target-role <role>  target role for the application
+  --steer <text>        instructions to guide the LLM output
   --refresh             re-fetch job description from stored URL
   -y, --yes             skip confirmation prompts
   -h, --help            display help for command

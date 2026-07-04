@@ -69,6 +69,7 @@ export const coverLetterCommand = new Command('cover-letter')
   .description('Generate or show cover letters (slug inferred from cwd if omitted)')
   .argument('[slug]', 'application slug')
   .option('--no-save', 'print to stdout only (skip file write)')
+  .option('--steer <text>', 'instructions to guide the cover letter generation')
   .addCommand(showCommand)
   .action(async function (slug: string | undefined, opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
@@ -86,6 +87,7 @@ export const coverLetterCommand = new Command('cover-letter')
             slug: resolvedSlug,
             campaign,
             noSave: opts.save === false,
+            steer: opts.steer as string | undefined,
           }),
         'Failed to generate cover letter',
       );

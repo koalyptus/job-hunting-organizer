@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   REGION_MARKER_NAMES,
   MarkerError,
+  extractSteer,
   findRegion,
   findSectionMarker,
   isKnownRegionName,
   parseRegions,
   replaceRegion,
+  replaceSteer,
 } from '../markers.js';
 
 describe('isKnownRegionName', () => {
@@ -207,5 +209,108 @@ describe('findSectionMarker', () => {
   it('does not confuse a section marker with a region start', () => {
     const content = '<!-- jho:start:fetched-jd -->\n';
     expect(findSectionMarker(content, 'fetched-jd')).toBeNull();
+  });
+});
+
+describe('extractSteer', () => {
+  it('extracts steer from a steer marker', () => {
+    const content = [
+      '<!-- jho:start:fetched-jd -->',
+      'jd body',
+      '<!-- jho:end:fetched-jd -->',
+      '',
+      '<!-- jho:steer: Focus on remote roles only -->',
+      '',
+      'user notes',
+    ].join('\n');
+    expect(extractSteer(content)).toBe('Focus on remote roles only');
+  });
+
+  it('returns empty string when no steer marker exists', () => {
+    const content = [
+      '<!-- jho:start:fetched-jd -->',
+      'jd body',
+      '<!-- jho:end:fetched-jd -->',
+    ].join('\n');
+    expect(extractSteer(content)).toBe('');
+  });
+
+  it('handles steer marker at the start of file', () => {
+    const content = ['<!-- jho:steer: First line -->', 'user content'].join('\n');
+    expect(extractSteer(content)).toBe('First line');
+  });
+
+  it('handles empty content', () => {
+    expect(extractSteer('')).toBe('');
+  });
+});
+
+describe('replaceSteer', () => {
+  it('inserts steer after the first jho:end marker', () => {
+    const content = [
+      '<!-- jho:start:fetched-jd -->',
+      'jd body',
+      '<!-- jho:end:fetched-jd -->',
+      '',
+      'user notes',
+    ].join('\n');
+    const updated = replaceSteer(content, 'Focus on remote roles');
+    expect(updated).toContain('<!-- jho:steer: Focus on remote roles -->');
+    expect(updated).toContain('user notes');
+    // Verify steer is inserted after jho:end marker
+    const endIdx = updated.indexOf('<!-- jho:end:fetched-jd -->');
+    const steerIdx = updated.indexOf('<!-- jho:steer: Focus on remote roles -->');
+    expect(steerIdx).toBeGreaterThan(endIdx);
+  });
+
+  it('overwrites an existing steer marker', () => {
+    const content = [
+      '<!-- jho:start:fetched-jd -->',
+      'jd body',
+      '<!-- jho:end:fetched-jd -->',
+      '',
+      '<!-- jho:steer: Old instructions -->',
+      '',
+      'user notes',
+    ].join('\n');
+    const updated = replaceSteer(content, 'New instructions');
+    expect(updated).toContain('<!-- jho:steer: New instructions -->');
+    expect(updated).not.toContain('Old instructions');
+  });
+
+  it('inserts at end when no region markers exist', () => {
+    const content = 'just some text\nmore text\n';
+    const updated = replaceSteer(content, 'New instructions');
+    expect(updated).toContain('<!-- jho:steer: New instructions -->');
+    expect(updated).toContain('just some text');
+    expect(updated).toContain('more text');
+  });
+
+  it('handles steer with special characters', () => {
+    const content = 'some text\n';
+    const updated = replaceSteer(content, 'Focus on remote & hybrid roles (50%+ remote)');
+    expect(updated).toContain('<!-- jho:steer: Focus on remote & hybrid roles (50%+ remote) -->');
+  });
+
+  it('handles steer text containing -->', () => {
+    const content = 'some text\n';
+    const updated = replaceSteer(content, 'use --> arrows');
+    expect(updated).toContain('<!-- jho:steer: use --> arrows -->');
+    expect(extractSteer(updated)).toBe('use --> arrows');
+  });
+
+  it('removes steer when empty string is provided', () => {
+    const content = [
+      '<!-- jho:start:fetched-jd -->',
+      'jd body',
+      '<!-- jho:end:fetched-jd -->',
+      '',
+      '<!-- jho:steer: Old instructions -->',
+      '',
+      'user notes',
+    ].join('\n');
+    const updated = replaceSteer(content, '');
+    expect(updated).not.toContain('jho:steer:');
+    expect(updated).toContain('user notes');
   });
 });

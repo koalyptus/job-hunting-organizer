@@ -456,6 +456,165 @@ describe('generateCoverLetter', () => {
 
     spy.mockRestore();
   });
+
+  it('includes steer in the user message when provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Cover letter with steer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      steer: 'Focus on remote work opportunities',
+    });
+
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user')?.content ?? '';
+    expect(userMessage).toContain('## Additional instructions');
+    expect(userMessage).toContain('Focus on remote work opportunities');
+  });
+
+  it('writes steer marker to cover-letter.md when steer is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Cover letter content.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      steer: 'Emphasize TypeScript experience',
+    });
+
+    const coverLetter = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'cover-letter.md'),
+      'utf8',
+    );
+    expect(coverLetter).toContain('<!-- jho:steer: Emphasize TypeScript experience -->');
+  });
+
+  it('overwrites existing steer when new steer is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // Create cover letter with existing steer
+    await writeFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'cover-letter.md'),
+      [
+        '<!-- jho:start:cover-letter -->',
+        'Old cover letter content.',
+        '<!-- jho:end:cover-letter -->',
+        '',
+        '<!-- jho:steer: Old steer instructions -->',
+      ].join('\n'),
+    );
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'New cover letter content.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      steer: 'New steer instructions',
+    });
+
+    const coverLetter = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'cover-letter.md'),
+      'utf8',
+    );
+    expect(coverLetter).toContain('<!-- jho:steer: New steer instructions -->');
+    expect(coverLetter).not.toContain('Old steer instructions');
+  });
+
+  it('preserves existing steer when no new steer is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // Create cover letter with existing steer
+    await writeFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'cover-letter.md'),
+      [
+        '<!-- jho:start:cover-letter -->',
+        'Old cover letter content.',
+        '<!-- jho:end:cover-letter -->',
+        '',
+        '<!-- jho:steer: Existing steer instructions -->',
+      ].join('\n'),
+    );
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'New cover letter content.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+    });
+
+    const coverLetter = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'cover-letter.md'),
+      'utf8',
+    );
+    expect(coverLetter).toContain('<!-- jho:steer: Existing steer instructions -->');
+  });
+
+  it('includes existing steer in the user message even when no new steer is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // Create cover letter with existing steer
+    await writeFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'cover-letter.md'),
+      [
+        '<!-- jho:start:cover-letter -->',
+        'Old cover letter content.',
+        '<!-- jho:end:cover-letter -->',
+        '',
+        '<!-- jho:steer: Existing steer from file -->',
+      ].join('\n'),
+    );
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'New cover letter content.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+    });
+
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user')?.content ?? '';
+    expect(userMessage).toContain('## Additional instructions');
+    expect(userMessage).toContain('Existing steer from file');
+  });
 });
 
 describe('readCoverLetter', () => {
