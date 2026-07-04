@@ -148,6 +148,8 @@ function parseSectionToEntry(heading: string, body: string[], index: number): Re
   };
 
   let inWeakTopics = false;
+  let inOtherNotes = false;
+  const notesBuffer: string[] = [];
   for (const line of body) {
     const fieldEntry = parseField(line);
     if (fieldEntry) {
@@ -167,6 +169,7 @@ function parseSectionToEntry(heading: string, body: string[], index: number): Re
     const h3Match = line.match(H3_PATTERN);
     if (h3Match) {
       inWeakTopics = h3Match[1] === 'Weak topics';
+      inOtherNotes = h3Match[1] === 'Other notes';
     } else if (inWeakTopics && line.startsWith('- ')) {
       const weakTopic = line.match(WEAK_TOPIC_PATTERN);
       if (weakTopic) {
@@ -175,7 +178,12 @@ function parseSectionToEntry(heading: string, body: string[], index: number): Re
           detail: weakTopic[2] ?? '',
         });
       }
+    } else if (inOtherNotes && line.trim()) {
+      notesBuffer.push(line);
     }
+  }
+  if (notesBuffer.length > 0) {
+    sectionData.notes = notesBuffer.join('\n');
   }
 
   return {

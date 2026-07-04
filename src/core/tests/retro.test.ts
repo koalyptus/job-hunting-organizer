@@ -198,6 +198,45 @@ describe('parseRetroFile', () => {
     expect(sections[0]!.weakTopics[0]!.detail).toBe('consistency models');
   });
 
+  it('parses Other notes section from retro content', () => {
+    const content = [
+      '<!-- jho:retro ... -->',
+      '',
+      '# Post-mortem — SE @ Foo',
+      '',
+      '## Retro for interview: 2026-06-17 14:00 — Interview #1 [failed]',
+      '',
+      '- Date: 2026-06-17',
+      '- Interview id: 1',
+      '- Status at the time: failed',
+      '',
+      '### Weak topics',
+      '',
+      '- System design',
+      '',
+      '### Other notes',
+      '',
+      'Interviewer was very technical.',
+      'Asked deep dive questions on distributed systems.',
+      '',
+      '### Learning plan',
+      '',
+      '#### Topic: System design',
+      '',
+      '- **What to know**: ACID vs BASE',
+      '',
+      '### Checklist',
+      '',
+      '- [ ] Read DDIA',
+      '',
+    ].join('\n');
+
+    const sections = parseRetroFile(content);
+    expect(sections).toHaveLength(1);
+    expect(sections[0]!.notes).toContain('Interviewer was very technical.');
+    expect(sections[0]!.notes).toContain('Asked deep dive questions on distributed systems.');
+  });
+
   it('parses multiple retro sections', () => {
     const content = [
       '# Post-mortem — SE @ Foo',
@@ -899,6 +938,62 @@ describe('appendRetro', () => {
     expect(matches).toHaveLength(1);
   });
 
+  it('handles trailing non-retro H2 in append', async () => {
+    const appDir = join(appliedDir, '2026-Jun-01-SE-Test-Corp');
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, '2026-Jun-01-SE-Test-Corp');
+    await writeJdMd(appDir);
+    await writeProfileMd(campaignRoot);
+
+    // Retro file with a non-retro H2 after the last retro section
+    const existingRetro = [
+      '<!-- jho:retro ... -->',
+      '',
+      '# Post-mortem — Software Engineer @ Foo Inc',
+      '',
+      '## Retro for interview: 2026-06-17 14:00 — Interview #1 [failed]',
+      '',
+      '- Date: 2026-06-17',
+      '- Status at the time: failed',
+      '',
+      '### Weak topics',
+      '',
+      '- System design',
+      '',
+      '### Learning plan',
+      '',
+      'Old plan.',
+      '',
+      '## Some other heading',
+      '',
+      'Misc content.',
+      '',
+    ].join('\n');
+    await writeFile(join(appDir, 'retro.md'), existingRetro);
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: mockPlanContent,
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await appendRetro({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      weakTopics: ['Behavioural'],
+    });
+
+    // The retro section should have been updated; trailing H2 should still be present
+    const retroContent = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'retro.md'),
+      'utf8',
+    );
+    expect(retroContent).toContain('## Some other heading');
+    expect(retroContent).toContain('Misc content.');
+  });
+
   it('throws RetroError when no retro exists', async () => {
     const slug = '2026-Jun-01-SE-Test-Corp';
     const appDir = join(appliedDir, slug);
@@ -947,6 +1042,87 @@ describe('appendRetro', () => {
       'utf8',
     );
     expect(retroContent).toContain('Additional observation.');
+  });
+
+  it('preserves existing notes when appending without new notes', async () => {
+    const appDir = join(appliedDir, '2026-Jun-01-SE-Test-Corp');
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, '2026-Jun-01-SE-Test-Corp');
+    await writeJdMd(appDir);
+    await writeProfileMd(campaignRoot);
+
+    // Create retro with existing notes section
+    const existingRetro = [
+      '<!-- jho:retro ... -->',
+      '',
+      '# Post-mortem — Software Engineer @ Foo Inc',
+      '',
+      '## Retro for interview: 2026-06-17 14:00 — Interview #1 [failed]',
+      '',
+      '- Date: 2026-06-17',
+      '- Interview id: 1',
+      '- Status at the time: failed',
+      '',
+      '### Weak topics',
+      '',
+      '- System design',
+      '',
+      '### Other notes',
+      '',
+      'Pre-existing note content.',
+      '',
+      '### Learning plan',
+      '',
+      'Old plan.',
+      '',
+    ].join('\n');
+    await writeFile(join(appDir, 'retro.md'), existingRetro);
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: mockPlanContent,
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await appendRetro({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      weakTopics: ['Behavioural'],
+      // No notes argument — should preserve existing notes from file
+    });
+
+    const retroContent = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'retro.md'),
+      'utf8',
+    );
+    expect(retroContent).toContain('Pre-existing note content.');
+  });
+
+  it('preserves weak topic details after append cycle', async () => {
+    await setupAppWithRetro('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: mockPlanContent,
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await appendRetro({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      weakTopics: ['Behavioural'],
+    });
+
+    const retroContent = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'retro.md'),
+      'utf8',
+    );
+    // Original weak topic with detail should be preserved
+    expect(retroContent).toContain('- System design — consistency models');
   });
 
   it('includes steer in user message when provided', async () => {
