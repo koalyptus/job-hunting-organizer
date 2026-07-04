@@ -24,20 +24,20 @@
   - [x] 5c — Target role suggestion
   - [x] 5d — jho track CLI
     - [x] 5d1 — CLI logging integration (incl. `disableFileLogging` config flag)
-    - [ ] 5d2 — `jho track <slug> --refresh` (re-fetch JD for existing application)
-    - [ ] 5d3 — `--verbose` CLI flag (enables terminal output for a single run)
-  - [ ] 5e — jho list
-  - [ ] 5f — core/stats & jho stats
-  - [ ] 5g — Tests, docs & polish
+    - [x] 5d2 — `jho track <slug> --refresh` (re-fetch JD for existing application)
+    - [x] 5d3 — `--verbose` CLI flag (enables terminal output for a single run)
+  - [x] 5e — jho list
+  - [x] 5f — core/stats & jho stats
+  - [x] 5g — Tests, docs & polish
 - [x] **Phase 6** — Cover letter & Q&A
   - [x] 6a — Cover letter core
   - [x] 6b — Q&A core
   - [x] 6c — CLI commands (cover-letter + answer)
   - [x] 6d — Tests, docs & polish
-  - [ ] 6e — Steer: custom LLM instructions per command
-- [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
-  - [ ] 7a — Core: Interviews module
-  - [ ] 7b — Core: Retro module (LLM-backed learning plan)
+  - [x] 6e — Steer: custom LLM instructions per command
+- [x] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
+  - [x] 7a — Core: Interviews module
+  - [x] 7b — Core: Retro module (LLM-backed learning plan)
   - [ ] 7c — Core: Prep module (LLM-backed pre-interview plan)
   - [ ] 7d — Core: Doctor & Repair
   - [ ] 7e — CLI: Show command with ownership footer

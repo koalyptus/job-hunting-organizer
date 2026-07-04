@@ -127,7 +127,7 @@ jho interview [<slug>] {add,list,mark,notes}  # manage interview pipeline; --whe
 jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile); --update, --add, --text, --days, --json
 jho prepare <url>       # ad-hoc prep from URL (print to stdout, don't save)
 jho prepare --text "..."# ad-hoc prep from pasted text
-jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan
+jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan; --steer <text>
 jho retro [<slug>] --show # display existing retro
 jho retro [<slug>] --interview <n> # retro for a specific interview
 jho retro [<slug>] --append # add weak topics to existing retro

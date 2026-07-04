@@ -48,7 +48,7 @@ describe('command option definitions match documentation', () => {
     expect(daysOpt?.defaultValue).toBe('7');
   });
 
-  it('retro has --aggregate, --role, --include-abandoned, --show, --interview, --append', () => {
+  it('retro has --aggregate, --role, --include-abandoned, --show, --interview, --append, --weak-topics, --notes, --steer', () => {
     expect(optionLongs(retroCommand)).toEqual(
       expect.arrayContaining([
         '--aggregate',
@@ -57,6 +57,9 @@ describe('command option definitions match documentation', () => {
         '--show',
         '--interview',
         '--append',
+        '--weak-topics',
+        '--notes',
+        '--steer',
       ]),
     );
   });
