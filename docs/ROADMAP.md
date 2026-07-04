@@ -35,7 +35,14 @@
   - [x] 6c — CLI commands (cover-letter + answer)
   - [x] 6d — Tests, docs & polish
   - [ ] 6e — Steer: custom LLM instructions per command
-- [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro)
+- [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
+  - [ ] 7a — Core: Interviews module
+  - [ ] 7b — Core: Retro module (LLM-backed learning plan)
+  - [ ] 7c — Core: Prep module (LLM-backed pre-interview plan)
+  - [ ] 7d — Core: Doctor & Repair
+  - [ ] 7e — CLI: Show command with ownership footer
+  - [ ] 7f — CLI: Interview, retro, prepare, doctor, repair commands
+  - [ ] 7g — Tests, evals & documentation
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
@@ -419,39 +426,131 @@ Split into sub-phases for incremental delivery.
 
 ## Phase 7 — Tracker depth
 
-**Scope**:
+Split into sub-phases for incremental delivery.
 
-- `core/interviews.ts` — `addInterview`, `listInterviews`, `markInterview`, `appendNotes`
-- `core/qa.ts` — append-only writer
-- `core/doctor.ts` — campaign diagnostics
-- `core/repair.ts` — rebuilds frontmatter, indexes, counters
-- `core/retro.ts` — `startRetro`, `appendRetro`, `showRetro`, `aggregateRetros`
-- `core/learning-plan.ts` — LLM call to generate a learning plan from a list of weak topics
-- `prompts/learning-plan.md` — prompt template
-- `applied/<slug>/retro.md` (new file type, append-only per H2)
-- `core/prep.ts` — `generatePrep({ jd, profile, targetRole, days })` returning a zod-validated structured plan; `formatPrep(plan)` → markdown; `writePrep(slug, plan)` (atomic + `.toolhash`); `readPrep(slug)`; `appendTopic(slug, topic)`
-- `prompts/prep.md` — prompt template; cross-references `retro.md` weak topics and `aggregate_retros` output for the same target role (read-only seed)
-- `applied/<slug>/prep.md` (new file type; regenerable on `--update`, appends user-added topics on `--add`; same `.toolhash` conflict detection as `cover-letter.md`)
-- `jho show <slug>` with file-ownership footer
-- `jho interview` subcommands
-- `jho retro <slug>` (interactive: ask for weak topics, generate plan, write to retro.md)
-- `jho retro <slug> --show`
-- `jho retro <slug> --interview <n>` (associate with a specific interview)
-- `jho retro <slug> --append` (add more weak topics to an existing retro)
-- `jho retro --aggregate` (recurring weak topics across all apps)
-- `jho prepare <slug>` (generate or show prep plan; slug inferred from cwd)
-- `jho prepare <slug> --update` (regenerate from current JD + profile; prompts on user-edit conflict)
-- `jho prepare <slug> --add "<topic>"` (append a manual topic)
-- `jho prepare <url>` and `jho prepare --text "..."` (ad-hoc: print to stdout, don't save)
-- `jho prepare --days <n>` (default 7), `--json`
-- `jho doctor`, `jho repair`, `jho ownership`
-- `evals/learning-plan/{cases.ts, rubric.md}` — qualitative evals
-- `evals/prep/{cases.ts, expected/<jd-slug>/expected.json, rubric.md}` — checks depth distribution, materials are real URLs, timeline sums, strengths/concerns reference profile
-- Tests
+#### 7a — Core: Interviews module (no LLM)
 
-**Deliverable**: Full CLI tracker workflow including post-mortem retro for failed interviews with LLM-generated learning plans, cross-app aggregation, and pre-interview prep plans generated from JD + profile. Real job-hunting campaign usable from CLI only.
+- `src/core/interviews/` — types, interviews.ts, index.ts
+- `addInterview(appliedDir, slug, opts)` — appends new H2 section to `interviews.md` with timestamp, type, interviewers, location, status, topics, notes
+- `listInterviews(appliedDir, slug)` — parses H2 sections into structured `InterviewEntry[]`
+- `markInterviewStatus(appliedDir, slug, index, status)` — regex-replaces `Status:` line in section `n` only
+- `appendInterviewNotes(appliedDir, slug, index, notes)` — appends to `Notes:` line in section `n`
+- Error classes: `InterviewError`, `InterviewNotFoundError`
+- Tests: append, list, mark status, append notes, invalid index, missing file
 
-**Commit**: `feat(applications): interviews, doctor, repair, ownership, retro, prep`
+**Deliverable**: `jho interview add/list/mark/notes` backend. `interviews.md` append-only writer with section-aware status updates.
+
+**Commit**: `feat(interviews): H2-based append-only interviews module`
+
+#### 7b — Core: Retro module (LLM-backed, Tier 2)
+
+- `src/core/retro/` — types, retro.ts, aggregate.ts, index.ts
+- `startRetro(opts)` — reads app + profile + JD, calls LLM with weak topics → generates learning plan → appends new H2 to `retro.md` (follows same `read→LLM→write` pattern as `cover-letter.ts`)
+- `appendRetro(opts)` — adds more weak topics and regenerates learning plan for an existing retro section
+- `showRetro(campaign, slug)` — reads `retro.md` (no LLM)
+- `aggregateRetros(appliedDir, options?)` — scans all `applied/*/retro.md`, extracts weak topics from H2 sections, counts frequency, returns ranked `AggregateResult[]` (pure text analysis, no LLM)
+  - `--role <slug>` filters aggregate to a single target role
+  - `--include-abandoned` includes abandoned apps in aggregation
+- `prompts/learning-plan.md` — Tier 2 prompt (temperature 0.6, refusal detection, 200–600 word plan per topic); same frontmatter format as `cover-letter.md`
+- Tests: retro generation, append, show, aggregate with filters, LLM failure, missing app
+
+**Deliverable**: `retro.md` appendable. Learning plan generation from weak topics. Cross-app weak topic aggregation.
+
+**Commit**: `feat(retro): LLM-backed post-mortem with learning plans and cross-app aggregation`
+
+#### 7c — Core: Prep module (LLM-backed, Tier 2, toolhash)
+
+- `src/core/prep/` — types, prep.ts, index.ts
+- `generatePrep(opts)` — reads app + profile + JD + target role + days, calls LLM → returns zod-validated structured `PrepPlan` (topics with depth/why/resources/timeline, behavioural questions, strengths, concerns, materials)
+- Ad-hoc mode: `generatePrepFromUrl(url, ...)` and `generatePrepFromText(text, ...)` — extract JD, generate plan, return to stdout (no file I/O)
+- `writePrep(campaign, slug, plan)` — writes `prep.md` with `<!-- jho:prep -->` section marker via `atomicWrite`; `.toolhash` sidecar for conflict detection (same mechanism as `cover-letter.md`)
+- `readPrep(campaign, slug)` — reads existing prep.md
+- `appendTopic(campaign, slug, topic)` — appends user-added H3 under a preserved "User-added topics" section
+- Cross-seeds weak topics from `retro.md` of the same app + `aggregateRetros()` output for the same target role (read-only seed; v1 does not write back)
+- `prompts/prep.md` — Tier 2 prompt (temperature 0.6); cross-references retro weak topics; validates depth distribution (≥1 of each), materials are real URLs, timeline sums to ±20% of `days`
+- Tests: generate, ad-hoc mode (URL/text), write/read round-trip, append topic, toolhash conflict, cross-referencing retro, LLM failure
+
+**Deliverable**: `jho prepare` generates structured pre-interview plans. `prep.md` with toolhash conflict detection. Ad-hoc mode for untracked jobs.
+
+**Commit**: `feat(prep): LLM-backed pre-interview prep plans with toolhash`
+
+#### 7d — Core: Doctor & Repair (no LLM, pure file I/O)
+
+- `src/core/doctor/` — types, doctor.ts, index.ts
+- `diagnoseCampaign(campaignRoot)` checks: campaign root exists, `config.json` valid, `profile.md` present, `applied/` directory, `.index.json` consistency
+- `diagnoseApp(appliedDir, slug)` checks: folder exists, `meta.md` has valid marker + frontmatter, `jd.md` has `fetched-jd` region, toolhash mismatches per file
+- Returns typed `DiagnoseIssue[]` with severity (`error|warn|info`), category, message, remediation hint
+- `src/core/repair/` — types, repair.ts, index.ts
+- `repairApp(appliedDir, slug, log?)` — rebuilds frontmatter from sibling files, regenerates toolhash, re-adds index entry
+- `repairAll(appliedDir, log?)` — rebuilds `.index.json`, `.counters.json`, walks all app folders running `repairApp` on each
+- Uses `core/fs.ts`, `core/frontmatter.ts`, `core/markers.ts`, `core/slug.ts`, `core/index-builder.ts`
+- Tests: doctor finds known issues (missing file, bad marker, toolhash mismatch), repair fixes them, no-op on clean state, all flag
+
+**Deliverable**: `jho doctor` diagnoses issues. `jho repair` fixes them. Campaign can be recovered from common corruptions.
+
+**Commit**: `feat(doctor,repair): campaign diagnostics and auto-repair`
+
+#### 7e — CLI: Show command with ownership footer
+
+- `src/cli/commands/show.ts` — replace stub with full implementation
+- Summary view: title, company, status, location, site, salary, tags, target role
+- Safe slug inference (cwd or explicit); error with hint when missing
+- Flags: `--jd`, `--meta`, `--cover-letter`, `--qa`, `--interviews` for focused file views (read and print raw file content)
+- File-ownership footer: renders a compact per-entry ownership table listing every file in the application folder with its `jho:` marker rules
+- Tests: show summary, show with filename flags, slug inference, missing slug error, help snapshot
+
+**Deliverable**: `jho show` displays applications with ownership footer.
+
+**Commit**: `feat(cli): jho show with summary view and file-ownership footer`
+
+#### 7f — CLI: Interview, retro, prepare, doctor, repair commands
+
+- `src/cli/commands/interview.ts` — wire subcommands to core interviews module:
+  - `jho interview add --when <datetime> --type <type> --duration <min> [--interviewer] [--location]`
+  - `jho interview list`
+  - `jho interview mark <n> --status <status>`
+  - `jho interview notes <n> --append <text>`
+  - All subcommands support slug inference from cwd
+- `src/cli/commands/retro.ts` — wire to core retro module:
+  - `jho retro [<slug>]` — interactive (prompt for weak topics, generate plan, write to retro.md)
+  - `jho retro [<slug>] --show` — display existing retro
+  - `jho retro [<slug>] --interview <n>` — associate retro with interview `n`
+  - `jho retro [<slug>] --append` — add weak topics to existing retro
+  - `jho retro --aggregate [--role <slug>] [--include-abandoned]` — cross-app aggregation
+- `src/cli/commands/prepare.ts` — wire to core prep module:
+  - `jho prepare [<slug>]` — generate/show prep plan
+  - `jho prepare <slug> --update` — regenerate from current JD + profile
+  - `jho prepare <slug> --add "<topic>"` — append a manual topic
+  - `jho prepare <url>` — ad-hoc from URL
+  - `jho prepare --text "..."` — ad-hoc from pasted text
+  - `--days <n>` (default 7), `--json`
+- `src/cli/commands/doctor.ts` — wire to core doctor module:
+  - `jho doctor [<slug>]` — diagnose single app or campaign
+  - `jho doctor --all` — run all checks
+- `src/cli/commands/repair.ts` — wire to core repair module:
+  - `jho repair [<slug>]` — repair single app or campaign
+  - `jho repair --all` — attempt all repairs
+- Each command: error handling via custom error classes, help text with examples, `--campaign` flag, slug inference
+- CLI tests, help snapshots updated
+
+**Deliverable**: All Phase 7 commands wired end-to-end. Campaign is fully usable from CLI only.
+
+**Commit**: `feat(cli): wire interview, retro, prepare, doctor, repair commands`
+
+#### 7g — Tests, evals & documentation
+
+- Core tests: `src/core/tests/interviews.test.ts`, `retro.test.ts`, `prep.test.ts`, `doctor.test.ts`, `repair.test.ts`
+- CLI tests: `show.test.ts`, `interview.test.ts`, `retro.test.ts`, `prepare.test.ts`, `doctor.test.ts`, `repair.test.ts` — captured output, flag parsing, error messages, help snapshots
+- Eval fixtures:
+  - `evals/learning-plan/{cases.ts, expected/, rubric.md}` — qualitative eval for learning plan generation: depth distribution, materials are real URLs, strengths/concerns reference profile
+  - `evals/prep/{cases.ts, expected/<jd-slug>/expected.json, rubric.md}` — checks depth distribution (≥1 of each level), materials are real URLs, timeline sums to ±20% of `days`, strengths/concerns correctly reference profile
+- Update `docs/ROADMAP.md` Phase 7 status to checked
+- Update `AGENTS.md` — new modules, updated CLI commands, updated MCP tools list, updated prompt table
+- Help snapshots regenerated
+
+**Deliverable**: All tests pass. Phase 7 complete.
+
+**Commit**: `test: Phase 7 tests, evals, docs update`
 
 ---
 

@@ -46,15 +46,25 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │   ├── cli/            # CLI commands
 │   ├── mcp/            # MCP server
 │   └── core/           # shared business logic (no I/O boundaries)
-│       ├── types.ts    # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
-│   ├── applications.ts  # application CRUD: create, update, read, list; writes meta.md + jd.md + index
-│       ├── jobs.ts     # JD fetch, extraction (single LLM call), target-role suggestion
-│       ├── cover-letter.ts  # cover letter generation (LLM-backed, marker-aware write)
-│       ├── application-qa.ts  # Q&A answer generation (LLM-backed, append-only qa.md)
-│       ├── stats.ts    # campaign snapshot: counts by status/role/site, funnel, this-month delta
-│       ├── index-builder.ts  # build/update applied/.index.json from folder listing
-│       ├── meta-schema.ts    # Zod schema for meta.md frontmatter
-│       └── tests/      # colocated vitest suite (Jest `__tests__` convention)
+│       ├── applications/  # application CRUD: create, update, read, list; writes meta.md + jd.md + index
+│       │   ├── application-qa.ts  # Q&A answer generation (LLM-backed, append-only qa.md)
+│       │   ├── applications.ts    # core CRUD operations
+│       │   ├── cover-letter.ts    # cover letter generation (LLM-backed, marker-aware write)
+│       │   ├── index-builder.ts   # build/update applied/.index.json from folder listing
+│       │   ├── meta-schema.ts     # Zod schema for meta.md frontmatter
+│       │   └── types.ts           # application-specific types
+│       ├── interviews/  # interview pipeline management (no LLM, H2-based append-only)
+│       ├── retro/       # post-mortem retros with LLM-backed learning plans + cross-app aggregation
+│       ├── prep/        # pre-interview prep plans (LLM-backed, toolhash sidecar)
+│       ├── doctor/      # campaign diagnostics
+│       ├── repair/      # auto-repair (frontmatter, indexes, counters)
+│       ├── jobs/        # JD fetch, extraction (single LLM call), target-role suggestion
+│       ├── track/       # track orchestration (create/update/refresh)
+│       ├── init/        # init wizard orchestration
+│       ├── stats/       # campaign snapshot: counts by status/role/site, funnel, this-month delta
+│       ├── list/        # list applications with filters
+│       ├── types.ts     # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
+│       └── tests/       # colocated vitest suite
 ├── prompts/            # versioned LLM prompt templates
 ├── evals/              # lightweight eval suite (not in CI)
 ├── docs/
@@ -112,13 +122,19 @@ jho answer  [<slug>] "<question>" | --image <path> | --stdin [--steer <text>]
                                   # slug optional (cwd inference)
                                   # --steer: custom LLM instructions for this answer
 jho answer show [<slug>]         # display existing Q&A entries
-jho interview [<slug>] {add,list,mark,notes}
-jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile)
+jho show [<slug>]       # show one application with file-ownership footer; --jd, --meta, --cover-letter, --qa, --interviews for focused views
+jho interview [<slug>] {add,list,mark,notes}  # manage interview pipeline; --when, --type, --duration, --interviewer, --location; mark --status, notes --append
+jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile); --update, --add, --text, --days, --json
+jho prepare <url>       # ad-hoc prep from URL (print to stdout, don't save)
+jho prepare --text "..."# ad-hoc prep from pasted text
 jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan
-jho retro --aggregate   # recurring weak topics across all apps
+jho retro [<slug>] --show # display existing retro
+jho retro [<slug>] --interview <n> # retro for a specific interview
+jho retro [<slug>] --append # add weak topics to existing retro
+jho retro --aggregate   # recurring weak topics across all apps; --role, --include-abandoned
 jho ownership           # what you can/can't edit
-jho doctor              # diagnose the campaign
-jho repair              # attempt auto-repair
+jho doctor [<slug>]     # diagnose the campaign or a single app; --all
+jho repair [<slug>]     # attempt auto-repair; --all for campaign-wide
 jho stats [--role <slug>] [--since <date|7d|30d|90d>] [--json]
   # campaign snapshot: counts by status / role / site, funnel, this-month delta
 jho logs [--tail <n>] [--level <level>] [--json] [--path]
@@ -142,13 +158,15 @@ jho mcp                 # start MCP server
 
 ## Prompts (versioned LLM templates)
 
-| Prompt              | Phase | Purpose                                        |
-| ------------------- | ----- | ---------------------------------------------- |
-| `profile-build.md`  | 3d    | Generate profile.md from CV + GitHub           |
-| `jd-extract.md`     | 5b    | Extract structured JD from raw text (Tier 1)   |
-| `suggest-role.md`   | 5c    | Suggest best-matching target role from profile |
-| `cover-letter.md`   | 6a    | Generate tailored cover letter (Tier 2)        |
-| `application-qa.md` | 6b    | Tailor answer to application question (Tier 2) |
+| Prompt              | Phase | Purpose                                          |
+| ------------------- | ----- | ------------------------------------------------ |
+| `profile-build.md`  | 3d    | Generate profile.md from CV + GitHub             |
+| `jd-extract.md`     | 5b    | Extract structured JD from raw text (Tier 1)     |
+| `suggest-role.md`   | 5c    | Suggest best-matching target role from profile   |
+| `cover-letter.md`   | 6a    | Generate tailored cover letter (Tier 2)          |
+| `application-qa.md` | 6b    | Tailor answer to application question (Tier 2)   |
+| `learning-plan.md`  | 7b    | Generate learning plan from weak topics (Tier 2) |
+| `prep.md`           | 7c    | Generate pre-interview prep plan (Tier 2)        |
 
 ## File ownership model
 
@@ -232,7 +250,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 6 — Cover letter & Q&A. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 6a (cover letter core), 6b (Q&A core), 6c (CLI commands), 6d (tests & docs), 6e (steer: custom LLM instructions).
+Phase 7 — Tracker depth. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 7a (core interviews), 7b (core retro), 7c (core prep), 7d (core doctor & repair), 7e (CLI show), 7f (CLI commands), 7g (tests, evals & docs).
 
 ## Cross-platform conventions
 
