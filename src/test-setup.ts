@@ -49,6 +49,20 @@ afterEach(() => {
   process.env['JHO_DATA'] = join(globalTestDir, 'data');
 });
 
-afterAll(() => {
-  rmSync(globalTestDir, { recursive: true, force: true });
+afterAll(async () => {
+  // On Windows Node 20, file handles (proper-lockfile sidecars, config.json
+  // writes, etc.) may be slow to release. Retry with exponential backoff.
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      rmSync(globalTestDir, { recursive: true, force: true });
+      return;
+    } catch (err: unknown) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (attempt === 4 || (code !== 'ENOTEMPTY' && code !== 'EPERM')) {
+        throw err;
+      }
+      await delay(50 * 2 ** attempt);
+    }
+  }
 });
