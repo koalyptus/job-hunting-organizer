@@ -40,6 +40,7 @@ vi.mock('../logger/logger.js', () => ({
 
 // Wrap atomicWrite in a spy so per-test mockResolvedValue works for write-failure tests.
 vi.mock('../fs.js', async () => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   const actual = await vi.importActual<typeof import('../fs.js')>('../fs.js');
   return {
     ...actual,
@@ -49,6 +50,7 @@ vi.mock('../fs.js', async () => {
 
 // Wrap readApplication so we can inject errors for the catch-all test.
 vi.mock('../applications/applications.js', async () => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   const actual = await vi.importActual<typeof import('../applications/applications.js')>(
     '../applications/applications.js',
   );
@@ -352,6 +354,18 @@ describe('addInterview', () => {
   it('throws InterviewNotFoundError for missing slug', async () => {
     await expect(
       addInterview(appliedDir, 'nonexistent', { when: '2026-06-10 10:00' }),
+    ).rejects.toThrow(InterviewError);
+  });
+
+  it('throws InterviewError for empty when', async () => {
+    await expect(addInterview(appliedDir, slug, { when: '', type: 'technical' })).rejects.toThrow(
+      InterviewError,
+    );
+  });
+
+  it('throws InterviewError for when with newlines', async () => {
+    await expect(
+      addInterview(appliedDir, slug, { when: '2026-06-10\n10:00', type: 'technical' }),
     ).rejects.toThrow(InterviewError);
   });
 

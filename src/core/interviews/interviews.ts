@@ -306,6 +306,9 @@ export async function addInterview(
   const { title, company } = app.frontmatter;
 
   // Validate input
+  if (!input.when || input.when.includes('\n')) {
+    throw new InterviewError('when must be a non-empty string without newlines');
+  }
   if (input.type !== undefined && !INTERVIEW_TYPES.includes(input.type)) {
     throw new InterviewError(`invalid interview type: ${input.type}`);
   }
