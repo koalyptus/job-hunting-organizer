@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
+import { confirmTrackSummary, confirmTrackUpdate } from '../../track/prompts.js';
 import { confirm, isCancel } from '@clack/prompts';
-import type { ExtractedJd, RoleSuggestion } from '../jobs/types.js';
-import type { TargetRole } from '../types.js';
-import type { ApplicationStatus } from '../applications/types.js';
+import type { ExtractedJd, RoleSuggestion } from '../../jobs/types.js';
+import type { TargetRole } from '../../types.js';
+import type { ApplicationStatus } from '../../applications/types.js';
 
 vi.mock('@clack/prompts', () => ({
   confirm: vi.fn(),
