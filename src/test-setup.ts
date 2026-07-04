@@ -1,7 +1,9 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync, rmSync } from 'node:fs';
-import { afterEach, afterAll } from 'vitest';
+import { vi, afterEach, afterAll } from 'vitest';
+import pino from 'pino';
+import type { Logger } from 'pino';
 
 /**
  * Global test setup: ensures JHO_CONFIG_HOME and JHO_DATA always point
@@ -16,6 +18,30 @@ const globalTestDir = mkdtempSync(join(tmpdir(), 'jho-global-test-'));
 process.env['JHO_CONFIG_HOME'] = join(globalTestDir, '.jho');
 process.env['JHO_DATA'] = join(globalTestDir, 'data');
 
+// Prevent pino from opening file handles inside the temp dir. The silent
+// logger is used for getRootLogger() so that moduleLogger() calls across
+// the codebase never create real file destinations — keeping the temp dir
+// cleanable on Windows Node 20 where file handles are slow to release.
+const silentLogger = pino({ level: 'silent' });
+vi.mock('./core/logger/logger.js', async (importOriginal) => {
+  const mod = await importOriginal<{
+    createLogger: (...args: unknown[]) => Logger;
+    defaultLoggerConfig: (...args: unknown[]) => unknown;
+    childLogger: (...args: unknown[]) => Logger;
+    moduleLogger: (...args: unknown[]) => Logger;
+    closeLogger: (...args: unknown[]) => void;
+    logError: (...args: unknown[]) => void;
+    isInteractive: (...args: unknown[]) => boolean;
+    getRootLogger: () => Logger;
+    setRootLogger: (logger: Logger) => void;
+  }>();
+  return {
+    ...mod,
+    getRootLogger: () => silentLogger,
+    setRootLogger: () => {},
+  };
+});
+
 afterEach(() => {
   // Reset env vars to the global test dir after each test.
   // This catches tests that modify env vars without restoring them.
@@ -24,22 +50,5 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  // On Windows Node 20, pino file destinations may hold file handles
-  // briefly after close, causing rmSync to fail with ENOTEMPTY.
-  // Retry with exponential backoff on those errors.
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      rmSync(globalTestDir, { recursive: true, force: true });
-      return;
-    } catch (err: unknown) {
-      const code = (err as NodeJS.ErrnoException).code;
-      if (attempt === 4 || (code !== 'ENOTEMPTY' && code !== 'EPERM')) {
-        throw err;
-      }
-      // Synchronous wait via Atomics (setup file must stay sync)
-      const buf = new SharedArrayBuffer(4);
-      const view = new Int32Array(buf);
-      Atomics.wait(view, 0, 0, 50 * 2 ** attempt);
-    }
-  }
+  rmSync(globalTestDir, { recursive: true, force: true });
 });
