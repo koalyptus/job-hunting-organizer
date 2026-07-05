@@ -7,7 +7,6 @@
  */
 import type { Logger } from 'pino';
 import { join } from 'node:path';
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { isUrl } from '../url.js';
@@ -618,16 +617,16 @@ export async function runTrackRefresh(opts: TrackOptions): Promise<TrackResult> 
     }
   }
 
-   // Read current jd.md content
-   const folder = join(campaignRoot, 'applied', slug);
-   const jdPath = join(folder, 'jd.md');
-   let jdContent = '';
-   try {
-     jdContent = await readFile(jdPath, 'utf8');
-   } catch (err) {
-     // File doesn't exist or can't be read - treat as empty
-     log?.debug({ slug, err }, 'jd.md not found when refreshing; creating fresh file');
-   }
+  // Read current jd.md content
+  const folder = join(campaignRoot, 'applied', slug);
+  const jdPath = join(folder, 'jd.md');
+  let jdContent = '';
+  try {
+    jdContent = await readFile(jdPath, 'utf8');
+  } catch (err) {
+    // File doesn't exist or can't be read - treat as empty
+    log?.debug({ slug, err }, 'jd.md not found when refreshing; creating fresh file');
+  }
 
   // Replace the fetched-jd region with the new description
   const updatedJdContent = replaceRegion(jdContent, 'fetched-jd', jd.description ?? '', {
