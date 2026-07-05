@@ -259,16 +259,20 @@ exports[`command --help output > retro has consistent help output 1`] = `
 Post-mortem for failed interviews (slug inferred from cwd if omitted)
 
 Arguments:
-  slug                 application slug (inferred from cwd if omitted)
+  slug                    application slug (inferred from cwd if omitted)
 
 Options:
-  --show               display the most recent retro
-  --interview <index>  retro for a specific interview index
-  --append             append notes to the existing retro
-  --aggregate          show recurring weak topics across all apps
-  --role <slug>        scope to a single target role (with --aggregate)
-  --include-abandoned  also count weak topics from abandoned apps
-  -h, --help           display help for command
+  --show                  display the most recent retro
+  --interview <index>     retro for a specific interview index
+  --append                add weak topics to the existing retro
+  --aggregate             show recurring weak topics across all apps
+  --weak-topics <topics>  comma-separated weak topics (prompts interactively if
+                          omitted)
+  --notes <text>          additional context notes
+  --steer <text>          instructions to guide the learning plan generation
+  --role <slug>           scope to a single target role (with --aggregate)
+  --include-abandoned     also count weak topics from abandoned apps
+  -h, --help              display help for command
 "
 `;
 
