@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { computeHash, writeToolhash, TOOL_MANAGED_FILES } from '../toolhash.js';
@@ -102,7 +102,6 @@ export async function repairAll(campaignRoot: string): Promise<RepairResult> {
     });
 
     // Rebuild counters from folder names
-    const { readdir } = await import('node:fs/promises');
     const folders = await readdir(appliedDir, { withFileTypes: true });
     const slugFolders = folders
       .filter((entry) => entry.isDirectory() && SLUG_PATTERN.test(entry.name))
