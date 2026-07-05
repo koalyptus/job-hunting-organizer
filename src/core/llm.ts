@@ -128,8 +128,42 @@ export async function chatComplete(
   return result;
 }
 
+/**
+ * Extract JSON from a string that may contain markdown fences, preamble
+ * text, or other surrounding content. Tries three strategies in order:
+ *
+ * 1. Direct `JSON.parse` (fast path for clean output)
+ * 2. Extract from ```json ... ``` fences
+ * 3. Find first `{` to last `}` and parse the slice
+ *
+ * @throws {SyntaxError} if no valid JSON can be extracted.
+ */
+export function extractJson(raw: string): unknown {
+  // Fast path — clean JSON
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // not clean JSON, try other strategies
+  }
+
+  // Try extracting from markdown fences
+  const fenceMatch = raw.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
+  if (fenceMatch) {
+    return JSON.parse(fenceMatch[1]!.trim());
+  }
+
+  // Try finding first { to last }
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    return JSON.parse(raw.slice(start, end + 1));
+  }
+
+  throw new SyntaxError('No JSON found in LLM response');
+}
+
 export function parseJsonResult<T>(content: string, schema?: z.ZodType<T>): T {
-  const parsed: unknown = JSON.parse(content);
+  const parsed: unknown = extractJson(content);
   if (schema) {
     return schema.parse(parsed);
   }

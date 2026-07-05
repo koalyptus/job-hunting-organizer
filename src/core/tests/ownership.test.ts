@@ -22,7 +22,7 @@ describe('OWNERSHIP_ROWS', () => {
     expect(files).toContain('qa.md');
     expect(files).toContain('interviews.md');
     expect(files).toContain('retro.md');
-    expect(files).toContain('prep.md');
+    expect(files).toContain('prepare.md');
     expect(files).toContain('notes.md');
   });
 });
