@@ -292,6 +292,32 @@ describe('parseRetroFile', () => {
     expect(parseRetroFile(content)).toHaveLength(0);
   });
 
+  it('preserves blank lines in Other notes section', () => {
+    const content = [
+      '## Retro for interview: 2026-06-17 14:00 — Interview #1 [failed]',
+      '',
+      '- Date: 2026-06-17',
+      '- Status at the time: failed',
+      '',
+      '### Other notes',
+      '',
+      'Interviewer was very technical.',
+      '',
+      'Asked deep dive questions on distributed systems.',
+      '',
+      '### Learning plan',
+      '',
+      'Plan content.',
+      '',
+    ].join('\n');
+
+    const sections = parseRetroFile(content);
+    expect(sections[0]!.notes).toContain('Interviewer was very technical.');
+    expect(sections[0]!.notes).toContain('Asked deep dive questions on distributed systems.');
+    // Blank lines between paragraphs should be preserved
+    expect(sections[0]!.notes).toMatch(/technical\.\n\nAsked/);
+  });
+
   it('parses weak topics without detail (no "—" separator)', () => {
     const content = [
       '## Retro for interview: 2026-06-17 14:00 — Interview #1 [failed]',

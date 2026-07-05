@@ -94,7 +94,7 @@ export function parseRetroFile(content: string): RetroSection[] {
     if (headingMatch) {
       if (currentHeading !== null) {
         const body = lines.slice(currentStartIndex + 1, i);
-        const section = parseSectionToEntry(currentHeading, body, sectionCount);
+        const section = parseRetroSection(currentHeading, body, sectionCount);
         if (section) {
           sections.push(section);
           sectionCount++;
@@ -107,7 +107,7 @@ export function parseRetroFile(content: string): RetroSection[] {
 
   if (currentHeading !== null) {
     const body = lines.slice(currentStartIndex + 1);
-    const section = parseSectionToEntry(currentHeading, body, sectionCount);
+    const section = parseRetroSection(currentHeading, body, sectionCount);
     if (section) {
       sections.push(section);
     }
@@ -119,7 +119,7 @@ export function parseRetroFile(content: string): RetroSection[] {
 /**
  * Build a RetroSection from a parsed H2 heading and its body lines.
  */
-function parseSectionToEntry(heading: string, body: string[], index: number): RetroSection | null {
+function parseRetroSection(heading: string, body: string[], index: number): RetroSection | null {
   const headingData = parseRetroHeading(heading);
   if (!headingData) {
     return null;
@@ -178,12 +178,12 @@ function parseSectionToEntry(heading: string, body: string[], index: number): Re
           detail: weakTopic[2] ?? '',
         });
       }
-    } else if (inOtherNotes && line.trim()) {
+    } else if (inOtherNotes) {
       notesBuffer.push(line);
     }
   }
   if (notesBuffer.length > 0) {
-    sectionData.notes = notesBuffer.join('\n');
+    sectionData.notes = notesBuffer.join('\n').trim();
   }
 
   return {
@@ -256,19 +256,10 @@ async function generateLearningPlan(
   weakTopics: string[],
   steer: string | undefined,
   externalLog: Logger | undefined,
+  frontmatter: { title: string; company: string; location: string },
 ): Promise<{ content: string; model: string; durationMs: number }> {
   const campaignRoot = resolveCampaignRoot(campaign);
   const appliedDir = resolveAppliedDir(campaignRoot);
-
-  let app;
-  try {
-    app = await readApplication(appliedDir, slug);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new RetroError(`Failed to read application: ${msg}`);
-  }
-
-  const { frontmatter } = app;
 
   const appFolder = join(appliedDir, slug);
   let jdContent: string;
@@ -397,7 +388,14 @@ export async function startRetro(opts: StartRetroInput): Promise<StartRetroResul
   const effectiveSteer = steer ?? existingSteer;
 
   // Generate the learning plan
-  const plan = await generateLearningPlan(slug, campaign, weakTopics, effectiveSteer, externalLog);
+  const plan = await generateLearningPlan(
+    slug,
+    campaign,
+    weakTopics,
+    effectiveSteer,
+    externalLog,
+    app.frontmatter,
+  );
 
   const section = buildSection(
     new Date()
@@ -484,6 +482,17 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
   const existingSteer = extractSteer(existingContent);
   const effectiveSteer = steer ?? existingSteer;
 
+  let app;
+  try {
+    app = await readApplication(appliedDir, slug);
+  } catch (err) {
+    if (err instanceof Error && err.name === 'ApplicationNotFoundError') {
+      throw new RetroNotFoundError(slug);
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new RetroError(`Failed to read application: ${msg}`);
+  }
+
   const sections = parseRetroFile(existingContent);
   if (sections.length === 0) {
     throw new RetroError(`No retro sections found for "${slug}"`);
@@ -504,7 +513,7 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
     ...additionalTopics.filter((topic) => !existingLabels.has(topic)),
   ];
 
-  const combinedNotes = [lastSection.notes, incomingNotes ?? ''].filter(Boolean).join('\n');
+  const combinedNotes = [lastSection.notes, incomingNotes].filter(Boolean).join('\n').trim();
 
   // Regenerate learning plan with all weak topics (outside lock)
   const plan = await generateLearningPlan(
@@ -513,6 +522,7 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
     combinedTopics,
     effectiveSteer,
     externalLog,
+    app.frontmatter,
   );
 
   // Rebuild and persist (inside lock)
