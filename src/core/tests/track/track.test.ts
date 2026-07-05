@@ -893,6 +893,7 @@ describe('runTrackRefresh', () => {
 describe('steer functionality', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(atomicWrite).mockResolvedValue(true);
   });
 
   it('writes steer to jd.md via replaceSteer in create mode', async () => {

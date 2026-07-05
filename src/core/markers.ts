@@ -24,7 +24,12 @@ import type { RegionName, Region, ReplaceRegionOptions } from './types.js';
  * alias in `core/types.ts` is a literal union of the same strings.
  * The two are checked for parity by the test suite.
  */
-export const REGION_MARKER_NAMES = ['fetched-jd', 'tool-output', 'cover-letter'] as const;
+export const REGION_MARKER_NAMES = [
+  'fetched-jd',
+  'tool-output',
+  'cover-letter',
+  'prepare',
+] as const;
 
 /**
  * Matches a region start marker line. Group 1 is the region name.

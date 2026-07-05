@@ -7,7 +7,7 @@ import {
 } from 'openai';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { z } from 'zod';
-import { chatComplete, defaultLlmConfig, parseJsonResult } from '../llm.js';
+import { chatComplete, defaultLlmConfig, parseJsonResult, extractJson } from '../llm.js';
 
 const testConfig = {
   baseUrl: 'https://api.test.com/v1',
@@ -357,6 +357,86 @@ describe('chatComplete', () => {
       );
     });
   });
+
+  describe('edge cases', () => {
+    it('returns null finish_reason when API omits it', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(
+        okJson({
+          ...successBody,
+          choices: [{ index: 0, message: { role: 'assistant', content: 'Hi' } }],
+        }),
+      );
+
+      const result = await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        testConfig,
+        testChatOpts,
+      );
+
+      expect(result.finishReason).toBeNull();
+    });
+
+    it('falls back to "no-key" when apiKey is empty', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(okJson(successBody));
+
+      await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        { ...testConfig, apiKey: '' },
+        testChatOpts,
+      );
+
+      const init = fetch.mock.calls[0]![1]!;
+      const authHeader =
+        (init!.headers as Record<string, string>)['Authorization'] ??
+        (init!.headers as Headers).get('Authorization');
+      expect(authHeader).toBe('Bearer no-key');
+    });
+
+    it('normalises baseUrl: trailing slash gets /v1 appended', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(okJson(successBody));
+
+      await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        { ...testConfig, baseUrl: 'http://localhost:11434/' },
+        testChatOpts,
+      );
+
+      const url = fetch.mock.calls[0]![0] as string;
+      expect(url).toContain('localhost:11434/v1/chat/completions');
+    });
+
+    it('normalises baseUrl: bare URL gets /v1 appended', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(okJson(successBody));
+
+      await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        { ...testConfig, baseUrl: 'http://localhost:11434' },
+        testChatOpts,
+      );
+
+      const url = fetch.mock.calls[0]![0] as string;
+      expect(url).toContain('localhost:11434/v1/chat/completions');
+    });
+
+    it('normalises baseUrl: /v1 URL is not double-appended', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(okJson(successBody));
+
+      await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        { ...testConfig, baseUrl: 'http://localhost:11434/v1' },
+        testChatOpts,
+      );
+
+      const url = fetch.mock.calls[0]![0] as string;
+      expect(url).toContain('localhost:11434/v1/chat/completions');
+      expect(url).not.toContain('v1/v1');
+    });
+  });
 });
 
 describe('defaultLlmConfig', () => {
@@ -425,5 +505,43 @@ describe('parseJsonResult', () => {
 
   it('throws SyntaxError on invalid JSON', () => {
     expect(() => parseJsonResult('not json')).toThrow(SyntaxError);
+  });
+
+  it('parses JSON from markdown fences via extractJson', () => {
+    const fenced = '```json\n{"a":1}\n```';
+    const result = parseJsonResult(fenced);
+    expect(result).toEqual({ a: 1 });
+  });
+
+  it('parses JSON from surrounding text via extractJson', () => {
+    const wrapped = 'Here:\n{"a":1}\nDone.';
+    const result = parseJsonResult(wrapped);
+    expect(result).toEqual({ a: 1 });
+  });
+});
+
+describe('extractJson', () => {
+  it('parses clean JSON directly', () => {
+    expect(extractJson('{"a":1}')).toEqual({ a: 1 });
+  });
+
+  it('extracts from markdown fences', () => {
+    const input = 'pre text\n```json\n{"a":1}\n```\npost text';
+    expect(extractJson(input)).toEqual({ a: 1 });
+  });
+
+  it('extracts from markdown fences without json tag', () => {
+    const input = '```\n{"a":1}\n```';
+    expect(extractJson(input)).toEqual({ a: 1 });
+  });
+
+  it('extracts from surrounding braces', () => {
+    const input = 'Here is the result:\n{"a":1}\nDone.';
+    expect(extractJson(input)).toEqual({ a: 1 });
+  });
+
+  it('throws SyntaxError when no JSON found', () => {
+    expect(() => extractJson('no json here')).toThrow(SyntaxError);
+    expect(() => extractJson('no json here')).toThrow('No JSON found');
   });
 });

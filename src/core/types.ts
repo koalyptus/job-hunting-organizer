@@ -356,7 +356,7 @@ export interface ParsedFile {
  * `REGION_MARKER_NAMES` constant. **Must stay in sync** with that
  * array — the two are checked at compile time by the test suite.
  */
-export type RegionName = 'fetched-jd' | 'tool-output' | 'cover-letter';
+export type RegionName = 'fetched-jd' | 'tool-output' | 'cover-letter' | 'prepare';
 
 /**
  * A parsed region: a tool-managed block of content bounded by paired

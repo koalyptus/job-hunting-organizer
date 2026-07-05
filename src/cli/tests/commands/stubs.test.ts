@@ -23,11 +23,10 @@ describe('stub commands exit with correct phase messages', () => {
     expect(stderr).toContain('missing <slug> argument');
   });
 
-  it('prepare exits with code 1 and mentions phase 7', async () => {
+  it('prepare exits with slug missing error when run outside app folder', async () => {
     const { stderr, exitCode } = await runCommand(prepareCommand, ['prepare']);
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('not implemented yet');
-    expect(stderr).toContain('phase 7');
+    expect(stderr).toContain('missing <slug> argument');
   });
 
   it('doctor exits with code 1 and mentions phase 7', async () => {

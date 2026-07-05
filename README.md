@@ -31,6 +31,17 @@ npm run build
 
 The binaries are then available at `./bin/jho` and `./bin/jho-mcp`.
 
+## Build & test commands
+
+```sh
+npm run build        # tsup → dist/
+npm run typecheck    # tsc --noEmit
+npm run lint         # eslint
+npm run format:check # prettier
+npm test             # vitest
+npm run eval         # lightweight LLM eval suite (manual)
+```
+
 ### Cross-platform notes
 
 Runs unchanged on Linux, macOS, and Windows.
@@ -40,7 +51,7 @@ Runs unchanged on Linux, macOS, and Windows.
 - All shell commands above work in PowerShell, cmd, bash, and zsh. No platform-specific flags.
 - CI runs the full check matrix on `ubuntu-latest`, `windows-latest`, and `macos-latest` (Node 20 + 22).
 
-## Quickstart (once Phase 4 is shipped)
+## Quickstart
 
 ```sh
 # 1. Initialize your campaign (wizard builds your profile from CV + GitHub,
@@ -65,7 +76,7 @@ jho interview 2026-Jun-03-SE-Nuage-Technology-Group-12345 add \
 
 # 5b. Before the interview: get a prep plan (tech stack, depth-tagged topics, timeline)
 jho prepare 2026-Jun-03-SE-Nuage-Technology-Group-12345 --days 7
-#   ... write prep.md to the app folder; regenerate with --update, append with --add
+#   ... write prepare.md to the app folder; append with --add
 
 # 6. After a rejection: jot down weak topics, get a learning plan
 jho retro 2026-Jun-03-SE-Nuage-Technology-Group-12345

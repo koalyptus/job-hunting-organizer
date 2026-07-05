@@ -192,20 +192,23 @@ Options:
 `;
 
 exports[`command --help output > prepare has consistent help output 1`] = `
-"Usage: prepare [options] [slugOrUrl]
+"Usage: prepare [options] [command] [slugOrUrl]
 
-Generate a pre-interview prep plan (slug inferred from cwd if omitted)
+Generate or show prep plans (slug inferred from cwd if omitted)
 
 Arguments:
-  slugOrUrl      application slug or job posting URL
+  slugOrUrl       application slug or job posting URL
 
 Options:
-  --update       update an existing prep plan
-  --add <topic>  add a topic to brush up on
-  --text <text>  paste job description text (ad-hoc, prints to stdout)
-  --days <n>     number of days until the interview (default: "7")
-  --json         output as JSON
-  -h, --help     display help for command
+  --add <topic>   add a topic to brush up on
+  --text <text>   paste job description text (ad-hoc, prints to stdout)
+  --days <n>      number of days until the interview (default: "7")
+  --steer <text>  instructions to guide the prep plan generation
+  --json          output as JSON
+  -h, --help      display help for command
+
+Commands:
+  show [slug]     Show an existing prep plan (slug inferred from cwd if omitted)
 "
 `;
 

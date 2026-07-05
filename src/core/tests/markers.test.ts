@@ -38,7 +38,7 @@ describe('isKnownRegionName', () => {
     // drift between the two — if you add a name to one, add it to
     // the other, and update both this assertion and the union.
     const fromArray: readonly string[] = REGION_MARKER_NAMES;
-    const fromLiteral: readonly string[] = ['fetched-jd', 'tool-output', 'cover-letter'];
+    const fromLiteral: readonly string[] = ['fetched-jd', 'tool-output', 'cover-letter', 'prepare'];
     expect(fromArray).toEqual(fromLiteral);
   });
 });

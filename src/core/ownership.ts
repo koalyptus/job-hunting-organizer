@@ -60,8 +60,8 @@ export const OWNERSHIP_ROWS: readonly OwnershipRow[] = [
     onYourEdit: 'older retro sections stay as you wrote them',
   },
   {
-    file: 'prep.md',
-    toolWrites: 'rewrites on `--update`; appends topics on `--add`',
+    file: 'prepare.md',
+    toolWrites: 'rewrites on each `jho prepare`; appends topics on `--add`',
     editFreely: 'yes',
     onYourEdit: 'asks before overwriting; your edits are kept unless you accept',
   },

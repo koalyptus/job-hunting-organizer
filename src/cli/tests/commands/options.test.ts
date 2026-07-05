@@ -37,9 +37,9 @@ describe('command option definitions match documentation', () => {
     expect(optionLongs(coverLetterCommand)).toEqual(expect.arrayContaining(['--no-save']));
   });
 
-  it('prepare has --update, --add, --text, --days, --json', () => {
+  it('prepare has --add, --text, --days, --steer, --json', () => {
     expect(optionLongs(prepareCommand)).toEqual(
-      expect.arrayContaining(['--update', '--add', '--text', '--days', '--json']),
+      expect.arrayContaining(['--add', '--text', '--days', '--steer', '--json']),
     );
   });
 

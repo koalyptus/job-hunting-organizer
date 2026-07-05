@@ -460,19 +460,19 @@ Split into sub-phases for incremental delivery.
 
 #### 7c — Core: Prep module (LLM-backed, Tier 2, toolhash)
 
-- `src/core/prep/` — types, prep.ts, index.ts
+- `src/core/prepare/` — types, prepare.ts, index.ts
 - `generatePrep(opts)` — reads app + profile + JD + target role + days, calls LLM → returns zod-validated structured `PrepPlan` (topics with depth/why/resources/timeline, behavioural questions, strengths, concerns, materials)
 - Ad-hoc mode: `generatePrepFromUrl(url, ...)` and `generatePrepFromText(text, ...)` — extract JD, generate plan, return to stdout (no file I/O)
-- `writePrep(campaign, slug, plan)` — writes `prep.md` with `<!-- jho:prep -->` section marker via `atomicWrite`; `.toolhash` sidecar for conflict detection (same mechanism as `cover-letter.md`)
-- `readPrep(campaign, slug)` — reads existing prep.md
+- `writePrep(campaign, slug, plan)` — writes `prepare.md` with `<!-- jho:prepare -->` section marker via `atomicWrite`; `.toolhash` sidecar for conflict detection (same mechanism as `cover-letter.md`)
+- `readPrep(campaign, slug)` — reads existing prepare.md
 - `appendTopic(campaign, slug, topic)` — appends user-added H3 under a preserved "User-added topics" section
 - Cross-seeds weak topics from `retro.md` of the same app + `aggregateRetros()` output for the same target role (read-only seed; v1 does not write back)
-- `prompts/prep.md` — Tier 2 prompt (temperature 0.6); cross-references retro weak topics; validates depth distribution (≥1 of each), materials are real URLs, timeline sums to ±20% of `days`
+- `prompts/prepare.md` — Tier 2 prompt (temperature 0.6); cross-references retro weak topics; validates depth distribution (≥1 of each), materials are real URLs, timeline sums to ±20% of `days`
 - Tests: generate, ad-hoc mode (URL/text), write/read round-trip, append topic, toolhash conflict, cross-referencing retro, LLM failure
 
-**Deliverable**: `jho prepare` generates structured pre-interview plans. `prep.md` with toolhash conflict detection. Ad-hoc mode for untracked jobs.
+**Deliverable**: `jho prepare` generates structured pre-interview plans. `prepare.md` with toolhash conflict detection. Ad-hoc mode for untracked jobs.
 
-**Commit**: `feat(prep): LLM-backed pre-interview prep plans with toolhash`
+**Commit**: `feat(prepare): LLM-backed pre-interview prepare plans with toolhash`
 
 #### 7d — Core: Doctor & Repair (no LLM, pure file I/O)
 
@@ -517,9 +517,9 @@ Split into sub-phases for incremental delivery.
   - `jho retro [<slug>] --interview <n>` — associate retro with interview `n`
   - `jho retro [<slug>] --append` — add weak topics to existing retro
   - `jho retro --aggregate [--role <slug>] [--include-abandoned]` — cross-app aggregation
-- `src/cli/commands/prepare.ts` — wire to core prep module:
-  - `jho prepare [<slug>]` — generate/show prep plan
-  - `jho prepare <slug> --update` — regenerate from current JD + profile
+- `src/cli/commands/prepare.ts` — wire to core prepare module:
+  - `jho prepare [<slug>]` — generate/show prepare plan
+  - `jho prepare <slug>` — regenerate from current JD + profile
   - `jho prepare <slug> --add "<topic>"` — append a manual topic
   - `jho prepare <url>` — ad-hoc from URL
   - `jho prepare --text "..."` — ad-hoc from pasted text
@@ -539,11 +539,11 @@ Split into sub-phases for incremental delivery.
 
 #### 7g — Tests, evals & documentation
 
-- Core tests: `src/core/tests/interviews.test.ts`, `retro.test.ts`, `prep.test.ts`, `doctor.test.ts`, `repair.test.ts`
+- Core tests: `src/core/tests/interviews.test.ts`, `retro.test.ts`, `prepare.test.ts`, `doctor.test.ts`, `repair.test.ts`
 - CLI tests: `show.test.ts`, `interview.test.ts`, `retro.test.ts`, `prepare.test.ts`, `doctor.test.ts`, `repair.test.ts` — captured output, flag parsing, error messages, help snapshots
 - Eval fixtures:
   - `evals/learning-plan/{cases.ts, expected/, rubric.md}` — qualitative eval for learning plan generation: depth distribution, materials are real URLs, strengths/concerns reference profile
-  - `evals/prep/{cases.ts, expected/<jd-slug>/expected.json, rubric.md}` — checks depth distribution (≥1 of each level), materials are real URLs, timeline sums to ±20% of `days`, strengths/concerns correctly reference profile
+  - `evals/prepare/{cases.ts, expected/<jd-slug>/expected.json, rubric.md}` — checks depth distribution (≥1 of each level), materials are real URLs, timeline sums to ±20% of `days`, strengths/concerns correctly reference profile
 - Update `docs/ROADMAP.md` Phase 7 status to checked
 - Update `AGENTS.md` — new modules, updated CLI commands, updated MCP tools list, updated prompt table
 - Help snapshots regenerated

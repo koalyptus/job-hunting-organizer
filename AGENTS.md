@@ -55,7 +55,7 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       │   └── types.ts           # application-specific types
 │       ├── interviews/  # interview pipeline management (no LLM, H2-based append-only)
 │       ├── retro/       # post-mortem retros with LLM-backed learning plans + cross-app aggregation
-│       ├── prep/        # pre-interview prep plans (LLM-backed, toolhash sidecar)
+│       ├── prepare/     # pre-interview prep plans (LLM-backed, toolhash sidecar)
 │       ├── doctor/      # campaign diagnostics
 │       ├── repair/      # auto-repair (frontmatter, indexes, counters)
 │       ├── jobs/        # JD fetch, extraction (single LLM call), target-role suggestion
@@ -74,6 +74,9 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 ├── examples/           # MCP client configs (claude-desktop, cursor, continue)
 ├── .github/workflows/  # CI (lint, typecheck, test, build)
 ├── glama.json          # glama.ai MCP registry metadata
+├── tsconfig.json       # TypeScript configuration
+├── tsup.config.ts      # tsup build configuration
+├── vitest.config.ts    # vitest test configuration
 └── package.json
 ```
 
@@ -124,7 +127,7 @@ jho answer  [<slug>] "<question>" | --image <path> | --stdin [--steer <text>]
 jho answer show [<slug>]         # display existing Q&A entries
 jho show [<slug>]       # show one application with file-ownership footer; --jd, --meta, --cover-letter, --qa, --interviews for focused views
 jho interview [<slug>] {add,list,mark,notes}  # manage interview pipeline; --when, --type, --duration, --interviewer, --location; mark --status, notes --append
-jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile); --update, --add, --text, --days, --json
+jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile); --add, --text, --days, --steer, --json
 jho prepare <url>       # ad-hoc prep from URL (print to stdout, don't save)
 jho prepare --text "..."# ad-hoc prep from pasted text
 jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan; --steer <text>
@@ -154,7 +157,7 @@ jho mcp                 # start MCP server
 
 ## Resources (planned)
 
-`profile://current`, `applied://list`, `applied://<slug>`, `applied://<slug>/interviews`, `applied://<slug>/retro`, `applied://<slug>/prep`.
+`profile://current`, `applied://list`, `applied://<slug>`, `applied://<slug>/interviews`, `applied://<slug>/retro`, `applied://<slug>/prepare`.
 
 ## Prompts (versioned LLM templates)
 
@@ -166,7 +169,7 @@ jho mcp                 # start MCP server
 | `cover-letter.md`   | 6a    | Generate tailored cover letter (Tier 2)          |
 | `application-qa.md` | 6b    | Tailor answer to application question (Tier 2)   |
 | `learning-plan.md`  | 7b    | Generate learning plan from weak topics (Tier 2) |
-| `prep.md`           | 7c    | Generate pre-interview prep plan (Tier 2)        |
+| `prepare.md`        | 7c    | Generate pre-interview prep plan (Tier 2)        |
 
 ## File ownership model
 
@@ -183,7 +186,7 @@ jho mcp                 # start MCP server
 | `qa.md`                                             | appends new entries; `- Steer:` line per entry when `--steer` provided        | yes                                                 | older entries stay as you wrote them; steer stored per-entry    |
 | `interviews.md`                                     | appends new entries; updates the current status line                          | yes (except the current status line)                | change the status with `jho interview mark`                     |
 | `retro.md`                                          | appends a new section per retro                                               | yes (your notes and checklists inside a section)    | older retro sections stay as you wrote them                     |
-| `prep.md`                                           | rewrites on `--update`; appends topics on `--add`                             | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
+| `prepare.md`                                        | rewrites on each `jho prepare`; appends topics on `--add`                     | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
 | `profile.md` (the "Target roles" section)           | suggests roles on `jho campaign init` and `profile rebuild`                   | yes (titles, fields, priority)                      | asks before overwriting                                         |
 | `backups/profile.*.md.bak`                          | created on re-init (before profile overwrite)                                 | no (tool-managed backups)                           | previous profile versions preserved; safe to delete manually    |
 | `notes.md`                                          | never                                                                         | yes                                                 | this file is entirely yours — the tool never reads or writes it |

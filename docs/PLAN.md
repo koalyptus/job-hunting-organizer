@@ -288,12 +288,12 @@ patterns the LLM can't see from a single interview.
 
 **Flags**: `--role <slug>` to scope to a single target role, `--include-abandoned` to also count weak topics from apps that the user `abandoned` (off by default — abandonment is a self-reflection signal, not a learning-from-failure signal; see §4 status semantics).
 
-### `prep.md` schema (one file per application; regenerable, user-editable)
+### `prepare.md` schema (one file per application; regenerable, user-editable)
 
-Created by `jho prepare <slug>` from the JD plus the user's profile and target role. The pre-interview counterpart to `retro.md`: instead of learning from failure, it primes the user with what to brush up on _before_ walking in. Regenerated on `jho prepare <slug> --update`; user-added free-form edits are preserved unless the user accepts an overwrite prompt (same `.toolhash` sidecar mechanism as `cover-letter.md`).
+Created by `jho prepare <slug>` from the JD plus the user's profile and target role. The pre-interview counterpart to `retro.md`: instead of learning from failure, it primes the user with what to brush up on _before_ walking in. Regenerated on each `jho prepare`; user-added free-form edits are preserved unless the user accepts an overwrite prompt (same `.toolhash` sidecar mechanism as `cover-letter.md`).
 
 ```markdown
-<!-- jho:prep — pre-interview prep plan. Tool regenerates on --update; user body preserved on edit. -->
+<!-- jho:prepare — pre-interview prep plan. Tool rewrites on each run; user body preserved on edit. -->
 
 # Prep plan — <title> @ <company>
 
@@ -371,21 +371,21 @@ Re-read: your Canva conflict story; tighten to 90 seconds.
 - https://react.dev/reference/rsc/server-components
 ```
 
-**Ad-hoc mode**: `jho prepare <url>` and `jho prepare --text "..."` skip writing `prep.md` and just print the formatted plan to stdout. Useful for jobs you haven't tracked yet, or quick "what should I read up on?" passes.
+**Ad-hoc mode**: `jho prepare <url>` and `jho prepare --text "..."` skip writing `prepare.md` and just print the formatted plan to stdout. Useful for jobs you haven't tracked yet, or quick "what should I read up on?" passes.
 
-**Manual topics**: `jho prepare <slug> --add "Read the engineering blog"` appends a user-added H3 (or bullet under a "User-added" section) with a marker so the tool can preserve it on `--update`.
+**Manual topics**: `jho prepare <slug> --add "Read the engineering blog"` appends a user-added H3 (or bullet under a "User-added" section) with a marker so the tool can preserve it on regeneration.
 
-**LLM prompt**: `prompts/prep.md`
+**LLM prompt**: `prompts/prepare.md`
 
 - Inputs: JD text, profile, target role, days, known-weak topics (optional; seeded from `retro.md` of this app + aggregate weak topics — see "Cross-referencing prep and retro" below).
 - Output: zod-validated structured plan (techStack, topics, behavioral, strengths, concerns, timeline, materials).
 - Tier 2 guard rails: tech stack must be a subset of JD terms; depth levels must be distributed (not all 3); materials must be real URLs (validated by a HEAD request during eval, not in production — for speed).
 
-**Eval**: `evals/prep/cases.ts` + `expected-prep/<jd-slug>/expected.json`
+**Eval**: `evals/prepare/cases.ts` + `expected-prep/<jd-slug>/expected.json`
 
 - Checks: depth distribution (≥ 1 of each), materials are real URLs, timeline sums to ±20% of `days`, strengths/ concerns correctly reference profile, behavioural questions map to real profile stories.
 
-**Cross-referencing prep and retro (v1 read-only)**: the prep prompt can be seeded with the user's known-weak topics from `retro.md` of the same app and from `jho retro --aggregate` output (when run for the same target role). v1 does not write back from retro to prep; the user runs `jho prepare --update` explicitly.
+**Cross-referencing prep and retro (v1 read-only)**: the prep prompt can be seeded with the user's known-weak topics from `retro.md` of the same app and from `jho retro --aggregate` output (when run for the same target role). v1 does not write back from retro to prep; the user runs `jho prepare` explicitly.
 
 ---
 
@@ -568,7 +568,7 @@ The two layers are *additive*, not an override cascade. `jho config` shows the g
 | `qa.md`               | appends only; `- Steer:` line per entry                                           | freely                     | prior entries untouched; steer stored per-entry            |
 | `interviews.md`       | appends, `Status:` line updates                                                   | freely (except `Status:`)  | mark status via `jho interview mark`                       |
 | `retro.md`            | appends new H2 sections; updates `Status:` of a section if interview is re-marked | freely (checklists, notes) | prior retros untouched                                     |
-| `prep.md`             | regenerates whole file on `--update`; appends user-added topics on `--add`        | freely                     | prompts on overwrite; user edits preserved unless accepted |
+| `prepare.md`            | rewrites on each `jho prepare`; appends user-added topics on `--add`            | freely                     | prompts on overwrite; user edits preserved unless accepted |
 | `notes.md`            | never                                                                             | freely                     | never touched                                              |
 | `.index.json`         | on read / staleness                                                               | no (internal)              | cache, regenerated                                         |
 | `.counters.json`      | on slug collision                                                                 | no (internal)              | cache, regenerated                                         |
@@ -665,11 +665,11 @@ jho interview [<slug>] mark <n> --status passed|failed|no-show
 jho interview [<slug>] notes <n> --append "..."
 
 jho prepare  [<slug>]           # show prep plan (generate if none; slug inferred from cwd)
-jho prepare  <slug> --update    # regenerate from current JD + profile
-jho prepare  <slug> --add "..." # append a manual topic to prep.md
+jho prepare  <slug>             # regenerate from current JD + profile
+jho prepare  <slug> --add "..." # append a manual topic to prepare.md
 jho prepare  <url>              # ad-hoc: extract JD, print prep plan, don't save
 jho prepare  --text "..."       # ad-hoc: pasted JD, print prep plan, don't save
-                                # flags: --days <n> (default 7), --json
+                                # flags: --days <n> (default 7), --steer <text>, --json
 
 jho retro    [<slug>]              # interactive: ask for weak topics, generate learning plan
                                   # slug optional (cwd inference)
@@ -783,9 +783,9 @@ post_mortem                { slug, interviewId?, weaknesses: string[], notes?: s
 show_retro                 { slug }
 append_retro               { slug, weaknesses: string[], notes?: string }
 aggregate_retros           { minOccurrences?: number, role?, includeAbandoned? }   # default 2, includeAbandoned default false
-prepare                    { slug? | url? | text?, days?: number, update?: boolean, add?: string }
+prepare                    { slug? | url? | text?, days?: number, steer?: string, add?: string }
                             # one of slug/url/text is required; returns formatted plan
-                            # update=true regenerates prep.md; add appends a manual topic
+                            # add appends a manual topic
 read_profile
 update_profile             { frontmatterPatch?, bodyAppend? }
 get_root
@@ -804,7 +804,7 @@ applied://list
 applied://<slug>
 applied://<slug>/interviews
 applied://<slug>/retro
-applied://<slug>/prep
+applied://<slug>/prepare
 ```
 
 ### Prompts
@@ -957,7 +957,7 @@ evals/
 ├── cover-letter/{cases.ts, rubric.md}
 ├── application-qa/{cases.ts, rubric.md}
 ├── learning-plan/{cases.ts, rubric.md}
-└── prep/{cases.ts, expected/<jd-slug>/expected.json, rubric.md}
+└── prepare/{cases.ts, expected/<jd-slug>/expected.json, rubric.md}
 ```
 
 - `npm run eval` — structural only, fast.
