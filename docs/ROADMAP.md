@@ -39,7 +39,8 @@
   - [x] 7a — Core: Interviews module
   - [x] 7b — Core: Retro module (LLM-backed learning plan)
   - [ ] 7c — Core: Prep module (LLM-backed pre-interview plan)
-  - [ ] 7d — Core: Doctor & Repair
+  - [x] 7d — Core: Doctor & Repair (toolhash utility, diagnostics, auto-repair)
+  - [ ] 7d1 — Toolhash sidecar wiring (integrate writeToolhash into existing modules)
   - [ ] 7e — CLI: Show command with ownership footer
   - [ ] 7f — CLI: Interview, retro, prepare, doctor, repair commands
   - [ ] 7g — Tests, evals & documentation
@@ -489,6 +490,26 @@ Split into sub-phases for incremental delivery.
 **Deliverable**: `jho doctor` diagnoses issues. `jho repair` fixes them. Campaign can be recovered from common corruptions.
 
 **Commit**: `feat(doctor,repair): campaign diagnostics and auto-repair`
+
+#### 7d1 — Toolhash sidecar wiring (mechanical follow-up)
+
+Wires `writeToolhash()` calls into every existing module that writes tool-managed files, so `.toolhash` sidecars are created/updated alongside each write. Without this sub-phase, the toolhash integrity checks in `diagnoseApp()` detect mismatches but no tool-owned file ever has a sidecar.
+
+**Scope**:
+
+- `src/core/applications/applications.ts` — add `writeToolhash(metaPath, hash)` after `writeFrontmatter(metaPath, ...)` in `createApplication` and `updateApplication`
+- `src/core/track/track.ts` — add `writeToolhash(jdPath, hash)` after `replaceRegion` / `atomicWrite` in `runTrackCreate` and `runTrackRefresh`
+- `src/core/applications/cover-letter.ts` — add `writeToolhash(clPath, hash)` after `atomicWrite` in `generateCoverLetter`
+- `src/core/prepare/prepare.ts` — add `writeToolhash(preparePath, hash)` after `atomicWrite` in `writePrep`
+- `src/core/interviews/interviews.ts` — add `writeToolhash(interviewsPath, hash)` after `atomicWrite` in `addInterview`, `markInterviewStatus`, and `appendInterviewNotes` (interviews.md has in-place status updates, unlike purely append-only files)
+
+**Not needed** — qa.md (append-only, never overwrites), retro.md (append-only sections), and user-owned files (notes.md).
+
+**Tests**: one integration test per module ensuring the sidecar is created with the correct hash after a write operation.
+
+**Deliverable**: Every tool-managed write creates or updates its `.toolhash` sidecar. `jho doctor`/`jho repair` can meaningfully detect user edits.
+
+**Commit**: `feat(toolhash): wire sidecar writes into all tool-writing modules`
 
 #### 7e — CLI: Show command with ownership footer
 
