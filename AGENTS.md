@@ -74,6 +74,9 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 ├── examples/           # MCP client configs (claude-desktop, cursor, continue)
 ├── .github/workflows/  # CI (lint, typecheck, test, build)
 ├── glama.json          # glama.ai MCP registry metadata
+├── tsconfig.json       # TypeScript configuration
+├── tsup.config.ts      # tsup build configuration
+├── vitest.config.ts    # vitest test configuration
 └── package.json
 ```
 

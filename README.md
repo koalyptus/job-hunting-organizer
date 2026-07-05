@@ -31,6 +31,17 @@ npm run build
 
 The binaries are then available at `./bin/jho` and `./bin/jho-mcp`.
 
+## Build & test commands
+
+```sh
+npm run build        # tsup → dist/
+npm run typecheck    # tsc --noEmit
+npm run lint         # eslint
+npm run format:check # prettier
+npm test             # vitest
+npm run eval         # lightweight LLM eval suite (manual)
+```
+
 ### Cross-platform notes
 
 Runs unchanged on Linux, macOS, and Windows.
