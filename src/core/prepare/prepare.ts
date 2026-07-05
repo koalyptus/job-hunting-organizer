@@ -34,7 +34,7 @@ const log = moduleLogger(import.meta.url);
 const PROMPT_NAME = 'prepare';
 
 const PREP_MARKER =
-  '<!-- jho:prepare — pre-interview prep plan. Tool rewrites on --update; appends topics on --add. -->';
+  '<!-- jho:prepare — pre-interview prep plan. Tool rewrites region on each run; appends topics on --add. -->';
 
 const PREP_REGION_NAME = 'prepare';
 
