@@ -51,7 +51,7 @@ export async function readToolhash(filePath: string): Promise<string | null> {
       log.debug({ sidecar }, 'toolhash.missing');
       return null;
     }
-    log.debug({ sidecar, err }, 'toolhash.read.failed');
+    log.warn({ sidecar, err }, 'toolhash.read.failed');
     return null;
   }
 }
@@ -71,7 +71,7 @@ export async function writeToolhash(filePath: string, hash: string): Promise<boo
     log.debug({ sidecar }, 'toolhash.written');
     return true;
   } catch (err) {
-    log.debug({ sidecar, err }, 'toolhash.write.failed');
+    log.warn({ sidecar, err }, 'toolhash.write.failed');
     return false;
   }
 }

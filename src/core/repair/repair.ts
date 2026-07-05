@@ -133,7 +133,7 @@ export async function repairAll(campaignRoot: string): Promise<RepairResult> {
       const merged = { ...currentCounters };
       for (const [key, value] of Object.entries(rebuiltCounters)) {
         if ((value ?? 0) > (merged[key] ?? 0)) {
-          merged[key] = value!;
+          merged[key] = value;
         }
       }
       await writeCountersAsync(appliedDir, merged);

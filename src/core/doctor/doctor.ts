@@ -148,7 +148,7 @@ export async function diagnoseApp(appliedDir: string, slug: string): Promise<Doc
   // Validate frontmatter
   try {
     const { frontmatter } = await readFrontmatter(metaPath);
-    const result = safeValidateApplicationFrontmatter(frontmatter as Record<string, unknown>);
+    const result = safeValidateApplicationFrontmatter(frontmatter);
     if (!result.success) {
       issues.push({
         severity: 'error',
