@@ -33,3 +33,11 @@ Thumbs.db
 .vite/
 .turbo/
 
+# Lavish artifacts
+.lavish/
+
+# Derived application state (tool-managed, regenerated automatically)
+applied/.index.json
+applied/.counters.json
+*.toolhash
+
