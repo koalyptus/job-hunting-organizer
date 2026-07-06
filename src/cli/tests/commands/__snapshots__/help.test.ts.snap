@@ -257,32 +257,34 @@ Options:
 `;
 
 exports[`command --help output > retro has consistent help output 1`] = `
-"Usage: retro [options] [slug]
+"Usage: retro [options] [command] [slug]
 
 Post-mortem for failed interviews (slug inferred from cwd if omitted)
 
 Arguments:
-  slug                    application slug (inferred from cwd if omitted)
+  slug                     application slug (inferred from cwd if omitted)
 
 Options:
-  --show                  display the most recent retro
-  --interview <index>     retro for a specific interview index
-  --append                add weak topics to the existing retro
-  --aggregate             show recurring weak topics across all apps
-  --weak-topics <topics>  comma-separated weak topics (prompts interactively if
-                          omitted)
-  --notes <text>          additional context notes
-  --steer <text>          instructions to guide the learning plan generation
-  --role <slug>           scope to a single target role (with --aggregate)
-  --include-abandoned     also count weak topics from abandoned apps
-  -h, --help              display help for command
+  --interview <index>      retro for a specific interview index
+  --weak-topics <topics>   comma-separated weak topics (prompts interactively if
+                           omitted)
+  --notes <text>           additional context notes
+  --steer <text>           instructions to guide the learning plan generation
+  -h, --help               display help for command
+
+Commands:
+  show [slug]              Display the most recent retro (slug inferred from cwd
+                           if omitted)
+  append [options] [slug]  Add weak topics to the existing retro (slug inferred
+                           from cwd if omitted)
+  aggregate [options]      Show recurring weak topics across all applications
 "
 `;
 
 exports[`command --help output > show has consistent help output 1`] = `
 "Usage: show [options] [slug]
 
-Show one application (slug inferred from cwd if omitted)
+Show one application summary (slug inferred from cwd if omitted)
 
 Arguments:
   slug        application slug (inferred from cwd if omitted)
@@ -404,6 +406,48 @@ exports[`profile subcommands --help > profile show has consistent help output 1`
 "Usage: profile show [options]
 
 Print the current profile
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`retro subcommands --help > retro aggregate has consistent help output 1`] = `
+"Usage: retro aggregate [options]
+
+Show recurring weak topics across all applications
+
+Options:
+  --role <slug>        scope to a single target role
+  --include-abandoned  also count weak topics from abandoned apps
+  -h, --help           display help for command
+"
+`;
+
+exports[`retro subcommands --help > retro append has consistent help output 1`] = `
+"Usage: retro append [options] [slug]
+
+Add weak topics to the existing retro (slug inferred from cwd if omitted)
+
+Arguments:
+  slug                    application slug (inferred from cwd if omitted)
+
+Options:
+  --weak-topics <topics>  comma-separated weak topics (prompts interactively if
+                          omitted)
+  --notes <text>          additional context notes
+  --steer <text>          instructions to guide the learning plan generation
+  -h, --help              display help for command
+"
+`;
+
+exports[`retro subcommands --help > retro show has consistent help output 1`] = `
+"Usage: retro show [options] [slug]
+
+Display the most recent retro (slug inferred from cwd if omitted)
+
+Arguments:
+  slug        application slug (inferred from cwd if omitted)
 
 Options:
   -h, --help  display help for command

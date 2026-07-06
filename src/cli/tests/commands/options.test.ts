@@ -48,20 +48,27 @@ describe('command option definitions match documentation', () => {
     expect(daysOpt?.defaultValue).toBe('7');
   });
 
-  it('retro has --aggregate, --role, --include-abandoned, --show, --interview, --append, --weak-topics, --notes, --steer', () => {
+  it('retro parent has --interview, --weak-topics, --notes, --steer', () => {
     expect(optionLongs(retroCommand)).toEqual(
-      expect.arrayContaining([
-        '--aggregate',
-        '--role',
-        '--include-abandoned',
-        '--show',
-        '--interview',
-        '--append',
-        '--weak-topics',
-        '--notes',
-        '--steer',
-      ]),
+      expect.arrayContaining(['--interview', '--weak-topics', '--notes', '--steer']),
     );
+  });
+
+  it('retro show has no extra options', () => {
+    const subCmd = retroCommand.commands.find((c) => c.name() === 'show')!;
+    expect(optionLongs(subCmd)).toEqual([]);
+  });
+
+  it('retro append has --weak-topics, --notes, --steer', () => {
+    const subCmd = retroCommand.commands.find((c) => c.name() === 'append')!;
+    expect(optionLongs(subCmd)).toEqual(
+      expect.arrayContaining(['--weak-topics', '--notes', '--steer']),
+    );
+  });
+
+  it('retro aggregate has --role, --include-abandoned', () => {
+    const subCmd = retroCommand.commands.find((c) => c.name() === 'aggregate')!;
+    expect(optionLongs(subCmd)).toEqual(expect.arrayContaining(['--role', '--include-abandoned']));
   });
 
   it('stats has --role, --since, --include-notes, --json', () => {

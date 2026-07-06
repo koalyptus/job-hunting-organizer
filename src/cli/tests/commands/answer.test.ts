@@ -115,6 +115,9 @@ describe('answer command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('I am a software engineer with 5 years of experience.');
+      expect(stdout).toContain('Answer saved to:');
+      expect(stdout).toContain('qa.md');
+      expect(stdout).toContain('Next steps');
       expect(applicationQa.answerQuestion).toHaveBeenCalledWith({
         slug,
         campaign: 'default',
@@ -142,7 +145,7 @@ describe('answer command', () => {
           '\ntitle: Software Engineer\ncompany: Test Corp\nstatus: applied\n---\n',
       );
 
-      const { stdout, stderr, exitCode } = await runCommand(answerCommand, [
+      const { stdout, exitCode } = await runCommand(answerCommand, [
         'answer',
         slug,
         'Why our company?',
@@ -151,7 +154,7 @@ describe('answer command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Test answer.');
-      expect(stderr).not.toContain('Appended to qa.md');
+      expect(stdout).not.toContain('Answer saved to:');
     });
 
     it('generates answer with --image option', async () => {

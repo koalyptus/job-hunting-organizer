@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { runCommand } from '../helpers.js';
-import { showCommand } from '../../commands/show.js';
 import { retroCommand } from '../../commands/retro.js';
 import { prepareCommand } from '../../commands/prepare.js';
 import { doctorCommand } from '../../commands/doctor.js';
@@ -10,13 +9,6 @@ import { mcpCommand } from '../../commands/mcp.js';
 import { profileCommand } from '../../commands/profile.js';
 
 describe('stub commands exit with correct phase messages', () => {
-  it('show exits with code 1 and mentions phase 7', async () => {
-    const { stderr, exitCode } = await runCommand(showCommand, ['show']);
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain('not implemented yet');
-    expect(stderr).toContain('phase 7');
-  });
-
   it('retro exits with slug missing error when run outside app folder', async () => {
     const { stderr, exitCode } = await runCommand(retroCommand, ['retro']);
     expect(exitCode).toBe(1);

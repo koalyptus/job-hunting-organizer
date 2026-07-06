@@ -1,5 +1,7 @@
 import { Command } from 'commander';
-import { resolveCampaignName } from '../../core/paths.js';
+import { join } from 'node:path';
+import { log as clackLog } from '@clack/prompts';
+import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
   answerQuestion,
@@ -116,6 +118,21 @@ export const answerCommand = new Command('answer')
 
       // Always print to stdout
       userOutput(result.answer);
+
+      // Show file path and next steps when saved to file
+      if (opts.save !== false) {
+        const campaignRoot = resolveCampaignRoot(campaign);
+        const appliedDir = resolveAppliedDir(campaignRoot);
+        const qaPath = join(appliedDir, resolvedSlug, 'qa.md');
+
+        clackLog.info(`
+Answer saved to: ${qaPath}
+
+Next steps:
+  jho show ${resolvedSlug} --qa   # view all Q&A entries
+  jho answer ${resolvedSlug} "..." # another question
+`);
+      }
 
       log.info(
         { slug: resolvedSlug, model: result.model, wordCount: result.wordCount },

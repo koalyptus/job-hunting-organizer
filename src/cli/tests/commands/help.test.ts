@@ -78,3 +78,14 @@ describe('profile subcommands --help', () => {
     });
   }
 });
+
+describe('retro subcommands --help', () => {
+  const subcommands = ['show', 'append', 'aggregate'];
+
+  for (const sub of subcommands) {
+    it(`retro ${sub} has consistent help output`, () => {
+      const subCmd = retroCommand.commands.find((c) => c.name() === sub);
+      expect(subCmd?.helpInformation()).toMatchSnapshot();
+    });
+  }
+});

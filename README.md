@@ -83,7 +83,7 @@ jho retro 2026-Jun-03-SE-Nuage-Technology-Group-12345
 #  ... answer "what topics did you struggle with?" ...
 
 # 7. See recurring weak topics across all interviews
-jho retro --aggregate
+jho retro aggregate
 
 # 8. Get a snapshot of the campaign (counts, funnel, this-month delta)
 jho stats
@@ -93,7 +93,7 @@ jho logs --tail 50
 jho logs --json | jq 'select(.level == 50)'    # pipe to jq for filtering
 ```
 
-> **Tip**: you can omit the slug and just `cd` into the application folder — `jho show`, `jho cover-letter`, `jho answer`, `jho interview ...`, `jho prepare`, and `jho retro` all infer the slug from the current directory.
+> **Tip**: you can omit the slug and just `cd` into the application folder — `jho show`, `jho cover-letter`, `jho answer`, `jho interview ...`, `jho prepare`, `jho retro`, `jho retro show`, `jho retro append` all infer the slug from the current directory.
 >
 > ```sh
 > cd ~/job-hunting-organizer-data/campaigns/default/applied/2026-Jun-03-SE-Nuage-Technology-Group-12345
