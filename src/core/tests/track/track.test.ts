@@ -76,6 +76,11 @@ vi.mock('../../locks.js', () => ({
   acquireLock: vi.fn(async (_target, fn) => fn()),
 }));
 
+vi.mock('../../toolhash.js', () => ({
+  computeHash: vi.fn(() => 'mock-hash'),
+  writeToolhash: vi.fn(async () => {}),
+}));
+
 describe('runTrack', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -498,6 +503,10 @@ describe('prepareTrack', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.mocked(suggestTargetRole).mockReset();
+  });
+
   it('extracts JD from URL', async () => {
     vi.mocked(extractJdFromUrl).mockResolvedValue({
       title: 'Engineer',
@@ -596,6 +605,37 @@ describe('prepareTrack', () => {
 
     expect(result.targetRoles).toHaveLength(0);
   });
+
+  it('throws when suggestTargetRole fails with target roles', async () => {
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'desc',
+    });
+    vi.mocked(readProfile).mockResolvedValue('profile content');
+    vi.mocked(parseTargetRoles).mockReturnValue([
+      {
+        slug: 'frontend-dev',
+        title: 'Frontend Developer',
+        priority: 'primary',
+        level: '',
+        domain: '',
+        stack: '',
+        workStyle: '',
+        compensation: '',
+        notes: '',
+      },
+    ]);
+    vi.mocked(suggestTargetRole).mockRejectedValue(new Error('LLM timeout'));
+
+    await expect(
+      prepareTrack({
+        campaign: 'default',
+        url: 'https://example.com/job/123',
+      }),
+    ).rejects.toThrow('Failed to suggest target role: LLM timeout');
+  });
 });
 
 describe('confirmAndCreate', () => {
@@ -692,6 +732,30 @@ describe('confirmAndCreate', () => {
     });
 
     expect(appendNote).toHaveBeenCalledOnce();
+  });
+
+  it('writes steer when provided', async () => {
+    vi.mocked(confirmTrackSummary).mockResolvedValue(true);
+    vi.mocked(createApplication).mockResolvedValue('2026-Jun-21-SE-test-co');
+
+    await confirmAndCreate({
+      campaign: 'default',
+      summary: {
+        jd: {
+          title: 'Engineer',
+          company: 'TestCo',
+          location: 'Remote',
+          description: 'desc',
+        },
+        suggestion: { roleSlug: '', confidence: 0, reasoning: '' },
+        targetRoles: [],
+      },
+      url: 'https://example.com/job/123',
+      steer: 'Focus on leadership',
+      yes: true,
+    });
+
+    expect(replaceSteer).toHaveBeenCalledOnce();
   });
 });
 
@@ -903,6 +967,11 @@ describe('steer functionality', () => {
       location: 'Remote',
       description: 'desc',
     });
+    vi.mocked(suggestTargetRole).mockResolvedValue({
+      roleSlug: '',
+      confidence: 0,
+      reasoning: '',
+    });
 
     await runTrack({
       campaign: 'default',
@@ -944,5 +1013,56 @@ describe('steer functionality', () => {
     });
 
     expect(updateApplication).toHaveBeenCalled();
+  });
+
+  it('writes steer to jd.md via replaceSteer in refresh mode', async () => {
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'Updated description',
+    });
+
+    await runTrackRefresh({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      steer: 'Refresh mode steer',
+      yes: true,
+    });
+
+    expect(replaceSteer).toHaveBeenCalledWith(expect.any(String), 'Refresh mode steer');
+  });
+
+  it('does not call replaceSteer when steer is undefined in refresh mode', async () => {
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'Updated description',
+    });
+
+    await runTrackRefresh({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      yes: true,
+    });
+
+    expect(replaceSteer).not.toHaveBeenCalled();
+  });
+
+  it('includes steer in confirmation prompt changes during update', async () => {
+    vi.mocked(confirmTrackUpdate).mockResolvedValue(true);
+
+    await runTrack({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      steer: 'Custom instructions',
+    });
+
+    expect(confirmTrackUpdate).toHaveBeenCalledWith(
+      '2026-Jun-21-SE-test-co',
+      'applied',
+      expect.arrayContaining([expect.stringContaining('steer')]),
+    );
   });
 });

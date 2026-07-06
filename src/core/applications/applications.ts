@@ -6,6 +6,7 @@ import { writeFrontmatter, readFrontmatter, mergeFrontmatter } from '../frontmat
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { getRootLogger, moduleLogger } from '../logger/logger.js';
+import { computeHash, writeToolhash } from '../toolhash.js';
 import { ApplicationFrontmatterSchema } from './meta-schema.js';
 import { upsertIndexEntry, removeIndexEntry, readIndex, rebuildIndex } from './index-builder.js';
 import { replaceRegion } from '../markers.js';
@@ -154,6 +155,11 @@ export async function createApplication(input: CreateApplicationInput): Promise<
     if (!metaWritten) {
       throw new Error(`failed to write meta.md for ${slug}`);
     }
+
+    // Write toolhash sidecar for meta.md
+    const metaContent = await readFile(join(folder, 'meta.md'), 'utf8');
+    await writeToolhash(join(folder, 'meta.md'), computeHash(metaContent));
+
     const jdContent = replaceRegion('', 'fetched-jd', input.description ?? '', {
       createIfMissing: true,
     });
@@ -212,6 +218,10 @@ export async function updateApplication(
     if (!written) {
       throw new Error(`failed to write meta.md for ${slug}`);
     }
+
+    // Write toolhash sidecar for meta.md
+    const updatedMeta = await readFile(metaPath, 'utf8');
+    await writeToolhash(metaPath, computeHash(updatedMeta));
 
     const result = ApplicationFrontmatterSchema.safeParse(merged);
     if (result.success) {

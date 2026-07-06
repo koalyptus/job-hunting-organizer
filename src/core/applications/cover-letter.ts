@@ -18,6 +18,7 @@ import { replaceRegion, extractSteer, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
+import { computeHash, writeToolhash } from '../toolhash.js';
 import type { CoverLetterOptions, CoverLetterResult } from '../types.js';
 
 /** Prompt template name (without `.md`). */
@@ -191,6 +192,9 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
       if (!written) {
         throw new CoverLetterError(`Failed to write cover-letter.md`);
       }
+
+      // Write toolhash sidecar for cover-letter.md
+      await writeToolhash(coverLetterPath, computeHash(fileContent));
     });
   }
 
