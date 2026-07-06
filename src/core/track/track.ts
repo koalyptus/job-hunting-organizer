@@ -32,6 +32,7 @@ import type { TargetRole } from '../types.js';
 import { replaceRegion, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
+import { computeHash, writeToolhash } from '../toolhash.js';
 
 const log = moduleLogger(import.meta.url);
 
@@ -133,6 +134,9 @@ async function writeSteerToJd(appliedDir: string, slug: string, steer: string): 
     if (!written) {
       throw new TrackError(`failed to write jd.md for ${slug}`);
     }
+
+    // Write toolhash sidecar for jd.md
+    await writeToolhash(jdPath, computeHash(updatedJd));
   });
 }
 
@@ -453,6 +457,16 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
     description: jd.description,
   });
 
+  // Write toolhash sidecar for jd.md (meta.md handled inside createApplication).
+  // Best-effort: in tests createApplication is mocked and doesn't write files.
+  try {
+    const jdPath = join(appliedDir, slug, 'jd.md');
+    const jdContent = await readFile(jdPath, 'utf8');
+    await writeToolhash(jdPath, computeHash(jdContent));
+  } catch {
+    log?.debug({ slug }, 'toolhash.skip.jd.md');
+  }
+
   // Append note if provided
   if (note) {
     await appendNote(appliedDir, slug, note);
@@ -637,6 +651,14 @@ export async function runTrackRefresh(opts: TrackOptions): Promise<TrackResult> 
   const written = await atomicWrite(jdPath, updatedJdContent);
   if (!written) {
     throw new TrackError(`failed to write jd.md for ${slug}`);
+  }
+
+  // Write toolhash sidecar for jd.md
+  await writeToolhash(jdPath, computeHash(updatedJdContent));
+
+  // Write steer to jd.md if provided
+  if (opts.steer) {
+    await writeSteerToJd(appliedDir, slug, opts.steer);
   }
 
   log?.info({ slug, link }, 'track.refresh.completed');

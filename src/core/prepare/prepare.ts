@@ -17,6 +17,7 @@ import { replaceRegion, extractSteer, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
+import { computeHash, writeToolhash } from '../toolhash.js';
 import { aggregateRetros } from '../retro/aggregate.js';
 import { moduleLogger } from '../logger/logger.js';
 import type { Logger } from 'pino';
@@ -275,6 +276,9 @@ export async function generatePrep(opts: GeneratePrepOptions): Promise<GenerateP
       throw new PrepError(`Failed to write prepare.md for ${slug}`);
     }
 
+    // Write toolhash sidecar for prepare.md
+    await writeToolhash(prepPath, computeHash(fileContent));
+
     log.info(
       { slug, model: planResult.model, wordCount: countWords(planResult.content) },
       'prep.generated',
@@ -386,6 +390,9 @@ export async function appendTopic(campaign: string, slug: string, topic: string)
       if (!written) {
         throw new PrepError(`Failed to write prepare.md for ${slug}`);
       }
+
+      // Write toolhash sidecar for prepare.md
+      await writeToolhash(prepPath, computeHash(content));
 
       log.info({ slug, topic }, 'prep.topic-appended');
     });

@@ -4,6 +4,7 @@ import { readApplication, ApplicationNotFoundError } from '../applications/appli
 import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { moduleLogger } from '../logger/logger.js';
+import { computeHash, writeToolhash } from '../toolhash.js';
 import type { Logger } from 'pino';
 import type {
   InterviewType,
@@ -338,6 +339,9 @@ export async function addInterview(
       throw new InterviewError(`failed to write interviews.md for ${slug}`);
     }
 
+    // Write toolhash sidecar for interviews.md
+    await writeToolhash(interviewsPath, computeHash(newContent));
+
     (externalLog ?? log).info({ slug, interviewIndex: index }, 'interview.added');
     return { index };
   });
@@ -447,6 +451,9 @@ export async function markInterviewStatus(
       throw new InterviewError(`failed to write interviews.md for ${slug}`);
     }
 
+    // Write toolhash sidecar for interviews.md
+    await writeToolhash(interviewsPath, computeHash(newContent));
+
     (externalLog ?? log).info(
       { slug, sectionNumber: input.sectionNumber, status: input.status },
       'interview.status.updated',
@@ -539,6 +546,9 @@ export async function appendInterviewNotes(
     if (!written) {
       throw new InterviewError(`failed to write interviews.md for ${slug}`);
     }
+
+    // Write toolhash sidecar for interviews.md
+    await writeToolhash(interviewsPath, computeHash(newContent));
 
     (externalLog ?? log).info(
       { slug, sectionNumber: input.sectionNumber },

@@ -9,7 +9,13 @@ const log = moduleLogger(import.meta.url);
  * Files whose content is owned by the tool (see AGENTS.md "File ownership model").
  * Used by doctor and repair to decide which files to check/fix.
  */
-export const TOOL_MANAGED_FILES = ['meta.md', 'jd.md', 'cover-letter.md', 'prepare.md'] as const;
+export const TOOL_MANAGED_FILES = [
+  'meta.md',
+  'jd.md',
+  'cover-letter.md',
+  'prepare.md',
+  'interviews.md',
+] as const;
 
 /**
  * Compute a SHA-256 hex digest of `content`.
