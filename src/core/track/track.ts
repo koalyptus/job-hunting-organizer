@@ -457,22 +457,14 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
     description: jd.description,
   });
 
-  // Write toolhash sidecar for jd.md (meta.md handled inside createApplication).
-  // Best-effort: in tests createApplication is mocked and doesn't write files.
-  try {
-    const jdPath = join(appliedDir, slug, 'jd.md');
-    const jdContent = await readFile(jdPath, 'utf8');
-    await writeToolhash(jdPath, computeHash(jdContent));
-  } catch {
-    log?.debug({ slug }, 'toolhash.skip.jd.md');
-  }
-
   // Append note if provided
   if (note) {
     await appendNote(appliedDir, slug, note);
   }
 
-  // Write steer to jd.md if provided
+  // Write steer to jd.md if provided. This also writes the toolhash sidecar
+  // for jd.md. When steer is not provided, the sidecar is optional and
+  // can be created by `jho repair`.
   if (steer) {
     await writeSteerToJd(appliedDir, slug, steer);
   }
@@ -632,8 +624,7 @@ export async function runTrackRefresh(opts: TrackOptions): Promise<TrackResult> 
   }
 
   // Read current jd.md content
-  const folder = join(campaignRoot, 'applied', slug);
-  const jdPath = join(folder, 'jd.md');
+  const jdPath = join(appliedDir, slug, 'jd.md');
   let jdContent = '';
   try {
     jdContent = await readFile(jdPath, 'utf8');

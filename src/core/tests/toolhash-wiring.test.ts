@@ -4,7 +4,19 @@ import { mkdir, mkdtemp, rm, readFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { computeHash, readToolhash } from '../toolhash.js';
 import { createApplication, updateApplication } from '../applications/applications.js';
-import { addInterview, markInterviewStatus } from '../interviews/interviews.js';
+import {
+  addInterview,
+  markInterviewStatus,
+  appendInterviewNotes,
+} from '../interviews/interviews.js';
+import { generateCoverLetter } from '../applications/cover-letter.js';
+import { generatePrep, appendTopic } from '../prepare/prepare.js';
+
+vi.mock('../config.js', () => ({
+  getConfig: vi.fn(() => ({
+    global: { llm: { baseUrl: 'http://test', apiKey: 'key', model: 'model' } },
+  })),
+}));
 
 vi.mock('../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -32,7 +44,21 @@ vi.mock('../logger/logger.js', () => ({
 vi.mock('../llm.js', () => ({
   defaultLlmConfig: vi.fn(() => ({})),
   chatComplete: vi.fn(async () => ({
-    content: 'Mocked LLM response',
+    content: JSON.stringify({
+      topics: [
+        {
+          title: 'System Design',
+          whatToKnow: ['Scalability patterns'],
+          resources: ['https://example.com'],
+          estimatedTime: '2h',
+          depth: 2,
+        },
+      ],
+      behavioral: [{ question: 'Tell me about yourself', answer: 'Use STAR method' }],
+      timeline: [{ daysBefore: 3, task: 'Review notes' }],
+      checklist: ['Prepare questions'],
+      notes: 'Focus on distributed systems',
+    }),
     model: 'test-model',
     durationMs: 100,
   })),
@@ -201,6 +227,145 @@ describe('toolhash wiring: interviews.ts', () => {
     const content = await readFile(interviewsPath, 'utf8');
     const expectedHash = computeHash(content);
     const storedHash = await readToolhash(interviewsPath);
+
+    expect(storedHash).toBe(expectedHash);
+  });
+
+  it('appendInterviewNotes writes toolhash for interviews.md', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Software Engineer',
+      company: 'Test Corp',
+    });
+
+    await addInterview(appliedDir, slug, {
+      when: '2026-06-10 14:00',
+      type: 'technical',
+    });
+
+    await appendInterviewNotes(appliedDir, slug, {
+      sectionNumber: 1,
+      notes: 'Candidate was well-prepared.',
+    });
+
+    const interviewsPath = join(appliedDir, slug, 'interviews.md');
+    const content = await readFile(interviewsPath, 'utf8');
+    const expectedHash = computeHash(content);
+    const storedHash = await readToolhash(interviewsPath);
+
+    expect(storedHash).toBe(expectedHash);
+  });
+});
+
+describe('toolhash wiring: cover-letter.ts', () => {
+  let workDir: string;
+  let appliedDir: string;
+  let originalJhoData: string | undefined;
+
+  beforeEach(async () => {
+    originalJhoData = process.env['JHO_DATA'];
+    workDir = await mkdtemp(join(tmpdir(), 'jho-toolhash-wiring-cl-'));
+    process.env['JHO_DATA'] = workDir;
+    appliedDir = join(workDir, 'campaigns', 'default', 'applied');
+    await mkdir(appliedDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+    if (originalJhoData) {
+      process.env['JHO_DATA'] = originalJhoData;
+    } else {
+      delete process.env['JHO_DATA'];
+    }
+  });
+
+  it('generateCoverLetter writes toolhash for cover-letter.md', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Software Engineer',
+      company: 'Test Corp',
+      url: 'https://example.com/job/123',
+      description: 'Test job.',
+    });
+
+    await generateCoverLetter({
+      slug,
+      campaign: 'default',
+      noSave: false,
+    });
+
+    const coverLetterPath = join(appliedDir, slug, 'cover-letter.md');
+    const content = await readFile(coverLetterPath, 'utf8');
+    const expectedHash = computeHash(content);
+    const storedHash = await readToolhash(coverLetterPath);
+
+    expect(storedHash).toBe(expectedHash);
+  });
+});
+
+describe('toolhash wiring: prepare.ts', () => {
+  let workDir: string;
+  let appliedDir: string;
+  let originalJhoData: string | undefined;
+
+  beforeEach(async () => {
+    originalJhoData = process.env['JHO_DATA'];
+    workDir = await mkdtemp(join(tmpdir(), 'jho-toolhash-wiring-prep-'));
+    process.env['JHO_DATA'] = workDir;
+    appliedDir = join(workDir, 'campaigns', 'default', 'applied');
+    await mkdir(appliedDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+    if (originalJhoData) {
+      process.env['JHO_DATA'] = originalJhoData;
+    } else {
+      delete process.env['JHO_DATA'];
+    }
+  });
+
+  it('generatePrep writes toolhash for prepare.md', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Software Engineer',
+      company: 'Test Corp',
+      url: 'https://example.com/job/123',
+      description: 'Test job.',
+    });
+
+    await generatePrep({
+      slug,
+      campaign: 'default',
+    });
+
+    const prepPath = join(appliedDir, slug, 'prepare.md');
+    const content = await readFile(prepPath, 'utf8');
+    const expectedHash = computeHash(content);
+    const storedHash = await readToolhash(prepPath);
+
+    expect(storedHash).toBe(expectedHash);
+  });
+
+  it('appendTopic writes toolhash for prepare.md', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Software Engineer',
+      company: 'Test Corp',
+    });
+
+    // Generate a prep plan first so prepare.md exists
+    await generatePrep({
+      slug,
+      campaign: 'default',
+    });
+
+    await appendTopic('default', slug, 'System design review');
+
+    const prepPath = join(appliedDir, slug, 'prepare.md');
+    const content = await readFile(prepPath, 'utf8');
+    const expectedHash = computeHash(content);
+    const storedHash = await readToolhash(prepPath);
 
     expect(storedHash).toBe(expectedHash);
   });

@@ -76,6 +76,11 @@ vi.mock('../../locks.js', () => ({
   acquireLock: vi.fn(async (_target, fn) => fn()),
 }));
 
+vi.mock('../../toolhash.js', () => ({
+  computeHash: vi.fn(() => 'mock-hash'),
+  writeToolhash: vi.fn(async () => {}),
+}));
+
 describe('runTrack', () => {
   beforeEach(() => {
     vi.clearAllMocks();
