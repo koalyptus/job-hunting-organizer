@@ -110,19 +110,26 @@ function renderFileTable(filesPresent: string[]): void {
 export const showCommand = new Command('show')
   .description('Show one application summary (slug inferred from cwd if omitted)')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
+  .option('--json', 'output as JSON')
 
   .action(async function (slug: string | undefined) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
     const campaign = resolveCampaignName(globals?.campaign);
     const log = getRootLogger().child({ cmd: 'show', campaign });
+    const opts = this.opts() as { json?: boolean };
 
     try {
       const resolvedSlug = resolveSlug(slug, campaign);
       const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
 
       const data = await readShowData(appliedDir, resolvedSlug);
-      renderSummary(data);
-      renderFileTable(data.filesPresent);
+
+      if (opts.json) {
+        userOutput(JSON.stringify({ ...data.frontmatter, files: data.filesPresent }, null, 2));
+      } else {
+        renderSummary(data);
+        renderFileTable(data.filesPresent);
+      }
 
       log.info({ slug: resolvedSlug }, 'show.completed');
     } catch (err) {
@@ -152,10 +159,12 @@ The slug is optional. When omitted, it is inferred from the current directory
 
 Shows a summary with all metadata fields (grid layout) and a file table
 listing each file, the command that manages it, and a note.
+Use --json for machine-readable output.
 
 Examples:
   $ jho show                                                  # infer slug from cwd
   $ jho show 2026-Jan-15-frontend-acme-12345                  # explicit slug
+  $ jho show --json                                           # JSON output
   $ cd applied/2026-Jan-15-frontend-acme-12345 && jho show    # infer from cwd
 `,
 );

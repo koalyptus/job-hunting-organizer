@@ -178,6 +178,28 @@ describe('show command', () => {
       expect(stdout).not.toContain('Tags');
       expect(stdout).not.toContain('Target role');
     });
+
+    it('outputs JSON with --json flag', async () => {
+      vi.mocked(showCore.readShowData).mockResolvedValue({
+        frontmatter: mockFrontmatter,
+        body: 'some body text',
+        filesPresent: ['meta.md', 'jd.md', 'qa.md'],
+      });
+
+      const { stdout, exitCode } = await runCommand(showCommand, [
+        'show',
+        '2026-Jun-03-se-test-corp',
+        '--json',
+      ]);
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.slug).toBe('2026-Jun-03-se-test-corp');
+      expect(parsed.title).toBe('Software Engineer');
+      expect(parsed.company).toBe('Test Corp');
+      expect(parsed.status).toBe('applied');
+      expect(parsed.files).toEqual(['meta.md', 'jd.md', 'qa.md']);
+      expect(parsed.body).toBeUndefined();
+    });
   });
 
   describe('slug resolution', () => {

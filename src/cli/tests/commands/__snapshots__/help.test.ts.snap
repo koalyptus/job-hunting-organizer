@@ -291,6 +291,7 @@ Arguments:
   slug        application slug (inferred from cwd if omitted)
 
 Options:
+  --json      output as JSON
   -h, --help  display help for command
 "
 `;
