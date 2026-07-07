@@ -109,10 +109,24 @@ describe('show command', () => {
       const { stdout, exitCode } = await runCommand(showCommand, ['show', slug]);
       expect(exitCode).toBe(0);
       expect(stdout).toContain(slug);
+      // Grid columns: label without colon prefix
+      expect(stdout).toContain('Title');
       expect(stdout).toContain('Software Engineer');
+      expect(stdout).toContain('Company');
       expect(stdout).toContain('Test Corp');
+      expect(stdout).toContain('Status');
       expect(stdout).toContain('applied');
-      expect(stdout).toContain('File ownership');
+      expect(stdout).toContain('Remote');
+      expect(stdout).toContain('LinkedIn');
+      expect(stdout).toContain('$100k');
+      expect(stdout).toContain('senior-engineer');
+      // File table header
+      expect(stdout).toContain('Available files');
+      expect(stdout).toContain('File');
+      expect(stdout).toContain('Created by');
+      expect(stdout).toContain('Notes');
+      // Table rows: file + command
+      expect(stdout).toContain('jho track');
     });
 
     it('shows file presence indicators', async () => {
@@ -134,10 +148,15 @@ describe('show command', () => {
 
       const { stdout, exitCode } = await runCommand(showCommand, ['show', slug]);
       expect(exitCode).toBe(0);
+      // File names in the table
       expect(stdout).toContain('meta.md');
       expect(stdout).toContain('jd.md');
       expect(stdout).toContain('cover-letter.md');
       expect(stdout).toContain('qa.md');
+      // Command names in the Created by column
+      expect(stdout).toContain('jho track');
+      expect(stdout).toContain('jho cover-letter');
+      expect(stdout).toContain('jho answer');
     });
 
     it('strips empty fields from display', async () => {
@@ -171,11 +190,11 @@ describe('show command', () => {
 
       const { stdout, exitCode } = await runCommand(showCommand, ['show', slug]);
       expect(exitCode).toBe(0);
-      expect(stdout).not.toContain('Location:');
-      expect(stdout).not.toContain('Site:');
-      expect(stdout).not.toContain('Salary:');
-      expect(stdout).not.toContain('Tags:');
-      expect(stdout).not.toContain('Target role:');
+      expect(stdout).not.toContain('Location');
+      expect(stdout).not.toContain('Site');
+      expect(stdout).not.toContain('Salary');
+      expect(stdout).not.toContain('Tags');
+      expect(stdout).not.toContain('Target role');
     });
   });
 

@@ -374,4 +374,109 @@ describe('list command', () => {
       expect(stderr).toContain('invalid status');
     });
   });
+
+  describe('cwd inference (inside campaign folder)', () => {
+    let cwdSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(async () => {
+      // Spy on process.cwd to return a path inside a campaign folder
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied'), { recursive: true });
+      await writeFile(
+        join(campaignDir, 'config.json'),
+        JSON.stringify({
+          version: 1,
+          profile: { path: '' },
+          cv: { path: '' },
+          linkedin: { url: '' },
+          applied: { dir: '' },
+          knowledgeBase: { dir: '' },
+        }),
+      );
+
+      cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(campaignDir);
+
+      vi.mocked(listCoreModule.runListApplications).mockResolvedValue({
+        entries: [
+          {
+            slug: '2026-Jun-01-SE-Acme-123',
+            status: 'applied',
+            title: 'Software Engineer',
+            company: 'Acme Corp',
+            site: 'Seek',
+            location: 'Sydney NSW',
+            targetRole: 'senior-backend-engineer',
+            appliedOn: '2026-06-01',
+            tags: ['typescript'],
+          },
+        ],
+      });
+    });
+
+    afterEach(() => {
+      cwdSpy.mockRestore();
+    });
+
+    it('lists applications when cwd is inside a campaign folder', async () => {
+      const { stdout, exitCode } = await runCommand(listCommand, ['list']);
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Acme Corp');
+      expect(stdout).toContain('Software Engineer');
+      expect(stdout).toContain('1 application');
+    });
+
+    it('outputs application JSON with --json when cwd inside campaign', async () => {
+      const { stdout, exitCode } = await runCommand(listCommand, ['list', '--json']);
+      expect(exitCode).toBe(0);
+      const appEntries = JSON.parse(stdout.trim());
+      expect(appEntries).toHaveLength(1);
+      expect(appEntries[0]!.company).toBe('Acme Corp');
+    });
+
+    it('respects --status filter alongside cwd inference', async () => {
+      const { exitCode } = await runCommand(listCommand, ['list', '--status', 'applied']);
+      expect(exitCode).toBe(0);
+      expect(listCoreModule.runListApplications).toHaveBeenCalledWith(
+        'default',
+        expect.objectContaining({ status: 'applied' }),
+      );
+    });
+
+    it('shows "No applications found." when campaign has no applications', async () => {
+      vi.mocked(listCoreModule.runListApplications).mockResolvedValue({ entries: [] });
+      const { stdout, exitCode } = await runCommand(listCommand, ['list']);
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('No applications found.');
+    });
+
+    it('still respects explicit --campaign over cwd inference', async () => {
+      vi.mocked(listCoreModule.runListApplications).mockResolvedValue({
+        entries: [
+          {
+            slug: '2026-Jun-02-SE-Other-456',
+            status: 'applied',
+            title: 'Other Engineer',
+            company: 'Other Corp',
+            site: '',
+            location: '',
+            targetRole: '',
+            appliedOn: '2026-06-02',
+            tags: [],
+          },
+        ],
+      });
+
+      const { stdout, exitCode } = await runCommand(
+        listCommand,
+        ['list', '--campaign', 'freelance'],
+        parentSetup,
+      );
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Other Corp');
+      expect(listCoreModule.runListApplications).toHaveBeenCalledWith(
+        'freelance',
+        expect.anything(),
+      );
+    });
+  });
 });
