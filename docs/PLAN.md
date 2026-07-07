@@ -146,7 +146,7 @@ targetRole: senior-backend-engineer # slug from profile's ## Target roles; optio
 
 Body: user-owned (untouched by tool).
 
-**Status semantics** (the distinction matters for `jho retro --aggregate` and for self-reflection):
+**Status semantics** (the distinction matters for `jho retro aggregate` and for self-reflection):
 
 | Status      | Meaning                                                                    | Typical signal in `meta.md` body or `notes.md`             |
 | ----------- | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -159,7 +159,7 @@ Body: user-owned (untouched by tool).
 | `abandoned` | **I just stopped** responding / preparing, without a formal withdrawal.    | (no closing email)                                         |
 | `ghosted`   | They went silent after ≥ 1 successful exchange.                            | "no reply after N weeks"                                   |
 
-`withdrawn` and `abandoned` are deliberately separate: the first is a _professional_ closing action, the second is a _self-reflection_ state. `abandoned` apps are the input to the "where do I drop the ball?" question — useful for spotting patterns like "I abandon 30% of apps after the take-home." `jho retro --aggregate` keeps `abandoned` apps out of weak-topic aggregation by default (`--include-abandoned` to include).
+`withdrawn` and `abandoned` are deliberately separate: the first is a _professional_ closing action, the second is a _self-reflection_ state. `abandoned` apps are the input to the "where do I drop the ball?" question — useful for spotting patterns like "I abandon 30% of apps after the take-home." `jho retro aggregate` keeps `abandoned` apps out of weak-topic aggregation by default (`--include-abandoned` to include).
 
 ### `interviews.md` schema (one H2 per interview)
 
@@ -265,11 +265,11 @@ Prior sections are never read or rewritten by the tool.
 
 ### Cross-app aggregation
 
-`jho retro --aggregate` (or MCP `aggregate_retros`) scans all `applied/*/retro.md`
+`jho retro aggregate` (or MCP `aggregate_retros`) scans all `applied/*/retro.md`
 files and surfaces recurring weak topics across applications:
 
 ```
-$ jho retro --aggregate
+$ jho retro aggregate
 Recurring weak topics across 4 retros:
 
   system design (3x) — Nuage, Atlassian, Canva
@@ -385,7 +385,7 @@ Re-read: your Canva conflict story; tighten to 90 seconds.
 
 - Checks: depth distribution (≥ 1 of each), materials are real URLs, timeline sums to ±20% of `days`, strengths/ concerns correctly reference profile, behavioural questions map to real profile stories.
 
-**Cross-referencing prep and retro (v1 read-only)**: the prep prompt can be seeded with the user's known-weak topics from `retro.md` of the same app and from `jho retro --aggregate` output (when run for the same target role). v1 does not write back from retro to prep; the user runs `jho prepare` explicitly.
+**Cross-referencing prep and retro (v1 read-only)**: the prep prompt can be seeded with the user's known-weak topics from `retro.md` of the same app and from `jho retro aggregate` output (when run for the same target role). v1 does not write back from retro to prep; the user runs `jho prepare` explicitly.
 
 ---
 
@@ -485,7 +485,7 @@ identifier; the title is display-only.
 - `jho cover-letter <slug>` — picks which role's experience to emphasize based
   on `meta.md`'s `targetRole`.
 - `jho list --role <slug>` — filters applications by target role.
-- `jho retro --aggregate --role <slug>` — only aggregates retros for that role.
+- `jho retro aggregate --role <slug>` — only aggregates retros for that role.
 - `jho profile rebuild` — regenerates the suggested list, prompts before
   overwriting user edits.
 
@@ -672,12 +672,13 @@ jho prepare  --text "..."       # ad-hoc: pasted JD, print prep plan, don't save
                                 # flags: --days <n> (default 7), --steer <text>, --json
 
 jho retro    [<slug>]              # interactive: ask for weak topics, generate learning plan
-                                  # slug optional (cwd inference)
-jho retro    [<slug>] --show       # print retro for an app
-jho retro    [<slug>] --interview <n>  # associate retro with a specific interview
-jho retro    [<slug>] --append     # add to an existing retro (more weak topics)
-jho retro    --aggregate [--role <slug>] [--include-abandoned]
-                                  # recurring weak topics, optionally filtered
+                                   # slug optional (cwd inference)
+                                   # flags: --interview <n>, --weak-topics, --notes, --steer
+jho retro    show [<slug>]         # print existing retro
+jho retro    append [<slug>]       # add weak topics to existing retro
+                                   # flags: --weak-topics, --notes, --steer
+jho retro    aggregate [--role <slug>] [--include-abandoned]
+                                   # recurring weak topics, optionally filtered
 
 jho ownership [--markdown]
 jho doctor [<slug>] [--all]

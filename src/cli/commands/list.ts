@@ -6,6 +6,7 @@ import {
   ListError,
   InvalidListStatusError,
 } from '../../core/list/index.js';
+import { findCampaignFromCwd, resolveDataRoot } from '../../core/paths.js';
 import { APPLICATION_STATUSES } from '../../core/applications/types.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userOutput, userError } from '../output.js';
@@ -16,17 +17,24 @@ import { bold, cyan, dim, statusColor } from '../colors.js';
  */
 export const listCommand = new Command('list')
   .description('List campaigns, or applications within a campaign')
-  .option('--status <status>', 'filter by status (requires --campaign)')
-  .option('--tag <tag>', 'filter by tag, repeatable (requires --campaign)', collectTags, [])
-  .option('--role <role>', 'filter by target role (requires --campaign)')
+  .option('--status <status>', 'filter by status (requires --campaign or campaign folder)')
+  .option(
+    '--tag <tag>',
+    'filter by tag, repeatable (requires --campaign or campaign folder)',
+    collectTags,
+    [],
+  )
+  .option('--role <role>', 'filter by target role (requires --campaign or campaign folder)')
   .option('--json', 'output as JSON')
   .action(async function (opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
     const explicitCampaign = globals?.campaign;
-    const log = getRootLogger().child({ cmd: 'list', campaign: explicitCampaign ?? '(campaigns)' });
+    const inferredCampaign =
+      explicitCampaign ?? findCampaignFromCwd(process.cwd(), resolveDataRoot());
+    const log = getRootLogger().child({ cmd: 'list', campaign: inferredCampaign ?? '(campaigns)' });
 
     try {
-      if (explicitCampaign === undefined) {
+      if (inferredCampaign === null) {
         const { campaigns } = await runListCampaigns();
 
         if (opts.json) {
@@ -46,7 +54,7 @@ export const listCommand = new Command('list')
           userOutput(`  ${cyan(c.name.padEnd(maxNameLen))}  ${apps}`);
         }
       } else {
-        const { entries } = await runListApplications(explicitCampaign, {
+        const { entries } = await runListApplications(inferredCampaign, {
           status: opts.status as string | undefined,
           tags: opts.tag as string[] | undefined,
           targetRole: opts.role as string | undefined,
@@ -66,13 +74,13 @@ export const listCommand = new Command('list')
           if (i > 0) {
             userOutput('');
           }
-          const e = entries[i]!;
-          userOutput(`${cyan(e.slug)}`);
-          userOutput(`  ${dim('Title:')} ${e.title ?? ''}`);
-          userOutput(`  ${dim('Company:')} ${e.company ?? ''}`);
-          userOutput(`  ${dim('Location:')} ${e.location ?? ''}`);
-          userOutput(`  ${dim('Status:')} ${statusColor(e.status ?? '')}`);
-          userOutput(`  ${dim('Applied on:')} ${e.appliedOn ?? ''}`);
+          const entry = entries[i]!;
+          userOutput(`${cyan(entry.slug)}`);
+          userOutput(`  ${dim('Title:')} ${entry.title ?? ''}`);
+          userOutput(`  ${dim('Company:')} ${entry.company ?? ''}`);
+          userOutput(`  ${dim('Location:')} ${entry.location ?? ''}`);
+          userOutput(`  ${dim('Status:')} ${statusColor(entry.status ?? '')}`);
+          userOutput(`  ${dim('Applied on:')} ${entry.appliedOn ?? ''}`);
         }
         const apps = entries.length === 1 ? 'application' : 'applications';
         userOutput(`${entries.length} ${apps}`);
@@ -97,12 +105,14 @@ export const listCommand = new Command('list')
 listCommand.addHelpText(
   'after',
   `
-Without --campaign, lists all campaigns. Add --campaign <name> to list applications
-within that campaign.
+Without --campaign, lists all campaigns. When run from inside a campaign
+folder, lists applications within that campaign. Add --campaign <name>
+to target a specific campaign explicitly.
 
 Examples:
-  $ jho list                                    # list campaigns
+  $ jho list                                    # list campaigns (outside campaign folder)
   $ jho list --json                             # list campaigns as JSON
+  $ cd campaigns/default && jho list            # list applications (cwd inference)
   $ jho list --campaign default                 # list all applications
   $ jho list --campaign default --status interview  # filter by status
   $ jho list --campaign default --tag remote        # filter by tag

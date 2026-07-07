@@ -516,7 +516,6 @@ Wires `writeToolhash()` calls into every existing module that writes tool-manage
 - `src/cli/commands/show.ts` — replace stub with full implementation
 - Summary view: title, company, status, location, site, salary, tags, target role
 - Safe slug inference (cwd or explicit); error with hint when missing
-- Flags: `--jd`, `--meta`, `--cover-letter`, `--qa`, `--interviews` for focused file views (read and print raw file content)
 - File-ownership footer: renders a compact per-entry ownership table listing every file in the application folder with its `jho:` marker rules
 - Tests: show summary, show with filename flags, slug inference, missing slug error, help snapshot
 
@@ -534,10 +533,9 @@ Wires `writeToolhash()` calls into every existing module that writes tool-manage
   - All subcommands support slug inference from cwd
 - `src/cli/commands/retro.ts` — wire to core retro module:
   - `jho retro [<slug>]` — interactive (prompt for weak topics, generate plan, write to retro.md)
-  - `jho retro [<slug>] --show` — display existing retro
-  - `jho retro [<slug>] --interview <n>` — associate retro with interview `n`
-  - `jho retro [<slug>] --append` — add weak topics to existing retro
-  - `jho retro --aggregate [--role <slug>] [--include-abandoned]` — cross-app aggregation
+  - `jho retro show [<slug>]` — display existing retro
+  - `jho retro append [<slug>] --weak-topics <topics>` — add weak topics to existing retro
+  - `jho retro aggregate [--role <slug>] [--include-abandoned]` — cross-app aggregation
 - `src/cli/commands/prepare.ts` — wire to core prepare module:
   - `jho prepare [<slug>]` — generate/show prepare plan
   - `jho prepare <slug>` — regenerate from current JD + profile

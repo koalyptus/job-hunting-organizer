@@ -125,16 +125,17 @@ jho answer  [<slug>] "<question>" | --image <path> | --stdin [--steer <text>]
                                   # slug optional (cwd inference)
                                   # --steer: custom LLM instructions for this answer
 jho answer show [<slug>]         # display existing Q&A entries
-jho show [<slug>]       # show one application with file-ownership footer; --jd, --meta, --cover-letter, --qa, --interviews for focused views
+jho show [<slug>]       # show one application with file-ownership footer
 jho interview [<slug>] {add,list,mark,notes}  # manage interview pipeline; --when, --type, --duration, --interviewer, --location; mark --status, notes --append
 jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile); --add, --text, --days, --steer, --json
 jho prepare <url>       # ad-hoc prep from URL (print to stdout, don't save)
 jho prepare --text "..."# ad-hoc prep from pasted text
-jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan; --steer <text>
-jho retro [<slug>] --show # display existing retro
-jho retro [<slug>] --interview <n> # retro for a specific interview
-jho retro [<slug>] --append # add weak topics to existing retro
-jho retro --aggregate   # recurring weak topics across all apps; --role, --include-abandoned
+jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan; --steer <text>, --interview <n>
+jho retro show [<slug>] # display existing retro
+jho retro append [<slug>] [--weak-topics <topics>] [--notes <text>] [--steer <text>]
+                        # add weak topics to existing retro
+jho retro aggregate [--role <slug>] [--include-abandoned]
+                        # recurring weak topics across all apps
 jho ownership           # what you can/can't edit
 jho doctor [<slug>]     # diagnose the campaign or a single app; --all
 jho repair [<slug>]     # attempt auto-repair; --all for campaign-wide
@@ -195,7 +196,7 @@ jho mcp                 # start MCP server
 
 Each tool-managed file has a `.toolhash` sidecar. If the file's current hash differs from the sidecar, the tool refuses silent overwrite and shows a diff.
 
-**Discoverability**: in-file markers, `jho ownership`, `jho doctor`, `jho show <slug>`, README, and this file.
+**Discoverability**: in-file markers, `jho ownership`, `jho doctor`, README, and this file.
 
 ## Logging conventions
 
