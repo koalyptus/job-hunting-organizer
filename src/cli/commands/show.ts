@@ -8,31 +8,47 @@ import { userOutput, userError } from '../output.js';
 import { dim, cyan, statusColor, green } from '../colors.js';
 import type { GlobalOpts } from '../options.js';
 
+interface FileTableEntry {
+  file: string;
+  createdBy: string;
+  notes: string;
+}
+
 /**
- * Unified file-table rows: maps each known application file to its
- * creator command and a one-line note.
+ * Unified file-table rows, ordered by display priority (meta.md first).
+ * Each entry maps an application file to the command that manages it
+ * and a one-line note about the tool's behavior.
  */
-const FILE_TABLE: Record<string, { createdBy: string; notes: string }> = {
-  'jd.md': {
-    createdBy: 'jho track',
-    notes: 'Auto-fetched JD at top; your comments survive re-fetches',
-  },
-  'meta.md': {
+const FILE_TABLE: FileTableEntry[] = [
+  {
+    file: 'meta.md',
     createdBy: 'jho track',
     notes: 'Known fields rewritten on track; custom keys & body text kept',
   },
-  'cover-letter.md': {
+  {
+    file: 'jd.md',
+    createdBy: 'jho track',
+    notes: 'Auto-fetched JD at top; your comments survive re-fetches',
+  },
+  {
+    file: 'cover-letter.md',
     createdBy: 'jho cover-letter',
     notes: 'Regenerated on demand; asks before overwriting your edits',
   },
-  'qa.md': { createdBy: 'jho answer', notes: 'Appends new entries; old entries stay as written' },
-  'interviews.md': {
+  {
+    file: 'qa.md',
+    createdBy: 'jho answer',
+    notes: 'Appends new entries; old entries stay as written',
+  },
+  {
+    file: 'interviews.md',
     createdBy: 'jho interview',
     notes: 'Appends entries; status updated with mark',
   },
-  'retro.md': { createdBy: 'jho retro', notes: 'Appends a section per retro' },
-  'prepare.md': { createdBy: 'jho prepare', notes: 'Rewrites on prepare; appends on --add' },
-};
+  { file: 'retro.md', createdBy: 'jho retro', notes: 'Appends a section per retro' },
+  { file: 'prepare.md', createdBy: 'jho prepare', notes: 'Rewrites on prepare; appends on --add' },
+  { file: 'notes.md', createdBy: '(you)', notes: 'Your notes — tool never reads or writes' },
+];
 
 /**
  * Render the summary view for an application.
@@ -68,7 +84,7 @@ function renderSummary(data: Awaited<ReturnType<typeof readShowData>>): void {
  */
 function renderFileTable(filesPresent: string[]): void {
   const fileSet = new Set(filesPresent);
-  const rows = Object.entries(FILE_TABLE).filter(([file]) => fileSet.has(file));
+  const rows = FILE_TABLE.filter((entry) => fileSet.has(entry.file));
 
   if (rows.length === 0) {
     return;
@@ -80,8 +96,8 @@ function renderFileTable(filesPresent: string[]): void {
   });
 
   table.push([dim('File'), dim('Created by'), dim('Notes')]);
-  for (const [file, info] of rows) {
-    table.push([green(file), cyan(info.createdBy), info.notes]);
+  for (const entry of rows) {
+    table.push([green(entry.file), cyan(entry.createdBy), entry.notes]);
   }
 
   userOutput(`\n${dim('Available files')}\n${table.toString().trimEnd()}`);

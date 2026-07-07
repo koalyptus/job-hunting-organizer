@@ -1,6 +1,5 @@
 import { Command } from 'commander';
 import { join } from 'node:path';
-import { log as clackLog } from '@clack/prompts';
 import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
@@ -125,12 +124,11 @@ export const answerCommand = new Command('answer')
         const appliedDir = resolveAppliedDir(campaignRoot);
         const qaPath = join(appliedDir, resolvedSlug, 'qa.md');
 
-        clackLog.info(`
-Answer saved to: ${qaPath}
+        userOutput(`Answer saved to: ${qaPath}
 
 Next steps:
-  jho show ${resolvedSlug} --qa   # view all Q&A entries
-  jho answer ${resolvedSlug} "..." # another question
+  jho answer show ${resolvedSlug}   # view all Q&A entries
+  jho answer ${resolvedSlug} "..."  # another question
 `);
       }
 

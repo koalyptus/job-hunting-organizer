@@ -99,12 +99,6 @@ describe('show command', () => {
       const slug = '2026-Jun-03-se-test-corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
       await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
-      await writeFile(
-        join(campaignDir, 'applied', slug, 'meta.md'),
-        '---\nslug: ' +
-          slug +
-          '\ntitle: Software Engineer\ncompany: Test Corp\nstatus: applied\nappliedOn: 2026-06-03\n---\n',
-      );
 
       const { stdout, exitCode } = await runCommand(showCommand, ['show', slug]);
       expect(exitCode).toBe(0);
@@ -139,12 +133,6 @@ describe('show command', () => {
       const slug = '2026-Jun-03-se-test-corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
       await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
-      await writeFile(
-        join(campaignDir, 'applied', slug, 'meta.md'),
-        '---\nslug: ' +
-          slug +
-          '\ntitle: SE\ncompany: C\nstatus: applied\nappliedOn: 2026-06-03\n---\n',
-      );
 
       const { stdout, exitCode } = await runCommand(showCommand, ['show', slug]);
       expect(exitCode).toBe(0);
@@ -181,12 +169,6 @@ describe('show command', () => {
       const slug = '2026-Jun-03-se-test-corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
       await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
-      await writeFile(
-        join(campaignDir, 'applied', slug, 'meta.md'),
-        '---\nslug: ' +
-          slug +
-          '\ntitle: SE\ncompany: C\nstatus: applied\nappliedOn: 2026-06-03\n---\n',
-      );
 
       const { stdout, exitCode } = await runCommand(showCommand, ['show', slug]);
       expect(exitCode).toBe(0);
