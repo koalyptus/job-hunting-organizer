@@ -1,13 +1,13 @@
 import { Command } from 'commander';
 import { join } from 'node:path';
-import { writeFile } from 'node:fs/promises';
-import { createEvent } from 'ics';
 import { text, select, isCancel, log as clackLog } from '@clack/prompts';
 import Table from 'cli-table3';
 import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { validateDatetime } from '../validate.js';
 import { dim, cyan, interviewStatusColor } from '../colors.js';
+import { generateIcsFile } from '../interview-ics.js';
+import type { InterviewDetails } from '../interview-ics.js';
 import {
   addInterview,
   listInterviews,
@@ -19,6 +19,7 @@ import {
   INTERVIEW_STATUSES,
 } from '../../core/interviews/index.js';
 import type { InterviewEntry, InterviewType } from '../../core/interviews/index.js';
+import type { Logger } from 'pino';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput, userSuccess } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
@@ -83,7 +84,7 @@ async function promptInterviewDetails(): Promise<{
   }
 
   const duration = parseInt((durationResult as string) || '60', 10);
-  if (isNaN(duration) || duration <= 0) {
+  if (Number.isNaN(duration) || duration <= 0) {
     userError('Duration must be a positive number');
     process.exit(1);
   }
@@ -129,68 +130,6 @@ async function promptInterviewDetails(): Promise<{
 }
 
 /**
- * Parse a datetime string like "2026-06-15 10:00" or "2026-06-15 10:00:00" into [year, month, day, hour, minute].
- */
-function parseDatetime(datetime: string): [number, number, number, number, number] {
-  const match = datetime.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::\d{2})?$/);
-  if (!match) {
-    throw new Error(
-      `Invalid datetime format: ${datetime}. Expected "YYYY-MM-DD HH:MM" or "YYYY-MM-DD HH:MM:SS"`,
-    );
-  }
-  return [
-    parseInt(match[1]!, 10),
-    parseInt(match[2]!, 10),
-    parseInt(match[3]!, 10),
-    parseInt(match[4]!, 10),
-    parseInt(match[5]!, 10),
-  ];
-}
-
-/**
- * Generate an ICS file for the interview.
- */
-async function generateIcsFile(
-  appFolder: string,
-  index: number,
-  when: string,
-  type: string,
-  duration: number,
-  title?: string,
-  location?: string,
-): Promise<string> {
-  const start = parseDatetime(when);
-  const eventTitle = title || `Interview #${index} (${type})`;
-
-  const { error, value } = createEvent({
-    start,
-    duration: { minutes: duration },
-    title: eventTitle,
-    description: `Interview type: ${type}`,
-    location: location || undefined,
-    status: 'CONFIRMED',
-    busyStatus: 'BUSY',
-  });
-
-  if (error) {
-    throw new Error(`Failed to create ICS event: ${error}`);
-  }
-
-  if (!value) {
-    throw new Error('Failed to create ICS event: no value returned');
-  }
-
-  // Create filename: interview-YYYY-MM-DD-type.ics
-  const dateStr = when.replace(/[:\s]/g, '-').slice(0, 10);
-  const typeSlug = type.replace(/\s+/g, '-');
-  const filename = `interview-${dateStr}-${typeSlug}.ics`;
-  const filePath = join(appFolder, filename);
-
-  await writeFile(filePath, value, 'utf8');
-  return filePath;
-}
-
-/**
  * Format a recap table for the interview.
  */
 function formatRecapTable(
@@ -224,6 +163,69 @@ function formatRecapTable(
 }
 
 /**
+ * Shared flow for adding an interview: calls the core, generates ICS, shows recap + next steps.
+ * Used by both `addCmd` and the parent `interviewCommand` alias.
+ */
+async function addInterviewFlow(
+  log: Logger,
+  appliedDir: string,
+  resolvedSlug: string,
+  details: InterviewDetails,
+): Promise<void> {
+  const result = await withSpinner(
+    'Adding interview...',
+    'Interview added',
+    () =>
+      addInterview(appliedDir, resolvedSlug, {
+        when: details.when,
+        type: details.type as InterviewType,
+        duration: details.duration,
+        interviewers: details.interviewer,
+        location: details.location,
+        title: details.title,
+      }),
+    'Failed to add interview',
+  );
+
+  const appFolder = join(appliedDir, resolvedSlug);
+
+  const icsPath = await generateIcsFile(
+    appFolder,
+    result.index,
+    details.when,
+    details.type,
+    details.duration,
+    details.title,
+    details.location,
+  );
+
+  userOutput(
+    '\n' +
+      formatRecapTable(
+        result.index,
+        details.when,
+        details.type,
+        details.duration,
+        details.interviewer,
+        details.location,
+        details.title,
+      ),
+  );
+
+  userOutput(`Interview saved to: ${join(appFolder, 'interviews.md')}
+ICS file: ${icsPath}
+
+Next steps:
+  jho interview list ${resolvedSlug}          # view all interviews
+  jho interview mark ${resolvedSlug} ${result.index} --status completed  # mark status
+  jho interview notes ${resolvedSlug} ${result.index} --append "..."    # add notes
+  jho prepare ${resolvedSlug}                 # prep for the interview
+`);
+
+  log.info({ slug: resolvedSlug, index: result.index }, 'interview.add.completed');
+}
+
+/**
  * `jho interview add [<slug>]` — add an interview entry.
  */
 const addCmd = new Command('add')
@@ -244,7 +246,6 @@ const addCmd = new Command('add')
       const resolvedSlug = resolveSlug(slug, campaign);
       const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
 
-      // Wizard mode: if --when is not provided, prompt for all details
       let when = opts.when as string | undefined;
       let type = opts.type as string;
       let duration = parseInt(opts.duration as string, 10);
@@ -270,51 +271,14 @@ const addCmd = new Command('add')
         title = details.title;
       }
 
-      const result = await withSpinner(
-        'Adding interview...',
-        'Interview added',
-        () =>
-          addInterview(appliedDir, resolvedSlug, {
-            when,
-            type: type as InterviewType,
-            duration,
-            interviewers: interviewer,
-            location,
-            title,
-          }),
-        'Failed to add interview',
-      );
-
-      const appFolder = join(appliedDir, resolvedSlug);
-
-      // Generate ICS file
-      const icsPath = await generateIcsFile(
-        appFolder,
-        result.index,
+      await addInterviewFlow(log, appliedDir, resolvedSlug, {
         when,
         type,
         duration,
-        title,
+        interviewer,
         location,
-      );
-
-      // Show recap table
-      userOutput(
-        '\n' + formatRecapTable(result.index, when, type, duration, interviewer, location, title),
-      );
-
-      // Show file location and follow-up commands
-      userOutput(`Interview saved to: ${join(appFolder, 'interviews.md')}
-ICS file: ${icsPath}
-
-Next steps:
-  jho interview list ${resolvedSlug}          # view all interviews
-  jho interview mark ${resolvedSlug} ${result.index} --status completed  # mark status
-  jho interview notes ${resolvedSlug} ${result.index} --append "..."    # add notes
-  jho prepare ${resolvedSlug}                 # prep for the interview
-`);
-
-      log.info({ slug: resolvedSlug, index: result.index }, 'interview.add.completed');
+        title,
+      });
     } catch (err) {
       if (err instanceof SlugMissingError) {
         logError(log, err, 'interview.add.slug-missing', { campaign });
@@ -595,60 +559,14 @@ export const interviewCommand = new Command('interview')
 
       const details = await promptInterviewDetails();
 
-      const result = await withSpinner(
-        'Adding interview...',
-        'Interview added',
-        () =>
-          addInterview(appliedDir, resolvedSlug, {
-            when: details.when,
-            type: details.type as InterviewType,
-            duration: details.duration,
-            interviewers: details.interviewer,
-            location: details.location,
-            title: details.title,
-          }),
-        'Failed to add interview',
-      );
-
-      const appFolder = join(appliedDir, resolvedSlug);
-
-      // Generate ICS file
-      const icsPath = await generateIcsFile(
-        appFolder,
-        result.index,
-        details.when,
-        details.type,
-        details.duration,
-        details.title,
-        details.location,
-      );
-
-      // Show recap table
-      userOutput(
-        '\n' +
-          formatRecapTable(
-            result.index,
-            details.when,
-            details.type,
-            details.duration,
-            details.interviewer,
-            details.location,
-            details.title,
-          ),
-      );
-
-      // Show file location and follow-up commands
-      userOutput(`Interview saved to: ${join(appFolder, 'interviews.md')}
-ICS file: ${icsPath}
-
-Next steps:
-  jho interview list ${resolvedSlug}          # view all interviews
-  jho interview mark ${resolvedSlug} ${result.index} --status completed  # mark status
-  jho interview notes ${resolvedSlug} ${result.index} --append "..."    # add notes
-  jho prepare ${resolvedSlug}                 # prep for the interview
-`);
-
-      log.info({ slug: resolvedSlug, index: result.index }, 'interview.add.completed');
+      await addInterviewFlow(log, appliedDir, resolvedSlug, {
+        when: details.when,
+        type: details.type,
+        duration: details.duration,
+        interviewer: details.interviewer,
+        location: details.location,
+        title: details.title,
+      });
     } catch (err) {
       if (err instanceof SlugMissingError) {
         logError(log, err, 'interview.add.slug-missing', { campaign });

@@ -126,7 +126,7 @@ describe('interview command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
       expect(stdout).toContain('interviews.md');
-      expect(stdout).toContain('interview-2026-06-15-technical.ics');
+      expect(stdout).toContain('interview-2026-06-15-10-00-technical.ics');
       expect(stdout).toContain('Next steps:');
       expect(stdout).toContain('jho interview list');
       expect(stdout).toContain('jho interview mark');
@@ -172,7 +172,7 @@ describe('interview command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
       expect(stdout).toContain('interviews.md');
-      expect(stdout).toContain('interview-2026-06-15-technical.ics');
+      expect(stdout).toContain('interview-2026-06-15-14-00-technical.ics');
       expect(stdout).toContain('Next steps:');
       expect(interviewsCore.addInterview).toHaveBeenCalledWith(
         expect.any(String),
@@ -370,7 +370,7 @@ describe('interview command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
       expect(stdout).toContain('interviews.md');
-      expect(stdout).toContain('interview-2026-07-15-technical.ics');
+      expect(stdout).toContain('interview-2026-07-15-10-00-technical.ics');
       expect(stdout).toContain('Next steps:');
       expect(text).toHaveBeenCalled();
       expect(select).toHaveBeenCalled();
@@ -405,7 +405,7 @@ describe('interview command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
       expect(stdout).toContain('interviews.md');
-      expect(stdout).toContain('interview-2026-07-15-hr.ics');
+      expect(stdout).toContain('interview-2026-07-15-14-00-hr.ics');
       expect(stdout).toContain('Next steps:');
       expect(interviewsCore.addInterview).toHaveBeenCalledWith(
         expect.any(String),
@@ -786,7 +786,7 @@ describe('interview command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
-      expect(stdout).toContain('interview-2026-08-01-hr.ics');
+      expect(stdout).toContain('interview-2026-08-01-09-00-hr.ics');
       expect(interviewsCore.addInterview).toHaveBeenCalledWith(
         expect.any(String),
         slug,
@@ -967,7 +967,7 @@ describe('interview command', () => {
 
       // Verify the ICS file was created
       const { readFile } = await import('node:fs/promises');
-      const icsPath = join(appDir, 'interview-2026-06-15-technical.ics');
+      const icsPath = join(appDir, 'interview-2026-06-15-10-00-technical.ics');
       const icsContent = await readFile(icsPath, 'utf8');
       expect(icsContent).toContain('BEGIN:VCALENDAR');
       expect(icsContent).toContain('BEGIN:VEVENT');
@@ -1004,7 +1004,10 @@ describe('interview command', () => {
       ]);
 
       const { readFile } = await import('node:fs/promises');
-      const icsContent = await readFile(join(appDir, 'interview-2026-06-15-technical.ics'), 'utf8');
+      const icsContent = await readFile(
+        join(appDir, 'interview-2026-06-15-10-00-technical.ics'),
+        'utf8',
+      );
       expect(icsContent).toContain('System Design Round');
     });
 
@@ -1035,7 +1038,10 @@ describe('interview command', () => {
       ]);
 
       const { readFile } = await import('node:fs/promises');
-      const icsContent = await readFile(join(appDir, 'interview-2026-06-15-technical.ics'), 'utf8');
+      const icsContent = await readFile(
+        join(appDir, 'interview-2026-06-15-10-00-technical.ics'),
+        'utf8',
+      );
       expect(icsContent).toContain('Google Meet');
     });
   });

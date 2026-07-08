@@ -5,6 +5,7 @@ import {
   parseSince,
   toIsoDateString,
   daysInMonth,
+  parseDatetime,
 } from '../date.js';
 
 describe('formatDateUtc', () => {
@@ -146,5 +147,21 @@ describe('daysInMonth', () => {
 
   it('returns 31 for December', () => {
     expect(daysInMonth(2026, 12)).toBe(31);
+  });
+});
+
+describe('parseDatetime', () => {
+  it('parses YYYY-MM-DD HH:MM', () => {
+    expect(parseDatetime('2026-06-15 10:00')).toEqual([2026, 6, 15, 10, 0]);
+  });
+
+  it('parses YYYY-MM-DD HH:MM:SS (ignores seconds)', () => {
+    expect(parseDatetime('2026-06-15 10:30:45')).toEqual([2026, 6, 15, 10, 30]);
+  });
+
+  it('throws on invalid format', () => {
+    expect(() => parseDatetime('not-a-date')).toThrow(/Invalid datetime format/);
+    expect(() => parseDatetime('2026/06/15 10:00')).toThrow(/Invalid datetime format/);
+    expect(() => parseDatetime('2026-06-15')).toThrow(/Invalid datetime format/);
   });
 });
