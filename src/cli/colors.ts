@@ -13,7 +13,9 @@ export function initColors(cliColor?: boolean, configColor?: boolean): void {
   } else {
     noColor = false;
   }
-  chalk.level = noColor ? 0 : 3;
+  if (noColor) {
+    chalk.level = 0;
+  }
 }
 
 export const dim = (text: string): string => (noColor ? text : chalk.dim(text));

@@ -130,6 +130,34 @@ async function promptInterviewDetails(): Promise<{
 }
 
 /**
+ * Handle known interview errors, logging and exiting with a user message.
+ * Re-throws unknown errors for the caller to handle.
+ */
+function handleInterviewError(err: unknown, log: Logger, campaign: string): never {
+  if (err instanceof SlugMissingError) {
+    logError(log, err, 'interview.add.slug-missing', { campaign });
+    log.flush();
+    userError(
+      `${err.message}\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`,
+    );
+    process.exit(1);
+  }
+  if (err instanceof InterviewNotFoundError) {
+    logError(log, err, 'interview.add.not-found', { campaign });
+    log.flush();
+    userError(`${err.message}\nhint: create the application first with: jho track <url>`);
+    process.exit(1);
+  }
+  if (err instanceof InterviewError) {
+    logError(log, err, 'interview.add.failed', { campaign });
+    log.flush();
+    userError(err.message);
+    process.exit(1);
+  }
+  throw err;
+}
+
+/**
  * Format a recap table for the interview.
  */
 function formatRecapTable(
@@ -285,27 +313,7 @@ const addCmd = new Command('add')
         title,
       });
     } catch (err) {
-      if (err instanceof SlugMissingError) {
-        logError(log, err, 'interview.add.slug-missing', { campaign });
-        log.flush();
-        userError(
-          `${err.message}\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`,
-        );
-        process.exit(1);
-      }
-      if (err instanceof InterviewNotFoundError) {
-        logError(log, err, 'interview.add.not-found', { campaign });
-        log.flush();
-        userError(`${err.message}\nhint: create the application first with: jho track <url>`);
-        process.exit(1);
-      }
-      if (err instanceof InterviewError) {
-        logError(log, err, 'interview.add.failed', { campaign });
-        log.flush();
-        userError(err.message);
-        process.exit(1);
-      }
-      throw err;
+      handleInterviewError(err, log, campaign);
     }
   });
 
@@ -573,27 +581,7 @@ export const interviewCommand = new Command('interview')
         title: details.title,
       });
     } catch (err) {
-      if (err instanceof SlugMissingError) {
-        logError(log, err, 'interview.add.slug-missing', { campaign });
-        log.flush();
-        userError(
-          `${err.message}\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`,
-        );
-        process.exit(1);
-      }
-      if (err instanceof InterviewNotFoundError) {
-        logError(log, err, 'interview.add.not-found', { campaign });
-        log.flush();
-        userError(`${err.message}\nhint: create the application first with: jho track <url>`);
-        process.exit(1);
-      }
-      if (err instanceof InterviewError) {
-        logError(log, err, 'interview.add.failed', { campaign });
-        log.flush();
-        userError(err.message);
-        process.exit(1);
-      }
-      throw err;
+      handleInterviewError(err, log, campaign);
     }
   });
 

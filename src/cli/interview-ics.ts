@@ -49,10 +49,10 @@ export async function generateIcsFile(
     throw new Error('Failed to create ICS event: no value returned');
   }
 
-  // Create filename: interview-YYYY-MM-DD-HH-MM-type.ics (time ensures uniqueness)
+  // Create filename: interview-{index}-{datetime}-{type}.ics (index guarantees uniqueness)
   const whenSlug = when.replace(/[:\s]/g, '-');
   const typeSlug = type.replace(/\s+/g, '-');
-  const filename = `interview-${whenSlug}-${typeSlug}.ics`;
+  const filename = `interview-${index}-${whenSlug}-${typeSlug}.ics`;
   const filePath = join(appFolder, filename);
 
   await writeFile(filePath, value, 'utf8');

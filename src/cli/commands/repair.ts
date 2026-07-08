@@ -22,9 +22,10 @@ function formatResult(result: RepairResult, campaignWide: boolean): string {
   if (campaignWide) {
     const bySlug = new Map<string | null, typeof result.actions>();
     for (const action of result.actions) {
-      const existing = bySlug.get(action.slug) ?? [];
-      existing.push(action);
-      bySlug.set(action.slug, existing);
+      if (!bySlug.has(action.slug)) {
+        bySlug.set(action.slug, []);
+      }
+      bySlug.get(action.slug)!.push(action);
     }
 
     for (const [slug, actions] of bySlug) {

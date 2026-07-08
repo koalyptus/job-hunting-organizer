@@ -23,6 +23,8 @@ function hasAnsi(text: string): boolean {
 describe('initColors', () => {
   beforeEach(() => {
     delete process.env.NO_COLOR;
+    chalk.level = 3;
+    initColors();
   });
 
   afterEach(() => {
@@ -34,6 +36,7 @@ describe('initColors', () => {
   });
 
   it('enables color by default', () => {
+    chalk.level = 3;
     initColors();
     expect(chalk.level).toBeGreaterThan(0);
     expect(hasAnsi(cyan('text'))).toBe(true);
@@ -71,6 +74,7 @@ describe('initColors', () => {
   });
 
   it('ignores empty NO_COLOR env var', () => {
+    chalk.level = 3;
     process.env.NO_COLOR = '';
     initColors();
     expect(chalk.level).toBeGreaterThan(0);
@@ -126,6 +130,7 @@ describe('color functions', () => {
 describe('statusColor', () => {
   beforeEach(() => {
     delete process.env.NO_COLOR;
+    chalk.level = 3;
     initColors();
   });
 
@@ -157,6 +162,7 @@ describe('statusColor', () => {
 describe('interviewStatusColor', () => {
   beforeEach(() => {
     delete process.env.NO_COLOR;
+    chalk.level = 3;
     initColors();
   });
 

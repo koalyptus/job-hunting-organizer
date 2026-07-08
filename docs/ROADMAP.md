@@ -38,13 +38,13 @@
 - [x] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
   - [x] 7a — Core: Interviews module
   - [x] 7b — Core: Retro module (LLM-backed learning plan)
-  - [ ] 7c — Core: Prep module (LLM-backed pre-interview plan)
+  - [x] 7c — Core: Prep module (LLM-backed pre-interview plan)
   - [x] 7d — Core: Doctor & Repair (toolhash utility, diagnostics, auto-repair)
   - [ ] 7d1 — Toolhash sidecar wiring (integrate writeToolhash into existing modules)
-  - [ ] 7e — CLI: Show command with ownership footer
-  - [ ] 7f — CLI: Interview, retro, prepare, doctor, repair commands
+  - [x] 7e — CLI: Show command with ownership footer
+  - [x] 7f — CLI: Interview, retro, prepare, doctor, repair commands
   - [ ] 7f1 — Interactive campaign picker
-  - [ ] 7g — Tests, evals & documentation
+  - [x] 7g — Tests, evals & documentation
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
