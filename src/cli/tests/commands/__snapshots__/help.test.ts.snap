@@ -152,7 +152,6 @@ Commands:
                               from cwd if omitted)
   mark [options] [slug] <n>   Mark the current interview status
   notes [options] [slug] <n>  Add notes to an interview entry
-  help [command]              display help for command
 "
 `;
 

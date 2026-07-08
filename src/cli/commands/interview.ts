@@ -1,7 +1,13 @@
 import { Command } from 'commander';
+import { join } from 'node:path';
+import { writeFile } from 'node:fs/promises';
+import { createEvent } from 'ics';
+import { text, select, isCancel, log as clackLog } from '@clack/prompts';
 import Table from 'cli-table3';
 import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
+import { validateDatetime } from '../validate.js';
+import { dim, cyan, interviewStatusColor } from '../colors.js';
 import {
   addInterview,
   listInterviews,
@@ -12,11 +18,210 @@ import {
   INTERVIEW_TYPES,
   INTERVIEW_STATUSES,
 } from '../../core/interviews/index.js';
-import type { InterviewEntry } from '../../core/interviews/index.js';
+import type { InterviewEntry, InterviewType } from '../../core/interviews/index.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput, userSuccess } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';
+
+/**
+ * Prompt the user for interview details using @clack/prompts.
+ * Returns the interview options, or exits if cancelled.
+ */
+async function promptInterviewDetails(): Promise<{
+  when: string;
+  type: string;
+  duration: number;
+  interviewer?: string;
+  location?: string;
+  title?: string;
+}> {
+  const whenResult = await text({
+    message: 'When is the interview?',
+    placeholder: 'e.g. 2026-06-15 10:00',
+  });
+
+  if (isCancel(whenResult)) {
+    clackLog.info('Cancelled.');
+    process.exit(0);
+  }
+
+  const when = whenResult as string;
+  if (!when) {
+    userError('Interview date/time is required');
+    process.exit(1);
+  }
+
+  const whenError = validateDatetime(when);
+  if (whenError) {
+    userError(`Invalid date/time: ${whenError}`);
+    process.exit(1);
+  }
+
+  const typeResult = await select({
+    message: 'Interview type?',
+    options: INTERVIEW_TYPES.map((t) => ({ value: t, label: t })),
+    initialValue: 'technical',
+  });
+
+  if (isCancel(typeResult)) {
+    clackLog.info('Cancelled.');
+    process.exit(0);
+  }
+
+  const type = typeResult as string;
+
+  const durationResult = await text({
+    message: 'Duration in minutes?',
+    placeholder: '60',
+    initialValue: '60',
+  });
+
+  if (isCancel(durationResult)) {
+    clackLog.info('Cancelled.');
+    process.exit(0);
+  }
+
+  const duration = parseInt((durationResult as string) || '60', 10);
+  if (isNaN(duration) || duration <= 0) {
+    userError('Duration must be a positive number');
+    process.exit(1);
+  }
+
+  const interviewerResult = await text({
+    message: 'Interviewer name? (optional)',
+    placeholder: 'Press Enter to skip',
+  });
+
+  if (isCancel(interviewerResult)) {
+    clackLog.info('Cancelled.');
+    process.exit(0);
+  }
+
+  const locationResult = await text({
+    message: 'Location or link? (optional)',
+    placeholder: 'Press Enter to skip',
+  });
+
+  if (isCancel(locationResult)) {
+    clackLog.info('Cancelled.');
+    process.exit(0);
+  }
+
+  const titleResult = await text({
+    message: 'Title? (optional)',
+    placeholder: 'Press Enter to skip',
+  });
+
+  if (isCancel(titleResult)) {
+    clackLog.info('Cancelled.');
+    process.exit(0);
+  }
+
+  return {
+    when,
+    type,
+    duration,
+    interviewer: (interviewerResult as string) || undefined,
+    location: (locationResult as string) || undefined,
+    title: (titleResult as string) || undefined,
+  };
+}
+
+/**
+ * Parse a datetime string like "2026-06-15 10:00" or "2026-06-15 10:00:00" into [year, month, day, hour, minute].
+ */
+function parseDatetime(datetime: string): [number, number, number, number, number] {
+  const match = datetime.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::\d{2})?$/);
+  if (!match) {
+    throw new Error(
+      `Invalid datetime format: ${datetime}. Expected "YYYY-MM-DD HH:MM" or "YYYY-MM-DD HH:MM:SS"`,
+    );
+  }
+  return [
+    parseInt(match[1]!, 10),
+    parseInt(match[2]!, 10),
+    parseInt(match[3]!, 10),
+    parseInt(match[4]!, 10),
+    parseInt(match[5]!, 10),
+  ];
+}
+
+/**
+ * Generate an ICS file for the interview.
+ */
+async function generateIcsFile(
+  appFolder: string,
+  index: number,
+  when: string,
+  type: string,
+  duration: number,
+  title?: string,
+  location?: string,
+): Promise<string> {
+  const start = parseDatetime(when);
+  const eventTitle = title || `Interview #${index} (${type})`;
+
+  const { error, value } = createEvent({
+    start,
+    duration: { minutes: duration },
+    title: eventTitle,
+    description: `Interview type: ${type}`,
+    location: location || undefined,
+    status: 'CONFIRMED',
+    busyStatus: 'BUSY',
+  });
+
+  if (error) {
+    throw new Error(`Failed to create ICS event: ${error}`);
+  }
+
+  if (!value) {
+    throw new Error('Failed to create ICS event: no value returned');
+  }
+
+  // Create filename: interview-YYYY-MM-DD-type.ics
+  const dateStr = when.replace(/[:\s]/g, '-').slice(0, 10);
+  const typeSlug = type.replace(/\s+/g, '-');
+  const filename = `interview-${dateStr}-${typeSlug}.ics`;
+  const filePath = join(appFolder, filename);
+
+  await writeFile(filePath, value, 'utf8');
+  return filePath;
+}
+
+/**
+ * Format a recap table for the interview.
+ */
+function formatRecapTable(
+  index: number,
+  when: string,
+  type: string,
+  duration: number,
+  interviewer?: string,
+  location?: string,
+  title?: string,
+): string {
+  const table = new Table({
+    style: { head: [] },
+  });
+
+  table.push(['#', index]);
+  table.push(['When', when]);
+  table.push(['Type', type]);
+  table.push(['Duration', `${duration} min`]);
+  if (title) {
+    table.push(['Title', title]);
+  }
+  if (interviewer) {
+    table.push(['Interviewer', interviewer]);
+  }
+  if (location) {
+    table.push(['Location', location]);
+  }
+
+  return table.toString();
+}
 
 /**
  * `jho interview add [<slug>]` — add an interview entry.
@@ -24,9 +229,9 @@ import type { GlobalOpts } from '../options.js';
 const addCmd = new Command('add')
   .description('Add an interview entry (slug inferred from cwd if omitted)')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
-  .requiredOption('--when <datetime>', 'interview date/time (e.g. "2026-06-15 10:00")')
+  .option('--when <datetime>', 'interview date/time (e.g. "2026-06-15 10:00")')
   .option('--type <type>', `interview type (${INTERVIEW_TYPES.join(', ')})`, 'technical')
-  .requiredOption('--duration <minutes>', 'duration in minutes', '60')
+  .option('--duration <minutes>', 'duration in minutes', '60')
   .option('--interviewer <name>', 'interviewer name')
   .option('--location <location>', 'interview location or link')
   .option('--title <title>', 'interview title')
@@ -39,22 +244,76 @@ const addCmd = new Command('add')
       const resolvedSlug = resolveSlug(slug, campaign);
       const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
 
+      // Wizard mode: if --when is not provided, prompt for all details
+      let when = opts.when as string | undefined;
+      let type = opts.type as string;
+      let duration = parseInt(opts.duration as string, 10);
+      let interviewer = opts.interviewer as string | undefined;
+      let location = opts.location as string | undefined;
+      let title = opts.title as string | undefined;
+
+      if (when) {
+        const whenError = validateDatetime(when);
+        if (whenError) {
+          userError(`Invalid date/time: ${whenError}`);
+          process.exit(1);
+        }
+      }
+
+      if (!when) {
+        const details = await promptInterviewDetails();
+        when = details.when;
+        type = details.type;
+        duration = details.duration;
+        interviewer = details.interviewer;
+        location = details.location;
+        title = details.title;
+      }
+
       const result = await withSpinner(
         'Adding interview...',
         'Interview added',
         () =>
           addInterview(appliedDir, resolvedSlug, {
-            when: opts.when,
-            type: opts.type,
-            duration: parseInt(opts.duration as string, 10),
-            interviewers: opts.interviewer as string | undefined,
-            location: opts.location as string | undefined,
-            title: opts.title as string | undefined,
+            when,
+            type: type as InterviewType,
+            duration,
+            interviewers: interviewer,
+            location,
+            title,
           }),
         'Failed to add interview',
       );
 
-      userSuccess(`Interview #${result.index} added`);
+      const appFolder = join(appliedDir, resolvedSlug);
+
+      // Generate ICS file
+      const icsPath = await generateIcsFile(
+        appFolder,
+        result.index,
+        when,
+        type,
+        duration,
+        title,
+        location,
+      );
+
+      // Show recap table
+      userOutput(
+        '\n' + formatRecapTable(result.index, when, type, duration, interviewer, location, title),
+      );
+
+      // Show file location and follow-up commands
+      userOutput(`Interview saved to: ${join(appFolder, 'interviews.md')}
+ICS file: ${icsPath}
+
+Next steps:
+  jho interview list ${resolvedSlug}          # view all interviews
+  jho interview mark ${resolvedSlug} ${result.index} --status completed  # mark status
+  jho interview notes ${resolvedSlug} ${result.index} --append "..."    # add notes
+  jho prepare ${resolvedSlug}                 # prep for the interview
+`);
+
       log.info({ slug: resolvedSlug, index: result.index }, 'interview.add.completed');
     } catch (err) {
       if (err instanceof SlugMissingError) {
@@ -86,11 +345,14 @@ addCmd.addHelpText(
   `
 The slug is optional. When omitted, it is inferred from the current directory.
 
+When run without --when, enters interactive wizard mode to prompt for details.
+
 Examples:
+  $ jho interview add                                          # wizard mode
+  $ jho interview add --when "2026-06-15 10:00"               # explicit flags
   $ jho interview add --when "2026-06-15 10:00" --type technical --duration 60
-  $ jho interview add --when "2026-06-15 14:00" --interviewer "A. Smith" --location "Google Meet"
-  $ jho interview add my-app --when "2026-06-15 10:00"
-  $ cd applied/2026-Jan-15-frontend-acme-12345 && jho interview add --when "2026-06-15 10:00"
+  $ jho interview add my-app --when "2026-06-15 10:00"        # explicit slug
+  $ cd applied/2026-Jan-15-frontend-acme-12345 && jho interview add  # infer slug
 `,
 );
 
@@ -103,18 +365,18 @@ function formatInterviewTable(entries: InterviewEntry[]): string {
   }
 
   const table = new Table({
-    head: ['#', 'Type', 'When', 'Duration', 'Status', 'Location'],
+    head: [dim('#'), dim('Type'), dim('When'), dim('Duration'), dim('Status'), dim('Location')],
     style: { head: [] },
   });
 
   for (const entry of entries) {
     table.push([
-      entry.index,
+      cyan(String(entry.index)),
       entry.type,
       entry.when,
       `${entry.duration} min`,
-      entry.status,
-      entry.location || '-',
+      interviewStatusColor(entry.status),
+      entry.location || dim('-'),
     ]);
   }
 
@@ -310,8 +572,9 @@ Examples:
 );
 
 /**
- * `jho interview [<slug>] <subcommand>` — manage the interview pipeline.
+ * `jho interview [<slug>]` — manage the interview pipeline.
  * Slug is optional; inferred from cwd when omitted.
+ * Without a subcommand, this is an alias for `interview add`.
  */
 export const interviewCommand = new Command('interview')
   .description('Manage the interview pipeline (slug inferred from cwd if omitted)')
@@ -319,7 +582,97 @@ export const interviewCommand = new Command('interview')
   .addCommand(addCmd)
   .addCommand(listCmd)
   .addCommand(markCmd)
-  .addCommand(notesCmd);
+  .addCommand(notesCmd)
+  .action(async function (slug: string | undefined) {
+    // No subcommand provided — delegate to addCmd logic
+    const globals = this.parent?.opts() as GlobalOpts | undefined;
+    const campaign = resolveCampaignName(globals?.campaign);
+    const log = getRootLogger().child({ cmd: 'interview', campaign });
+
+    try {
+      const resolvedSlug = resolveSlug(slug, campaign);
+      const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
+
+      const details = await promptInterviewDetails();
+
+      const result = await withSpinner(
+        'Adding interview...',
+        'Interview added',
+        () =>
+          addInterview(appliedDir, resolvedSlug, {
+            when: details.when,
+            type: details.type as InterviewType,
+            duration: details.duration,
+            interviewers: details.interviewer,
+            location: details.location,
+            title: details.title,
+          }),
+        'Failed to add interview',
+      );
+
+      const appFolder = join(appliedDir, resolvedSlug);
+
+      // Generate ICS file
+      const icsPath = await generateIcsFile(
+        appFolder,
+        result.index,
+        details.when,
+        details.type,
+        details.duration,
+        details.title,
+        details.location,
+      );
+
+      // Show recap table
+      userOutput(
+        '\n' +
+          formatRecapTable(
+            result.index,
+            details.when,
+            details.type,
+            details.duration,
+            details.interviewer,
+            details.location,
+            details.title,
+          ),
+      );
+
+      // Show file location and follow-up commands
+      userOutput(`Interview saved to: ${join(appFolder, 'interviews.md')}
+ICS file: ${icsPath}
+
+Next steps:
+  jho interview list ${resolvedSlug}          # view all interviews
+  jho interview mark ${resolvedSlug} ${result.index} --status completed  # mark status
+  jho interview notes ${resolvedSlug} ${result.index} --append "..."    # add notes
+  jho prepare ${resolvedSlug}                 # prep for the interview
+`);
+
+      log.info({ slug: resolvedSlug, index: result.index }, 'interview.add.completed');
+    } catch (err) {
+      if (err instanceof SlugMissingError) {
+        logError(log, err, 'interview.add.slug-missing', { campaign });
+        log.flush();
+        userError(
+          `${err.message}\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`,
+        );
+        process.exit(1);
+      }
+      if (err instanceof InterviewNotFoundError) {
+        logError(log, err, 'interview.add.not-found', { campaign });
+        log.flush();
+        userError(`${err.message}\nhint: create the application first with: jho track <url>`);
+        process.exit(1);
+      }
+      if (err instanceof InterviewError) {
+        logError(log, err, 'interview.add.failed', { campaign });
+        log.flush();
+        userError(err.message);
+        process.exit(1);
+      }
+      throw err;
+    }
+  });
 
 interviewCommand.addHelpText(
   'after',
@@ -327,20 +680,21 @@ interviewCommand.addHelpText(
 The slug is optional on all subcommands. When omitted, it is inferred from
 the current directory — run from inside an application folder to skip it.
 
+Without a subcommand, this is an alias for \`add\`.
+
 Subcommands:
-  add       Add an interview entry
+  add       Add an interview entry (interactive wizard or explicit flags)
   list      List interviews for an application
   mark      Mark the current interview status
   notes     Add notes to an interview entry
 
 Examples:
-  $ jho interview add --when "2026-06-15 10:00" --type technical --duration 60
-  $ jho interview add --when "2026-06-15 14:00" --interviewer "A. Smith" --location "Google Meet"
-  $ jho interview list
-  $ jho interview mark 1 --status passed
-  $ jho interview mark 2 --status failed
-  $ jho interview notes 1 --append "They asked about distributed systems"
-  $ jho interview add my-app --when "2026-06-15 10:00"  # explicit slug
-  $ cd applied/2026-Jan-15-frontend-acme-12345 && jho interview add --when "2026-06-15 10:00"
+  $ jho interview my-app --when "2026-06-15 10:00"            # alias for add
+  $ jho interview add                                          # wizard mode
+  $ jho interview add --when "2026-06-15 10:00" --type technical
+  $ jho interview list my-app                                  # explicit slug
+  $ jho interview mark my-app 1 --status passed                # explicit slug
+  $ jho interview notes my-app 1 --append "They asked about distributed systems"
+  $ cd applied/2026-Jan-15-frontend-acme-12345 && jho interview add
 `,
 );

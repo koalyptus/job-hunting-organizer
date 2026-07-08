@@ -25,6 +25,17 @@ export const MONTH_ABBR: readonly string[] = [
 ];
 
 /**
+ * Return the number of days in a given month.
+ * @param year - The full year (e.g. 2024).
+ * @param month - Month number (1 = January, 12 = December).
+ * @returns The number of days (28, 29, 30, or 31).
+ */
+export function daysInMonth(year: number, month: number): number {
+  // Day 0 of the next month = last day of this month
+  return new Date(year, month, 0).getDate();
+}
+
+/**
  * Format a `Date` as `YYYY-MMM-DD` in UTC.
  * @param d - The date to format. Only the UTC components are read.
  * @returns An 11-character string like `2026-Jun-03`.

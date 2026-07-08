@@ -47,5 +47,28 @@ export function statusColor(s: string): string {
   }
 }
 
+/**
+ * Apply a colour to an interview status string for terminal output.
+ * @param s - The interview status value (e.g. `'scheduled'`, `'passed'`).
+ * @returns The status wrapped in the appropriate chalk colour.
+ */
+export function interviewStatusColor(s: string): string {
+  switch (s) {
+    case 'scheduled':
+    case 'pending':
+      return cyan(s);
+    case 'completed':
+    case 'passed':
+      return green(s);
+    case 'failed':
+    case 'no-show':
+      return red(s);
+    case 'rescheduled':
+      return yellow(s);
+    default:
+      return s;
+  }
+}
+
 /** Pre-built `Colorize` object using the CLI's colour helpers. */
 export const cliColorize: Colorize = { bold, cyan, dim, green, yellow, red, statusColor };

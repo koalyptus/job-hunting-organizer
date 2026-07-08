@@ -1,6 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import chalk from 'chalk';
-import { initColors, bold, cyan, dim, green, red, yellow } from '../colors.js';
+import {
+  initColors,
+  bold,
+  cyan,
+  dim,
+  green,
+  red,
+  yellow,
+  statusColor,
+  interviewStatusColor,
+} from '../colors.js';
 
 const NO_COLOR_SAVED = process.env.NO_COLOR;
 
@@ -110,5 +120,72 @@ describe('color functions', () => {
     expect(dim('test')).toBe('test');
     expect(bold('test')).toBe('test');
     expect(cyan('test')).toBe('test');
+  });
+});
+
+describe('statusColor', () => {
+  beforeEach(() => {
+    delete process.env.NO_COLOR;
+    initColors();
+  });
+
+  it('colors interview status yellow', () => {
+    expect(hasAnsi(statusColor('interview'))).toBe(true);
+    expect(statusColor('interview')).toContain('interview');
+  });
+
+  it('colors offer/accepted status green', () => {
+    expect(hasAnsi(statusColor('offer'))).toBe(true);
+    expect(hasAnsi(statusColor('accepted'))).toBe(true);
+  });
+
+  it('colors rejected status red', () => {
+    expect(hasAnsi(statusColor('rejected'))).toBe(true);
+  });
+
+  it('colors withdrawn/abandoned/ghosted status dim', () => {
+    expect(hasAnsi(statusColor('withdrawn'))).toBe(true);
+    expect(hasAnsi(statusColor('abandoned'))).toBe(true);
+    expect(hasAnsi(statusColor('ghosted'))).toBe(true);
+  });
+
+  it('returns unknown statuses unchanged', () => {
+    expect(statusColor('unknown')).toBe('unknown');
+  });
+});
+
+describe('interviewStatusColor', () => {
+  beforeEach(() => {
+    delete process.env.NO_COLOR;
+    initColors();
+  });
+
+  it('colors scheduled/pending status cyan', () => {
+    expect(hasAnsi(interviewStatusColor('scheduled'))).toBe(true);
+    expect(hasAnsi(interviewStatusColor('pending'))).toBe(true);
+  });
+
+  it('colors completed/passed status green', () => {
+    expect(hasAnsi(interviewStatusColor('completed'))).toBe(true);
+    expect(hasAnsi(interviewStatusColor('passed'))).toBe(true);
+  });
+
+  it('colors failed/no-show status red', () => {
+    expect(hasAnsi(interviewStatusColor('failed'))).toBe(true);
+    expect(hasAnsi(interviewStatusColor('no-show'))).toBe(true);
+  });
+
+  it('colors rescheduled status yellow', () => {
+    expect(hasAnsi(interviewStatusColor('rescheduled'))).toBe(true);
+  });
+
+  it('returns unknown statuses unchanged', () => {
+    expect(interviewStatusColor('unknown')).toBe('unknown');
+  });
+
+  it('returns plain text when color disabled', () => {
+    initColors(false);
+    expect(interviewStatusColor('scheduled')).toBe('scheduled');
+    expect(interviewStatusColor('passed')).toBe('passed');
   });
 });
