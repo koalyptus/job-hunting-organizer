@@ -189,15 +189,20 @@ async function addInterviewFlow(
 
   const appFolder = join(appliedDir, resolvedSlug);
 
-  const icsPath = await generateIcsFile(
-    appFolder,
-    result.index,
-    details.when,
-    details.type,
-    details.duration,
-    details.title,
-    details.location,
-  );
+  let icsPath: string | undefined;
+  try {
+    icsPath = await generateIcsFile(
+      appFolder,
+      result.index,
+      details.when,
+      details.type,
+      details.duration,
+      details.title,
+      details.location,
+    );
+  } catch (err) {
+    log.warn({ err, slug: resolvedSlug }, 'interview.ics.generation-failed');
+  }
 
   userOutput(
     '\n' +
@@ -213,7 +218,7 @@ async function addInterviewFlow(
   );
 
   userOutput(`Interview saved to: ${join(appFolder, 'interviews.md')}
-ICS file: ${icsPath}
+${icsPath ? `ICS file: ${icsPath}` : 'ICS file: (generation failed — interview was still saved)'}
 
 Next steps:
   jho interview list ${resolvedSlug}          # view all interviews

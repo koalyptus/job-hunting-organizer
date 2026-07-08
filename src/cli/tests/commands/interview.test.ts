@@ -7,6 +7,8 @@ import { runCommand } from '../helpers.js';
 import { interviewCommand } from '../../commands/interview.js';
 import * as interviewsCore from '../../../core/interviews/index.js';
 import { InterviewError, InterviewNotFoundError } from '../../../core/interviews/index.js';
+import * as icsModule from '../../interview-ics.js';
+import { text, select, isCancel } from '@clack/prompts';
 
 vi.mock('../../../core/interviews/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof interviewsCore>();
@@ -21,6 +23,10 @@ vi.mock('../../../core/interviews/index.js', async (importOriginal) => {
 
 vi.mock('../../../core/spinner.js', () => ({
   withSpinner: vi.fn((_msg: string, _success: string, fn: () => Promise<unknown>) => fn()),
+}));
+
+vi.mock('../../interview-ics.js', () => ({
+  generateIcsFile: vi.fn(),
 }));
 
 vi.mock('@clack/prompts', () => ({
@@ -100,6 +106,7 @@ describe('interview command', () => {
   describe('add subcommand', () => {
     it('adds interview with explicit slug', async () => {
       vi.mocked(interviewsCore.addInterview).mockResolvedValue({ index: 1 });
+      vi.mocked(icsModule.generateIcsFile).mockResolvedValue('/mock/path/interview.ics');
 
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
@@ -126,7 +133,7 @@ describe('interview command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
       expect(stdout).toContain('interviews.md');
-      expect(stdout).toContain('interview-2026-06-15-10-00-technical.ics');
+      expect(stdout).toContain('ICS file:');
       expect(stdout).toContain('Next steps:');
       expect(stdout).toContain('jho interview list');
       expect(stdout).toContain('jho interview mark');
@@ -172,7 +179,7 @@ describe('interview command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
       expect(stdout).toContain('interviews.md');
-      expect(stdout).toContain('interview-2026-06-15-14-00-technical.ics');
+      expect(stdout).toContain('ICS file:');
       expect(stdout).toContain('Next steps:');
       expect(interviewsCore.addInterview).toHaveBeenCalledWith(
         expect.any(String),
@@ -351,7 +358,6 @@ describe('interview command', () => {
     });
 
     it('enters wizard mode when --when is not provided', async () => {
-      const { text, select } = await import('@clack/prompts');
       vi.mocked(text)
         .mockResolvedValueOnce('2026-07-15 10:00')
         .mockResolvedValueOnce('60')
@@ -370,7 +376,7 @@ describe('interview command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
       expect(stdout).toContain('interviews.md');
-      expect(stdout).toContain('interview-2026-07-15-10-00-technical.ics');
+      expect(stdout).toContain('ICS file:');
       expect(stdout).toContain('Next steps:');
       expect(text).toHaveBeenCalled();
       expect(select).toHaveBeenCalled();
@@ -386,7 +392,6 @@ describe('interview command', () => {
     });
 
     it('wizard mode passes optional fields when provided', async () => {
-      const { text, select } = await import('@clack/prompts');
       vi.mocked(text)
         .mockResolvedValueOnce('2026-07-15 14:00')
         .mockResolvedValueOnce('45')
@@ -405,7 +410,7 @@ describe('interview command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
       expect(stdout).toContain('interviews.md');
-      expect(stdout).toContain('interview-2026-07-15-14-00-hr.ics');
+      expect(stdout).toContain('ICS file:');
       expect(stdout).toContain('Next steps:');
       expect(interviewsCore.addInterview).toHaveBeenCalledWith(
         expect.any(String),
@@ -422,8 +427,6 @@ describe('interview command', () => {
     });
 
     it('wizard mode exits when user cancels', async () => {
-      const { text } = await import('@clack/prompts');
-      const { isCancel } = await import('@clack/prompts');
       vi.mocked(text).mockResolvedValueOnce('2026-07-15 10:00');
       vi.mocked(isCancel).mockReturnValueOnce(true);
 
@@ -768,7 +771,6 @@ describe('interview command', () => {
 
   describe('parent action (alias for add)', () => {
     it('runs wizard mode and adds interview', async () => {
-      const { text, select } = await import('@clack/prompts');
       vi.mocked(text)
         .mockResolvedValueOnce('2026-08-01 09:00')
         .mockResolvedValueOnce('30')
@@ -786,7 +788,7 @@ describe('interview command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Interview saved to:');
-      expect(stdout).toContain('interview-2026-08-01-09-00-hr.ics');
+      expect(stdout).toContain('ICS file:');
       expect(interviewsCore.addInterview).toHaveBeenCalledWith(
         expect.any(String),
         slug,
@@ -795,7 +797,6 @@ describe('interview command', () => {
     });
 
     it('exits with error when InterviewError is thrown', async () => {
-      const { text, select } = await import('@clack/prompts');
       vi.mocked(text).mockResolvedValueOnce('2026-08-01 09:00');
       vi.mocked(select).mockResolvedValueOnce('technical');
       vi.mocked(interviewsCore.addInterview).mockRejectedValue(
@@ -813,7 +814,6 @@ describe('interview command', () => {
     });
 
     it('exits with error when InterviewNotFoundError is thrown', async () => {
-      const { text, select } = await import('@clack/prompts');
       vi.mocked(text).mockResolvedValueOnce('2026-08-01 09:00');
       vi.mocked(select).mockResolvedValueOnce('technical');
       vi.mocked(interviewsCore.addInterview).mockRejectedValue(
@@ -833,7 +833,6 @@ describe('interview command', () => {
 
   describe('wizard cancel coverage', () => {
     it('exits when user cancels on type select', async () => {
-      const { text, select, isCancel } = await import('@clack/prompts');
       vi.mocked(text).mockResolvedValueOnce('2026-07-15 10:00');
       vi.mocked(isCancel).mockReturnValueOnce(false);
       vi.mocked(select).mockResolvedValueOnce(undefined);
@@ -848,7 +847,6 @@ describe('interview command', () => {
     });
 
     it('exits when user cancels on duration', async () => {
-      const { text, select, isCancel } = await import('@clack/prompts');
       vi.mocked(text)
         .mockResolvedValueOnce('2026-07-15 10:00')
         .mockResolvedValueOnce(Symbol('cancel') as unknown as string);
@@ -867,7 +865,6 @@ describe('interview command', () => {
     });
 
     it('exits when user cancels on interviewer', async () => {
-      const { text, select, isCancel } = await import('@clack/prompts');
       vi.mocked(text)
         .mockResolvedValueOnce('2026-07-15 10:00')
         .mockResolvedValueOnce('60')
@@ -888,7 +885,6 @@ describe('interview command', () => {
     });
 
     it('exits when user cancels on location', async () => {
-      const { text, select, isCancel } = await import('@clack/prompts');
       vi.mocked(text)
         .mockResolvedValueOnce('2026-07-15 10:00')
         .mockResolvedValueOnce('60')
@@ -911,7 +907,6 @@ describe('interview command', () => {
     });
 
     it('exits when user cancels on title', async () => {
-      const { text, select, isCancel } = await import('@clack/prompts');
       vi.mocked(text)
         .mockResolvedValueOnce('2026-07-15 10:00')
         .mockResolvedValueOnce('60')
@@ -937,8 +932,9 @@ describe('interview command', () => {
   });
 
   describe('ICS file', () => {
-    it('writes ICS file to application folder', async () => {
+    it('calls generateIcsFile with correct arguments', async () => {
       vi.mocked(interviewsCore.addInterview).mockResolvedValue({ index: 1 });
+      vi.mocked(icsModule.generateIcsFile).mockResolvedValue('/mock/path/interview.ics');
 
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
@@ -964,21 +960,20 @@ describe('interview command', () => {
       ]);
 
       expect(exitCode).toBe(0);
-
-      // Verify the ICS file was created
-      const { readFile } = await import('node:fs/promises');
-      const icsPath = join(appDir, 'interview-2026-06-15-10-00-technical.ics');
-      const icsContent = await readFile(icsPath, 'utf8');
-      expect(icsContent).toContain('BEGIN:VCALENDAR');
-      expect(icsContent).toContain('BEGIN:VEVENT');
-      expect(icsContent).toContain('Interview #1 (technical)');
-      expect(icsContent).toContain('CONFIRMED');
-      expect(icsContent).toContain('END:VEVENT');
-      expect(icsContent).toContain('END:VCALENDAR');
+      expect(icsModule.generateIcsFile).toHaveBeenCalledWith(
+        appDir,
+        1,
+        '2026-06-15 10:00',
+        'technical',
+        60,
+        undefined,
+        undefined,
+      );
     });
 
-    it('uses title in ICS when provided', async () => {
+    it('passes title and location to generateIcsFile', async () => {
       vi.mocked(interviewsCore.addInterview).mockResolvedValue({ index: 1 });
+      vi.mocked(icsModule.generateIcsFile).mockResolvedValue('/mock/path/interview.ics');
 
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
@@ -1001,18 +996,24 @@ describe('interview command', () => {
         'technical',
         '--title',
         'System Design Round',
+        '--location',
+        'Google Meet',
       ]);
 
-      const { readFile } = await import('node:fs/promises');
-      const icsContent = await readFile(
-        join(appDir, 'interview-2026-06-15-10-00-technical.ics'),
-        'utf8',
+      expect(icsModule.generateIcsFile).toHaveBeenCalledWith(
+        appDir,
+        1,
+        '2026-06-15 10:00',
+        'technical',
+        60,
+        'System Design Round',
+        'Google Meet',
       );
-      expect(icsContent).toContain('System Design Round');
     });
 
-    it('includes location in ICS when provided', async () => {
+    it('continues gracefully when generateIcsFile fails', async () => {
       vi.mocked(interviewsCore.addInterview).mockResolvedValue({ index: 1 });
+      vi.mocked(icsModule.generateIcsFile).mockRejectedValue(new Error('ICS creation failed'));
 
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
@@ -1025,7 +1026,7 @@ describe('interview command', () => {
           '\ntitle: Software Engineer\ncompany: Test Corp\nstatus: applied\n---\n',
       );
 
-      await runCommand(interviewCommand, [
+      const { stdout, exitCode } = await runCommand(interviewCommand, [
         'interview',
         'add',
         slug,
@@ -1033,16 +1034,16 @@ describe('interview command', () => {
         '2026-06-15 10:00',
         '--type',
         'technical',
-        '--location',
-        'Google Meet',
+        '--duration',
+        '60',
       ]);
 
-      const { readFile } = await import('node:fs/promises');
-      const icsContent = await readFile(
-        join(appDir, 'interview-2026-06-15-10-00-technical.ics'),
-        'utf8',
-      );
-      expect(icsContent).toContain('Google Meet');
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Interview saved to:');
+      expect(stdout).toContain('interviews.md');
+      expect(stdout).toContain('generation failed');
+      expect(stdout).toContain('interview was still saved');
+      expect(stdout).toContain('Next steps:');
     });
   });
 
