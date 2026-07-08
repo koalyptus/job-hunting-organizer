@@ -99,7 +99,6 @@ Arguments:
   slug        application slug (inferred from cwd if omitted)
 
 Options:
-  --all       run all checks including optional ones
   -h, --help  display help for command
 "
 `;
@@ -141,17 +140,19 @@ exports[`command --help output > interview has consistent help output 1`] = `
 Manage the interview pipeline (slug inferred from cwd if omitted)
 
 Arguments:
-  slug                 application slug (inferred from cwd if omitted)
+  slug                        application slug (inferred from cwd if omitted)
 
 Options:
-  -h, --help           display help for command
+  -h, --help                  display help for command
 
 Commands:
-  add [options]        Add an interview entry
-  list                 List interviews for an application
-  mark [options] <n>   Mark the current interview status
-  notes [options] <n>  Add notes to an interview entry
-  help [command]       display help for command
+  add [options] [slug]        Add an interview entry (slug inferred from cwd if
+                              omitted)
+  list [slug]                 List interviews for an application (slug inferred
+                              from cwd if omitted)
+  mark [options] [slug] <n>   Mark the current interview status
+  notes [options] [slug] <n>  Add notes to an interview entry
+  help [command]              display help for command
 "
 `;
 
@@ -252,7 +253,6 @@ Arguments:
   slug        application slug (inferred from cwd if omitted)
 
 Options:
-  --all       attempt all possible repairs
   -h, --help  display help for command
 "
 `;
@@ -336,9 +336,12 @@ Options:
 `;
 
 exports[`interview subcommands --help > interview add has consistent help output 1`] = `
-"Usage: interview add [options]
+"Usage: interview add [options] [slug]
 
-Add an interview entry
+Add an interview entry (slug inferred from cwd if omitted)
+
+Arguments:
+  slug                   application slug (inferred from cwd if omitted)
 
 Options:
   --when <datetime>      interview date/time (e.g. "2026-06-15 10:00")
@@ -348,16 +351,18 @@ Options:
   --duration <minutes>   duration in minutes (default: "60")
   --interviewer <name>   interviewer name
   --location <location>  interview location or link
-  --provider <provider>  calendar provider (ics, outlook) (default: "ics")
   --title <title>        interview title
   -h, --help             display help for command
 "
 `;
 
 exports[`interview subcommands --help > interview list has consistent help output 1`] = `
-"Usage: interview list [options]
+"Usage: interview list [options] [slug]
 
-List interviews for an application
+List interviews for an application (slug inferred from cwd if omitted)
+
+Arguments:
+  slug        application slug (inferred from cwd if omitted)
 
 Options:
   -h, --help  display help for command
@@ -365,25 +370,28 @@ Options:
 `;
 
 exports[`interview subcommands --help > interview mark has consistent help output 1`] = `
-"Usage: interview mark [options] <n>
+"Usage: interview mark [options] [slug] <n>
 
 Mark the current interview status
 
 Arguments:
+  slug               application slug (inferred from cwd if omitted)
   n                  interview number (from list)
 
 Options:
-  --status <status>  new status (passed, failed, no-show, rescheduled, pending)
+  --status <status>  new status (scheduled, completed, passed, failed, no-show,
+                     rescheduled, pending)
   -h, --help         display help for command
 "
 `;
 
 exports[`interview subcommands --help > interview notes has consistent help output 1`] = `
-"Usage: interview notes [options] <n>
+"Usage: interview notes [options] [slug] <n>
 
 Add notes to an interview entry
 
 Arguments:
+  slug             application slug (inferred from cwd if omitted)
   n                interview number (from list)
 
 Options:

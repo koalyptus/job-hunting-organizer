@@ -10,6 +10,11 @@ import { getRootLogger } from './logger/logger.js';
 import type { LlmConfig } from './types.js';
 
 /**
+ * Maximum number of GitHub repositories to include in the profile build prompt.
+ */
+const MAX_REPOS_FOR_PROFILE = 20;
+
+/**
  * Error thrown when the profile file cannot be read.
  */
 export class ProfileReadError extends Error {
@@ -128,7 +133,7 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
   // 4. Build context for the LLM
   const repoSummary = repos
     .filter((r) => !r.fork && !r.archived)
-    .slice(0, 20)
+    .slice(0, MAX_REPOS_FOR_PROFILE)
     .map(
       (r) =>
         `- ${r.name}: ${r.description ?? '(no description)'} [${r.language ?? 'unknown'}] ★${r.stargazers_count} — ${r.html_url}`,

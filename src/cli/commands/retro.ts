@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { join } from 'node:path';
 import { text, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
@@ -136,6 +137,20 @@ const appendCommand = new Command('append')
       );
 
       userOutput(result.content);
+
+      // Show file path and next steps
+      const campaignRoot = resolveCampaignRoot(campaign);
+      const appliedDir = resolveAppliedDir(campaignRoot);
+      const retroPath = join(appliedDir, resolvedSlug, 'retro.md');
+
+      userOutput(`Retro saved to: ${retroPath}
+
+Next steps:
+  jho retro show ${resolvedSlug}      # view the updated retro
+  jho retro aggregate                 # see recurring weak topics
+  jho prepare ${resolvedSlug}         # generate prep plan using retro data
+`);
+
       log.info(
         { slug: resolvedSlug, model: result.model, wordCount: result.wordCount },
         'retro.append.completed',
@@ -281,6 +296,20 @@ export const retroCommand = new Command('retro')
       );
 
       userOutput(result.content);
+
+      // Show file path and next steps
+      const campaignRoot = resolveCampaignRoot(campaign);
+      const appliedDir = resolveAppliedDir(campaignRoot);
+      const retroPath = join(appliedDir, resolvedSlug, 'retro.md');
+
+      userOutput(`Retro saved to: ${retroPath}
+
+Next steps:
+  jho retro show ${resolvedSlug}       # view the saved retro
+  jho retro append ${resolvedSlug}     # add more weak topics
+  jho prepare ${resolvedSlug}          # generate prep plan using retro data
+`);
+
       log.info(
         { slug: resolvedSlug, model: result.model, wordCount: result.wordCount },
         'retro.completed',

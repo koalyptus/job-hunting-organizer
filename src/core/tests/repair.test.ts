@@ -159,13 +159,16 @@ describe('repairAll', () => {
     await rm(workDir, { recursive: true, force: true });
   });
 
-  it('returns no actions when applied dir is missing', async () => {
+  it('creates applied dir when missing and reports action', async () => {
     const noApplied = join(workDir, 'empty');
     await mkdir(noApplied, { recursive: true });
 
     const result = await repairAll(noApplied);
-    expect(result.actions).toHaveLength(0);
-    expect(result.isIndexRebuilt).toBe(false);
+    expect(result.actions).toHaveLength(2);
+    expect(result.actions[0]?.action).toBe('applied_dir_created');
+    expect(result.actions[0]?.message).toContain('Created missing applied directory');
+    expect(result.actions[1]?.action).toBe('index_rebuilt');
+    expect(result.isIndexRebuilt).toBe(true);
   });
 
   it('rebuilds the index from folder listing', async () => {

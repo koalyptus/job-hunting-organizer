@@ -1,4 +1,4 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { computeHash, writeToolhash, TOOL_MANAGED_FILES } from '../toolhash.js';
@@ -86,12 +86,18 @@ export async function repairApp(
 export async function repairAll(campaignRoot: string): Promise<RepairResult> {
   const appliedDir = join(campaignRoot, 'applied');
 
-  if (!existsSync(appliedDir)) {
-    return { actions: [], isIndexRebuilt: false };
-  }
-
   return acquireLock(campaignRoot, async () => {
     const actions: RepairAction[] = [];
+
+    // Create applied directory if missing
+    if (!existsSync(appliedDir)) {
+      await mkdir(appliedDir, { recursive: true });
+      actions.push({
+        action: 'applied_dir_created',
+        message: `Created missing applied directory: ${appliedDir}`,
+        slug: null,
+      });
+    }
 
     // Rebuild index
     const entries = await rebuildIndex(appliedDir);

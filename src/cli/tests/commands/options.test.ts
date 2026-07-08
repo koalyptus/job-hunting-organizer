@@ -77,7 +77,7 @@ describe('command option definitions match documentation', () => {
     );
   });
 
-  it('interview add has --when, --type, --duration, --interviewer, --location, --provider, --title', () => {
+  it('interview add has --when, --type, --duration, --interviewer, --location, --title', () => {
     const addCmd = interviewCommand.commands.find((c) => c.name() === 'add')!;
     expect(optionLongs(addCmd)).toEqual(
       expect.arrayContaining([
@@ -86,7 +86,6 @@ describe('command option definitions match documentation', () => {
         '--duration',
         '--interviewer',
         '--location',
-        '--provider',
         '--title',
       ]),
     );
@@ -102,12 +101,12 @@ describe('command option definitions match documentation', () => {
     expect(optionLongs(notesCmd)).toContain('--append');
   });
 
-  it('doctor has --all', () => {
-    expect(optionLongs(doctorCommand)).toContain('--all');
+  it('doctor does not have --all', () => {
+    expect(optionLongs(doctorCommand)).not.toContain('--all');
   });
 
-  it('repair has --all', () => {
-    expect(optionLongs(repairCommand)).toContain('--all');
+  it('repair does not have --all', () => {
+    expect(optionLongs(repairCommand)).not.toContain('--all');
   });
 });
 

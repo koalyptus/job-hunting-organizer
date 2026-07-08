@@ -1,5 +1,6 @@
 import { Command } from 'commander';
-import { resolveCampaignName } from '../../core/paths.js';
+import { join } from 'node:path';
+import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
   generateCoverLetter,
@@ -94,6 +95,21 @@ export const coverLetterCommand = new Command('cover-letter')
 
       // Always print to stdout
       userOutput(result.content);
+
+      // Show file path and next steps when saved to file
+      if (opts.save !== false) {
+        const campaignRoot = resolveCampaignRoot(campaign);
+        const appliedDir = resolveAppliedDir(campaignRoot);
+        const coverLetterPath = join(appliedDir, resolvedSlug, 'cover-letter.md');
+
+        userOutput(`Cover letter saved to: ${coverLetterPath}
+
+Next steps:
+  jho cover-letter show ${resolvedSlug}  # view saved cover letter
+  jho show ${resolvedSlug}              # view application details
+  jho answer ${resolvedSlug} "question" # answer application questions
+`);
+      }
 
       log.info(
         { slug: resolvedSlug, model: result.model, wordCount: result.wordCount },

@@ -57,33 +57,33 @@ export class InterviewNotFoundError extends InterviewError {
  * three components.
  */
 function parseHeading(heading: string): { when: string; title: string; status: string } | null {
-  const m = heading.match(HEADING_PATTERN);
-  if (!m) {
+  const match = heading.match(HEADING_PATTERN);
+  if (!match) {
     return null;
   }
-  return { when: m[1]!, title: m[2]!, status: m[3]! };
+  return { when: match[1]!, title: match[2]!, status: match[3]! };
 }
 
 /**
  * Parse the field line `- Key: Value` into a key-value pair.
  */
 function parseField(line: string): { key: string; value: string } | null {
-  const m = line.match(FIELD_PATTERN);
-  if (!m) {
+  const match = line.match(FIELD_PATTERN);
+  if (!match) {
     return null;
   }
-  return { key: m[1]!, value: m[2]! };
+  return { key: match[1]!, value: match[2]! };
 }
 
 /**
  * Parse the value of a Duration field (e.g. `"60 min"` → `60`).
  */
 function parseDuration(value: string): number | null {
-  const m = value.match(DURATION_PATTERN);
-  if (!m) {
+  const match = value.match(DURATION_PATTERN);
+  if (!match) {
     return null;
   }
-  return parseInt(m[1]!, 10);
+  return parseInt(match[1]!, 10);
 }
 
 /**
@@ -376,8 +376,8 @@ function findStatusLineInSection(lines: string[], sectionStartIndex: number): nu
     if (line.startsWith('## ')) {
       break;
     }
-    const m = line.match(FIELD_PATTERN);
-    if (m && m[1] === 'Status') {
+    const match = line.match(FIELD_PATTERN);
+    if (match && match[1] === 'Status') {
       return i;
     }
   }
@@ -520,8 +520,8 @@ export async function appendInterviewNotes(
         sectionEndIdx = i;
         break;
       }
-      const m = line.match(FIELD_PATTERN);
-      if (m && m[1] === 'Notes') {
+      const match = line.match(FIELD_PATTERN);
+      if (match && match[1] === 'Notes') {
         notesLineIndex = i;
         break;
       }

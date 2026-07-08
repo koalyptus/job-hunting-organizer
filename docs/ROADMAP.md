@@ -43,6 +43,7 @@
   - [ ] 7d1 — Toolhash sidecar wiring (integrate writeToolhash into existing modules)
   - [ ] 7e — CLI: Show command with ownership footer
   - [ ] 7f — CLI: Interview, retro, prepare, doctor, repair commands
+  - [ ] 7f1 — Interactive campaign picker
   - [ ] 7g — Tests, evals & documentation
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
@@ -555,6 +556,23 @@ Wires `writeToolhash()` calls into every existing module that writes tool-manage
 **Deliverable**: All Phase 7 commands wired end-to-end. Campaign is fully usable from CLI only.
 
 **Commit**: `feat(cli): wire interview, retro, prepare, doctor, repair commands`
+
+#### 7f1 — Interactive campaign picker
+
+- `src/core/paths.ts` — new async helpers:
+  - `pickCampaign(dataRoot, opts?)` — list campaigns via `listCampaigns`, prompt user with `@clack/prompts select` if 2+, auto-select if 1, error if 0
+  - `resolveCampaignNameOrPick(explicitName, opts?)` — async fallback chain: explicit → cwd-inferred → `pickCampaign()`
+  - Respects `--yes` flag: skips prompt, falls back to `'default'`
+- Updated commands (9 files, 15 actions) — switch from `resolveCampaignName` to `await resolveCampaignNameOrPick`:
+  - `track`, `show`, `cover-letter` (generate, show), `answer` (generate, show)
+  - `interview` (add, list, mark, notes), `retro` (generate, show, append, aggregate)
+  - `prepare` (generate, show), `doctor`, `repair`
+- Unchanged: `list`, `stats` (keep "show all" default), `init`, `profile`, `campaign`, `config`
+- Tests: `pickCampaign` unit tests (0/1/many campaigns, cancel, `--yes`), CLI tests mock `@clack/prompts select`
+
+**Deliverable**: Users with multiple campaigns are prompted to pick one instead of silently defaulting.
+
+**Commit**: `feat(cli): interactive campaign picker when multiple campaigns exist`
 
 #### 7g — Tests, evals & documentation
 

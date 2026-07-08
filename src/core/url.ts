@@ -103,9 +103,9 @@ const JOB_ID_PATTERNS: readonly {
  */
 export function extractJobIdFromUrl(url: string): string | null {
   for (const { pattern, group } of JOB_ID_PATTERNS) {
-    const m = url.match(pattern);
-    if (m && m[group] !== undefined) {
-      return m[group];
+    const match = url.match(pattern);
+    if (match && match[group] !== undefined) {
+      return match[group];
     }
   }
   return null;
