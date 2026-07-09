@@ -197,8 +197,8 @@ export function findSectionMarker(
   const lines = content.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? '';
-    const m = line.match(SECTION_LINE_RE);
-    if (m && m[1] === name) {
+    const match = line.match(SECTION_LINE_RE);
+    if (match && match[1] === name) {
       return { line: i + 1, text: line };
     }
   }
@@ -214,9 +214,9 @@ export function findSectionMarker(
 export function extractSteer(content: string): string {
   const lines = content.split(/\r?\n/);
   for (const line of lines) {
-    const m = line.match(STEER_LINE_RE);
-    if (m) {
-      return m[1] ?? '';
+    const match = line.match(STEER_LINE_RE);
+    if (match) {
+      return match[1] ?? '';
     }
   }
   return '';

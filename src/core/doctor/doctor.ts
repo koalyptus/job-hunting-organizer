@@ -85,7 +85,7 @@ export async function diagnoseCampaign(campaignRoot: string): Promise<DoctorIssu
           check: 'index_stale',
           message: `Application folder "${slug}" not in .index.json.`,
           slug,
-          remediation: 'Run jho doctor --repair to rebuild the index.',
+          remediation: 'Run jho repair to rebuild the index.',
         });
       }
     }
@@ -98,7 +98,7 @@ export async function diagnoseCampaign(campaignRoot: string): Promise<DoctorIssu
           check: 'index_orphan',
           message: `Index entry "${slug}" has no matching folder.`,
           slug,
-          remediation: 'Run jho doctor --repair to rebuild the index.',
+          remediation: 'Run jho repair to rebuild the index.',
         });
       }
     }
@@ -193,7 +193,7 @@ export async function diagnoseApp(appliedDir: string, slug: string): Promise<Doc
           check: 'toolhash_mismatch',
           message: `${filename} has been modified since the tool last wrote it for ${slug}.`,
           slug,
-          remediation: 'Run jho doctor --repair to update the sidecar, or keep your edits.',
+          remediation: 'Run jho repair to update the sidecar, or keep your edits.',
         });
       }
     } catch {

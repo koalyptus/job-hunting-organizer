@@ -16,6 +16,7 @@ import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractSteer, replaceSteer } from '../markers.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
+import { computeHash, writeToolhash } from '../toolhash.js';
 import { moduleLogger } from '../logger/logger.js';
 import type { Logger } from 'pino';
 import type {
@@ -432,6 +433,9 @@ export async function startRetro(opts: StartRetroInput): Promise<StartRetroResul
       throw new RetroError(`Failed to write retro.md for ${slug}`);
     }
 
+    // Write toolhash sidecar for retro.md
+    await writeToolhash(retroPath, computeHash(fileContent));
+
     logger.info({ slug, retroIndex: sectionIndex }, 'retro.started');
     return {
       content: plan.content,
@@ -587,6 +591,9 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
     if (!written) {
       throw new RetroError(`Failed to write retro.md for ${slug}`);
     }
+
+    // Write toolhash sidecar for retro.md
+    await writeToolhash(retroPath, computeHash(fileContent));
 
     logger.info({ slug, retroIndex: currentSections.length }, 'retro.appended');
     return {

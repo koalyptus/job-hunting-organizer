@@ -87,5 +87,4 @@ Return a JSON object with the following structure:
 - Total length: 400–800 words across all fields.
 - Do not mention that you are an AI or language model.
 - Return valid JSON only — no markdown fences, no preamble.
-- If additional instructions are provided in the `## Additional
-instructions` section, follow them as priority.
+- If additional instructions are provided in the `## Additional instructions` section, follow them as priority.

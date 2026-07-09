@@ -24,7 +24,7 @@ const INTERVIEW_SECTION_MARKER =
   '<!-- jho:interview-log — append-only. `jho interview mark` only updates Status: line. -->';
 
 const H2_PATTERN = /^## (.+)$/;
-const HEADING_PATTERN = /^(.+) — (.+?) \[([\w-]+)\]$/;
+const HEADING_PATTERN = /^(.+) — (.+)$/;
 const FIELD_PATTERN = /^- ([A-Za-z-]+):\s*(.*)$/;
 const DURATION_PATTERN = /^(\d+)\s*min/;
 
@@ -53,37 +53,36 @@ export class InterviewNotFoundError extends InterviewError {
 }
 
 /**
- * Parse the H2 heading line `<when> — <title> [<status>]` into its
- * three components.
+ * Parse the H2 heading line `<when> — <title>` into its components.
  */
-function parseHeading(heading: string): { when: string; title: string; status: string } | null {
-  const m = heading.match(HEADING_PATTERN);
-  if (!m) {
+function parseHeading(heading: string): { when: string; title: string } | null {
+  const match = heading.match(HEADING_PATTERN);
+  if (!match) {
     return null;
   }
-  return { when: m[1]!, title: m[2]!, status: m[3]! };
+  return { when: match[1]!, title: match[2]! };
 }
 
 /**
  * Parse the field line `- Key: Value` into a key-value pair.
  */
 function parseField(line: string): { key: string; value: string } | null {
-  const m = line.match(FIELD_PATTERN);
-  if (!m) {
+  const match = line.match(FIELD_PATTERN);
+  if (!match) {
     return null;
   }
-  return { key: m[1]!, value: m[2]! };
+  return { key: match[1]!, value: match[2]! };
 }
 
 /**
  * Parse the value of a Duration field (e.g. `"60 min"` → `60`).
  */
 function parseDuration(value: string): number | null {
-  const m = value.match(DURATION_PATTERN);
-  if (!m) {
+  const match = value.match(DURATION_PATTERN);
+  if (!match) {
     return null;
   }
-  return parseInt(m[1]!, 10);
+  return parseInt(match[1]!, 10);
 }
 
 /**
@@ -171,14 +170,25 @@ function parseSectionToEntry(
     duration: DEFAULT_INTERVIEW_DURATION_MINUTES,
   };
 
-  // Map status from heading bracket if valid
-  if (INTERVIEW_STATUSES.includes(parsed.status as InterviewStatus)) {
-    entryFields.status = parsed.status as InterviewStatus;
-  }
+  const noteLines: string[] = [];
+  let inNotesBlock = false;
 
   for (const line of body) {
+    if (inNotesBlock) {
+      if (line.startsWith('- ')) {
+        noteLines.push(line.slice(2));
+        continue;
+      }
+      // A non-bullet line ends the notes block; fall through to field parsing
+      inNotesBlock = false;
+    }
+
     const field = parseField(line);
     if (!field) {
+      // A bare `Notes` heading begins a bullet list of notes
+      if (line.trim() === 'Notes') {
+        inNotesBlock = true;
+      }
       continue;
     }
     const key = field.key;
@@ -213,10 +223,13 @@ function parseSectionToEntry(
         entryFields.topics = value;
         break;
       case 'Notes':
-        entryFields.notes = value;
+        // Legacy single-line format: `- Notes: <text>`
+        noteLines.push(value);
         break;
     }
   }
+
+  entryFields.notes = noteLines.join('\n');
 
   return { index, ...entryFields };
 }
@@ -246,7 +259,7 @@ function buildSection(input: AddInterviewInput): string {
   const title = input.title ?? getTypeLabel(type);
 
   const lines: string[] = [
-    `## ${input.when} — ${title} [${status}]`,
+    `## ${input.when} — ${title}`,
     '',
     `- Type: ${type}`,
     `- Duration: ${duration} min`,
@@ -265,10 +278,27 @@ function buildSection(input: AddInterviewInput): string {
     lines.push(`- Topics: ${input.topics}`);
   }
   if (input.notes) {
-    lines.push(`- Notes: ${input.notes}`);
+    lines.push('Notes');
+    for (const note of splitNoteText(input.notes)) {
+      lines.push(`- ${note}`);
+    }
   }
 
   return lines.join('\n');
+}
+
+/**
+ * Split free-text notes into individual bullet items.
+ * Newlines separate notes; a single line yields one bullet.
+ *
+ * @param text - Raw notes text (may contain newlines).
+ * @returns Non-empty note strings.
+ */
+function splitNoteText(text: string): string[] {
+  return text
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 /**
@@ -376,8 +406,8 @@ function findStatusLineInSection(lines: string[], sectionStartIndex: number): nu
     if (line.startsWith('## ')) {
       break;
     }
-    const m = line.match(FIELD_PATTERN);
-    if (m && m[1] === 'Status') {
+    const match = line.match(FIELD_PATTERN);
+    if (match && match[1] === 'Status') {
       return i;
     }
   }
@@ -463,9 +493,11 @@ export async function markInterviewStatus(
 }
 
 /**
- * Append text to the `- Notes:` line of an interview section.
+ * Append notes to an interview section as individual bullet points.
  *
- * If no `- Notes:` line exists in the section, one is created.
+ * Notes are stored under a `Notes` heading, each note on its own `- ` bullet
+ * line. If no `Notes` heading exists in the section, one is created. A blank
+ * line is ensured between this section and the next interview block.
  *
  * @param appliedDir - Absolute path to the campaign's `applied/` directory.
  * @param slug - Application slug.
@@ -510,8 +542,10 @@ export async function appendInterviewNotes(
       throw new InterviewError(`interview section ${input.sectionNumber} not found for ${slug}`);
     }
 
-    // Find existing Notes line in this section
-    let notesLineIndex = -1;
+    // Find the `Notes` heading and the last bullet within this section.
+    // The new format is a `Notes` heading followed by `- <note>` bullets.
+    let notesHeadingIdx = -1;
+    let lastNoteBulletIdx = -1;
     let sectionEndIdx = lines.length;
 
     for (let i = sectionStartIndex + 1; i < lines.length; i++) {
@@ -520,25 +554,33 @@ export async function appendInterviewNotes(
         sectionEndIdx = i;
         break;
       }
-      const m = line.match(FIELD_PATTERN);
-      if (m && m[1] === 'Notes') {
-        notesLineIndex = i;
-        break;
+      if (notesHeadingIdx === -1 && line.trim() === 'Notes') {
+        notesHeadingIdx = i;
+        continue;
+      }
+      if (notesHeadingIdx !== -1 && line.startsWith('- ')) {
+        lastNoteBulletIdx = i;
       }
     }
 
-    if (notesLineIndex !== -1) {
-      // Append to existing Notes line
-      const existingNotes = lines[notesLineIndex]!.replace(/^- Notes:\s*/, '');
-      const TRAILING_PUNCTUATION = ['.', '!', '?', ':', ';', ')'];
-      const needsSep =
-        existingNotes && !TRAILING_PUNCTUATION.some((p) => existingNotes.endsWith(p));
-      const separator = needsSep ? '; ' : ' ';
-      lines[notesLineIndex] = `- Notes: ${existingNotes}${separator}${input.notes}`;
+    const noteBullets = splitNoteText(input.notes);
+
+    if (notesHeadingIdx !== -1) {
+      // Append each new note as its own bullet after the last existing bullet
+      const insertAt = lastNoteBulletIdx !== -1 ? lastNoteBulletIdx + 1 : notesHeadingIdx + 1;
+      for (const note of noteBullets) {
+        lines.splice(insertAt, 0, `- ${note}`);
+      }
     } else {
-      // Insert Notes line before section end (or at end of body)
+      // Insert a `Notes` heading followed by the note bullets before section end
       const insertAt = sectionEndIdx;
-      lines.splice(insertAt, 0, `- Notes: ${input.notes}`);
+      const block = ['Notes', ...noteBullets.map((n) => `- ${n}`)];
+      lines.splice(insertAt, 0, ...block);
+      // Ensure a blank line separates this section from the next interview block
+      const afterBlock = insertAt + block.length;
+      if (afterBlock < lines.length && lines[afterBlock] !== '') {
+        lines.splice(afterBlock, 0, '');
+      }
     }
 
     const newContent = lines.join('\n');

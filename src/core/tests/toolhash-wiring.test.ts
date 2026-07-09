@@ -1,9 +1,11 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdir, mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { computeHash, readToolhash } from '../toolhash.js';
 import { createApplication, updateApplication } from '../applications/applications.js';
+import { chatComplete } from '../llm.js';
+import { startRetro, appendRetro } from '../retro/index.js';
 import {
   addInterview,
   markInterviewStatus,
@@ -366,6 +368,105 @@ describe('toolhash wiring: prepare.ts', () => {
     const content = await readFile(prepPath, 'utf8');
     const expectedHash = computeHash(content);
     const storedHash = await readToolhash(prepPath);
+
+    expect(storedHash).toBe(expectedHash);
+  });
+});
+
+describe('toolhash wiring: retro.ts', () => {
+  let workDir: string;
+  let appliedDir: string;
+  let campaignRoot: string;
+  let originalJhoData: string | undefined;
+
+  beforeEach(async () => {
+    originalJhoData = process.env['JHO_DATA'];
+    workDir = await mkdtemp(join(tmpdir(), 'jho-toolhash-wiring-retro-'));
+    process.env['JHO_DATA'] = workDir;
+    campaignRoot = join(workDir, 'campaigns', 'default');
+    appliedDir = join(campaignRoot, 'applied');
+    await mkdir(appliedDir, { recursive: true });
+
+    // Write profile.md at the campaign root (required by startRetro/appendRetro)
+    await writeFile(
+      join(campaignRoot, 'profile.md'),
+      '# Candidate profile\n\nExperienced engineer.\n',
+    );
+
+    // Store the default chatComplete mock and override for retro (needs plain text, not JSON)
+    const defaultMock = vi.mocked(chatComplete).getMockImplementation();
+    vi.mocked(chatComplete).mockImplementation(async () => ({
+      content: '## Learning plan\n\nStudy system design patterns and practise whiteboarding.',
+      model: 'test-model',
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+      finishReason: 'stop',
+      durationMs: 100,
+    }));
+
+    return () => {
+      vi.mocked(chatComplete).mockImplementation(defaultMock ?? vi.fn());
+    };
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+    if (originalJhoData) {
+      process.env['JHO_DATA'] = originalJhoData;
+    } else {
+      delete process.env['JHO_DATA'];
+    }
+  });
+
+  it('startRetro writes toolhash for retro.md', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Software Engineer',
+      company: 'Test Corp',
+      url: 'https://example.com/job/123',
+      description: 'Test job description.',
+    });
+
+    await startRetro({
+      slug,
+      campaign: 'default',
+      weakTopics: ['System design'],
+    });
+
+    const retroPath = join(appliedDir, slug, 'retro.md');
+    const content = await readFile(retroPath, 'utf8');
+    const expectedHash = computeHash(content);
+    const storedHash = await readToolhash(retroPath);
+
+    expect(storedHash).toBe(expectedHash);
+  });
+
+  it('appendRetro writes toolhash for retro.md', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Software Engineer',
+      company: 'Test Corp',
+      url: 'https://example.com/job/123',
+      description: 'Test job description.',
+    });
+
+    // Start retro first so retro.md exists
+    await startRetro({
+      slug,
+      campaign: 'default',
+      weakTopics: ['System design'],
+    });
+
+    // Now append — toolhash sidecar should be updated
+    await appendRetro({
+      slug,
+      campaign: 'default',
+      weakTopics: ['Behavioural'],
+    });
+
+    const retroPath = join(appliedDir, slug, 'retro.md');
+    const content = await readFile(retroPath, 'utf8');
+    const expectedHash = computeHash(content);
+    const storedHash = await readToolhash(retroPath);
 
     expect(storedHash).toBe(expectedHash);
   });

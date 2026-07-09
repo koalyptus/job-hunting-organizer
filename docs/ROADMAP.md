@@ -38,11 +38,12 @@
 - [x] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
   - [x] 7a — Core: Interviews module
   - [x] 7b — Core: Retro module (LLM-backed learning plan)
-  - [ ] 7c — Core: Prep module (LLM-backed pre-interview plan)
+  - [x] 7c — Core: Prep module (LLM-backed pre-interview plan)
   - [x] 7d — Core: Doctor & Repair (toolhash utility, diagnostics, auto-repair)
-  - [ ] 7d1 — Toolhash sidecar wiring (integrate writeToolhash into existing modules)
-  - [ ] 7e — CLI: Show command with ownership footer
-  - [ ] 7f — CLI: Interview, retro, prepare, doctor, repair commands
+  - [x] 7d1 — Toolhash sidecar wiring (integrate writeToolhash into existing modules)
+  - [x] 7e — CLI: Show command with ownership footer
+  - [x] 7f — CLI: Interview, retro, prepare, doctor, repair commands
+  - [ ] 7f1 — Interactive campaign picker
   - [ ] 7g — Tests, evals & documentation
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
@@ -435,7 +436,7 @@ Split into sub-phases for incremental delivery.
 - `addInterview(appliedDir, slug, opts)` — appends new H2 section to `interviews.md` with timestamp, type, interviewers, location, status, topics, notes
 - `listInterviews(appliedDir, slug)` — parses H2 sections into structured `InterviewEntry[]`
 - `markInterviewStatus(appliedDir, slug, index, status)` — regex-replaces `Status:` line in section `n` only
-- `appendInterviewNotes(appliedDir, slug, index, notes)` — appends to `Notes:` line in section `n`
+- `appendInterviewNotes(appliedDir, slug, index, notes)` — appends each note as its own `- ` bullet under the `Notes` heading in section `n`
 - Error classes: `InterviewError`, `InterviewNotFoundError`
 - Tests: append, list, mark status, append notes, invalid index, missing file
 
@@ -502,8 +503,9 @@ Wires `writeToolhash()` calls into every existing module that writes tool-manage
 - `src/core/applications/cover-letter.ts` — add `writeToolhash(clPath, hash)` after `atomicWrite` in `generateCoverLetter`
 - `src/core/prepare/prepare.ts` — add `writeToolhash(preparePath, hash)` after `atomicWrite` in `writePrep`
 - `src/core/interviews/interviews.ts` — add `writeToolhash(interviewsPath, hash)` after `atomicWrite` in `addInterview`, `markInterviewStatus`, and `appendInterviewNotes` (interviews.md has in-place status updates, unlike purely append-only files)
+- `src/core/retro/retro.ts` — add `writeToolhash(retroPath, hash)` after `atomicWrite` in `startRetro` and `appendRetro`
 
-**Not needed** — qa.md (append-only, never overwrites), retro.md (append-only sections), and user-owned files (notes.md).
+**Not needed** — qa.md (append-only, never overwrites) and user-owned files (notes.md).
 
 **Tests**: one integration test per module ensuring the sidecar is created with the correct hash after a write operation.
 
@@ -555,6 +557,23 @@ Wires `writeToolhash()` calls into every existing module that writes tool-manage
 **Deliverable**: All Phase 7 commands wired end-to-end. Campaign is fully usable from CLI only.
 
 **Commit**: `feat(cli): wire interview, retro, prepare, doctor, repair commands`
+
+#### 7f1 — Interactive campaign picker
+
+- `src/core/paths.ts` — new async helpers:
+  - `pickCampaign(dataRoot, opts?)` — list campaigns via `listCampaigns`, prompt user with `@clack/prompts select` if 2+, auto-select if 1, error if 0
+  - `resolveCampaignNameOrPick(explicitName, opts?)` — async fallback chain: explicit → cwd-inferred → `pickCampaign()`
+  - Respects `--yes` flag: skips prompt, falls back to `'default'`
+- Updated commands (9 files, 15 actions) — switch from `resolveCampaignName` to `await resolveCampaignNameOrPick`:
+  - `track`, `show`, `cover-letter` (generate, show), `answer` (generate, show)
+  - `interview` (add, list, mark, notes), `retro` (generate, show, append, aggregate)
+  - `prepare` (generate, show), `doctor`, `repair`
+- Unchanged: `list`, `stats` (keep "show all" default), `init`, `profile`, `campaign`, `config`
+- Tests: `pickCampaign` unit tests (0/1/many campaigns, cancel, `--yes`), CLI tests mock `@clack/prompts select`
+
+**Deliverable**: Users with multiple campaigns are prompted to pick one instead of silently defaulting.
+
+**Commit**: `feat(cli): interactive campaign picker when multiple campaigns exist`
 
 #### 7g — Tests, evals & documentation
 

@@ -13,7 +13,9 @@ export function initColors(cliColor?: boolean, configColor?: boolean): void {
   } else {
     noColor = false;
   }
-  chalk.level = noColor ? 0 : 3;
+  if (noColor) {
+    chalk.level = 0;
+  }
 }
 
 export const dim = (text: string): string => (noColor ? text : chalk.dim(text));
@@ -47,5 +49,59 @@ export function statusColor(s: string): string {
   }
 }
 
+/**
+ * Apply a colour to an interview status string for terminal output.
+ * @param s - The interview status value (e.g. `'scheduled'`, `'passed'`).
+ * @returns The status wrapped in the appropriate chalk colour.
+ */
+export function interviewStatusColor(s: string): string {
+  switch (s) {
+    case 'scheduled':
+    case 'pending':
+      return cyan(s);
+    case 'completed':
+    case 'passed':
+      return green(s);
+    case 'failed':
+    case 'no-show':
+      return red(s);
+    case 'rescheduled':
+      return yellow(s);
+    default:
+      return s;
+  }
+}
+
+/**
+ * Apply a colour to an interview type string for terminal output.
+ * @param s - The interview type value (e.g. `'technical'`, `'hr'`).
+ * @returns The type wrapped in the appropriate chalk colour.
+ */
+export function interviewTypeColor(s: string): string {
+  switch (s) {
+    case 'technical':
+      return blue(s);
+    case 'behavioral':
+      return green(s);
+    case 'system-design':
+      return yellow(s);
+    case 'hr':
+      return cyan(s);
+    case 'culture-fit':
+      return red(s);
+    default:
+      return dim(s);
+  }
+}
+
 /** Pre-built `Colorize` object using the CLI's colour helpers. */
-export const cliColorize: Colorize = { bold, cyan, dim, green, yellow, red, statusColor };
+export const cliColorize: Colorize = {
+  bold,
+  cyan,
+  dim,
+  green,
+  yellow,
+  red,
+  statusColor,
+  interviewTypeColor,
+};

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateUtc, parseDateOrNow, parseSince, toIsoDateString } from '../date.js';
+import {
+  formatDateUtc,
+  parseDateOrNow,
+  parseSince,
+  toIsoDateString,
+  daysInMonth,
+  parseDatetime,
+} from '../date.js';
 
 describe('formatDateUtc', () => {
   it('formats a UTC date as YYYY-MMM-DD', () => {
@@ -97,6 +104,64 @@ describe('parseSince', () => {
   });
 
   it('throws on an empty string', () => {
-    expect(() => parseSince('', now)).toThrow(/invalid date/);
+    expect(() => parseSince('')).toThrow(/invalid date/);
+  });
+});
+
+describe('daysInMonth', () => {
+  it('returns 31 for January', () => {
+    expect(daysInMonth(2026, 1)).toBe(31);
+  });
+
+  it('returns 28 for February in non-leap year', () => {
+    expect(daysInMonth(2026, 2)).toBe(28);
+  });
+
+  it('returns 29 for February in leap year', () => {
+    expect(daysInMonth(2024, 2)).toBe(29);
+  });
+
+  it('returns 29 for century leap year (2000)', () => {
+    expect(daysInMonth(2000, 2)).toBe(29);
+  });
+
+  it('returns 28 for non-leap century year (1900)', () => {
+    expect(daysInMonth(1900, 2)).toBe(28);
+  });
+
+  it('returns 30 for April', () => {
+    expect(daysInMonth(2026, 4)).toBe(30);
+  });
+
+  it('returns 30 for June', () => {
+    expect(daysInMonth(2026, 6)).toBe(30);
+  });
+
+  it('returns 30 for September', () => {
+    expect(daysInMonth(2026, 9)).toBe(30);
+  });
+
+  it('returns 30 for November', () => {
+    expect(daysInMonth(2026, 11)).toBe(30);
+  });
+
+  it('returns 31 for December', () => {
+    expect(daysInMonth(2026, 12)).toBe(31);
+  });
+});
+
+describe('parseDatetime', () => {
+  it('parses YYYY-MM-DD HH:MM', () => {
+    expect(parseDatetime('2026-06-15 10:00')).toEqual([2026, 6, 15, 10, 0]);
+  });
+
+  it('parses YYYY-MM-DD HH:MM:SS (ignores seconds)', () => {
+    expect(parseDatetime('2026-06-15 10:30:45')).toEqual([2026, 6, 15, 10, 30]);
+  });
+
+  it('throws on invalid format', () => {
+    expect(() => parseDatetime('not-a-date')).toThrow(/Invalid datetime format/);
+    expect(() => parseDatetime('2026/06/15 10:00')).toThrow(/Invalid datetime format/);
+    expect(() => parseDatetime('2026-06-15')).toThrow(/Invalid datetime format/);
   });
 });

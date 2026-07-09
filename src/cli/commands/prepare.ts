@@ -1,5 +1,6 @@
 import { Command } from 'commander';
-import { resolveCampaignName } from '../../core/paths.js';
+import { join } from 'node:path';
+import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { isUrl } from '../../core/url.js';
 import { extractJdFromUrl } from '../../core/jobs/extract.js';
@@ -187,6 +188,20 @@ export const prepareCommand = new Command('prepare')
         userOutput(JSON.stringify({ slug: resolvedSlug, ...result }, null, 2));
       } else {
         userOutput(result.content);
+
+        // Show file path and next steps
+        const campaignRoot = resolveCampaignRoot(campaign);
+        const appliedDir = resolveAppliedDir(campaignRoot);
+        const prepPath = join(appliedDir, resolvedSlug, 'prepare.md');
+
+        userOutput(`Prep plan saved to: ${prepPath}
+
+Next steps:
+  jho prepare show ${resolvedSlug}     # view the saved prep plan
+  jho prepare ${resolvedSlug} --add "React hooks"  # add a topic without LLM
+  jho interview ${resolvedSlug} add    # schedule the interview
+  jho retro ${resolvedSlug}           # after the interview, record a post-mortem
+`);
       }
 
       log.info(

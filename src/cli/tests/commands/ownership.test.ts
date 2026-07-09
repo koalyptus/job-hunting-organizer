@@ -28,7 +28,16 @@ describe('renderOwnership', () => {
     const noop = (s: string) => s;
     const out = renderOwnership({
       configPath: '/tmp/cfg.json',
-      colorize: { bold, cyan, dim: noop, green: noop, yellow: noop, red: noop, statusColor: noop },
+      colorize: {
+        bold,
+        cyan,
+        dim: noop,
+        green: noop,
+        yellow: noop,
+        red: noop,
+        statusColor: noop,
+        interviewTypeColor: noop,
+      },
     });
     // Headers are bold
     expect(out).toContain(`${ESC}[1mFile${ESC}[22m`);

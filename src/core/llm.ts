@@ -12,12 +12,15 @@ const DEFAULT_LLM_TIMEOUT_MS = 1_200_000;
 /** Default temperature for LLM requests. */
 const DEFAULT_TEMPERATURE = 0.6;
 
+/** Maximum characters for LLM response preview in error messages. */
+const LLM_RESPONSE_PREVIEW_LENGTH = 500;
+
 /**
- * Normalise a base URL for the OpenAI-compatible API.
+ * Normalize a base URL for the OpenAI-compatible API.
  * Appends `/v1` when missing so `http://localhost:11434` and
  * `http://localhost:11434/` both resolve to `http://localhost:11434/v1`.
  */
-function normaliseBaseUrl(url: string): string {
+function normalizeBaseUrl(url: string): string {
   if (url.endsWith('/v1')) {
     return url;
   }
@@ -66,7 +69,7 @@ export async function chatComplete(
   );
 
   const client = new OpenAI({
-    baseURL: normaliseBaseUrl(config.baseUrl),
+    baseURL: normalizeBaseUrl(config.baseUrl),
     apiKey: config.apiKey || 'no-key',
     maxRetries,
     timeout,
@@ -93,7 +96,7 @@ export async function chatComplete(
 
   if (!content) {
     // Log the raw response to help debug API format mismatches
-    const snippet = JSON.stringify(response).slice(0, 500);
+    const snippet = JSON.stringify(response).slice(0, LLM_RESPONSE_PREVIEW_LENGTH);
     throw new Error(
       `LLM returned empty or unexpected response (model: ${config.model}). ` +
         `Response preview: ${snippet}`,

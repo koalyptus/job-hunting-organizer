@@ -71,7 +71,16 @@ describe('renderOwnership', () => {
     const noop = (s: string) => s;
     const out = renderOwnership({
       configPath: '/tmp/cfg.json',
-      colorize: { bold, cyan, dim: noop, green: noop, yellow: noop, red: noop, statusColor: noop },
+      colorize: {
+        bold,
+        cyan,
+        dim: noop,
+        green: noop,
+        yellow: noop,
+        red: noop,
+        statusColor: noop,
+        interviewTypeColor: noop,
+      },
     });
     // Headers wrapped with bold
     expect(out).toContain(`${ESC}[1mFile${ESC}[22m`);
@@ -87,7 +96,16 @@ describe('renderOwnership', () => {
     const out = renderOwnership({
       markdown: true,
       configPath: '/tmp/cfg.json',
-      colorize: { bold, cyan, dim: noop, green: noop, yellow: noop, red: noop, statusColor: noop },
+      colorize: {
+        bold,
+        cyan,
+        dim: noop,
+        green: noop,
+        yellow: noop,
+        red: noop,
+        statusColor: noop,
+        interviewTypeColor: noop,
+      },
     });
     // Markdown output has no ANSI codes
     expect(out).not.toContain(ESC);

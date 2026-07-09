@@ -94,7 +94,7 @@ describe('parseInterviewsFile', () => {
       '',
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical [scheduled]',
+      '## 2026-06-10 10:00 — Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
@@ -116,13 +116,13 @@ describe('parseInterviewsFile', () => {
     const content = [
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical [scheduled]',
+      '## 2026-06-10 10:00 — Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
       '- Status: scheduled',
       '',
-      '## 2026-06-17 14:00 — HR screen [completed]',
+      '## 2026-06-17 14:00 — HR screen',
       '',
       '- Type: hr',
       '- Duration: 30 min',
@@ -145,7 +145,7 @@ describe('parseInterviewsFile', () => {
     const content = [
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical [scheduled]',
+      '## 2026-06-10 10:00 — Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
@@ -178,7 +178,7 @@ describe('parseInterviewsFile', () => {
     const content = [
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical [scheduled]',
+      '## 2026-06-10 10:00 — Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
@@ -196,7 +196,7 @@ describe('parseInterviewsFile', () => {
     const content = [
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical [scheduled]',
+      '## 2026-06-10 10:00 — Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
@@ -211,11 +211,11 @@ describe('parseInterviewsFile', () => {
     expect(entries[0]!.notes).toBe('');
   });
 
-  it('skips a malformed H2 heading without bracket', () => {
+  it('skips an H2 heading missing the `—` separator', () => {
     const content = [
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical',
+      '## 2026-06-10 10:00 Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
@@ -231,12 +231,12 @@ describe('parseInterviewsFile', () => {
     const content = [
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical',
+      '## 2026-06-10 10:00 Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
       '',
-      '## 2026-06-17 14:00 — HR screen [completed]',
+      '## 2026-06-17 14:00 — HR screen',
       '',
       '- Type: hr',
       '- Duration: 30 min',
@@ -254,7 +254,7 @@ describe('parseInterviewsFile', () => {
     const content = [
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical [scheduled]',
+      '## 2026-06-10 10:00 — Technical',
       '',
       '- Type: technical',
       '- Duration: N/A',
@@ -293,7 +293,7 @@ describe('addInterview', () => {
     const content = await readFile(join(appliedDir, slug, 'interviews.md'), 'utf8');
     expect(content).toContain('<!-- jho:interview-log');
     expect(content).toContain('# Interviews — Software Engineer @ Foo Inc');
-    expect(content).toContain('## 2026-06-10 10:00 — Technical [scheduled]');
+    expect(content).toContain('## 2026-06-10 10:00 — Technical');
   });
 
   it('appends sequential sections with correct index', async () => {
@@ -334,7 +334,8 @@ describe('addInterview', () => {
     expect(content).toContain('- Location: Google Meet');
     expect(content).toContain('- Status: scheduled');
     expect(content).toContain('- Topics: distributed systems, concurrency');
-    expect(content).toContain('- Notes: Prepare system design examples');
+    expect(content).toContain('Notes');
+    expect(content).toContain('- Prepare system design examples');
   });
 
   it('omits optional fields when not provided', async () => {
@@ -360,7 +361,7 @@ describe('addInterview', () => {
     });
 
     const content = await readFile(join(appliedDir, slug, 'interviews.md'), 'utf8');
-    expect(content).toContain('## 2026-06-10 10:00 — System design round [scheduled]');
+    expect(content).toContain('## 2026-06-10 10:00 — System design round');
   });
 
   it('uses defaults for type, duration, and status', async () => {
@@ -494,12 +495,13 @@ describe('markInterviewStatus', () => {
     expect(entries[1]!.status).toBe('scheduled');
   });
 
-  it('does not update the H2 heading bracket status', async () => {
+  it('does not write a status into the H2 heading', async () => {
     await markInterviewStatus(appliedDir, slug, { sectionNumber: 1, status: 'passed' });
 
     const content = await readFile(join(appliedDir, slug, 'interviews.md'), 'utf8');
-    // Heading still shows the original [scheduled], only the Status line changed
-    expect(content).toContain('## 2026-06-10 10:00 — Technical [scheduled]');
+    // Heading carries no status bracket; only the Status line changed
+    expect(content).toContain('## 2026-06-10 10:00 — Technical');
+    expect(content).not.toContain('— Technical [');
     expect(content).toContain('- Status: passed');
   });
 
@@ -532,7 +534,7 @@ describe('markInterviewStatus', () => {
       '',
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical [scheduled]',
+      '## 2026-06-10 10:00 — Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
@@ -551,12 +553,12 @@ describe('markInterviewStatus', () => {
       '',
       '# Interviews — SE @ Foo',
       '',
-      '## 2026-06-10 10:00 — Technical [scheduled]',
+      '## 2026-06-10 10:00 — Technical',
       '',
       '- Type: technical',
       '- Duration: 60 min',
       '',
-      '## 2026-06-17 14:00 — HR [scheduled]',
+      '## 2026-06-17 14:00 — HR',
       '',
       '- Type: hr',
       '- Duration: 30 min',
@@ -602,18 +604,19 @@ describe('appendInterviewNotes', () => {
     await rm(workDir, { recursive: true, force: true });
   });
 
-  it('appends to the existing Notes line', async () => {
+  it('appends to the existing Notes as a separate bullet', async () => {
     await appendInterviewNotes(appliedDir, slug, {
       sectionNumber: 1,
       notes: 'Review system design patterns',
     });
 
     const entries = await listInterviews(appliedDir, slug);
-    expect(entries[0]!.notes).toMatch(/Initial prep done\./);
-    expect(entries[0]!.notes).toMatch(/Review system design patterns/);
+    const notes = entries[0]!.notes.split('\n');
+    expect(notes).toContain('Initial prep done.');
+    expect(notes).toContain('Review system design patterns');
   });
 
-  it('creates a Notes line when missing', async () => {
+  it('creates a Notes section when missing', async () => {
     await appendInterviewNotes(appliedDir, slug, {
       sectionNumber: 2,
       notes: 'Prepare behavioural stories',
@@ -632,6 +635,27 @@ describe('appendInterviewNotes', () => {
     const entries = await listInterviews(appliedDir, slug);
     expect(entries[0]!.notes).toContain('More notes for section 1');
     expect(entries[1]!.notes).toBe('');
+  });
+
+  it('keeps each appended note on its own bullet', async () => {
+    await appendInterviewNotes(appliedDir, slug, { sectionNumber: 1, notes: 'first' });
+    await appendInterviewNotes(appliedDir, slug, { sectionNumber: 1, notes: 'second' });
+
+    const entries = await listInterviews(appliedDir, slug);
+    const notes = entries[0]!.notes.split('\n');
+    expect(notes).toEqual(['Initial prep done.', 'first', 'second']);
+  });
+
+  it('splits multi-line note input into separate bullets', async () => {
+    await appendInterviewNotes(appliedDir, slug, {
+      sectionNumber: 1,
+      notes: 'line one\nline two',
+    });
+
+    const entries = await listInterviews(appliedDir, slug);
+    const notes = entries[0]!.notes.split('\n');
+    expect(notes).toContain('line one');
+    expect(notes).toContain('line two');
   });
 
   it('throws InterviewError for out-of-bounds index', async () => {
@@ -659,33 +683,7 @@ describe('appendInterviewNotes', () => {
     ).rejects.toThrow(InterviewError);
   });
 
-  it('appends with single space separator when existing notes end with semicolon', async () => {
-    // Manually set notes ending with semicolon
-    const content = await readFile(join(appliedDir, slug, 'interviews.md'), 'utf8');
-    const patched = content.replace('- Notes: Initial prep done.', '- Notes: Initial prep done;');
-    await writeFile(join(appliedDir, slug, 'interviews.md'), patched);
-
-    await appendInterviewNotes(appliedDir, slug, { sectionNumber: 1, notes: 'Review patterns' });
-
-    const entries = await listInterviews(appliedDir, slug);
-    expect(entries[0]!.notes).toContain('Initial prep done;');
-    expect(entries[0]!.notes).toContain('Review patterns');
-    // Should NOT have double separator
-    expect(entries[0]!.notes).not.toMatch(/;\s*;/);
-  });
-
-  it('appends with semicolon-space separator when existing notes have no trailing punctuation', async () => {
-    // Manually strip trailing punctuation from notes
-    const content = await readFile(join(appliedDir, slug, 'interviews.md'), 'utf8');
-    const patched = content.replace('- Notes: Initial prep done.', '- Notes: Initial prep done');
-    await writeFile(join(appliedDir, slug, 'interviews.md'), patched);
-
-    await appendInterviewNotes(appliedDir, slug, { sectionNumber: 1, notes: 'Review patterns' });
-
-    const entries = await listInterviews(appliedDir, slug);
-    expect(entries[0]!.notes).toMatch(/Initial prep done; Review patterns/);
-  });
-  it('inserts Notes line before next section when middle section has no Notes', async () => {
+  it('inserts Notes section before next section when middle section has no Notes', async () => {
     // Add a third section so that section 2 (no Notes) is in the middle
     await addInterview(appliedDir, slug, { when: '2026-06-24 09:00', type: 'final' });
 
@@ -699,6 +697,26 @@ describe('appendInterviewNotes', () => {
     // Section 1 and 3 should not have these notes
     expect(entries[0]!.notes).not.toContain('Added to middle section');
     expect(entries[2]!.notes).not.toContain('Added to middle section');
+  });
+
+  it('separates notes from the next interview block with a blank line', async () => {
+    // Add a third section so that section 2 (no Notes) is in the middle
+    await addInterview(appliedDir, slug, { when: '2026-06-24 09:00', type: 'final' });
+
+    await appendInterviewNotes(appliedDir, slug, {
+      sectionNumber: 2,
+      notes: 'Added to middle section',
+    });
+
+    const content = await readFile(join(appliedDir, slug, 'interviews.md'), 'utf8');
+    const lines = content.split('\n');
+
+    // Find the `Notes` heading and ensure a blank line precedes the next H2 section
+    const notesIdx = lines.findIndex((l) => l.trim() === 'Notes');
+    expect(notesIdx).toBeGreaterThanOrEqual(0);
+    const nextH2Idx = lines.findIndex((l, i) => i > notesIdx && l.startsWith('## '));
+    expect(nextH2Idx).toBeGreaterThan(notesIdx + 1);
+    expect(lines[nextH2Idx - 1]).toBe('');
   });
 });
 

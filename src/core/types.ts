@@ -508,6 +508,8 @@ export interface Colorize {
   readonly red: (text: string) => string;
   /** Status-specific colour (applied, interview, offer, etc.). */
   readonly statusColor: (text: string) => string;
+  /** Interview type-specific colour (technical, behavioral, etc.). */
+  readonly interviewTypeColor: (text: string) => string;
 }
 
 const identity = <T>(t: T) => t;
@@ -519,6 +521,7 @@ const noStyle: Colorize = {
   yellow: identity,
   red: identity,
   statusColor: identity,
+  interviewTypeColor: identity,
 };
 
 /**

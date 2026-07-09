@@ -36,12 +36,12 @@ const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?([\s\S]*)$/;
  * @throws {FrontmatterParseError} If the YAML is invalid or does not decode to a mapping.
  */
 export function parseFrontmatter(content: string): ParsedFile {
-  const m = content.match(FRONTMATTER_RE);
-  if (!m || m[1] === undefined) {
+  const match = content.match(FRONTMATTER_RE);
+  if (!match || match[1] === undefined) {
     return { frontmatter: {}, body: content };
   }
-  const yamlText = m[1];
-  const body = m[2] ?? '';
+  const yamlText = match[1];
+  const body = match[2] ?? '';
   if (yamlText.trim() === '') {
     return { frontmatter: {}, body };
   }
@@ -70,14 +70,14 @@ export function parseFrontmatter(content: string): ParsedFile {
  * insertion order is preserved (`sortKeys: false`) so user custom
  * fields keep their position on round-trip. Long strings are not
  * wrapped (`lineWidth: -1`).
- * @param fm - The frontmatter mapping to serialize.
+ * @param frontmatter - The frontmatter mapping to serialize.
  * @param body - The body text. Leading newlines are stripped to keep the
  *   YAML/body boundary clean.
  * @returns The full file content, ending with a single trailing newline
  *   if the body is non-empty.
  */
-export function serializeFrontmatter(fm: Frontmatter, body: string): string {
-  const yaml = dump(fm, {
+export function serializeFrontmatter(frontmatter: Frontmatter, body: string): string {
+  const yaml = dump(frontmatter, {
     noRefs: true,
     lineWidth: -1,
     sortKeys: false,
@@ -105,16 +105,16 @@ export async function readFrontmatter(path: string): Promise<ParsedFile> {
  * concurrently — the tool-managed region is bounded by markers and
  * the body's user edits are preserved.
  * @param path - The absolute path to write to.
- * @param fm - The frontmatter mapping to write.
+ * @param frontmatter - The frontmatter mapping to write.
  * @param body - The body text to write.
  * @returns `true` on success.
  */
 export async function writeFrontmatter(
   path: string,
-  fm: Frontmatter,
+  frontmatter: Frontmatter,
   body: string,
 ): Promise<boolean> {
-  const content = serializeFrontmatter(fm, body);
+  const content = serializeFrontmatter(frontmatter, body);
   return atomicWrite(path, content, { encoding: 'utf8' });
 }
 
@@ -123,8 +123,12 @@ export async function writeFrontmatter(
  * fallback default. Returns `fallback` when the key is missing or
  * the value is not a `number`.
  */
-export function getFrontmatterNumber(fm: Frontmatter, key: string, fallback: number): number {
-  return typeof fm[key] === 'number' ? (fm[key] as number) : fallback;
+export function getFrontmatterNumber(
+  frontmatter: Frontmatter,
+  key: string,
+  fallback: number,
+): number {
+  return typeof frontmatter[key] === 'number' ? (frontmatter[key] as number) : fallback;
 }
 
 /**
