@@ -40,11 +40,11 @@
   - [x] 7b — Core: Retro module (LLM-backed learning plan)
   - [x] 7c — Core: Prep module (LLM-backed pre-interview plan)
   - [x] 7d — Core: Doctor & Repair (toolhash utility, diagnostics, auto-repair)
-  - [ ] 7d1 — Toolhash sidecar wiring (integrate writeToolhash into existing modules)
+  - [x] 7d1 — Toolhash sidecar wiring (integrate writeToolhash into existing modules)
   - [x] 7e — CLI: Show command with ownership footer
   - [x] 7f — CLI: Interview, retro, prepare, doctor, repair commands
   - [ ] 7f1 — Interactive campaign picker
-  - [x] 7g — Tests, evals & documentation
+  - [ ] 7g — Tests, evals & documentation
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
@@ -503,8 +503,9 @@ Wires `writeToolhash()` calls into every existing module that writes tool-manage
 - `src/core/applications/cover-letter.ts` — add `writeToolhash(clPath, hash)` after `atomicWrite` in `generateCoverLetter`
 - `src/core/prepare/prepare.ts` — add `writeToolhash(preparePath, hash)` after `atomicWrite` in `writePrep`
 - `src/core/interviews/interviews.ts` — add `writeToolhash(interviewsPath, hash)` after `atomicWrite` in `addInterview`, `markInterviewStatus`, and `appendInterviewNotes` (interviews.md has in-place status updates, unlike purely append-only files)
+- `src/core/retro/retro.ts` — add `writeToolhash(retroPath, hash)` after `atomicWrite` in `startRetro` and `appendRetro`
 
-**Not needed** — qa.md (append-only, never overwrites), retro.md (append-only sections), and user-owned files (notes.md).
+**Not needed** — qa.md (append-only, never overwrites) and user-owned files (notes.md).
 
 **Tests**: one integration test per module ensuring the sidecar is created with the correct hash after a write operation.
 
