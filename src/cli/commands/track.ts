@@ -4,7 +4,7 @@ import { log as clackLog } from '@clack/prompts';
 import { collectTags, type GlobalOpts } from '../options.js';
 import { readClipboard } from '../clipboard.js';
 import { readStdin } from '../stdin.js';
-import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { isUrl } from '../../core/url.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
@@ -25,6 +25,7 @@ import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError } from '../output.js';
 import { UserInputError } from '../errors.js';
 import { withSpinner } from '../../core/spinner.js';
+import { resolveCampaignCli } from '../campaign.js';
 
 /**
  * `jho track <url>` — record a new application (or update by slug).
@@ -44,7 +45,7 @@ export const trackCommand = new Command('track')
   .option('-y, --yes', 'skip confirmation prompts')
   .action(async function (urlOrSlug: string | undefined, opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = resolveCampaignName(globals?.campaign);
+    const campaign = await resolveCampaignCli(globals);
     const log = getRootLogger().child({ cmd: 'track', campaign });
     let text: string | undefined;
 
