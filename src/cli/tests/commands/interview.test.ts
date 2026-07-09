@@ -9,6 +9,13 @@ import * as interviewsCore from '../../../core/interviews/index.js';
 import { InterviewError, InterviewNotFoundError } from '../../../core/interviews/index.js';
 import * as icsModule from '../../interview-ics.js';
 import { text, select, isCancel } from '@clack/prompts';
+import { initColors } from '../../colors.js';
+import chalk from 'chalk';
+
+const ESC = '\u001b';
+function stripAnsi(text: string): string {
+  return text.replace(new RegExp(`${ESC}\\[[0-9;]*m`, 'g'), '');
+}
 
 vi.mock('../../../core/interviews/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof interviewsCore>();
@@ -147,6 +154,43 @@ describe('interview command', () => {
           duration: 60,
         }),
       );
+    });
+
+    it('recap table contains colored header labels and index', async () => {
+      chalk.level = 3;
+      initColors();
+      vi.mocked(interviewsCore.addInterview).mockResolvedValue({ index: 5 });
+      vi.mocked(icsModule.generateIcsFile).mockResolvedValue('/mock/path/interview.ics');
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stdout } = await runCommand(interviewCommand, [
+        'interview',
+        'add',
+        slug,
+        '--when',
+        '2026-06-15 10:00',
+        '--type',
+        'technical',
+        '--duration',
+        '60',
+      ]);
+
+      const plain = stripAnsi(stdout);
+      expect(plain).toContain('#');
+      expect(plain).toContain('5');
+      expect(plain).toContain('When');
+      expect(plain).toContain('2026-06-15 10:00');
+      expect(plain).toContain('Type');
+      expect(plain).toContain('technical');
+      expect(plain).toContain('Duration');
+      expect(plain).toContain('60 min');
+
+      // Verify ANSI codes are present for dim headers and cyan index
+      expect(stdout).toContain(`${ESC}[2m#${ESC}[22m`);
+      expect(stdout).toContain(`${ESC}[36m5${ESC}[39m`);
     });
 
     it('adds interview with optional fields', async () => {
@@ -304,7 +348,7 @@ describe('interview command', () => {
       ]);
 
       expect(exitCode).toBe(1);
-      expect(stderr).toContain('month 4 has at most 30 days');
+      expect(stderr).toContain('Apr has at most 30 days');
     });
 
     it('accepts datetime with seconds', async () => {
@@ -575,6 +619,11 @@ describe('interview command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Notes appended to interview #1');
+      expect(stdout).toContain('Notes saved to:');
+      expect(stdout).toContain('interviews.md');
+      expect(stdout).toContain('Next steps:');
+      expect(stdout).toContain(`jho interview list ${slug}`);
+      expect(stdout).toContain(`jho interview mark ${slug} 1 --status completed`);
       expect(interviewsCore.appendInterviewNotes).toHaveBeenCalledWith(expect.any(String), slug, {
         sectionNumber: 1,
         notes: 'They asked about distributed systems',
@@ -1094,7 +1143,7 @@ describe('interview command', () => {
       ]);
 
       expect(exitCode).toBe(1);
-      expect(stderr).toContain('missing');
+      expect(stderr).toContain('interview number is required');
     });
 
     it('notes requires <n> argument', async () => {
@@ -1111,7 +1160,7 @@ describe('interview command', () => {
       ]);
 
       expect(exitCode).toBe(1);
-      expect(stderr).toContain('missing');
+      expect(stderr).toContain('interview number is required');
     });
   });
 

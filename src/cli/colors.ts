@@ -72,5 +72,36 @@ export function interviewStatusColor(s: string): string {
   }
 }
 
+/**
+ * Apply a colour to an interview type string for terminal output.
+ * @param s - The interview type value (e.g. `'technical'`, `'hr'`).
+ * @returns The type wrapped in the appropriate chalk colour.
+ */
+export function interviewTypeColor(s: string): string {
+  switch (s) {
+    case 'technical':
+      return blue(s);
+    case 'behavioral':
+      return green(s);
+    case 'system-design':
+      return yellow(s);
+    case 'hr':
+      return cyan(s);
+    case 'culture-fit':
+      return red(s);
+    default:
+      return dim(s);
+  }
+}
+
 /** Pre-built `Colorize` object using the CLI's colour helpers. */
-export const cliColorize: Colorize = { bold, cyan, dim, green, yellow, red, statusColor };
+export const cliColorize: Colorize = {
+  bold,
+  cyan,
+  dim,
+  green,
+  yellow,
+  red,
+  statusColor,
+  interviewTypeColor,
+};

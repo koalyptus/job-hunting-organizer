@@ -102,7 +102,7 @@ describe('doctor command', () => {
           check: 'index_stale',
           message: 'Application folder not in index',
           slug: '2026-Jun-29-SE-Test-Corp',
-          remediation: 'Run jho doctor --repair',
+          remediation: 'Run jho repair',
         },
       ];
       vi.mocked(doctorCore.diagnoseCampaign).mockResolvedValue(issues);

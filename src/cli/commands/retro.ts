@@ -96,22 +96,20 @@ Examples:
 const appendCommand = new Command('append')
   .description('Add weak topics to the existing retro (slug inferred from cwd if omitted)')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
-  .option(
-    '--weak-topics <topics>',
-    'comma-separated weak topics (prompts interactively if omitted)',
-  )
-  .option('--notes <text>', 'additional context notes')
-  .option('--steer <text>', 'instructions to guide the learning plan generation')
-  .action(async function (slug: string | undefined, opts) {
+  .action(async function (slug: string | undefined, _opts) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
     const campaign = resolveCampaignName(globals?.campaign);
     const log = getRootLogger().child({ cmd: 'retro.append', campaign });
 
+    // Options are defined on the parent retroCommand (Commander v15 compatibility:
+    // same-named options on parent and child don't propagate to child actions).
+    const parentOpts = this.parent?.opts() as Record<string, unknown> | undefined;
+
     try {
       const resolvedSlug = resolveSlug(slug, campaign);
 
-      const weakTopics = opts.weakTopics
-        ? (opts.weakTopics as string)
+      const weakTopics = parentOpts?.weakTopics
+        ? (parentOpts.weakTopics as string)
             .split(',')
             .map((s: string) => s.trim())
             .filter(Boolean)
@@ -130,8 +128,8 @@ const appendCommand = new Command('append')
             slug: resolvedSlug,
             campaign,
             weakTopics,
-            notes: opts.notes as string | undefined,
-            steer: opts.steer as string | undefined,
+            notes: parentOpts?.notes as string | undefined,
+            steer: parentOpts?.steer as string | undefined,
           }),
         'Failed to update learning plan',
       );
@@ -185,9 +183,14 @@ appendCommand.addHelpText(
   `
 The slug is optional. When omitted, it is inferred from the current directory.
 
+Options (use before the subcommand on the retro command, e.g. jho retro --weak-topics "..." append):
+  --weak-topics      Comma-separated weak topics to add
+  --notes            Additional context notes
+  --steer            Custom LLM instructions for this retro
+
 Examples:
   $ jho retro append                                        # interactive: prompts for weak topics
-  $ jho retro append --weak-topics "Behavioural, SQL"       # non-interactive
+  $ jho retro --weak-topics "Behavioural, SQL" append       # non-interactive
   $ jho retro append 2026-Jan-15-frontend-acme-12345        # explicit slug
 `,
 );
@@ -362,7 +365,7 @@ Examples:
   $ jho retro                                         # interactive: prompts for weak topics
   $ jho retro --weak-topics "System design, SQL"      # non-interactive
   $ jho retro show                                    # show most recent retro
-  $ jho retro append --weak-topics "Behavioural"      # add topics to existing retro
+  $ jho retro --weak-topics "Behavioural" append      # add topics to existing retro
   $ jho retro aggregate                               # recurring weak topics across all apps
   $ jho retro aggregate --role senior-engineer        # filtered by role
   $ jho retro 2026-Jan-15-frontend-acme-12345         # explicit slug

@@ -2,7 +2,7 @@
 // These follow the same pattern as core/validate.ts but are specific to CLI flags.
 
 import { FILTERABLE_LOG_LEVELS, type LogLevel } from '../core/types.js';
-import { daysInMonth } from '../core/date.js';
+import { daysInMonth, MONTH_ABBR } from '../core/date.js';
 
 const TAIL_ERROR = '--tail must be a positive integer';
 const DATETIME_ERROR = 'must be "YYYY-MM-DD HH:MM" or "YYYY-MM-DD HH:MM:SS"';
@@ -70,7 +70,8 @@ export function validateDatetime(value: string): string | null {
   }
 
   if (day > daysInMonth(year, month)) {
-    return `month ${month} has at most ${daysInMonth(year, month)} days`;
+    const monthName = MONTH_ABBR[month - 1] ?? `month ${month}`;
+    return `${monthName} has at most ${daysInMonth(year, month)} days`;
   }
 
   return null;

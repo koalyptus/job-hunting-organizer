@@ -112,18 +112,18 @@ describe('validateDatetime', () => {
   });
 
   it('rejects 31 days for 30-day months', () => {
-    expect(validateDatetime('2026-04-31 10:00')).toBe('month 4 has at most 30 days');
-    expect(validateDatetime('2026-06-31 10:00')).toBe('month 6 has at most 30 days');
-    expect(validateDatetime('2026-09-31 10:00')).toBe('month 9 has at most 30 days');
-    expect(validateDatetime('2026-11-31 10:00')).toBe('month 11 has at most 30 days');
+    expect(validateDatetime('2026-04-31 10:00')).toBe('Apr has at most 30 days');
+    expect(validateDatetime('2026-06-31 10:00')).toBe('Jun has at most 30 days');
+    expect(validateDatetime('2026-09-31 10:00')).toBe('Sep has at most 30 days');
+    expect(validateDatetime('2026-11-31 10:00')).toBe('Nov has at most 30 days');
   });
 
   it('rejects days > 28/29 for February', () => {
-    expect(validateDatetime('2026-02-29 10:00')).toBe('month 2 has at most 28 days');
-    expect(validateDatetime('2026-02-30 10:00')).toBe('month 2 has at most 28 days');
-    expect(validateDatetime('2026-02-31 10:00')).toBe('month 2 has at most 28 days');
-    expect(validateDatetime('2024-02-30 10:00')).toBe('month 2 has at most 29 days');
-    expect(validateDatetime('2024-02-31 10:00')).toBe('month 2 has at most 29 days');
+    expect(validateDatetime('2026-02-29 10:00')).toBe('Feb has at most 28 days');
+    expect(validateDatetime('2026-02-30 10:00')).toBe('Feb has at most 28 days');
+    expect(validateDatetime('2026-02-31 10:00')).toBe('Feb has at most 28 days');
+    expect(validateDatetime('2024-02-30 10:00')).toBe('Feb has at most 29 days');
+    expect(validateDatetime('2024-02-31 10:00')).toBe('Feb has at most 29 days');
   });
 
   it('accepts February 29 in leap years', () => {
@@ -132,7 +132,7 @@ describe('validateDatetime', () => {
   });
 
   it('rejects February 29 in non-leap years', () => {
-    expect(validateDatetime('2026-02-29 10:00')).toBe('month 2 has at most 28 days');
-    expect(validateDatetime('1900-02-29 10:00')).toBe('month 2 has at most 28 days');
+    expect(validateDatetime('2026-02-29 10:00')).toBe('Feb has at most 28 days');
+    expect(validateDatetime('1900-02-29 10:00')).toBe('Feb has at most 28 days');
   });
 });

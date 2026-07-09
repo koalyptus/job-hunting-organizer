@@ -59,9 +59,12 @@ describe('command option definitions match documentation', () => {
     expect(optionLongs(subCmd)).toEqual([]);
   });
 
-  it('retro append has --weak-topics, --notes, --steer', () => {
+  it('retro append inherits options from parent retroCommand', () => {
     const subCmd = retroCommand.commands.find((c) => c.name() === 'append')!;
-    expect(optionLongs(subCmd)).toEqual(
+    // Options are on parent retroCommand, not on append subcommand
+    // (Commander v15 compat: same-named options on parent+child don't propagate to child)
+    expect(optionLongs(subCmd)).toEqual([]);
+    expect(optionLongs(retroCommand)).toEqual(
       expect.arrayContaining(['--weak-topics', '--notes', '--steer']),
     );
   });

@@ -5,7 +5,7 @@ import Table from 'cli-table3';
 import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { validateDatetime } from '../validate.js';
-import { dim, cyan, interviewStatusColor } from '../colors.js';
+import { dim, cyan, interviewStatusColor, interviewTypeColor } from '../colors.js';
 import { generateIcsFile } from '../interview-ics.js';
 import type { InterviewDetails } from '../interview-ics.js';
 import {
@@ -173,18 +173,18 @@ function formatRecapTable(
     style: { head: [] },
   });
 
-  table.push(['#', index]);
-  table.push(['When', when]);
-  table.push(['Type', type]);
-  table.push(['Duration', `${duration} min`]);
+  table.push([dim('#'), cyan(String(index))]);
+  table.push([dim('When'), when]);
+  table.push([dim('Type'), interviewTypeColor(type)]);
+  table.push([dim('Duration'), `${duration} min`]);
   if (title) {
-    table.push(['Title', title]);
+    table.push([dim('Title'), title]);
   }
   if (interviewer) {
-    table.push(['Interviewer', interviewer]);
+    table.push([dim('Interviewer'), interviewer]);
   }
   if (location) {
-    table.push(['Location', location]);
+    table.push([dim('Location'), location]);
   }
 
   return table.toString();
@@ -349,7 +349,7 @@ function formatInterviewTable(entries: InterviewEntry[]): string {
   for (const entry of entries) {
     table.push([
       cyan(String(entry.index)),
-      entry.type,
+      interviewTypeColor(entry.type),
       entry.when,
       `${entry.duration} min`,
       interviewStatusColor(entry.status),
@@ -415,14 +415,26 @@ Examples:
 const markCmd = new Command('mark')
   .description('Mark the current interview status')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
-  .argument('<n>', 'interview number (from list)')
+  .argument('[n]', 'interview number (from list)')
   .requiredOption('--status <status>', `new status (${INTERVIEW_STATUSES.join(', ')})`)
-  .action(async function (slug: string | undefined, n: string, opts) {
+  .action(async function (slug: string | undefined, n: string | undefined, opts) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
     const campaign = resolveCampaignName(globals?.campaign);
     const log = getRootLogger().child({ cmd: 'interview.mark', campaign });
 
     try {
+      // When only one positional arg is provided, it could be slug or number.
+      // If it looks like a positive integer, treat it as the number.
+      if (n === undefined && slug !== undefined && /^\d+$/.test(slug)) {
+        n = slug;
+        slug = undefined;
+      }
+
+      if (n === undefined) {
+        userError('interview number is required (the index from interview list)');
+        process.exit(1);
+      }
+
       const resolvedSlug = resolveSlug(slug, campaign);
       const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
       const sectionNumber = parseInt(n, 10);
@@ -487,14 +499,26 @@ Examples:
 const notesCmd = new Command('notes')
   .description('Add notes to an interview entry')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
-  .argument('<n>', 'interview number (from list)')
+  .argument('[n]', 'interview number (from list)')
   .requiredOption('--append <text>', 'notes to append')
-  .action(async function (slug: string | undefined, n: string, opts) {
+  .action(async function (slug: string | undefined, n: string | undefined, opts) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
     const campaign = resolveCampaignName(globals?.campaign);
     const log = getRootLogger().child({ cmd: 'interview.notes', campaign });
 
     try {
+      // When only one positional arg is provided, it could be slug or number.
+      // If it looks like a positive integer, treat it as the number.
+      if (n === undefined && slug !== undefined && /^\d+$/.test(slug)) {
+        n = slug;
+        slug = undefined;
+      }
+
+      if (n === undefined) {
+        userError('interview number is required (the index from interview list)');
+        process.exit(1);
+      }
+
       const resolvedSlug = resolveSlug(slug, campaign);
       const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
       const sectionNumber = parseInt(n, 10);
@@ -516,6 +540,17 @@ const notesCmd = new Command('notes')
       );
 
       userSuccess(`Notes appended to interview #${sectionNumber}`);
+
+      const appFolder = join(resolveAppliedDir(resolveCampaignRoot(campaign)), resolvedSlug);
+      userOutput(`Notes saved to: ${join(appFolder, 'interviews.md')}
+
+Next steps:
+  jho interview list ${resolvedSlug}                          # view all interviews
+  jho interview mark ${resolvedSlug} ${sectionNumber} --status completed  # mark status
+  jho prepare ${resolvedSlug}                                 # prep for the interview
+  jho retro ${resolvedSlug}                                   # post-mortem after the interview
+`);
+
       log.info({ slug: resolvedSlug, sectionNumber }, 'interview.notes.completed');
     } catch (err) {
       if (err instanceof SlugMissingError) {
@@ -561,7 +596,7 @@ export const interviewCommand = new Command('interview')
   .addCommand(markCmd)
   .addCommand(notesCmd)
   .action(async function (slug: string | undefined) {
-    // No subcommand provided — delegate to addCmd logic
+    // No subcommand provided — alias for add
     const globals = this.parent?.opts() as GlobalOpts | undefined;
     const campaign = resolveCampaignName(globals?.campaign);
     const log = getRootLogger().child({ cmd: 'interview', campaign });
@@ -588,8 +623,8 @@ export const interviewCommand = new Command('interview')
 interviewCommand.addHelpText(
   'after',
   `
-The slug is optional on all subcommands. When omitted, it is inferred from
-the current directory — run from inside an application folder to skip it.
+The slug is optional. When omitted, it is inferred from the current directory
+— run from inside an application folder (e.g. cd applied/<slug>) to skip it.
 
 Without a subcommand, this is an alias for \`add\`.
 
@@ -600,12 +635,12 @@ Subcommands:
   notes     Add notes to an interview entry
 
 Examples:
-  $ jho interview my-app --when "2026-06-15 10:00"            # alias for add
-  $ jho interview add                                          # wizard mode
-  $ jho interview add --when "2026-06-15 10:00" --type technical
-  $ jho interview list my-app                                  # explicit slug
-  $ jho interview mark my-app 1 --status passed                # explicit slug
+  $ jho interview                                          # wizard mode (infer slug from cwd)
+  $ jho interview my-app                                   # wizard mode (explicit slug)
+  $ jho interview my-app --when "2026-06-15 10:00"         # non-interactive add
+  $ jho interview add                                      # explicit add subcommand
+  $ jho interview list my-app                              # list interviews
+  $ jho interview mark my-app 1 --status passed            # mark status
   $ jho interview notes my-app 1 --append "They asked about distributed systems"
-  $ cd applied/2026-Jan-15-frontend-acme-12345 && jho interview add
 `,
 );

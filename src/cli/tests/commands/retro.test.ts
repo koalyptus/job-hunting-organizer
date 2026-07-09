@@ -26,7 +26,7 @@ vi.mock('../../../core/spinner.js', () => ({
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(async () => 'System design, SQL'),
   isCancel: vi.fn(() => false),
-  log: { info: vi.fn() },
+  log: { info: vi.fn(), success: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
 describe('retro command', () => {
@@ -342,6 +342,7 @@ describe('retro command', () => {
 
   describe('retro append', () => {
     it('appends weak topics', async () => {
+      const { text } = await import('@clack/prompts');
       vi.mocked(retroCore.appendRetro).mockResolvedValue({
         content: 'Updated learning plan',
         wordCount: 10,
@@ -364,6 +365,10 @@ describe('retro command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Updated learning plan');
+      expect(text).not.toHaveBeenCalled();
+      expect(retroCore.appendRetro).toHaveBeenCalledWith(
+        expect.objectContaining({ weakTopics: ['Behavioural'] }),
+      );
     });
 
     it('appends via interactive prompt', async () => {
@@ -386,6 +391,9 @@ describe('retro command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Updated learning plan');
+      expect(retroCore.appendRetro).toHaveBeenCalledWith(
+        expect.objectContaining({ weakTopics: ['System design', 'Kubernetes'] }),
+      );
     });
 
     it('exits when user cancels interactive prompt', async () => {
@@ -447,6 +455,36 @@ describe('retro command', () => {
 
       expect(exitCode).toBe(1);
       expect(stderr).toContain('Append failed');
+    });
+
+    it('uses --weak-topics value when option appears before slug', async () => {
+      const { text } = await import('@clack/prompts');
+      vi.mocked(retroCore.appendRetro).mockResolvedValue({
+        content: 'Updated learning plan',
+        wordCount: 10,
+        model: 'test-model',
+        durationMs: 100,
+        index: 1,
+      });
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stdout, exitCode } = await runCommand(retroCommand, [
+        'retro',
+        'append',
+        '--weak-topics',
+        'Behavioural',
+        slug,
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Updated learning plan');
+      expect(text).not.toHaveBeenCalled();
+      expect(retroCore.appendRetro).toHaveBeenCalledWith(
+        expect.objectContaining({ weakTopics: ['Behavioural'] }),
+      );
     });
   });
 

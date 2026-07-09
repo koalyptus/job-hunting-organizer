@@ -436,7 +436,7 @@ Split into sub-phases for incremental delivery.
 - `addInterview(appliedDir, slug, opts)` — appends new H2 section to `interviews.md` with timestamp, type, interviewers, location, status, topics, notes
 - `listInterviews(appliedDir, slug)` — parses H2 sections into structured `InterviewEntry[]`
 - `markInterviewStatus(appliedDir, slug, index, status)` — regex-replaces `Status:` line in section `n` only
-- `appendInterviewNotes(appliedDir, slug, index, notes)` — appends to `Notes:` line in section `n`
+- `appendInterviewNotes(appliedDir, slug, index, notes)` — appends each note as its own `- ` bullet under the `Notes` heading in section `n`
 - Error classes: `InterviewError`, `InterviewNotFoundError`
 - Tests: append, list, mark status, append notes, invalid index, missing file
 

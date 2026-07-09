@@ -15,6 +15,7 @@ export const TOOL_MANAGED_FILES = [
   'cover-letter.md',
   'prepare.md',
   'interviews.md',
+  'retro.md',
 ] as const;
 
 /**

@@ -10,6 +10,7 @@ import {
   yellow,
   statusColor,
   interviewStatusColor,
+  interviewTypeColor,
 } from '../colors.js';
 
 const NO_COLOR_SAVED = process.env.NO_COLOR;
@@ -193,5 +194,47 @@ describe('interviewStatusColor', () => {
     initColors(false);
     expect(interviewStatusColor('scheduled')).toBe('scheduled');
     expect(interviewStatusColor('passed')).toBe('passed');
+  });
+});
+
+describe('interviewTypeColor', () => {
+  beforeEach(() => {
+    delete process.env.NO_COLOR;
+    chalk.level = 3;
+    initColors();
+  });
+
+  it('colors technical type blue', () => {
+    expect(hasAnsi(interviewTypeColor('technical'))).toBe(true);
+  });
+
+  it('colors behavioral type green', () => {
+    expect(hasAnsi(interviewTypeColor('behavioral'))).toBe(true);
+  });
+
+  it('colors system-design type yellow', () => {
+    expect(hasAnsi(interviewTypeColor('system-design'))).toBe(true);
+  });
+
+  it('colors hr type cyan', () => {
+    expect(hasAnsi(interviewTypeColor('hr'))).toBe(true);
+  });
+
+  it('colors culture-fit type red', () => {
+    expect(hasAnsi(interviewTypeColor('culture-fit'))).toBe(true);
+  });
+
+  it('colors other type dim', () => {
+    expect(hasAnsi(interviewTypeColor('other'))).toBe(true);
+  });
+
+  it('returns unknown types dim', () => {
+    expect(hasAnsi(interviewTypeColor('unknown'))).toBe(true);
+  });
+
+  it('returns plain text when color disabled', () => {
+    initColors(false);
+    expect(interviewTypeColor('technical')).toBe('technical');
+    expect(interviewTypeColor('hr')).toBe('hr');
   });
 });
