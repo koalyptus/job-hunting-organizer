@@ -83,22 +83,22 @@ experience, primary domain, and key differentiators.>
 
 ## Target roles
 
-After the main profile, generate **2–4 target roles** based on the
-candidate's experience, skills, and career trajectory. Each role is an
-H3 heading with a slug, title, and priority tag:
+After the main profile, generate **2–4 target roles**. Each role **MUST** be an H3 heading in this **exact format**:
 
 ```markdown
 ## Target roles
 
-### <slug> — <Display Title> [<priority>]
+### senior-backend-engineer — Senior Backend Engineer [primary]
 
-- Level: <Senior / Staff / Principal / IC5 / M3 / Director / etc.>
-- Domain: <comma-separated domain keywords>
-- Stack: <comma-separated tech keywords, or "(agnostic)">
-- Work style: <Remote / Hybrid / On-site / freeform note>
-- Compensation: <number + currency, e.g. "160k AUD">
-- Notes: <freeform note about this role>
+- Level: Senior (IC4)
+- Domain: Backend, Distributed Systems
+- Stack: TypeScript, Node.js, PostgreSQL, AWS
+- Work style: Remote
+- Compensation: 160k AUD
+- Notes: Strong match given 5+ years Node.js experience
 ```
+
+❌ Do NOT use bullet lists, plain text, or any other format for target roles.
 
 **Priority rules**:
 

@@ -59,7 +59,7 @@ const TimelineSchema = z.object({
   task: z.string(),
 });
 
-const PrepPlanSchema = z.object({
+export const PrepPlanSchema = z.object({
   topics: z.array(TopicSchema),
   behavioral: z.array(BehavioralSchema),
   timeline: z.array(TimelineSchema),

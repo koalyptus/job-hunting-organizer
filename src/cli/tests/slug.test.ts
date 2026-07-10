@@ -50,4 +50,28 @@ describe('resolveSlug', () => {
     resolveSlug('my-slug', 'default');
     expect(cwdSpy).not.toHaveBeenCalled();
   });
+
+  it('infers slug from cwd when inside applied/<slug>', async () => {
+    const { mkdir } = await import('node:fs/promises');
+    const slug = '2026-Jan-15-frontend-acme-12345';
+    const appliedDir = join(testHome, 'data', 'campaigns', 'default', 'applied');
+    const slugDir = join(appliedDir, slug);
+    await mkdir(slugDir, { recursive: true });
+
+    vi.spyOn(process, 'cwd').mockReturnValue(slugDir);
+    const result = resolveSlug(undefined, 'default');
+    expect(result).toBe(slug);
+  });
+
+  it('infers slug from cwd when nested inside slug directory', async () => {
+    const { mkdir } = await import('node:fs/promises');
+    const slug = '2026-Jan-15-frontend-acme-12345';
+    const appliedDir = join(testHome, 'data', 'campaigns', 'default', 'applied');
+    const innerDir = join(appliedDir, slug, 'subdir');
+    await mkdir(innerDir, { recursive: true });
+
+    vi.spyOn(process, 'cwd').mockReturnValue(innerDir);
+    const result = resolveSlug(undefined, 'default');
+    expect(result).toBe(slug);
+  });
 });

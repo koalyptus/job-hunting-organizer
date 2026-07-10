@@ -44,7 +44,7 @@
   - [x] 7e — CLI: Show command with ownership footer
   - [x] 7f — CLI: Interview, retro, prepare, doctor, repair commands
   - [x] 7f1 — Interactive campaign picker
-  - [ ] 7g — Tests, evals & documentation
+  - [x] 7g — Tests, evals & documentation
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness

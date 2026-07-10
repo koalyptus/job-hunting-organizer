@@ -22,22 +22,40 @@ evals/
 ├── README.md                              # this file
 ├── vitest.config.ts                       # separate vitest config (npm run eval)
 ├── matchers.ts                            # shared vitest matchers (toPassLlmRubric, etc.)
+├── shared.ts                              # shared constants (BANNED_PHRASES, PROFILE_ITEMS, isRealResource)
 ├── graders/                               # versioned rubrics for LLM judges
 │   ├── cover-letter-rubric.md
-│   └── qa-rubric.md
+│   ├── qa-rubric.md
+│   ├── learning-plan-rubric.md
+│   └── profile-build-rubric.md
 ├── fixtures/                              # shared input data
 │   ├── jd.md                              # sample job description
-│   └── profile.md                         # sample candidate profile
-├── profile-build/                         # Tier 3: structural evals
+│   ├── profile.md                         # sample candidate profile
+│   ├── cv.md                              # sample CV
+│   └── github.json                        # sample GitHub data
+├── profile-build/                         # Tier 1/2: e2e profile generation eval
+│   ├── profile-build.test.ts
 │   ├── target-roles.test.ts
 │   ├── target-roles-cases.ts
 │   └── expected-target-roles/
 ├── cover-letter/                          # Tier 2: LLM-based evals
 │   ├── cases.ts
 │   └── cover-letter.test.ts
-└── application-qa/                        # Tier 2: LLM-based evals
+├── application-qa/                        # Tier 2: LLM-based evals
+│   ├── cases.ts
+│   └── qa.test.ts
+├── learning-plan/                         # Tier 2: LLM-based evals
+│   ├── cases.ts
+│   └── learning-plan.test.ts
+├── prepare/                               # Tier 2: LLM-based evals
+│   ├── cases.ts
+│   └── prepare.test.ts
+├── jd-extract/                            # Tier 1: structured extraction evals
+│   ├── cases.ts
+│   └── jd-extract.test.ts
+└── suggest-role/                          # Tier 1: structured extraction evals
     ├── cases.ts
-    └── qa.test.ts
+    └── suggest-role.test.ts
 ```
 
 ## Adding a new eval case

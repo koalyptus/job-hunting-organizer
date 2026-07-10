@@ -4,6 +4,7 @@ export {
   readPrep,
   appendTopic,
   formatPrepPlan,
+  PrepPlanSchema,
   PrepError,
   PrepNotFoundError,
   PrepReadError,

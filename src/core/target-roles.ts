@@ -4,8 +4,9 @@ import type { TargetRole } from './types.js';
  * Regex for the H3 heading of a target role.
  * Captures: (1) slug, (2) title, (3) priority tag.
  * Example: `### senior-backend-engineer — Senior Backend Engineer [primary]`
+ * Also accepts regular dash `-` and variations in spacing.
  */
-const ROLE_H3_RE = /^### ([a-z0-9-]+)\s+—\s+(.+?)\s+\[(primary|secondary|stretch)\]\s*$/;
+const ROLE_H3_RE = /^###\s+([a-z0-9-]+)\s*[—-]\s*(.+?)\s*\[(primary|secondary|stretch)\]\s*$/i;
 
 /**
  * Regex for a bullet-point field inside a target role.
@@ -43,13 +44,18 @@ interface MutableTargetRole {
  * @returns The parsed target roles, in document order.
  */
 export function parseTargetRoles(body: string): TargetRole[] {
-  const sectionStart = body.indexOf('## Target roles');
+  // Find the target roles section (case-insensitive, H2 or H3)
+  const sectionMatch = body.match(/^##?\s+Target\s+roles\s*$/im);
+  if (!sectionMatch) {
+    return [];
+  }
+  const sectionStart = sectionMatch.index ?? -1;
   if (sectionStart === -1) {
     return [];
   }
 
   // Find the next H2 after "## Target roles" to bound the section
-  const afterSection = body.slice(sectionStart + '## Target roles'.length);
+  const afterSection = body.slice(sectionStart + sectionMatch[0].length);
   const nextH2 = afterSection.search(/\n## /);
   const sectionBody = nextH2 === -1 ? afterSection : afterSection.slice(0, nextH2);
 

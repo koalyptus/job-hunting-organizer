@@ -35,6 +35,23 @@ export const REFUSAL_PATTERNS: readonly RegExp[] = [
   /no candidate profile/i,
   /I don't have access to your profile/i,
   /unable to generate/i,
+  /I'm sorry.*but.*(?:can't|cannot|unable)/i,
+  /without a (?:CV|profile|resume)/i,
+  /please provide/i,
+  /I need (?:a |your )?(?:CV|profile|resume)/i,
+  /no (?:CV|profile|resume) (?:was |is )?provided/i,
+  /insufficient (?:information|context|data)/i,
+  /I don't have (?:enough |sufficient )?(?:information|context|data)/i,
+  /unable to proceed/i,
+  /cannot proceed/i,
+  /can't proceed/i,
+  /I'm not able to/i,
+  /I am not able to/i,
+  /not enough (?:information|context|data)/i,
+  /no (?:content|data|input) (?:was |is )?provided/i,
+  /empty (?:input|content)/i,
+  /^\s*\{\s*"title"\s*:\s*"unknown"/i,
+  /^\s*\{\s*"company"\s*:\s*"unknown"/i,
 ];
 
 /**

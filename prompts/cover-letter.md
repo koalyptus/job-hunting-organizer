@@ -45,8 +45,7 @@ The cover letter must:
    role's domain, stack, and level.
 4. **Be specific.** Prefer concrete examples ("built a real-time chat system in Go")
    over vague claims ("strong technical skills").
-5. **Refusal detection.** If the profile is empty or the JD is unreadable, return a
-   short explanation of what's missing instead of a cover letter.
+5. **Refusal detection.** If the profile is empty or the JD is unreadable, you **MUST** return ONLY a refusal message. Do NOT generate a cover letter. Example: "I cannot write a cover letter without a candidate profile. Please provide a profile with skills, experience, and education."
 6. Do not fabricate company-specific information (culture, values, recent news) unless
    it is present in the JD text.
 7. Do not include the candidate's name, contact info, or date — the caller adds those.
