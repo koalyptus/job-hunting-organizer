@@ -33,7 +33,11 @@ export const removeCampaignCommand = new Command('remove-campaign')
       process.exit(0);
     } catch (err) {
       if (err instanceof RemoveCancelled) {
-        userInfo('Campaign removal cancelled.');
+        if (err.reason === 'declined') {
+          userInfo('Campaign removal declined.');
+        } else {
+          userInfo('Campaign removal cancelled.');
+        }
         process.exit(0);
       }
       if (err instanceof SelfRemoveError) {

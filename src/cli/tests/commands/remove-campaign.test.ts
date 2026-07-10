@@ -32,7 +32,6 @@ describe('remove-campaign command', () => {
     process.env['JHO_CONFIG_HOME'] = join(testHome, '.jho');
     process.env['JHO_DATA'] = join(testHome, 'data');
     clearConfigCache();
-    mockedConfirm.mockResolvedValue(true);
     vi.clearAllMocks();
     mockedConfirm.mockResolvedValue(true);
 
@@ -102,11 +101,11 @@ describe('remove-campaign command', () => {
     await expect(access(join(testHome, 'data', 'campaigns', 'freelance'))).rejects.toThrow();
   });
 
-  it('exits 0 and keeps data when the user cancels', async () => {
+  it('exits 0 and keeps data when the user declines', async () => {
     mockedConfirm.mockResolvedValue(false);
     const { stdout, exitCode } = await run('freelance');
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('cancelled');
+    expect(stdout).toContain('declined');
     const statResult = await stat(join(testHome, 'data', 'campaigns', 'freelance'));
     expect(statResult.isDirectory()).toBe(true);
   });

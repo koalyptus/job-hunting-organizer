@@ -48,9 +48,13 @@ export class SelfRemoveError extends RemoveCampaignError {
 
 /** Rejection when the user cancels the confirmation prompt. */
 export class RemoveCancelled extends Error {
-  constructor() {
-    super('cancelled');
+  /** 'cancelled' for Ctrl+C/Esc, 'declined' for a deliberate "No". */
+  reason: string;
+
+  constructor(reason: string = 'cancelled') {
+    super(reason);
     this.name = 'RemoveCancelled';
+    this.reason = reason;
   }
 }
 
@@ -75,20 +79,23 @@ export function resolveCampaignToRemove(nameFlag: string | undefined): string {
 
 /**
  * Ask the user to confirm permanent removal of a campaign.
+ * Throws {@link RemoveCancelled} on cancel (Ctrl+C/Esc) or decline (No).
  * @param name - The campaign name to display in the prompt.
- * @returns `true` if the user confirmed, `false` if cancelled/declined.
+ * @throws {RemoveCancelled} 'cancelled' on Ctrl+C/Esc, 'declined' on No.
  */
-async function confirmRemoval(name: string): Promise<boolean> {
+async function confirmRemoval(name: string): Promise<void> {
   clackLog.warn('This permanently deletes the campaign folder and everything in it.');
   const confirmed = await confirm({
     message: `Remove campaign "${name}"?`,
     initialValue: false,
   });
 
-  if (isCancel(confirmed) || !confirmed) {
-    return false;
+  if (isCancel(confirmed)) {
+    throw new RemoveCancelled('cancelled');
   }
-  return true;
+  if (!confirmed) {
+    throw new RemoveCancelled('declined');
+  }
 }
 
 /**
@@ -126,10 +133,7 @@ export async function removeCampaign(
   }
 
   if (!opts.skipConfirm) {
-    const confirmed = await confirmRemoval(name);
-    if (!confirmed) {
-      throw new RemoveCancelled();
-    }
+    await confirmRemoval(name);
   }
 
   const start = performance.now();
