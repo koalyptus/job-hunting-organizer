@@ -288,10 +288,13 @@ describe('isUnder', () => {
 describe('resolveCampaignName', () => {
   let dataRoot: string;
   let originalJhoData: string | undefined;
+  let originalJhoDefaultCampaign: string | undefined;
   let originalCwd: string;
 
   beforeEach(async () => {
     originalJhoData = process.env['JHO_DATA'];
+    originalJhoDefaultCampaign = process.env['JHO_DEFAULT_CAMPAIGN'];
+    delete process.env['JHO_DEFAULT_CAMPAIGN'];
     originalCwd = process.cwd();
     dataRoot = await mkdtemp(join(tmpdir(), 'jho-resolve-campaign-'));
     await mkdir(join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME, 'freelance'), { recursive: true });
@@ -304,6 +307,11 @@ describe('resolveCampaignName', () => {
       delete process.env['JHO_DATA'];
     } else {
       process.env['JHO_DATA'] = originalJhoData;
+    }
+    if (originalJhoDefaultCampaign === undefined) {
+      delete process.env['JHO_DEFAULT_CAMPAIGN'];
+    } else {
+      process.env['JHO_DEFAULT_CAMPAIGN'] = originalJhoDefaultCampaign;
     }
     process.chdir(originalCwd);
     await rm(dataRoot, { recursive: true, force: true });
@@ -353,6 +361,12 @@ describe('resolveCampaignName', () => {
     const campaignsRoot = join(dataRoot, DEFAULT_CAMPAIGNS_DIRNAME);
     process.chdir(campaignsRoot);
     expect(resolveCampaignName(undefined)).toBe('default');
+  });
+
+  it('returns JHO_DEFAULT_CAMPAIGN when set and cwd is outside campaigns dir', () => {
+    process.env['JHO_DEFAULT_CAMPAIGN'] = 'my-custom-default';
+    process.chdir(tmpdir());
+    expect(resolveCampaignName(undefined)).toBe('my-custom-default');
   });
 });
 
