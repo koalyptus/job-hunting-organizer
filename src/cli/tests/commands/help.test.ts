@@ -6,6 +6,7 @@ import { ownershipCommand } from '../../commands/ownership.js';
 import { profileCommand } from '../../commands/profile.js';
 import { initCommand } from '../../commands/init.js';
 import { renameCampaignCommand } from '../../commands/rename-campaign.js';
+import { removeCampaignCommand } from '../../commands/remove-campaign.js';
 import { trackCommand } from '../../commands/track.js';
 import { listCommand } from '../../commands/list.js';
 import { showCommand } from '../../commands/show.js';
@@ -27,6 +28,7 @@ const commands = [
   ['profile', profileCommand],
   ['init', initCommand],
   ['rename-campaign', renameCampaignCommand],
+  ['remove-campaign', removeCampaignCommand],
   ['track', trackCommand],
   ['list', listCommand],
   ['show', showCommand],
