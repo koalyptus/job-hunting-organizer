@@ -319,6 +319,7 @@ Arguments:
 
 Options:
   --json      output as JSON
+  --jd        show job description
   -h, --help  display help for command
 "
 `;
