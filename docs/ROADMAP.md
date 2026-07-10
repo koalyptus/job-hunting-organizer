@@ -43,7 +43,7 @@
   - [x] 7d1 — Toolhash sidecar wiring (integrate writeToolhash into existing modules)
   - [x] 7e — CLI: Show command with ownership footer
   - [x] 7f — CLI: Interview, retro, prepare, doctor, repair commands
-  - [ ] 7f1 — Interactive campaign picker
+  - [x] 7f1 — Interactive campaign picker
   - [ ] 7g — Tests, evals & documentation
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers

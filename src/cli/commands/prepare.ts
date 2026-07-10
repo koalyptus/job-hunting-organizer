@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { join } from 'node:path';
-import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { isUrl } from '../../core/url.js';
 import { extractJdFromUrl } from '../../core/jobs/extract.js';
@@ -19,6 +19,7 @@ import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';
+import { resolveCampaignCli } from '../campaign.js';
 
 /**
  * `jho prepare show [<slug>]` — display an existing prep plan.
@@ -28,7 +29,7 @@ const showCommand = new Command('show')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .action(async function (slug: string | undefined) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = resolveCampaignName(globals?.campaign);
+    const campaign = await resolveCampaignCli(globals);
     const log = getRootLogger().child({ cmd: 'prepare.show', campaign });
 
     try {
@@ -84,7 +85,7 @@ export const prepareCommand = new Command('prepare')
   .addCommand(showCommand)
   .action(async function (slugOrUrl: string | undefined, opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = resolveCampaignName(globals?.campaign);
+    const campaign = await resolveCampaignCli(globals);
     const log = getRootLogger().child({ cmd: 'prepare', campaign });
 
     try {

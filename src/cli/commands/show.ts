@@ -1,12 +1,13 @@
 import { Command } from 'commander';
 import Table from 'cli-table3';
-import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { readShowData, ShowError } from '../../core/applications/index.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { dim, cyan, statusColor, green } from '../colors.js';
 import type { GlobalOpts } from '../options.js';
+import { resolveCampaignCli } from '../campaign.js';
 
 interface FileTableEntry {
   file: string;
@@ -114,7 +115,7 @@ export const showCommand = new Command('show')
 
   .action(async function (slug: string | undefined) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = resolveCampaignName(globals?.campaign);
+    const campaign = await resolveCampaignCli(globals);
     const log = getRootLogger().child({ cmd: 'show', campaign });
     const opts = this.opts() as { json?: boolean };
 

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug } from '../slug.js';
 import { repairAll, repairApp, RepairError } from '../../core/repair/index.js';
 import type { RepairResult } from '../../core/repair/types.js';
@@ -7,6 +7,7 @@ import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';
+import { resolveCampaignCli } from '../campaign.js';
 
 /**
  * Format repair results as readable output.
@@ -63,7 +64,7 @@ export const repairCommand = new Command('repair')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .action(async function (slug: string | undefined) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = resolveCampaignName(globals?.campaign);
+    const campaign = await resolveCampaignCli(globals);
     const log = getRootLogger().child({ cmd: 'repair', campaign });
 
     try {

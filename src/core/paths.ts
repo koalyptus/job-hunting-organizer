@@ -331,7 +331,11 @@ export function findCampaignFromCwd(cwd: string, dataRoot: string): string | nul
  * @returns The resolved campaign name.
  */
 export function resolveCampaignName(explicitName: string | undefined): string {
-  return explicitName ?? findCampaignFromCwd(process.cwd(), resolveDataRoot()) ?? 'default';
+  return (
+    explicitName ??
+    findCampaignFromCwd(process.cwd(), resolveDataRoot()) ??
+    getDefaultCampaignName()
+  );
 }
 
 /**

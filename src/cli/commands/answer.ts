@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { join } from 'node:path';
-import { resolveCampaignName, resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
   answerQuestion,
@@ -13,6 +13,7 @@ import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import { readStdin } from '../stdin.js';
 import type { GlobalOpts } from '../options.js';
+import { resolveCampaignCli } from '../campaign.js';
 
 /**
  * `jho answer show [<slug>]` — display existing Q&A entries.
@@ -22,7 +23,7 @@ const showCommand = new Command('show')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .action(async function (slug: string | undefined) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = resolveCampaignName(globals?.campaign);
+    const campaign = await resolveCampaignCli(globals);
     const log = getRootLogger().child({ cmd: 'answer.show', campaign });
 
     try {
@@ -80,7 +81,7 @@ export const answerCommand = new Command('answer')
   .addCommand(showCommand)
   .action(async function (slug: string | undefined, question: string | undefined, opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = resolveCampaignName(globals?.campaign);
+    const campaign = await resolveCampaignCli(globals);
     const log = getRootLogger().child({ cmd: 'answer', campaign });
 
     try {

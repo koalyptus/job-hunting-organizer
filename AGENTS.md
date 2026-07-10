@@ -107,6 +107,8 @@ jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile 
 jho config show|path    # show the global config (in the config home); secrets redacted
 jho campaign config show|path  # show the active campaign's config (in the data root); secrets redacted
 jho rename-campaign <new> [--from <old>]  # rename a campaign folder (or `mv` the folder directly)
+jho remove-campaign [<name>] [--yes]       # permanently delete a campaign folder (inferred from cwd if omitted)
+jho remove-application [<slug>] [--yes]     # permanently delete an application folder (inferred from cwd if omitted)
 jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
 jho track <url> --paste # paste JD from clipboard, extract, create application
