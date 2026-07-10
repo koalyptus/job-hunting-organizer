@@ -228,6 +228,20 @@ Commands:
 "
 `;
 
+exports[`command --help output > remove-application has consistent help output 1`] = `
+"Usage: remove-application [options] [slug]
+
+Permanently remove an application folder
+
+Arguments:
+  slug        application slug (inferred from cwd if omitted)
+
+Options:
+  -y, --yes   skip the confirmation prompt
+  -h, --help  display help for command
+"
+`;
+
 exports[`command --help output > remove-campaign has consistent help output 1`] = `
 "Usage: remove-campaign [options] [name]
 
