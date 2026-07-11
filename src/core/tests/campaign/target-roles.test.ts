@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseTargetRoles,
+  extractTargetRoles,
   findTargetRole,
   replaceTargetRoles,
   isValidRoleSlug,
-} from '../target-roles.js';
+} from '../../campaign/target-roles.js';
 
 const PROFILE_BODY = `## Summary
 
@@ -48,14 +48,14 @@ Experienced backend engineer.
 - Led migration to microservices
 `;
 
-describe('parseTargetRoles', () => {
+describe('extractTargetRoles', () => {
   it('parses all roles from a profile body', () => {
-    const roles = parseTargetRoles(PROFILE_BODY);
+    const roles = extractTargetRoles(PROFILE_BODY);
     expect(roles).toHaveLength(3);
   });
 
   it('parses slug, title, and priority from H3 headings', () => {
-    const roles = parseTargetRoles(PROFILE_BODY);
+    const roles = extractTargetRoles(PROFILE_BODY);
     expect(roles[0]).toMatchObject({
       slug: 'senior-backend-engineer',
       title: 'Senior Backend Engineer',
@@ -74,7 +74,7 @@ describe('parseTargetRoles', () => {
   });
 
   it('parses all bullet-point fields', () => {
-    const roles = parseTargetRoles(PROFILE_BODY);
+    const roles = extractTargetRoles(PROFILE_BODY);
     const first = roles[0]!;
     expect(first.level).toBe('Senior (IC4)');
     expect(first.domain).toBe('Backend, distributed systems');
@@ -85,12 +85,12 @@ describe('parseTargetRoles', () => {
   });
 
   it('returns empty array when section is absent', () => {
-    expect(parseTargetRoles('## Summary\n\nHello world')).toEqual([]);
+    expect(extractTargetRoles('## Summary\n\nHello world')).toEqual([]);
   });
 
   it('returns empty array when section has no roles', () => {
     const body = '## Target roles\n\nNo roles defined yet.\n\n## Experience\n';
-    expect(parseTargetRoles(body)).toEqual([]);
+    expect(extractTargetRoles(body)).toEqual([]);
   });
 
   it('handles roles with missing fields gracefully', () => {
@@ -102,7 +102,7 @@ describe('parseTargetRoles', () => {
 
 ## Experience
 `;
-    const roles = parseTargetRoles(body);
+    const roles = extractTargetRoles(body);
     expect(roles).toHaveLength(1);
     expect(roles[0]).toMatchObject({
       slug: 'my-role',
@@ -130,17 +130,17 @@ describe('parseTargetRoles', () => {
 
 - Level: Staff
 `;
-    const roles = parseTargetRoles(body);
+    const roles = extractTargetRoles(body);
     expect(roles).toHaveLength(1);
     expect(roles[0]!.slug).toBe('role-a');
   });
 
   it('returns empty array for empty string', () => {
-    expect(parseTargetRoles('')).toEqual([]);
+    expect(extractTargetRoles('')).toEqual([]);
   });
 
   it('returns empty array for section with no roles', () => {
-    expect(parseTargetRoles('## Target roles\n')).toEqual([]);
+    expect(extractTargetRoles('## Target roles\n')).toEqual([]);
   });
 });
 
@@ -173,7 +173,7 @@ describe('replaceTargetRoles', () => {
       },
     ];
     const result = replaceTargetRoles(PROFILE_BODY, newRoles);
-    const roles = parseTargetRoles(result);
+    const roles = extractTargetRoles(result);
     expect(roles).toHaveLength(1);
     expect(roles[0]!.slug).toBe('new-role');
   });
@@ -214,7 +214,7 @@ describe('replaceTargetRoles', () => {
     ];
     const result = replaceTargetRoles(body, newRoles);
     expect(result).toContain('## Target roles');
-    const roles = parseTargetRoles(result);
+    const roles = extractTargetRoles(result);
     expect(roles).toHaveLength(1);
     expect(roles[0]!.slug).toBe('added');
   });
@@ -262,7 +262,7 @@ describe('replaceTargetRoles', () => {
     const result = replaceTargetRoles(body, newRoles);
     expect(result).toContain('## Target roles');
     expect(result).toContain('## Experience');
-    const roles = parseTargetRoles(result);
+    const roles = extractTargetRoles(result);
     expect(roles).toHaveLength(1);
     expect(roles[0]!.slug).toBe('new-role');
   });

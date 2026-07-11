@@ -11,8 +11,8 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { readProfile } from '../profile.js';
-import { parseTargetRoles } from '../target-roles.js';
+import { readProfile } from '../campaign/profile.js';
+import { extractTargetRoles } from '../campaign/target-roles.js';
 import { readApplication } from './applications.js';
 import { replaceRegion, extractSteer, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
@@ -80,7 +80,7 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
   }
 
   // Parse target roles and find the matching one
-  const targetRoles = parseTargetRoles(profile);
+  const targetRoles = extractTargetRoles(profile);
   const matchedRole = frontmatter.targetRole
     ? targetRoles.find((r) => r.slug === frontmatter.targetRole)
     : undefined;

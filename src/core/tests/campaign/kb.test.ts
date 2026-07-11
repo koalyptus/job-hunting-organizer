@@ -3,9 +3,14 @@ import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { GithubUser, GithubRepo } from '../types.js';
-import * as fsMod from '../fs.js';
-import { readCachedCv, writeCachedCv, readCachedGithub, writeCachedGithub } from '../kb.js';
+import type { GithubUser, GithubRepo } from '../../types.js';
+import * as fsMod from '../../fs.js';
+import {
+  readCachedCv,
+  writeCachedCv,
+  readCachedGithubProfile,
+  writeCachedGithubProfile,
+} from '../../campaign/kb.js';
 
 const mockUser = {
   login: 'testuser',
@@ -166,7 +171,7 @@ describe('writeCachedCv', () => {
   });
 });
 
-describe('readCachedGithub', () => {
+describe('readCachedGithubProfile', () => {
   let workDir: string;
 
   beforeEach(async () => {
@@ -178,7 +183,7 @@ describe('readCachedGithub', () => {
   });
 
   it('returns null when no cache exists', async () => {
-    const result = await readCachedGithub(workDir, 'testuser');
+    const result = await readCachedGithubProfile(workDir, 'testuser');
     expect(result).toBeNull();
   });
 
@@ -187,7 +192,7 @@ describe('readCachedGithub', () => {
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'testuser.json'), '{bad');
 
-    const result = await readCachedGithub(workDir, 'testuser');
+    const result = await readCachedGithubProfile(workDir, 'testuser');
     expect(result).toBeNull();
   });
 
@@ -199,7 +204,7 @@ describe('readCachedGithub', () => {
       JSON.stringify({ user: mockUser, repos: mockRepos, cachedAt: new Date().toISOString() }),
     );
 
-    const result = await readCachedGithub(workDir, 'testuser');
+    const result = await readCachedGithubProfile(workDir, 'testuser');
     expect(result).not.toBeNull();
     expect(result!.user.login).toBe('testuser');
     expect(result!.repos).toHaveLength(1);
@@ -214,7 +219,7 @@ describe('readCachedGithub', () => {
     );
 
     const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
-    await readCachedGithub(workDir, 'testuser', mockLog as never);
+    await readCachedGithubProfile(workDir, 'testuser', mockLog as never);
 
     expect(mockLog.info).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -226,7 +231,7 @@ describe('readCachedGithub', () => {
   });
 });
 
-describe('writeCachedGithub', () => {
+describe('writeCachedGithubProfile', () => {
   let workDir: string;
 
   beforeEach(async () => {
@@ -238,9 +243,9 @@ describe('writeCachedGithub', () => {
   });
 
   it('writes and reads back round-trip', async () => {
-    await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos);
+    await writeCachedGithubProfile(workDir, 'testuser', mockUser, mockRepos);
 
-    const result = await readCachedGithub(workDir, 'testuser');
+    const result = await readCachedGithubProfile(workDir, 'testuser');
     expect(result).not.toBeNull();
     expect(result!.user.login).toBe('testuser');
     expect(result!.repos).toHaveLength(1);
@@ -248,13 +253,13 @@ describe('writeCachedGithub', () => {
   });
 
   it('creates parent directories automatically', async () => {
-    await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos);
+    await writeCachedGithubProfile(workDir, 'testuser', mockUser, mockRepos);
 
     expect(existsSync(join(workDir, 'knowledge-base', 'github', 'testuser.json'))).toBe(true);
   });
 
   it('includes cachedAt timestamp', async () => {
-    await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos);
+    await writeCachedGithubProfile(workDir, 'testuser', mockUser, mockRepos);
 
     const raw = readFileSync(join(workDir, 'knowledge-base', 'github', 'testuser.json'), 'utf8');
     const parsed = JSON.parse(raw);
@@ -264,7 +269,7 @@ describe('writeCachedGithub', () => {
 
   it('calls log.info when logger provided', async () => {
     const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
-    await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos, mockLog as never);
+    await writeCachedGithubProfile(workDir, 'testuser', mockUser, mockRepos, mockLog as never);
 
     expect(mockLog.info).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -279,7 +284,7 @@ describe('writeCachedGithub', () => {
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
 
     const mockLog = { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() };
-    await writeCachedGithub(workDir, 'testuser', mockUser, mockRepos, mockLog as never);
+    await writeCachedGithubProfile(workDir, 'testuser', mockUser, mockRepos, mockLog as never);
 
     expect(mockLog.warn).toHaveBeenCalledWith(
       expect.objectContaining({

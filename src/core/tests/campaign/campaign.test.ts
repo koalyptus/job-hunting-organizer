@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as clack from '@clack/prompts';
-import * as pathsModule from '../paths.js';
-import type * as PathsModule from '../paths.js';
+import * as pathsModule from '../../paths.js';
+import type * as PathsModule from '../../paths.js';
 
 vi.mock('@clack/prompts', () => ({
   select: vi.fn(),
@@ -10,7 +10,7 @@ vi.mock('@clack/prompts', () => ({
 }));
 
 // Mock listCampaigns so the picker never touches the filesystem.
-vi.mock('../paths.js', async (importOriginal) => {
+vi.mock('../../paths.js', async (importOriginal) => {
   const actual = await importOriginal<typeof PathsModule>();
   return {
     ...actual,
@@ -18,7 +18,7 @@ vi.mock('../paths.js', async (importOriginal) => {
   };
 });
 
-import { resolveCampaignInteractive, CampaignPickerCancelled } from '../campaign.js';
+import { resolveCampaignInteractive, CampaignPickerCancelled } from '../../campaign/index.js';
 
 describe('resolveCampaignInteractive', () => {
   beforeEach(() => {

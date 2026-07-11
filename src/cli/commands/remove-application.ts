@@ -9,7 +9,7 @@ import { userError, userSuccess, userInfo } from '../output.js';
 import { bold, cyan } from '../colors.js';
 import { pathExists } from '../../core/fs.js';
 import type { GlobalOpts } from '../options.js';
-import { resolveCampaignCli } from '../campaign.js';
+import { resolveCampaign } from '../campaign.js';
 
 /**
  * Ask the user to confirm permanent removal of an application.
@@ -43,7 +43,7 @@ export const removeApplicationCommand = new Command('remove-application')
     const globals = this.parent?.opts() as GlobalOpts | undefined;
     let log = getRootLogger().child({ cmd: 'remove-application' });
     try {
-      const campaign = await resolveCampaignCli(globals);
+      const campaign = await resolveCampaign(globals);
       log = log.child({ campaign });
       const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
 

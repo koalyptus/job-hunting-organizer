@@ -15,7 +15,7 @@ import { BANNED_PHRASES } from '../shared.js';
 import { loadPromptTemplate } from '../../src/core/prompts.js';
 import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';
-import { parseTargetRoles } from '../../src/core/target-roles.js';
+import { extractTargetRoles } from '../../src/core/campaign/target-roles.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -86,7 +86,7 @@ describe('profile-build eval', () => {
 
       // Target roles parseable (0 or more; some LLMs use different formats)
       const targetRolesSection = result.split('## Target roles')[1] ?? '';
-      const roles = parseTargetRoles(targetRolesSection);
+      const roles = extractTargetRoles(targetRolesSection);
       expect(roles.length).toBeLessThanOrEqual(4);
 
       // Each role has valid slug and priority

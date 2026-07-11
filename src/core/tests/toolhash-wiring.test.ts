@@ -80,12 +80,12 @@ vi.mock('../prompts.js', () => ({
   })),
 }));
 
-vi.mock('../profile.js', () => ({
+vi.mock('../campaign/profile.js', () => ({
   readProfile: vi.fn(async () => '# Profile\n\nExperienced engineer.'),
 }));
 
 vi.mock('../target-roles.js', () => ({
-  parseTargetRoles: vi.fn(() => []),
+  extractTargetRoles: vi.fn(() => []),
 }));
 
 vi.mock('../jobs/extract.js', () => ({

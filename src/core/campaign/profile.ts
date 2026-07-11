@@ -1,13 +1,18 @@
 import { readFile } from 'node:fs/promises';
 import type { Logger } from 'pino';
-import { readCv } from './cv.js';
-import { fetchGithubUser, fetchGithubRepos } from './github.js';
-import { readCachedCv, readCachedGithub, writeCachedCv, writeCachedGithub } from './kb.js';
-import { chatComplete } from './llm.js';
-import { loadPromptTemplate } from './prompts.js';
-import { resolveProfilePath } from './paths.js';
-import { getRootLogger } from './logger/logger.js';
-import type { LlmConfig } from './types.js';
+import { readCv } from '../cv.js';
+import { fetchGithubUser, fetchGithubRepos } from '../github.js';
+import {
+  readCachedCv,
+  readCachedGithubProfile,
+  writeCachedCv,
+  writeCachedGithubProfile,
+} from './kb.js';
+import { chatComplete } from '../llm.js';
+import { loadPromptTemplate } from '../prompts.js';
+import { resolveProfilePath } from '../paths.js';
+import { getRootLogger } from '../logger/logger.js';
+import type { LlmConfig } from '../types.js';
 
 /**
  * Maximum number of GitHub repositories to include in the profile build prompt.
@@ -111,7 +116,7 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
   let user;
   let repos;
   if (campaignRoot) {
-    const cached = await readCachedGithub(campaignRoot, githubUser, log);
+    const cached = await readCachedGithubProfile(campaignRoot, githubUser, log);
     if (cached) {
       user = cached.user;
       repos = cached.repos;
@@ -123,7 +128,7 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
       fetchGithubRepos(githubUser, githubToken, log),
     ]);
     if (campaignRoot) {
-      await writeCachedGithub(campaignRoot, githubUser, user, repos, log);
+      await writeCachedGithubProfile(campaignRoot, githubUser, user, repos, log);
     }
   }
 

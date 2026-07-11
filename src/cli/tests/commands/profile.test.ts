@@ -5,10 +5,10 @@ import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
 import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { profileCommand } from '../../commands/profile.js';
-import type * as ProfileModule from '../../../core/profile.js';
-import { readProfile } from '../../../core/profile.js';
+import type * as ProfileModule from '../../../core/campaign/profile.js';
+import { readProfile } from '../../../core/campaign/profile.js';
 
-vi.mock('../../../core/profile.js', async (importOriginal) => {
+vi.mock('../../../core/campaign/profile.js', async (importOriginal) => {
   const actual = await importOriginal<typeof ProfileModule>();
   return {
     ...actual,

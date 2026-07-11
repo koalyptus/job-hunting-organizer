@@ -3,11 +3,11 @@ import { join } from 'node:path';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { select } from '@clack/prompts';
-import { buildProfile } from '../../profile.js';
-import { handleProfile } from '../../profile-builder.js';
+import { buildProfile } from '../../campaign/profile.js';
+import { handleProfile } from '../../campaign/profile-builder.js';
 import type * as FsModule from '../../fs.js';
 import { atomicWrite } from '../../fs.js';
-import { parseTargetRoles } from '../../target-roles.js';
+import { extractTargetRoles } from '../../campaign/target-roles.js';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-vi.mock('../../profile.js', () => ({
+vi.mock('../../campaign/profile.js', () => ({
   buildProfile: vi.fn(() =>
     Promise.resolve({
       content:
@@ -32,8 +32,8 @@ vi.mock('../../profile.js', () => ({
   ),
 }));
 
-vi.mock('../../target-roles.js', () => ({
-  parseTargetRoles: vi.fn(() => []),
+vi.mock('../../campaign/target-roles.js', () => ({
+  extractTargetRoles: vi.fn(() => []),
   replaceTargetRoles: vi.fn((content: string) => content),
 }));
 
@@ -241,9 +241,9 @@ describe('handleProfile', () => {
   });
 
   it('skips role review when nonInteractive is true', async () => {
-    // parseTargetRoles is already mocked via vi.mock at top of file
+    // extractTargetRoles is already mocked via vi.mock at top of file
     // re-mock it to return a non-empty array for this test
-    vi.mocked(parseTargetRoles).mockReturnValue([
+    vi.mocked(extractTargetRoles).mockReturnValue([
       {
         slug: 'senior-dev',
         title: 'Senior Dev',
@@ -279,7 +279,7 @@ describe('handleProfile', () => {
   });
 
   it('triggers role review when roles found and nonInteractive is false', async () => {
-    vi.mocked(parseTargetRoles).mockReturnValue([
+    vi.mocked(extractTargetRoles).mockReturnValue([
       {
         slug: 'senior-dev',
         title: 'Senior Dev',

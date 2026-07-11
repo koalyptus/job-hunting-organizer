@@ -15,7 +15,7 @@ import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';
-import { resolveCampaignCli } from '../campaign.js';
+import { resolveCampaign } from '../campaign.js';
 
 /**
  * Prompt the user for weak topics using @clack/prompts.
@@ -46,7 +46,7 @@ const showCommand = new Command('show')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .action(async function (slug: string | undefined) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'retro.show', campaign });
 
     try {
@@ -99,7 +99,7 @@ const appendCommand = new Command('append')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .action(async function (slug: string | undefined, _opts) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'retro.append', campaign });
 
     // Options are defined on the parent retroCommand (Commander v15 compatibility:
@@ -205,7 +205,7 @@ const aggregateCommand = new Command('aggregate')
   .option('--include-abandoned', 'also count weak topics from abandoned apps')
   .action(async function (opts) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'retro.aggregate', campaign });
 
     try {
@@ -266,7 +266,7 @@ export const retroCommand = new Command('retro')
   .addCommand(aggregateCommand)
   .action(async function (slug: string | undefined, opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'retro', campaign });
 
     try {

@@ -7,7 +7,7 @@ import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';
-import { resolveCampaignCli } from '../campaign.js';
+import { resolveCampaign } from '../campaign.js';
 
 /**
  * Severity icon for doctor issues.
@@ -53,7 +53,7 @@ export const doctorCommand = new Command('doctor')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .action(async function (slug: string | undefined) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'doctor', campaign });
 
     try {

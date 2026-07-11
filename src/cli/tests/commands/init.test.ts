@@ -6,7 +6,7 @@ import { text, select, confirm, password, isCancel } from '@clack/prompts';
 import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
-import * as profileModule from '../../../core/profile.js';
+import * as profileModule from '../../../core/campaign/profile.js';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-vi.mock('../../../core/profile.js', () => ({
+vi.mock('../../../core/campaign/profile.js', () => ({
   buildProfile: vi.fn(() =>
     Promise.resolve({
       content:

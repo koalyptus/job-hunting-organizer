@@ -5,7 +5,7 @@ import Table from 'cli-table3';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { validateDatetime } from '../validate.js';
-import { resolveCampaignCli } from '../campaign.js';
+import { resolveCampaign } from '../campaign.js';
 import { dim, cyan, interviewStatusColor, interviewTypeColor } from '../colors.js';
 import { generateIcsFile } from '../interview-ics.js';
 import type { InterviewDetails } from '../interview-ics.js';
@@ -273,7 +273,7 @@ const addCmd = new Command('add')
   .option('--title <title>', 'interview title')
   .action(async function (slug: string | undefined, opts) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'interview.add', campaign });
 
     try {
@@ -369,7 +369,7 @@ const listCmd = new Command('list')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .action(async function (slug: string | undefined) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'interview.list', campaign });
 
     try {
@@ -420,7 +420,7 @@ const markCmd = new Command('mark')
   .requiredOption('--status <status>', `new status (${INTERVIEW_STATUSES.join(', ')})`)
   .action(async function (slug: string | undefined, n: string | undefined, opts) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'interview.mark', campaign });
 
     try {
@@ -504,7 +504,7 @@ const notesCmd = new Command('notes')
   .requiredOption('--append <text>', 'notes to append')
   .action(async function (slug: string | undefined, n: string | undefined, opts) {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'interview.notes', campaign });
 
     try {
@@ -599,7 +599,7 @@ export const interviewCommand = new Command('interview')
   .action(async function (slug: string | undefined) {
     // No subcommand provided — alias for add
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'interview', campaign });
 
     try {

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { renderOwnership } from '../../core/ownership.js';
+import { renderOwnership } from '../../core/campaign/ownership.js';
 import { cliColorize } from '../colors.js';
 import { userOutput } from '../output.js';
 

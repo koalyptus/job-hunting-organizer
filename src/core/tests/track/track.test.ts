@@ -3,8 +3,8 @@ import { runTrack, runTrackRefresh, prepareTrack, confirmAndCreate } from '../..
 import { TrackError, TrackCancelled, NoLinkStoredError } from '../../track/errors.js';
 import { extractJdFromUrl, extractJdFromText } from '../../jobs/extract.js';
 import { suggestTargetRole } from '../../jobs/suggest.js';
-import { readProfile } from '../../profile.js';
-import { parseTargetRoles } from '../../target-roles.js';
+import { readProfile } from '../../campaign/profile.js';
+import { extractTargetRoles } from '../../campaign/target-roles.js';
 import {
   createApplication,
   updateApplication,
@@ -26,12 +26,12 @@ vi.mock('../../llm.js', () => ({
   defaultLlmConfig: vi.fn(() => ({ baseUrl: 'http://test', apiKey: 'key', model: 'model' })),
 }));
 
-vi.mock('../../profile.js', () => ({
+vi.mock('../../campaign/profile.js', () => ({
   readProfile: vi.fn(),
 }));
 
-vi.mock('../../target-roles.js', () => ({
-  parseTargetRoles: vi.fn(() => []),
+vi.mock('../../campaign/target-roles.js', () => ({
+  extractTargetRoles: vi.fn(() => []),
 }));
 
 vi.mock('../../jobs/extract.js', () => ({
@@ -233,7 +233,7 @@ describe('runTrack', () => {
         description: 'desc',
       });
       vi.mocked(readProfile).mockResolvedValue('profile content');
-      vi.mocked(parseTargetRoles).mockReturnValue([
+      vi.mocked(extractTargetRoles).mockReturnValue([
         {
           slug: 'frontend',
           title: 'Frontend Dev',
@@ -270,7 +270,7 @@ describe('runTrack', () => {
         description: 'desc',
       });
       vi.mocked(readProfile).mockResolvedValue('profile content');
-      vi.mocked(parseTargetRoles).mockReturnValue([
+      vi.mocked(extractTargetRoles).mockReturnValue([
         {
           slug: 'frontend',
           title: 'Frontend Dev',
@@ -566,7 +566,7 @@ describe('prepareTrack', () => {
       description: 'desc',
     });
     vi.mocked(readProfile).mockResolvedValue('profile content');
-    vi.mocked(parseTargetRoles).mockReturnValue([
+    vi.mocked(extractTargetRoles).mockReturnValue([
       {
         slug: 'frontend-dev',
         title: 'Frontend Developer',
@@ -614,7 +614,7 @@ describe('prepareTrack', () => {
       description: 'desc',
     });
     vi.mocked(readProfile).mockResolvedValue('profile content');
-    vi.mocked(parseTargetRoles).mockReturnValue([
+    vi.mocked(extractTargetRoles).mockReturnValue([
       {
         slug: 'frontend-dev',
         title: 'Frontend Developer',

@@ -1,7 +1,7 @@
 import Table from 'cli-table3';
-import { resolveConfigHome, DEFAULT_CONFIG_FILENAME } from './paths.js';
-import type { OwnershipRow, RenderOwnershipOptions } from './types.js';
-import { resolveStyle } from './types.js';
+import { resolveConfigHome, DEFAULT_CONFIG_FILENAME } from '../paths.js';
+import type { OwnershipRow, RenderOwnershipOptions } from '../types.js';
+import { resolveStyle } from '../types.js';
 
 // Static ownership table from AGENTS.md. Kept in code (not a doc) so that
 // `jho ownership` always shows the same rules the tool actually enforces.

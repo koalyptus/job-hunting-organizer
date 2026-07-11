@@ -7,7 +7,7 @@ import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { dim, cyan, statusColor, green } from '../colors.js';
 import type { GlobalOpts } from '../options.js';
-import { resolveCampaignCli } from '../campaign.js';
+import { resolveCampaign } from '../campaign.js';
 
 interface FileTableEntry {
   file: string;
@@ -117,7 +117,7 @@ showCommand.option('--jd', 'show job description');
 
 showCommand.action(async function (slug: string | undefined) {
   const globals = this.parent?.opts() as GlobalOpts | undefined;
-  const campaign = await resolveCampaignCli(globals);
+  const campaign = await resolveCampaign(globals);
   const log = getRootLogger().child({ cmd: 'show', campaign });
   const opts = this.opts() as { json?: boolean; jd?: boolean };
 

@@ -1,30 +1,30 @@
 import { readFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { GithubUser, GithubRepo } from '../types.js';
-import { buildProfile } from '../profile.js';
+import type { GithubUser, GithubRepo } from '../../types.js';
+import { buildProfile } from '../../campaign/profile.js';
 
-vi.mock('../cv.js', () => ({
+vi.mock('../../cv.js', () => ({
   readCv: vi.fn(),
 }));
 
-vi.mock('../github.js', () => ({
+vi.mock('../../github.js', () => ({
   fetchGithubUser: vi.fn(),
   fetchGithubRepos: vi.fn(),
 }));
 
-vi.mock('../llm.js', () => ({
+vi.mock('../../llm.js', () => ({
   chatComplete: vi.fn(),
 }));
 
-vi.mock('../package.js', () => ({
+vi.mock('../../package.js', () => ({
   getPackageRoot: vi.fn(() => '/mock/package/root'),
 }));
 
-vi.mock('../kb.js', () => ({
+vi.mock('../../campaign/kb.js', () => ({
   readCachedCv: vi.fn(),
   writeCachedCv: vi.fn(),
-  readCachedGithub: vi.fn(),
-  writeCachedGithub: vi.fn(),
+  readCachedGithubProfile: vi.fn(),
+  writeCachedGithubProfile: vi.fn(),
 }));
 
 vi.mock('node:fs/promises', async () => {
@@ -35,10 +35,15 @@ vi.mock('node:fs/promises', async () => {
   };
 });
 
-import { readCv } from '../cv.js';
-import { fetchGithubUser, fetchGithubRepos } from '../github.js';
-import { chatComplete } from '../llm.js';
-import { readCachedCv, writeCachedCv, readCachedGithub, writeCachedGithub } from '../kb.js';
+import { readCv } from '../../cv.js';
+import { fetchGithubUser, fetchGithubRepos } from '../../github.js';
+import { chatComplete } from '../../llm.js';
+import {
+  readCachedCv,
+  writeCachedCv,
+  readCachedGithubProfile,
+  writeCachedGithubProfile,
+} from '../../campaign/kb.js';
 
 const mockReadCv = vi.mocked(readCv);
 const mockFetchGithubUser = vi.mocked(fetchGithubUser);
@@ -47,8 +52,8 @@ const mockChatComplete = vi.mocked(chatComplete);
 const mockReadFile = vi.mocked(readFile);
 const mockReadCachedCv = vi.mocked(readCachedCv);
 const mockWriteCachedCv = vi.mocked(writeCachedCv);
-const mockReadCachedGithub = vi.mocked(readCachedGithub);
-const mockWriteCachedGithub = vi.mocked(writeCachedGithub);
+const mockReadCachedGithub = vi.mocked(readCachedGithubProfile);
+const mockWriteCachedGithub = vi.mocked(writeCachedGithubProfile);
 
 const testLlmConfig = {
   baseUrl: 'https://api.test.com/v1',

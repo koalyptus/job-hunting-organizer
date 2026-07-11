@@ -2,13 +2,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile, readdir, readFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearConfigCache } from '../config/config.js';
+import { clearConfigCache } from '../../config/config.js';
 import {
   resolveCampaignToRemove,
   removeCampaign,
   RemoveCampaignError,
   RemoveCancelled,
-} from '../remove-campaign.js';
+} from '../../campaign/remove-campaign.js';
 import type * as ClackPrompts from '@clack/prompts';
 import { confirm } from '@clack/prompts';
 

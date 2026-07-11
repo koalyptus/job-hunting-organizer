@@ -1,16 +1,16 @@
 import { text, select, isCancel, log as clackLog } from '@clack/prompts';
 import Table from 'cli-table3';
-import type { TargetRole, RoleAction } from './types.js';
-import { InitCancelled } from './init/errors.js';
+import type { TargetRole, RoleAction } from '../types.js';
+import { InitCancelled } from '../init/errors.js';
 
 /**
  * Validate a role slug.
  */
-export function validateRoleSlug(v: string | undefined): string | undefined {
-  if (!v) {
+export function validateRoleSlug(value: string | undefined): string | undefined {
+  if (!value) {
     return 'Slug is required';
   }
-  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(v)) {
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(value)) {
     return 'Must be lowercase alphanumeric with hyphens';
   }
 }

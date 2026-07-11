@@ -4,8 +4,8 @@ import {
   listCampaigns,
   resolveCampaignName,
   resolveDataRoot,
-} from './paths.js';
-import type { CampaignListing } from './types.js';
+} from '../paths.js';
+import type { CampaignListing } from '../types.js';
 
 /**
  * Thrown when the user cancels the campaign picker (e.g. Ctrl+C or selecting

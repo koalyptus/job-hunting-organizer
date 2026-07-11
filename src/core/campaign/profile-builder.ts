@@ -1,16 +1,16 @@
 import { copyFile } from 'node:fs/promises';
 import { log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
-import { resolveProfilePath } from './paths.js';
-import { pathExists, atomicWrite } from './fs.js';
+import { resolveProfilePath } from '../paths.js';
+import { pathExists, atomicWrite } from '../fs.js';
 import { buildProfile } from './profile.js';
-import { parseTargetRoles, replaceTargetRoles } from './target-roles.js';
-import { withSpinner } from './spinner.js';
-import type { LlmConfig } from './types.js';
+import { extractTargetRoles, replaceTargetRoles } from './target-roles.js';
+import { withSpinner } from '../spinner.js';
+import type { LlmConfig } from '../types.js';
 import { reviewRoles } from './roles.js';
-import { generateSkeletonProfile } from './init/skeleton.js';
-import { InitError } from './init/errors.js';
-import { moduleLogger } from './logger/logger.js';
+import { generateSkeletonProfile } from '../init/skeleton.js';
+import { InitError } from '../init/errors.js';
+import { moduleLogger } from '../logger/logger.js';
 
 const fallbackLog = moduleLogger(import.meta.url);
 
@@ -86,7 +86,7 @@ export async function handleProfile(opts: {
     let profileContent = profile.content;
 
     // Parse and review target roles
-    const roles = parseTargetRoles(profileContent);
+    const roles = extractTargetRoles(profileContent);
 
     if (roles.length > 0 && !opts.nonInteractive) {
       const reviewed = await reviewRoles(roles);

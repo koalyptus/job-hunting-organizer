@@ -1,4 +1,4 @@
-import type { TargetRole } from './types.js';
+import type { TargetRole } from '../types.js';
 
 /**
  * Regex for the H3 heading of a target role.
@@ -43,7 +43,7 @@ interface MutableTargetRole {
  * @param body - The profile body text (everything after the frontmatter).
  * @returns The parsed target roles, in document order.
  */
-export function parseTargetRoles(body: string): TargetRole[] {
+export function extractTargetRoles(body: string): TargetRole[] {
   // Find the target roles section (case-insensitive, H2 or H3)
   const sectionMatch = body.match(/^##?\s+Target\s+roles\s*$/im);
   if (!sectionMatch) {
@@ -135,7 +135,7 @@ function finalizeRole(partial: MutableTargetRole): TargetRole {
  * @returns The matching role, or `null` if not found.
  */
 export function findTargetRole(body: string, slug: string): TargetRole | null {
-  return parseTargetRoles(body).find((r) => r.slug === slug) ?? null;
+  return extractTargetRoles(body).find((r) => r.slug === slug) ?? null;
 }
 
 /**

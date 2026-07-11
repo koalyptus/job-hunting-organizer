@@ -25,8 +25,8 @@ import { validateCvPath } from '../cv.js';
 import { promptGithub } from './github.js';
 import { promptLlm, loadExistingConfig } from './llm.js';
 import { promptCalendar } from './calendar.js';
-import { createDirectories } from '../directories.js';
-import { handleProfile } from '../profile-builder.js';
+import { createDirectories } from '../campaign/directories.js';
+import { handleProfile } from '../campaign/profile-builder.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
 

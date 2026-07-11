@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger } from 'pino';
-import { atomicWrite, pathExists } from './fs.js';
-import { resolveKnowledgeBaseDir } from './paths.js';
-import type { CvContent, GithubRepo, GithubUser } from './types.js';
+import { atomicWrite, pathExists } from '../fs.js';
+import { resolveKnowledgeBaseDir } from '../paths.js';
+import type { CvContent, GithubRepo, GithubUser } from '../types.js';
 
 /**
  * Cached GitHub user and repo data, written to
@@ -88,7 +88,7 @@ export async function writeCachedCv(
  * @param log - Optional pino logger.
  * @returns The cached user and repos, or `null` if no cache exists or it is corrupted.
  */
-export async function readCachedGithub(
+export async function readCachedGithubProfile(
   campaignRoot: string,
   username: string,
   log?: Logger,
@@ -122,7 +122,7 @@ export async function readCachedGithub(
  * @param repos - The repos list to cache.
  * @param log - Optional pino logger.
  */
-export async function writeCachedGithub(
+export async function writeCachedGithubProfile(
   campaignRoot: string,
   username: string,
   user: GithubUser,

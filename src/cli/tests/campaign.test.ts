@@ -8,9 +8,9 @@ import { runCommand } from './helpers.js';
 import { doctorCommand } from '../commands/doctor.js';
 import * as doctorCore from '../../core/doctor/index.js';
 import * as pathsModule from '../../core/paths.js';
-import { resolveCampaignCli } from '../campaign.js';
-import * as campaignCore from '../../core/campaign.js';
-import { CampaignPickerCancelled } from '../../core/campaign.js';
+import { resolveCampaign } from '../campaign.js';
+import * as campaignCore from '../../core/campaign/index.js';
+import { CampaignPickerCancelled } from '../../core/campaign/index.js';
 
 vi.mock('@clack/prompts', () => ({
   select: vi.fn(),
@@ -135,11 +135,11 @@ describe('doctor command — interactive campaign picker', () => {
   });
 });
 
-describe('resolveCampaignCli', () => {
+describe('resolveCampaign', () => {
   it('returns the campaign from resolveCampaignInteractive', async () => {
     const spy = vi.spyOn(campaignCore, 'resolveCampaignInteractive').mockResolvedValue('freelance');
 
-    const result = await resolveCampaignCli({ campaign: 'freelance' });
+    const result = await resolveCampaign({ campaign: 'freelance' });
     expect(result).toBe('freelance');
     expect(spy).toHaveBeenCalledWith('freelance', { yes: undefined });
   });
@@ -147,7 +147,7 @@ describe('resolveCampaignCli', () => {
   it('passes undefined campaign and yes flag', async () => {
     const spy = vi.spyOn(campaignCore, 'resolveCampaignInteractive').mockResolvedValue('default');
 
-    const result = await resolveCampaignCli({ yes: true });
+    const result = await resolveCampaign({ yes: true });
     expect(result).toBe('default');
     expect(spy).toHaveBeenCalledWith(undefined, { yes: true });
   });
@@ -160,7 +160,7 @@ describe('resolveCampaignCli', () => {
       new CampaignPickerCancelled(),
     );
 
-    await expect(resolveCampaignCli({})).rejects.toThrow('process.exit called');
+    await expect(resolveCampaign({})).rejects.toThrow('process.exit called');
     expect(exitSpy).toHaveBeenCalledWith(0);
     exitSpy.mockRestore();
   });
@@ -170,6 +170,6 @@ describe('resolveCampaignCli', () => {
       new Error('disk failure'),
     );
 
-    await expect(resolveCampaignCli({})).rejects.toThrow('disk failure');
+    await expect(resolveCampaign({})).rejects.toThrow('disk failure');
   });
 });

@@ -1,6 +1,6 @@
 import { log as clackLog } from '@clack/prompts';
 import type { GlobalOpts } from './options.js';
-import { resolveCampaignInteractive, CampaignPickerCancelled } from '../core/campaign.js';
+import { resolveCampaignInteractive, CampaignPickerCancelled } from '../core/campaign/index.js';
 
 export { CampaignPickerCancelled };
 
@@ -18,7 +18,7 @@ export { CampaignPickerCancelled };
  * @param globals - Parsed global options (holds `--campaign` and `--yes`).
  * @returns The resolved campaign name.
  */
-export async function resolveCampaignCli(globals: GlobalOpts | undefined): Promise<string> {
+export async function resolveCampaign(globals: GlobalOpts | undefined): Promise<string> {
   try {
     return await resolveCampaignInteractive(globals?.campaign, { yes: globals?.yes });
   } catch (err) {
