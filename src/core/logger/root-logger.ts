@@ -1,4 +1,4 @@
-import { loadGlobalConfig } from '../config.js';
+import { loadGlobalConfig } from '../config/config.js';
 import { defaultLoggerConfig, createLogger, setRootLogger, getRootLogger } from './logger.js';
 
 /**

@@ -10,7 +10,7 @@
  */
 import { expect } from 'vitest';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { getConfig } from '../src/core/config.js';
+import { getConfig } from '../src/core/config/config.js';
 import { chatComplete } from '../src/core/llm.js';
 
 /**

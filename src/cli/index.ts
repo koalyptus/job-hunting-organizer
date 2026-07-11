@@ -25,7 +25,7 @@ import { helpCommand } from './commands/help.js';
 import { mcpCommand } from './commands/mcp.js';
 import { initRootLogger } from '../core/logger/root-logger.js';
 import { getRootLogger } from '../core/logger/logger.js';
-import { loadGlobalConfig } from '../core/config.js';
+import { loadGlobalConfig } from '../core/config/config.js';
 import { initColors } from './colors.js';
 
 const VERSION = getPackageVersion();

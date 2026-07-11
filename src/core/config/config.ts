@@ -5,16 +5,16 @@ import {
   resolveCampaignRoot,
   resolveConfigPath,
   getDefaultCampaignName,
-} from './paths.js';
-import type { GlobalConfig, CampaignConfig } from './types.js';
-import { moduleLogger } from './logger/logger.js';
+} from '../paths.js';
+import type { GlobalConfig, CampaignConfig } from '../types.js';
+import { moduleLogger } from '../logger/logger.js';
 import {
   GlobalConfigSchema,
   CampaignConfigSchema,
   CURRENT_GLOBAL_CONFIG_VERSION,
   CURRENT_CAMPAIGN_CONFIG_VERSION,
 } from './config.schema.js';
-import { GLOBAL_MIGRATIONS, CAMPAIGN_MIGRATIONS, runMigrations } from './config.migrations.js';
+import { GLOBAL_MIGRATIONS, CAMPAIGN_MIGRATIONS, runMigrations } from './migrations.js';
 
 const log = moduleLogger(import.meta.url);
 

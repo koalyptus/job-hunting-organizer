@@ -5,7 +5,7 @@ import { resolveSlug, SlugMissingError } from '../slug.js';
 import { isUrl } from '../../core/url.js';
 import { extractJdFromUrl } from '../../core/jobs/extract.js';
 import { defaultLlmConfig } from '../../core/llm.js';
-import { getConfig } from '../../core/config.js';
+import { getConfig } from '../../core/config/config.js';
 import {
   generatePrep,
   generatePrepFromText,

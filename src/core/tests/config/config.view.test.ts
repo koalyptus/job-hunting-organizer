@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { redactSecrets } from '../config.view.js';
-import type { GlobalConfig } from '../types.js';
+import { redactSecrets } from '../../config/config.view.js';
+import type { GlobalConfig } from '../../types.js';
 
 // Test fixture: a fully-populated config shape that matches
 // `GlobalConfig` structurally. `redactSecrets` only walks the secret

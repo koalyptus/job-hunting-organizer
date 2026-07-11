@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { text, select, confirm, password, isCancel } from '@clack/prompts';
-import { clearConfigCache } from '../../../core/config.js';
+import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
 import * as profileModule from '../../../core/profile.js';

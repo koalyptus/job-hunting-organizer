@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { loadCampaignConfig } from '../../core/config.js';
+import { loadCampaignConfig } from '../../core/config/config.js';
 import { resolveCampaignRoot, resolveConfigPath } from '../../core/paths.js';
-import { redactSecrets } from '../../core/config.view.js';
+import { redactSecrets } from '../../core/config/config.view.js';
 import type { GlobalOpts } from '../options.js';
 import { userWarn, userError, userOutput } from '../output.js';
 

@@ -4,7 +4,7 @@ import { confirm, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignRoot, resolveDataRoot, findCampaignFromCwd, isUnder } from './paths.js';
 import { pathExists } from './fs.js';
 import { acquireLock } from './locks.js';
-import { clearConfigCache } from './config.js';
+import { clearConfigCache } from './config/config.js';
 import { moduleLogger } from './logger/logger.js';
 import { validateName } from './validate.js';
 

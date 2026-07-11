@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile, readdir, readFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearConfigCache } from '../config.js';
+import { clearConfigCache } from '../config/config.js';
 import {
   resolveCampaignToRemove,
   removeCampaign,

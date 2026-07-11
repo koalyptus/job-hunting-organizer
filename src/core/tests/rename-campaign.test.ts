@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile, readdir } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearConfigCache } from '../config.js';
+import { clearConfigCache } from '../config/config.js';
 import { resolveOldName, renameCampaign, RenameError } from '../rename-campaign.js';
 
 describe('resolveOldName', () => {

@@ -7,7 +7,7 @@ const { mockLoadGlobalConfig } = vi.hoisted(() => ({
   mockLoadGlobalConfig: vi.fn(),
 }));
 
-vi.mock('../../config.js', () => ({
+vi.mock('../../config/config.js', () => ({
   loadGlobalConfig: mockLoadGlobalConfig,
 }));
 

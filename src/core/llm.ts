@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { performance } from 'node:perf_hooks';
 import type { z } from 'zod';
 import type { Logger } from 'pino';
-import { loadGlobalConfig } from './config.js';
+import { loadGlobalConfig } from './config/config.js';
 import { createLlmFetch } from './fetch.js';
 import type { GlobalConfig, LlmConfig, ChatCompleteOptions, ChatCompleteResult } from './types.js';
 

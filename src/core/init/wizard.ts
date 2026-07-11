@@ -8,7 +8,7 @@ import {
   updateCampaignConfig,
   loadGlobalConfig,
   loadCampaignConfig,
-} from '../config.js';
+} from '../config/config.js';
 import { validateName } from '../validate.js';
 import { acquireLock } from '../locks.js';
 import type { InitOptions } from './types.js';

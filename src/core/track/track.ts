@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { isUrl } from '../url.js';
-import { getConfig } from '../config.js';
+import { getConfig } from '../config/config.js';
 import { defaultLlmConfig } from '../llm.js';
 import { moduleLogger } from '../logger/logger.js';
 import { readProfile } from '../profile.js';

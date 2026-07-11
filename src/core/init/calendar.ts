@@ -1,5 +1,5 @@
 import { select, isCancel } from '@clack/prompts';
-import { getConfigValue } from '../config.js';
+import { getConfigValue } from '../config/config.js';
 import type { CalendarProvider, GlobalConfig } from '../types.js';
 import { DEFAULT_CALENDAR_PROVIDER } from './constants.js';
 import { InitCancelled } from './errors.js';

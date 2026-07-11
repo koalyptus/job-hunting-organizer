@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { resolveDataRoot } from './paths.js';
-import { ALL_LOG_LEVELS, type LogLevel } from './types.js';
+import { resolveDataRoot } from '../paths.js';
+import { ALL_LOG_LEVELS, type LogLevel } from '../types.js';
 
 /**
  * Current version of the global config schema. Bumped on any

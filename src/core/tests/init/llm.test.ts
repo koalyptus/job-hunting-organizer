@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { text, password, isCancel } from '@clack/prompts';
 import { promptLlm, loadExistingConfig } from '../../init/llm.js';
-import { clearConfigCache } from '../../config.js';
+import { clearConfigCache } from '../../config/config.js';
 import { InitCancelled } from '../../init/errors.js';
 import type { GlobalConfig } from '../../types.js';
 

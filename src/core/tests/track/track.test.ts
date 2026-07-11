@@ -803,7 +803,7 @@ describe('runTrackRefresh', () => {
       'https://example.com/job/123',
       expect.any(Object),
       undefined,
-      undefined,
+      30_000,
     );
   });
 

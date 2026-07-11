@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { runMigrations } from '../config.migrations.js';
+import { runMigrations } from '../../config/migrations.js';
 
 describe('runMigrations', () => {
   it('returns config unchanged when stored version equals current', () => {
