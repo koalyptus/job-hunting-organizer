@@ -168,6 +168,89 @@ describe('doctor command', () => {
     });
   });
 
+  describe('campaign-wide diagnosis edge cases', () => {
+    it('campaign-picker respects silent logging from campaign config', async () => {
+      const silentCampaignDir = join(testHome, 'data', 'campaigns', 'silent-campaign');
+      await mkdir(silentCampaignDir, { recursive: true });
+      await writeFile(
+        join(silentCampaignDir, 'config.json'),
+        JSON.stringify({
+          version: 1,
+          logging: { level: 'silent' },
+        }),
+      );
+
+      vi.mocked(doctorCore.diagnoseCampaign).mockResolvedValue([]);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor'], (p) =>
+        p.option('--campaign', 'silent-campaign'),
+      );
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('healthy');
+    });
+
+    it('handles DoctorError with custom message', async () => {
+      vi.mocked(doctorCore.diagnoseCampaign).mockRejectedValue(
+        new DoctorError('Custom doctor error'),
+      );
+
+      const { stderr, exitCode } = await runCommand(doctorCommand, ['doctor']);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Custom doctor error');
+    });
+
+    it('handles DoctorError for unknown campaign passed via --campaign', async () => {
+      vi.mocked(doctorCore.diagnoseCampaign).mockRejectedValue(
+        new DoctorError('Unknown campaign "ghost-campaign"'),
+      );
+
+      const { stderr, exitCode } = await runCommand(doctorCommand, ['doctor'], (p) =>
+        p.option('--campaign', 'ghost-campaign'),
+      );
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Unknown campaign');
+    });
+
+    it('campaign diagnosis respects default campaign when --campaign flag omitted', async () => {
+      vi.mocked(doctorCore.diagnoseCampaign).mockResolvedValue([
+        {
+          severity: 'info',
+          category: 'config',
+          check: 'campaign_loaded',
+          message: 'Default campaign loaded successfully',
+          slug: null,
+          remediation: 'No action needed',
+        },
+      ]);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('campaign_loaded');
+    });
+
+    it('renders unknown severity via severityIcon default', async () => {
+      vi.mocked(doctorCore.diagnoseCampaign).mockResolvedValue([
+        {
+          severity: 'critical' as unknown as DoctorIssue['severity'],
+          category: 'system' as unknown as DoctorIssue['category'],
+          check: 'test_check',
+          message: 'Something critical',
+          slug: null,
+          remediation: 'Take action',
+        },
+      ]);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('CRITICAL');
+    });
+  });
+
   describe('help text', () => {
     it('contains examples', async () => {
       const helpOutput = doctorCommand.helpInformation();

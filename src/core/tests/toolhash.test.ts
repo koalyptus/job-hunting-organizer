@@ -1,8 +1,18 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
+import type * as FsPromisesModule from 'node:fs/promises';
+import { chmod, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { computeHash, readToolhash, writeToolhash, toolhashPath } from '../toolhash.js';
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof FsPromisesModule>();
+  return {
+    ...actual,
+    readFile: vi.fn(actual.readFile),
+    writeFile: vi.fn(actual.writeFile),
+  };
+});
 
 vi.mock('../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -72,6 +82,7 @@ describe('readToolhash', () => {
   });
 
   afterEach(async () => {
+    await chmod(workDir, 0o755).catch(() => {});
     await rm(workDir, { recursive: true, force: true });
   });
 
@@ -114,6 +125,17 @@ describe('readToolhash', () => {
     const result = await readToolhash(filePath);
     expect(result).toBe(hash);
   });
+
+  it('returns null when sidecar read fails with non-ENOENT error', async () => {
+    const filePath = join(workDir, 'meta.md');
+    await writeFile(toolhashPath(filePath), 'some content\n', 'utf8');
+    vi.mocked(readFile).mockRejectedValueOnce(
+      Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' }),
+    );
+
+    const result = await readToolhash(filePath);
+    expect(result).toBeNull();
+  });
 });
 
 describe('writeToolhash', () => {
@@ -124,6 +146,7 @@ describe('writeToolhash', () => {
   });
 
   afterEach(async () => {
+    await chmod(workDir, 0o755).catch(() => {});
     await rm(workDir, { recursive: true, force: true });
   });
 
@@ -160,6 +183,14 @@ describe('writeToolhash', () => {
     const stored = await readFile(toolhashPath(filePath), 'utf8');
     expect(stored).toBe(hash2 + '\n');
   });
+
+  it('returns false when write fails', async () => {
+    const filePath = join(workDir, 'meta.md');
+    vi.mocked(writeFile).mockRejectedValueOnce(new Error('EACCES: permission denied'));
+
+    const result = await writeToolhash(filePath, computeHash('test'));
+    expect(result).toBe(false);
+  });
 });
 
 describe('round-trip: compute → write → read', () => {
@@ -170,6 +201,7 @@ describe('round-trip: compute → write → read', () => {
   });
 
   afterEach(async () => {
+    await chmod(workDir, 0o755).catch(() => {});
     await rm(workDir, { recursive: true, force: true });
   });
 

@@ -4,6 +4,7 @@ import { retroCommand } from '../../commands/retro.js';
 import { prepareCommand } from '../../commands/prepare.js';
 import { helpCommand } from '../../commands/help.js';
 import { mcpCommand } from '../../commands/mcp.js';
+import { campaignCommand } from '../../commands/campaign.js';
 import { profileCommand } from '../../commands/profile.js';
 
 describe('stub commands exit with correct phase messages', () => {
@@ -39,5 +40,21 @@ describe('stub commands exit with correct phase messages', () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain('not implemented yet');
     expect(stderr).toContain('phase 4c');
+  });
+
+  it('campaign init stub exits with code 1', async () => {
+    const initStub = campaignCommand.commands.find((c) => c.name() === 'init')!;
+    const { stderr, exitCode } = await runCommand(initStub, ['init']);
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('not implemented yet');
+    expect(stderr).toContain('phase 4c');
+  });
+
+  it('campaign rename stub exits with code 1', async () => {
+    const renameStub = campaignCommand.commands.find((c) => c.name() === 'rename')!;
+    const { stderr, exitCode } = await runCommand(renameStub, ['rename']);
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('not implemented yet');
+    expect(stderr).toContain('phase 4b');
   });
 });

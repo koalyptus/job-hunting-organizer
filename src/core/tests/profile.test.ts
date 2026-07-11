@@ -357,4 +357,91 @@ describe('buildProfile', () => {
       }),
     ).rejects.toThrow('empty or unexpected response');
   });
+
+  describe('branch coverage — template literal fallbacks', () => {
+    it('falls back to user login when name is missing', async () => {
+      mockFetchGithubUser.mockResolvedValue({
+        ...mockUser,
+        name: undefined,
+      } as never);
+
+      await buildProfile({
+        cvPath: '/tmp/cv.txt',
+        githubUser: 'testuser',
+        llmConfig: testLlmConfig,
+      });
+
+      const [messages] = mockChatComplete.mock.calls[0]!;
+      const msg = messages[1]!.content;
+      expect(msg).toContain('- Name: testuser');
+    });
+
+    it('uses fallback text for missing bio, location, and company', async () => {
+      mockFetchGithubUser.mockResolvedValue({
+        ...mockUser,
+        bio: undefined,
+        location: undefined,
+        company: undefined,
+      } as never);
+
+      await buildProfile({
+        cvPath: '/tmp/cv.txt',
+        githubUser: 'testuser',
+        llmConfig: testLlmConfig,
+      });
+
+      const [messages] = mockChatComplete.mock.calls[0]!;
+      const msg = messages[1]!.content;
+      expect(msg).toContain('- Bio: (none)');
+      expect(msg).toContain('- Location: (not specified)');
+      expect(msg).toContain('- Company: (not specified)');
+    });
+
+    it('handles repos with no description', async () => {
+      mockFetchGithubRepos.mockResolvedValue([
+        {
+          name: 'no-desc',
+          description: null,
+          language: 'Python',
+          stargazers_count: 0,
+          forks_count: 0,
+          topics: [],
+          archived: false,
+          fork: false,
+          pushed_at: '2025-01-01T00:00:00Z',
+          html_url: 'https://github.com/testuser/no-desc',
+        },
+      ] as never);
+
+      await buildProfile({
+        cvPath: '/tmp/cv.txt',
+        githubUser: 'testuser',
+        llmConfig: testLlmConfig,
+      });
+
+      const [messages] = mockChatComplete.mock.calls[0]!;
+      const msg = messages[1]!.content;
+      expect(msg).toContain('no description');
+    });
+
+    it('shows no repos found when all repos are filtered out', async () => {
+      mockFetchGithubRepos.mockResolvedValue([
+        {
+          ...mockRepos[0]!,
+          fork: true,
+          archived: true,
+        },
+      ] as never);
+
+      await buildProfile({
+        cvPath: '/tmp/cv.txt',
+        githubUser: 'testuser',
+        llmConfig: testLlmConfig,
+      });
+
+      const [messages] = mockChatComplete.mock.calls[0]!;
+      const msg = messages[1]!.content;
+      expect(msg).toContain('no repos found');
+    });
+  });
 });

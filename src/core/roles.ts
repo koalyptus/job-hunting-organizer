@@ -4,6 +4,25 @@ import type { TargetRole, RoleAction } from './types.js';
 import { InitCancelled } from './init/errors.js';
 
 /**
+ * Validate a role slug.
+ */
+export function validateRoleSlug(v: string | undefined): string | undefined {
+  if (!v) {
+    return 'Slug is required';
+  }
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(v)) {
+    return 'Must be lowercase alphanumeric with hyphens';
+  }
+}
+
+/**
+ * Validate a role title.
+ */
+export function validateRoleTitle(v: string | undefined): string | undefined {
+  return v ? undefined : 'Title is required';
+}
+
+/**
  * Display target roles in a table.
  */
 function displayRoles(roles: TargetRole[]): void {
@@ -25,14 +44,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
   const slug = await text({
     message: 'Role slug (lowercase, hyphens):',
     initialValue: existing?.slug ?? '',
-    validate: (v) => {
-      if (!v) {
-        return 'Slug is required';
-      }
-      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(v)) {
-        return 'Must be lowercase alphanumeric with hyphens';
-      }
-    },
+    validate: validateRoleSlug,
   });
   if (isCancel(slug)) {
     return null;
@@ -41,7 +53,7 @@ async function editRole(existing: TargetRole | null): Promise<TargetRole | null>
   const title = await text({
     message: 'Role title:',
     initialValue: existing?.title ?? '',
-    validate: (v) => (v ? undefined : 'Title is required'),
+    validate: validateRoleTitle,
   });
   if (isCancel(title)) {
     return null;

@@ -54,4 +54,22 @@ describe('redactSecrets', () => {
     expect(SAMPLE_GLOBAL.llm.apiKey).toBe('sk-secret-abc');
     expect(SAMPLE_GLOBAL.github.token).toBe('ghp-secret-xyz');
   });
+
+  it('handles config with missing secret branches gracefully', () => {
+    const minimal = { version: 1, dataRoot: '/tmp' };
+    const result = redactSecrets(minimal);
+    expect(result).toEqual(minimal);
+  });
+
+  it('handles nullish intermediate paths gracefully', () => {
+    const config = { version: 1, llm: null, dataRoot: '/tmp' };
+    const result = redactSecrets(config);
+    expect(result.llm).toBeNull();
+  });
+
+  it('handles config with missing nested secret paths', () => {
+    const config = { version: 1, dataRoot: '/tmp', calendar: { outlook: null } };
+    const result = redactSecrets(config);
+    expect(result.calendar.outlook).toBeNull();
+  });
 });

@@ -2,9 +2,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { select } from '@clack/prompts';
+import { buildProfile } from '../../profile.js';
 import { handleProfile } from '../../profile-builder.js';
+import type * as FsModule from '../../fs.js';
+import { atomicWrite } from '../../fs.js';
+import { parseTargetRoles } from '../../target-roles.js';
 
 vi.mock('@clack/prompts', () => ({
+  text: vi.fn(),
+  select: vi.fn(),
+  isCancel: vi.fn(() => false),
   log: {
     info: vi.fn(),
     success: vi.fn(),
@@ -33,6 +41,14 @@ vi.mock('../../spinner.js', () => ({
   withSpinner: vi.fn((_msg: string, _success: string, fn: () => Promise<unknown>) => fn()),
 }));
 
+vi.mock('../../fs.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof FsModule>();
+  return {
+    ...actual,
+    atomicWrite: vi.fn().mockResolvedValue(true),
+  };
+});
+
 describe('handleProfile', () => {
   let testDir: string;
   let campaignRoot: string;
@@ -45,7 +61,7 @@ describe('handleProfile', () => {
 
   afterEach(async () => {
     await rm(testDir, { recursive: true, force: true });
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it('copies profile when --profile flag provided', async () => {
@@ -165,5 +181,158 @@ describe('handleProfile', () => {
     });
 
     expect(result).toContain('LinkedIn: https://linkedin.com/in/testuser');
+  });
+
+  it('throws when atomicWrite fails after profile build', async () => {
+    vi.mocked(atomicWrite).mockResolvedValueOnce(false);
+
+    await expect(
+      handleProfile({
+        campaignRoot,
+        profileFlag: undefined,
+        cvPath: '/path/to/cv.pdf',
+        githubUser: 'testuser',
+        githubToken: 'token',
+        linkedinUrl: undefined,
+        llmConfig: {
+          baseUrl: 'http://localhost:11434/v1',
+          apiKey: 'key',
+          model: 'model',
+          timeoutMs: 300_000,
+        },
+        nonInteractive: false,
+      }),
+    ).rejects.toThrow('failed to write profile');
+  });
+
+  it('throws when atomicWrite fails for skeleton profile', async () => {
+    vi.mocked(atomicWrite).mockResolvedValueOnce(false);
+
+    await expect(
+      handleProfile({
+        campaignRoot,
+        profileFlag: undefined,
+        cvPath: undefined,
+        githubUser: undefined,
+        githubToken: undefined,
+        linkedinUrl: undefined,
+        llmConfig: undefined,
+        nonInteractive: false,
+      }),
+    ).rejects.toThrow('failed to write skeleton profile');
+  });
+
+  it('throws when --profile copy fails', async () => {
+    const dirPath = join(testDir, 'sourcedir');
+    await mkdir(dirPath, { recursive: true });
+
+    await expect(
+      handleProfile({
+        campaignRoot,
+        profileFlag: dirPath,
+        cvPath: undefined,
+        githubUser: undefined,
+        githubToken: undefined,
+        linkedinUrl: undefined,
+        llmConfig: undefined,
+        nonInteractive: false,
+      }),
+    ).rejects.toThrow('Failed to copy profile');
+  });
+
+  it('skips role review when nonInteractive is true', async () => {
+    // parseTargetRoles is already mocked via vi.mock at top of file
+    // re-mock it to return a non-empty array for this test
+    vi.mocked(parseTargetRoles).mockReturnValue([
+      {
+        slug: 'senior-dev',
+        title: 'Senior Dev',
+        priority: 'primary',
+        level: 'Senior',
+        domain: '',
+        stack: '',
+        workStyle: '',
+        compensation: '',
+        notes: '',
+      },
+    ]);
+
+    vi.mocked(atomicWrite).mockResolvedValueOnce(true);
+
+    const result = await handleProfile({
+      campaignRoot,
+      profileFlag: undefined,
+      cvPath: '/path/to/cv.pdf',
+      githubUser: 'testuser',
+      githubToken: 'token',
+      linkedinUrl: undefined,
+      llmConfig: {
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: 'key',
+        model: 'model',
+        timeoutMs: 300_000,
+      },
+      nonInteractive: true,
+    });
+
+    expect(result).toContain('# Profile — Test User');
+  });
+
+  it('triggers role review when roles found and nonInteractive is false', async () => {
+    vi.mocked(parseTargetRoles).mockReturnValue([
+      {
+        slug: 'senior-dev',
+        title: 'Senior Dev',
+        priority: 'primary',
+        level: 'Senior',
+        domain: '',
+        stack: '',
+        workStyle: '',
+        compensation: '',
+        notes: '',
+      },
+    ]);
+    vi.mocked(atomicWrite).mockResolvedValueOnce(true);
+    vi.mocked(select).mockResolvedValue('accept');
+
+    const result = await handleProfile({
+      campaignRoot,
+      profileFlag: undefined,
+      cvPath: '/path/to/cv.pdf',
+      githubUser: 'testuser',
+      githubToken: 'token',
+      linkedinUrl: undefined,
+      llmConfig: {
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: 'key',
+        model: 'model',
+        timeoutMs: 300_000,
+      },
+      nonInteractive: false,
+    });
+
+    expect(result).toContain('# Profile — Test User');
+  });
+
+  it('adds timeout hint when profile build times out', async () => {
+    vi.mocked(buildProfile).mockRejectedValueOnce(new Error('The LLM request timed out'));
+
+    await expect(
+      handleProfile({
+        campaignRoot,
+        profileFlag: undefined,
+        cvPath: '/path/to/cv.pdf',
+        githubUser: 'testuser',
+        githubToken: 'token',
+        linkedinUrl: undefined,
+        llmConfig: {
+          baseUrl: 'http://localhost:11434/v1',
+          apiKey: 'key',
+          model: 'model',
+          timeoutMs: 300_000,
+        },
+        nonInteractive: false,
+      }),
+    ).rejects.toThrow('timed out');
   });
 });

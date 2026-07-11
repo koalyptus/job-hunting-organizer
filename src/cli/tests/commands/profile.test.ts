@@ -1,10 +1,20 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
 import { clearConfigCache } from '../../../core/config.js';
 import { runCommand } from '../helpers.js';
 import { profileCommand } from '../../commands/profile.js';
+import type * as ProfileModule from '../../../core/profile.js';
+import { readProfile } from '../../../core/profile.js';
+
+vi.mock('../../../core/profile.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof ProfileModule>();
+  return {
+    ...actual,
+    readProfile: vi.fn(actual.readProfile),
+  };
+});
 
 describe('profile command', () => {
   let testHome: string;
@@ -71,6 +81,12 @@ describe('profile command', () => {
     expect(exitCode).toBe(0);
     expect(stdout).toContain('# Profile — Test User');
     expect(stdout).toContain('email@test.com');
+  });
+
+  it('show throws when readProfile throws unexpected error', async () => {
+    vi.mocked(readProfile).mockRejectedValueOnce(new Error('Disk failure'));
+
+    await expect(runCommand(profileCommand, ['profile', 'show'])).rejects.toThrow('Disk failure');
   });
 
   it('show exits with code 1 when profile is missing', async () => {

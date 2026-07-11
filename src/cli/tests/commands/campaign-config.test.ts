@@ -1,3 +1,4 @@
+import { Command } from 'commander';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -111,5 +112,52 @@ describe('campaign config command', () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain('unknown subcommand');
     expect(stderr).toContain('bogus');
+  });
+
+  it('reads --campaign from grandparent opts', async () => {
+    const program = new Command('root');
+    program.option('--campaign <name>', 'campaign name');
+    const campCmd = new Command('campaign');
+    program.addCommand(campCmd);
+    campCmd.addCommand(campaignConfigCommand);
+
+    let stdout = '';
+    let exitCode = 0;
+    const origStdout = process.stdout.write;
+    const origExit = process.exit;
+
+    process.stdout.write = ((chunk: string | Uint8Array) => {
+      stdout += typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk);
+      return true;
+    }) as typeof process.stdout.write;
+    process.exit = ((code?: number) => {
+      exitCode = code ?? 0;
+      throw new Error(`EXIT_${exitCode}`);
+    }) as never;
+
+    try {
+      await program.parseAsync([
+        'node',
+        'root',
+        '--campaign',
+        'default',
+        'campaign',
+        'config',
+        'show',
+      ]);
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message.startsWith('EXIT_')) {
+        exitCode = parseInt(e.message.replace('EXIT_', ''), 10);
+      } else {
+        throw e;
+      }
+    } finally {
+      process.stdout.write = origStdout;
+      process.exit = origExit;
+    }
+
+    expect(exitCode).toBe(0);
+    const parsed = JSON.parse(stdout);
+    expect(parsed).toHaveProperty('profile');
   });
 });

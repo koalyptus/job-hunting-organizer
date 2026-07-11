@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { text, select, isCancel } from '@clack/prompts';
-import { reviewRoles } from '../roles.js';
+import { reviewRoles, validateRoleSlug, validateRoleTitle } from '../roles.js';
 import { InitCancelled } from '../init/errors.js';
 import type { TargetRole } from '../types.js';
 
@@ -258,5 +258,163 @@ describe('reviewRoles', () => {
     const result = await reviewRoles(mockRoles);
 
     expect(result).toEqual(mockRoles);
+  });
+
+  it('skips edit when domain is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(false) // slug ok
+      .mockReturnValueOnce(false) // title ok
+      .mockReturnValueOnce(false) // priority ok
+      .mockReturnValueOnce(false) // level ok
+      .mockReturnValueOnce(true); // domain cancel
+
+    vi.mocked(text)
+      .mockResolvedValueOnce('new-slug')
+      .mockResolvedValueOnce('New Title')
+      .mockResolvedValueOnce('Staff');
+    vi.mocked(select).mockResolvedValueOnce('primary').mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('skips edit when stack is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(false) // slug ok
+      .mockReturnValueOnce(false) // title ok
+      .mockReturnValueOnce(false) // priority ok
+      .mockReturnValueOnce(false) // level ok
+      .mockReturnValueOnce(false) // domain ok
+      .mockReturnValueOnce(true); // stack cancel
+
+    vi.mocked(text)
+      .mockResolvedValueOnce('new-slug')
+      .mockResolvedValueOnce('New Title')
+      .mockResolvedValueOnce('Staff')
+      .mockResolvedValueOnce('Backend');
+    vi.mocked(select).mockResolvedValueOnce('primary').mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('skips edit when workStyle is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(false) // slug ok
+      .mockReturnValueOnce(false) // title ok
+      .mockReturnValueOnce(false) // priority ok
+      .mockReturnValueOnce(false) // level ok
+      .mockReturnValueOnce(false) // domain ok
+      .mockReturnValueOnce(false) // stack ok
+      .mockReturnValueOnce(true); // workStyle cancel
+
+    vi.mocked(text)
+      .mockResolvedValueOnce('new-slug')
+      .mockResolvedValueOnce('New Title')
+      .mockResolvedValueOnce('Staff')
+      .mockResolvedValueOnce('Backend')
+      .mockResolvedValueOnce('Go');
+    vi.mocked(select).mockResolvedValueOnce('primary').mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('skips edit when compensation is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(false) // slug ok
+      .mockReturnValueOnce(false) // title ok
+      .mockReturnValueOnce(false) // priority ok
+      .mockReturnValueOnce(false) // level ok
+      .mockReturnValueOnce(false) // domain ok
+      .mockReturnValueOnce(false) // stack ok
+      .mockReturnValueOnce(false) // workStyle ok
+      .mockReturnValueOnce(true); // compensation cancel
+
+    vi.mocked(text)
+      .mockResolvedValueOnce('new-slug')
+      .mockResolvedValueOnce('New Title')
+      .mockResolvedValueOnce('Staff')
+      .mockResolvedValueOnce('Backend')
+      .mockResolvedValueOnce('Go')
+      .mockResolvedValueOnce('Remote');
+    vi.mocked(select).mockResolvedValueOnce('primary').mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  it('skips edit when notes is cancelled', async () => {
+    vi.mocked(select).mockResolvedValueOnce('edit').mockResolvedValueOnce(0);
+    vi.mocked(isCancel)
+      .mockReturnValueOnce(false) // action select
+      .mockReturnValueOnce(false) // role select
+      .mockReturnValueOnce(false) // slug ok
+      .mockReturnValueOnce(false) // title ok
+      .mockReturnValueOnce(false) // priority ok
+      .mockReturnValueOnce(false) // level ok
+      .mockReturnValueOnce(false) // domain ok
+      .mockReturnValueOnce(false) // stack ok
+      .mockReturnValueOnce(false) // workStyle ok
+      .mockReturnValueOnce(false) // compensation ok
+      .mockReturnValueOnce(true); // notes cancel
+
+    vi.mocked(text)
+      .mockResolvedValueOnce('new-slug')
+      .mockResolvedValueOnce('New Title')
+      .mockResolvedValueOnce('Staff')
+      .mockResolvedValueOnce('Backend')
+      .mockResolvedValueOnce('Go')
+      .mockResolvedValueOnce('Remote')
+      .mockResolvedValueOnce('200k');
+    vi.mocked(select).mockResolvedValueOnce('primary').mockResolvedValueOnce('accept');
+
+    const result = await reviewRoles(mockRoles);
+
+    expect(result).toEqual(mockRoles);
+  });
+
+  describe('validateRoleSlug', () => {
+    it('returns error for empty slug', () => {
+      expect(validateRoleSlug('')).toBe('Slug is required');
+    });
+
+    it('returns error for invalid slug format', () => {
+      expect(validateRoleSlug('UPPERCASE')).toBe('Must be lowercase alphanumeric with hyphens');
+      expect(validateRoleSlug('has space')).toBe('Must be lowercase alphanumeric with hyphens');
+      expect(validateRoleSlug('special!chars')).toBe('Must be lowercase alphanumeric with hyphens');
+    });
+
+    it('returns undefined for valid slug', () => {
+      expect(validateRoleSlug('senior-backend')).toBeUndefined();
+      expect(validateRoleSlug('staff-engineer')).toBeUndefined();
+      expect(validateRoleSlug('a')).toBeUndefined();
+    });
+  });
+
+  describe('validateRoleTitle', () => {
+    it('returns error for empty title', () => {
+      expect(validateRoleTitle('')).toBe('Title is required');
+    });
+
+    it('returns undefined for non-empty title', () => {
+      expect(validateRoleTitle('Senior Backend Engineer')).toBeUndefined();
+    });
   });
 });
