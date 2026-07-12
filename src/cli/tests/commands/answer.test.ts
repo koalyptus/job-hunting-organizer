@@ -278,7 +278,8 @@ describe('answer command', () => {
       const { stdout, exitCode } = await runCommand(answerCommand, ['answer', 'show', slug]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('# Q&A — Software Engineer @ Test Corp');
+      // Content is now rendered markdown, so check for the text content without # prefix
+      expect(stdout).toContain('Q&A — Software Engineer @ Test Corp');
       expect(stdout).toContain('Answer here.');
     });
 

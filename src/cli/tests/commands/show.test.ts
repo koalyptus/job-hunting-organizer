@@ -262,7 +262,9 @@ describe('show command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain(slug);
       expect(stdout).toContain('job description');
-      expect(stdout).toContain(jdContent);
+      // Content is now rendered markdown, so check for the text content
+      expect(stdout).toContain('Job Description');
+      expect(stdout).toContain('We are looking for...');
     });
 
     it('shows error when jd.md does not exist', async () => {

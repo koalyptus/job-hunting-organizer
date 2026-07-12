@@ -233,6 +233,17 @@ The codebase has three output channels, each serving a different audience. Mixin
 - Secrets in config are redacted by default; `jho config show --reveal` shows all (with confirmation).
 - Use `moduleLogger(import.meta.url)` instead of `childLogger({ module: '...' })` at module scope — it's rename-proof (the `module` binding derives from the file path).
 
+### Markdown rendering (Phase 7h)
+
+All `show` commands render markdown content via `src/cli/markdown.ts` (`renderMarkdown()`). The renderer uses `marked` + `marked-terminal` with terminal-friendly styling (bold cyan headings, green bullets, yellow code spans, blue links).
+
+- **Human-facing output**: markdown is rendered with ANSI styling.
+- **`--json` output**: raw markdown string (no rendering) — machine consumption only.
+- **Pipe compatibility**: respects `NO_COLOR` env var via existing `initColors()` integration.
+- **Ownership tables**: `cli-table3` (not markdown-rendered) — already well-formatted.
+- **When to use `renderMarkdown()`**: any time raw markdown content is displayed to the user via `userOutput()`.
+- **When NOT to use**: JSON output, structured tables (cli-table3), error messages, spinner text.
+
 ## Eval philosophy
 
 - Lightweight, manual, **not in CI** (LLMs are slow and non-deterministic; CI can't run them).
@@ -260,7 +271,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 7 — Tracker depth. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 7a (core interviews), 7b (core retro), 7c (core prep), 7d (core doctor & repair), 7e (CLI show), 7f (CLI commands), 7g (tests, evals & docs).
+Phase 7 — Tracker depth. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 7a (core interviews), 7b (core retro), 7c (core prep), 7d (core doctor & repair), 7e (CLI show), 7f (CLI commands), 7g (tests, evals & docs), 7h (markdown-formatted show commands).
 
 ## Cross-platform conventions
 

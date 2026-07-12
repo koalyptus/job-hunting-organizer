@@ -6,6 +6,7 @@ import { readShowData, readShowFile, ShowError } from '../../core/applications/i
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { dim, cyan, statusColor, green } from '../colors.js';
+import { renderMarkdown } from '../markdown.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 
@@ -145,7 +146,8 @@ showCommand.action(async function (slug: string | undefined) {
       if (showJd) {
         try {
           const content = await readShowFile(appliedDir, resolvedSlug, 'jd.md');
-          userOutput(`\n${cyan('job description')}\n${'─'.repeat(16)}\n${content}`);
+          const cleaned = content.replace(/<!--[\s\S]*?-->\s*\n?/gm, '');
+          userOutput(`\n${cyan('job description')}\n${'─'.repeat(16)}\n${renderMarkdown(cleaned)}`);
         } catch {
           log.warn({ slug: resolvedSlug }, 'show.jd-missing');
           userError('jd.md not found');
