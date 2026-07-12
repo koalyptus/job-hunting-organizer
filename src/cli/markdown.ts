@@ -28,3 +28,16 @@ marked.use(
 export function renderMarkdown(content: string): string {
   return marked.parse(content) as string;
 }
+
+/** Strip HTML comments and their trailing newlines from markdown content. */
+export function stripHtmlComments(content: string): string {
+  return content.replace(/<!--[\s\S]*?-->\s*\n?/gm, '');
+}
+
+/**
+ * Strip HTML comments then render markdown for terminal display.
+ * Convenience wrapper for the common pattern: strip markers → render.
+ */
+export function stripAndRender(content: string): string {
+  return renderMarkdown(stripHtmlComments(content));
+}

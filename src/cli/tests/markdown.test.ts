@@ -1,11 +1,16 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import chalk from 'chalk';
 import { renderMarkdown } from '../markdown.js';
+
+const ESC = '\u001b';
+const ANSI_RE = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 
 describe('markdown renderer', () => {
   let originalNoColor: string | undefined;
 
   beforeEach(() => {
     originalNoColor = process.env['NO_COLOR'];
+    delete process.env['NO_COLOR'];
   });
 
   afterEach(() => {
@@ -122,12 +127,41 @@ const x = 1;
     expect(result).toContain('Just plain text');
   });
 
+  it('applies ANSI styling by default', () => {
+    const prev = chalk.level;
+    chalk.level = 1;
+    const result = renderMarkdown('# Heading');
+    chalk.level = prev;
+    expect(result).toContain('Heading');
+    expect(result).toMatch(ANSI_RE);
+  });
+
   it('respects NO_COLOR environment variable', () => {
     process.env['NO_COLOR'] = '1';
     const result = renderMarkdown('# Heading');
     expect(result).toContain('Heading');
-    // With NO_COLOR, there should be no ANSI escape codes
-    // eslint-disable-next-line no-control-regex
-    expect(result).not.toMatch(/\u001b\[[0-9;]*m/);
+    expect(result).not.toMatch(ANSI_RE);
+  });
+
+  describe('stripHtmlComments', () => {
+    it('strips HTML comments', async () => {
+      const { stripHtmlComments } = await import('../markdown.js');
+      expect(stripHtmlComments('before<!-- comment -->after')).toBe('beforeafter');
+    });
+
+    it('strips multi-line comments', async () => {
+      const { stripHtmlComments } = await import('../markdown.js');
+      expect(stripHtmlComments('a<!--\nmulti\nline\n-->b')).toBe('ab');
+    });
+
+    it('removes trailing newline after comment', async () => {
+      const { stripHtmlComments } = await import('../markdown.js');
+      expect(stripHtmlComments('text<!-- comment -->\nnext')).toBe('textnext');
+    });
+
+    it('passes through text without comments', async () => {
+      const { stripHtmlComments } = await import('../markdown.js');
+      expect(stripHtmlComments('no comments here')).toBe('no comments here');
+    });
   });
 });

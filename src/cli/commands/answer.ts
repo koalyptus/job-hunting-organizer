@@ -12,7 +12,7 @@ import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import { readStdin } from '../stdin.js';
-import { renderMarkdown } from '../markdown.js';
+import { stripAndRender } from '../markdown.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 
@@ -30,8 +30,7 @@ const showCommand = new Command('show')
     try {
       const resolvedSlug = resolveSlug(slug, campaign);
       const raw = await readQa(campaign, resolvedSlug);
-      const content = raw.replace(/<!--[\s\S]*?-->\s*\n?/gm, '');
-      userOutput(renderMarkdown(content));
+      userOutput(stripAndRender(raw));
       log.info({ slug: resolvedSlug }, 'answer.show.completed');
     } catch (err) {
       if (err instanceof SlugMissingError) {
