@@ -2,12 +2,12 @@ import { Command } from 'commander';
 import Table from 'cli-table3';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
-import { readShowData, ShowError } from '../../core/applications/index.js';
+import { readShowData, readShowFile, ShowError } from '../../core/applications/index.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { dim, cyan, statusColor, green } from '../colors.js';
 import type { GlobalOpts } from '../options.js';
-import { resolveCampaignCli } from '../campaign.js';
+import { resolveCampaign } from '../campaign.js';
 
 interface FileTableEntry {
   file: string;
@@ -111,46 +111,69 @@ function renderFileTable(filesPresent: string[]): void {
 export const showCommand = new Command('show')
   .description('Show one application summary (slug inferred from cwd if omitted)')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
-  .option('--json', 'output as JSON')
+  .option('--json', 'output as JSON');
 
-  .action(async function (slug: string | undefined) {
-    const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
-    const log = getRootLogger().child({ cmd: 'show', campaign });
-    const opts = this.opts() as { json?: boolean };
+showCommand.option('--jd', 'show job description');
 
-    try {
-      const resolvedSlug = resolveSlug(slug, campaign);
-      const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
+showCommand.action(async function (slug: string | undefined) {
+  const globals = this.parent?.opts() as GlobalOpts | undefined;
+  const campaign = await resolveCampaign(globals);
+  const log = getRootLogger().child({ cmd: 'show', campaign });
+  const opts = this.opts() as { json?: boolean; jd?: boolean };
 
-      const data = await readShowData(appliedDir, resolvedSlug);
+  try {
+    const resolvedSlug = resolveSlug(slug, campaign);
+    const appliedDir = resolveAppliedDir(resolveCampaignRoot(campaign));
 
-      if (opts.json) {
-        userOutput(JSON.stringify({ ...data.frontmatter, files: data.filesPresent }, null, 2));
+    const data = await readShowData(appliedDir, resolvedSlug);
+
+    const showJd = opts.jd === true;
+
+    if (opts.json) {
+      const json: Record<string, unknown> = { ...data.frontmatter, files: data.filesPresent };
+      if (showJd) {
+        try {
+          const content = await readShowFile(appliedDir, resolvedSlug, 'jd.md');
+          json['jd.md'] = content;
+        } catch {
+          log.warn({ slug: resolvedSlug }, 'show.jd-missing');
+        }
+      }
+      userOutput(JSON.stringify(json, null, 2));
+    } else {
+      renderSummary(data);
+      if (showJd) {
+        try {
+          const content = await readShowFile(appliedDir, resolvedSlug, 'jd.md');
+          userOutput(`\n${cyan('job description')}\n${'─'.repeat(16)}\n${content}`);
+        } catch {
+          log.warn({ slug: resolvedSlug }, 'show.jd-missing');
+          userError('jd.md not found');
+        }
       } else {
-        renderSummary(data);
         renderFileTable(data.filesPresent);
       }
-
-      log.info({ slug: resolvedSlug }, 'show.completed');
-    } catch (err) {
-      if (err instanceof SlugMissingError) {
-        logError(log, err, 'show.slug-missing', { campaign });
-        log.flush();
-        userError(
-          `${err.message}\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`,
-        );
-        process.exit(1);
-      }
-      if (err instanceof ShowError) {
-        logError(log, err, 'show.failed', { campaign });
-        log.flush();
-        userError(err.message);
-        process.exit(1);
-      }
-      throw err;
     }
-  });
+
+    log.info({ slug: resolvedSlug }, 'show.completed');
+  } catch (err) {
+    if (err instanceof SlugMissingError) {
+      logError(log, err, 'show.slug-missing', { campaign });
+      log.flush();
+      userError(
+        `${err.message}\nhint: pass a slug, or run from inside the application folder (e.g. cd applied/<slug>)`,
+      );
+      process.exit(1);
+    }
+    if (err instanceof ShowError) {
+      logError(log, err, 'show.failed', { campaign });
+      log.flush();
+      userError(err.message);
+      process.exit(1);
+    }
+    throw err;
+  }
+});
 
 showCommand.addHelpText(
   'after',
@@ -162,10 +185,13 @@ Shows a summary with all metadata fields (grid layout) and a file table
 listing each file, the command that manages it, and a note.
 Use --json for machine-readable output.
 
+Use --jd to view the job description content directly after the summary.
+
 Examples:
   $ jho show                                                  # infer slug from cwd
   $ jho show 2026-Jan-15-frontend-acme-12345                  # explicit slug
   $ jho show --json                                           # JSON output
+  $ jho show --jd                                             # view job description
   $ cd applied/2026-Jan-15-frontend-acme-12345 && jho show    # infer from cwd
 `,
 );

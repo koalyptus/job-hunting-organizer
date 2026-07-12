@@ -1,10 +1,10 @@
 import { Command } from 'commander';
 import { resolveCampaignRoot } from '../../core/paths.js';
-import { readProfile, ProfileReadError } from '../../core/profile.js';
+import { readProfile, ProfileReadError } from '../../core/campaign/profile.js';
 import type { GlobalOpts } from '../options.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userWarn, userOutput } from '../output.js';
-import { resolveCampaignCli } from '../campaign.js';
+import { resolveCampaign } from '../campaign.js';
 
 /**
  * `jho profile show` — print the current profile.
@@ -13,7 +13,7 @@ const showCommand = new Command('show')
   .description('Print the current profile')
   .action(async function () {
     const globals = this.parent?.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'profile.show', campaign });
     try {
       log.info({ campaign }, 'profile.show.started');

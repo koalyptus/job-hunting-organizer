@@ -25,7 +25,7 @@ import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError } from '../output.js';
 import { UserInputError } from '../errors.js';
 import { withSpinner } from '../../core/spinner.js';
-import { resolveCampaignCli } from '../campaign.js';
+import { resolveCampaign } from '../campaign.js';
 
 /**
  * `jho track <url>` — record a new application (or update by slug).
@@ -45,7 +45,7 @@ export const trackCommand = new Command('track')
   .option('-y, --yes', 'skip confirmation prompts')
   .action(async function (urlOrSlug: string | undefined, opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
-    const campaign = await resolveCampaignCli(globals);
+    const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'track', campaign });
     let text: string | undefined;
 

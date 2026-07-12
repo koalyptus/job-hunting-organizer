@@ -10,11 +10,11 @@ import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { isUrl } from '../url.js';
-import { getConfig } from '../config.js';
+import { getConfig } from '../config/config.js';
 import { defaultLlmConfig } from '../llm.js';
 import { moduleLogger } from '../logger/logger.js';
-import { readProfile } from '../profile.js';
-import { parseTargetRoles } from '../target-roles.js';
+import { readProfile } from '../campaign/profile.js';
+import { extractTargetRoles } from '../campaign/target-roles.js';
 import { extractJdFromUrl, extractJdFromText } from '../jobs/extract.js';
 import { suggestTargetRole } from '../jobs/suggest.js';
 import {
@@ -286,7 +286,7 @@ export async function prepareTrack(opts: TrackOptions): Promise<TrackSummary> {
   let targetRoles: TargetRole[] = [];
   try {
     const profile = await readProfile(campaignRoot);
-    targetRoles = parseTargetRoles(profile);
+    targetRoles = extractTargetRoles(profile);
   } catch (err) {
     log?.debug({ err }, 'profile.read.failed');
     // No profile — proceed without role suggestion
@@ -402,7 +402,7 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
   let targetRoles: TargetRole[] = [];
   try {
     const profile = await readProfile(campaignRoot);
-    targetRoles = parseTargetRoles(profile);
+    targetRoles = extractTargetRoles(profile);
   } catch (err) {
     log?.debug({ err }, 'profile.read.failed');
     // No profile — proceed without role suggestion

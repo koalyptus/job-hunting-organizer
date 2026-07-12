@@ -9,6 +9,7 @@ import { initCommand } from './commands/init.js';
 import { renameCampaignCommand } from './commands/rename-campaign.js';
 import { removeCampaignCommand } from './commands/remove-campaign.js';
 import { removeApplicationCommand } from './commands/remove-application.js';
+import { renameApplicationCommand } from './commands/rename-application.js';
 import { trackCommand } from './commands/track.js';
 import { listCommand } from './commands/list.js';
 import { showCommand } from './commands/show.js';
@@ -25,7 +26,7 @@ import { helpCommand } from './commands/help.js';
 import { mcpCommand } from './commands/mcp.js';
 import { initRootLogger } from '../core/logger/root-logger.js';
 import { getRootLogger } from '../core/logger/logger.js';
-import { loadGlobalConfig } from '../core/config.js';
+import { loadGlobalConfig } from '../core/config/config.js';
 import { initColors } from './colors.js';
 
 const VERSION = getPackageVersion();
@@ -33,7 +34,7 @@ const VERSION = getPackageVersion();
 initRootLogger();
 
 const log = getRootLogger();
-log.info({ version: VERSION, args: process.argv.slice(2) }, 'cli.start');
+log.info({ args: process.argv.slice(2) }, 'cli.start');
 
 const program = new Command('jho')
   .version(VERSION)
@@ -60,6 +61,7 @@ program.addCommand(initCommand);
 program.addCommand(renameCampaignCommand);
 program.addCommand(removeCampaignCommand);
 program.addCommand(removeApplicationCommand);
+program.addCommand(renameApplicationCommand);
 program.addCommand(trackCommand);
 program.addCommand(listCommand);
 program.addCommand(showCommand);

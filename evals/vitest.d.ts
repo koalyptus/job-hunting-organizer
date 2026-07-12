@@ -14,12 +14,12 @@ interface CustomMatchers<R = unknown> {
   /**
    * Check that the output does not contain any of the banned phrases.
    */
-  toNotContainPhrases(phrases: string[]): R;
+  toNotContainPhrases(phrases: readonly string[]): R;
 
   /**
    * Check that the output contains at least n of the profile items.
    */
-  toContainAtLeastNProfileItems(profileItems: string[], n: number): R;
+  toContainAtLeastNProfileItems(profileItems: readonly string[], n: number): R;
 }
 
 declare module 'vitest' {

@@ -10,7 +10,7 @@
  */
 import { expect } from 'vitest';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { getConfig } from '../src/core/config.js';
+import { getConfig } from '../src/core/config/config.js';
 import { chatComplete } from '../src/core/llm.js';
 
 /**
@@ -145,7 +145,10 @@ export function installEvalMatchers(): void {
       };
     },
 
-    async toNotContainPhrases(received: string, phrases: string[]): Promise<MatcherResult> {
+    async toNotContainPhrases(
+      received: string,
+      phrases: readonly string[],
+    ): Promise<MatcherResult> {
       const found = phrases.filter((p) => received.toLowerCase().includes(p.toLowerCase()));
       const pass = found.length === 0;
       return {
@@ -159,7 +162,7 @@ export function installEvalMatchers(): void {
 
     async toContainAtLeastNProfileItems(
       received: string,
-      profileItems: string[],
+      profileItems: readonly string[],
       n: number,
     ): Promise<MatcherResult> {
       const found = profileItems.filter((item) => received.includes(item));

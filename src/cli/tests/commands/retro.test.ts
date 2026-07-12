@@ -2,11 +2,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearConfigCache } from '../../../core/config.js';
+import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { retroCommand } from '../../commands/retro.js';
 import * as retroCore from '../../../core/retro/index.js';
 import { RetroError, RetroNotFoundError } from '../../../core/retro/index.js';
+import * as clack from '@clack/prompts';
 
 vi.mock('../../../core/retro/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof retroCore>();
@@ -207,8 +208,7 @@ describe('retro command', () => {
     });
 
     it('generates retro via interactive prompt', async () => {
-      const { text } = await import('@clack/prompts');
-      vi.mocked(text).mockResolvedValue('Dynamic programming, Graphs');
+      vi.mocked(clack.text).mockResolvedValue('Dynamic programming, Graphs');
 
       vi.mocked(retroCore.startRetro).mockResolvedValue({
         content: 'Learning plan from prompt',
@@ -240,9 +240,8 @@ describe('retro command', () => {
     });
 
     it('exits when user cancels interactive prompt', async () => {
-      const { text, isCancel } = await import('@clack/prompts');
-      vi.mocked(text).mockResolvedValue('User input');
-      vi.mocked(isCancel).mockReturnValue(true);
+      vi.mocked(clack.text).mockResolvedValue('User input');
+      vi.mocked(clack.isCancel).mockReturnValue(true);
 
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
@@ -342,7 +341,6 @@ describe('retro command', () => {
 
   describe('retro append', () => {
     it('appends weak topics', async () => {
-      const { text } = await import('@clack/prompts');
       vi.mocked(retroCore.appendRetro).mockResolvedValue({
         content: 'Updated learning plan',
         wordCount: 10,
@@ -365,15 +363,14 @@ describe('retro command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Updated learning plan');
-      expect(text).not.toHaveBeenCalled();
+      expect(clack.text).not.toHaveBeenCalled();
       expect(retroCore.appendRetro).toHaveBeenCalledWith(
         expect.objectContaining({ weakTopics: ['Behavioural'] }),
       );
     });
 
     it('appends via interactive prompt', async () => {
-      const { text } = await import('@clack/prompts');
-      vi.mocked(text).mockResolvedValue('System design, Kubernetes');
+      vi.mocked(clack.text).mockResolvedValue('System design, Kubernetes');
 
       vi.mocked(retroCore.appendRetro).mockResolvedValue({
         content: 'Updated learning plan',
@@ -397,9 +394,8 @@ describe('retro command', () => {
     });
 
     it('exits when user cancels interactive prompt', async () => {
-      const { text, isCancel } = await import('@clack/prompts');
-      vi.mocked(text).mockResolvedValue('User input');
-      vi.mocked(isCancel).mockReturnValue(true);
+      vi.mocked(clack.text).mockResolvedValue('User input');
+      vi.mocked(clack.isCancel).mockReturnValue(true);
 
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
@@ -458,7 +454,6 @@ describe('retro command', () => {
     });
 
     it('uses --weak-topics value when option appears before slug', async () => {
-      const { text } = await import('@clack/prompts');
       vi.mocked(retroCore.appendRetro).mockResolvedValue({
         content: 'Updated learning plan',
         wordCount: 10,
@@ -481,7 +476,7 @@ describe('retro command', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Updated learning plan');
-      expect(text).not.toHaveBeenCalled();
+      expect(clack.text).not.toHaveBeenCalled();
       expect(retroCore.appendRetro).toHaveBeenCalledWith(
         expect.objectContaining({ weakTopics: ['Behavioural'] }),
       );

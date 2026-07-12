@@ -37,6 +37,8 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 
 **Renaming a campaign**: the folder name is the only thing that identifies a campaign; nothing on disk references it elsewhere. `jho rename-campaign <new> [--from <old>]` is the validated path (validates `<new>`, takes a `proper-lockfile` lock, atomic `fs.rename`, logs the move). Bare `mv` on `<dataRoot>/campaigns/<old>/` is also supported as an escape hatch — the tool will pick up the new name on the next call.
 
+**Renaming an application**: the slug (folder name) is stored in `meta.md` frontmatter and `.index.json`. `jho rename-application <new> [--from <old>]` validates the new slug against `SLUG_PATTERN`, acquires a lock on `applied/`, performs an atomic `fs.rename`, updates `meta.md` `slug:` field, and rebuilds the index. Bare `mv` on `applied/<old>/` works but leaves `meta.md` stale — the tool will pick up the new folder name on the next read, but the `slug:` field inside `meta.md` will mismatch until manually corrected.
+
 ## Repo structure
 
 ```
@@ -52,6 +54,7 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       │   ├── cover-letter.ts    # cover letter generation (LLM-backed, marker-aware write)
 │       │   ├── index-builder.ts   # build/update applied/.index.json from folder listing
 │       │   ├── meta-schema.ts     # Zod schema for meta.md frontmatter
+│       │   ├── rename.ts          # rename application folder (atomic rename + meta.md update + index rebuild)
 │       │   └── types.ts           # application-specific types
 │       ├── interviews/  # interview pipeline management (no LLM, H2-based append-only)
 │       ├── retro/       # post-mortem retros with LLM-backed learning plans + cross-app aggregation
@@ -109,6 +112,7 @@ jho campaign config show|path  # show the active campaign's config (in the data 
 jho rename-campaign <new> [--from <old>]  # rename a campaign folder (or `mv` the folder directly)
 jho remove-campaign [<name>] [--yes]       # permanently delete a campaign folder (inferred from cwd if omitted)
 jho remove-application [<slug>] [--yes]     # permanently delete an application folder (inferred from cwd if omitted)
+jho rename-application <new-slug> [--from <old-slug>]  # rename an application folder (old slug inferred from cwd if omitted)
 jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
 jho track <url> --paste # paste JD from clipboard, extract, create application

@@ -7,7 +7,7 @@ import {
   InvalidNameError,
   SelfRemoveError,
   RemoveCancelled,
-} from '../../core/remove-campaign.js';
+} from '../../core/campaign/remove-campaign.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userSuccess, userInfo } from '../output.js';
 import { bold, cyan } from '../colors.js';

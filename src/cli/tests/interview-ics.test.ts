@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateIcsFile } from '../interview-ics.js';
+import * as ics from 'ics';
 
 vi.mock('ics', () => ({
   createEvent: vi.fn(),
@@ -13,8 +14,7 @@ describe('generateIcsFile', () => {
 
   beforeEach(async () => {
     testDir = await mkdtemp(join(tmpdir(), 'jho-ics-'));
-    const { createEvent } = await import('ics');
-    vi.mocked(createEvent).mockReturnValue({
+    vi.mocked(ics.createEvent).mockReturnValue({
       error: null,
       value: 'BEGIN:VCALENDAR\nEND:VCALENDAR',
     });
@@ -42,8 +42,7 @@ describe('generateIcsFile', () => {
 
     await generateIcsFile(appFolder, 3, '2026-07-15 14:00', 'hr', 45);
 
-    const { createEvent } = await import('ics');
-    expect(vi.mocked(createEvent)).toHaveBeenCalledWith(
+    expect(vi.mocked(ics.createEvent)).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Interview #3 (hr)',
       }),
@@ -56,8 +55,7 @@ describe('generateIcsFile', () => {
 
     await generateIcsFile(appFolder, 1, '2026-07-15 10:00', 'technical', 60, 'System Design Round');
 
-    const { createEvent } = await import('ics');
-    expect(vi.mocked(createEvent)).toHaveBeenCalledWith(
+    expect(vi.mocked(ics.createEvent)).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'System Design Round',
       }),
@@ -78,8 +76,7 @@ describe('generateIcsFile', () => {
       'Google Meet',
     );
 
-    const { createEvent } = await import('ics');
-    expect(vi.mocked(createEvent)).toHaveBeenCalledWith(
+    expect(vi.mocked(ics.createEvent)).toHaveBeenCalledWith(
       expect.objectContaining({
         location: 'Google Meet',
       }),
@@ -92,8 +89,7 @@ describe('generateIcsFile', () => {
 
     await generateIcsFile(appFolder, 1, '2026-07-15 10:00', 'technical', 60);
 
-    const { createEvent } = await import('ics');
-    expect(vi.mocked(createEvent)).toHaveBeenCalledWith(
+    expect(vi.mocked(ics.createEvent)).toHaveBeenCalledWith(
       expect.objectContaining({
         location: undefined,
       }),
@@ -110,8 +106,7 @@ describe('generateIcsFile', () => {
   });
 
   it('throws when createEvent returns error', async () => {
-    const { createEvent } = await import('ics');
-    vi.mocked(createEvent).mockReturnValue({ error: new Error('bad event'), value: null });
+    vi.mocked(ics.createEvent).mockReturnValue({ error: new Error('bad event'), value: null });
 
     const appFolder = join(testDir, 'app');
     await mkdir(appFolder, { recursive: true });
@@ -122,8 +117,7 @@ describe('generateIcsFile', () => {
   });
 
   it('throws when createEvent returns no value', async () => {
-    const { createEvent } = await import('ics');
-    vi.mocked(createEvent).mockReturnValue({ error: null, value: null });
+    vi.mocked(ics.createEvent).mockReturnValue({ error: null, value: null });
 
     const appFolder = join(testDir, 'app');
     await mkdir(appFolder, { recursive: true });

@@ -1,0 +1,30 @@
+{
+  "login": "testuser",
+  "name": "Jane Smith",
+  "bio": "Senior software engineer with 7 years of experience in React, TypeScript, and Node.js.",
+  "public_repos": 15,
+  "followers": 42,
+  "repos": [
+    {
+      "name": "react-property-dashboard",
+      "description": "Dashboard for managing property portfolios",
+      "stargazers_count": 28,
+      "language": "TypeScript",
+      "topics": ["react", "typescript", "dashboard"]
+    },
+    {
+      "name": "node-api-starter",
+      "description": "Boilerplate for Node.js REST APIs with PostgreSQL",
+      "stargazers_count": 12,
+      "language": "TypeScript",
+      "topics": ["nodejs", "postgresql", "rest-api"]
+    },
+    {
+      "name": "css-grid-layouts",
+      "description": "Collection of responsive CSS grid layout patterns",
+      "stargazers_count": 8,
+      "language": "CSS",
+      "topics": ["css", "grid", "responsive"]
+    }
+  ]
+}

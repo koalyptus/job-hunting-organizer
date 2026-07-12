@@ -58,3 +58,4 @@ Return **only** a JSON object with these fields:
    pulled FROM the description — they are not a replacement for it.
 4. Do not invent information not present in the input text.
 5. If an optional field is not present in the input, omit it (do not use null or "").
+6. If the input is empty or unreadable, **refuse** by returning a short message (e.g. "I cannot extract a job description from empty input. Please provide the raw job posting text.") — do not fabricate a job posting with "unknown" fields.

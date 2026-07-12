@@ -6,7 +6,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Test cases for prep plan generation evals.
- * Each case provides input data and expected behavior.
+ * Each case provides input data, expected behaviour, and inline expectations
+ * (per D2: LLM evals carry expectations in cases.ts, not expected.json).
  */
 export interface PrepCase {
   /** Human-readable test name. */
@@ -27,8 +28,25 @@ export interface PrepCase {
   readonly days: number;
   /** Retro cross-reference text (optional). */
   readonly retroCrossRef?: string;
-  /** Expected behavior: 'generate' or 'refuse'. */
+  /** Expected behaviour: 'generate' or 'refuse'. */
   readonly expectedBehavior: 'generate' | 'refuse';
+  /** Inline expectations used by deterministic gates (only when generate). */
+  readonly expectations?: {
+    /** Min topics expected. */
+    readonly minTopics?: number;
+    /** Max topics expected. */
+    readonly maxTopics?: number;
+    /** Min behavioural questions. */
+    readonly minBehavioral?: number;
+    /** Max behavioural questions. */
+    readonly maxBehavioral?: number;
+    /** Min checklist items. */
+    readonly minChecklist?: number;
+    /** Max checklist items. */
+    readonly maxChecklist?: number;
+    /** Must include these profile refs. */
+    readonly mustReferenceProfile?: readonly string[];
+  };
 }
 
 function loadFixture(filename: string): string {
@@ -50,6 +68,14 @@ export const cases: PrepCase[] = [
     profile: defaultProfile,
     days: 7,
     expectedBehavior: 'generate',
+    expectations: {
+      minTopics: 3,
+      maxTopics: 6,
+      minBehavioral: 2,
+      maxBehavioral: 4,
+      minChecklist: 4,
+      maxChecklist: 8,
+    },
   },
   {
     name: 'prep plan with extended timeline',
@@ -61,6 +87,12 @@ export const cases: PrepCase[] = [
     profile: defaultProfile,
     days: 14,
     expectedBehavior: 'generate',
+    expectations: {
+      minTopics: 3,
+      maxTopics: 6,
+      minChecklist: 4,
+      maxChecklist: 8,
+    },
   },
   {
     name: 'prep plan with retro cross-reference',
@@ -74,6 +106,12 @@ export const cases: PrepCase[] = [
     retroCrossRef:
       '## Retro cross-reference\n\nWeak topics from previous failed interviews:\n\n- System design — consistency models (2x)\n- Behavioural — conflict resolution (1x)',
     expectedBehavior: 'generate',
+    expectations: {
+      minTopics: 3,
+      maxTopics: 6,
+      minChecklist: 4,
+      maxChecklist: 8,
+    },
   },
   {
     name: 'refusal on empty profile',

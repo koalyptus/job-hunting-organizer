@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { text, password } from '@clack/prompts';
+import { text, password, isCancel } from '@clack/prompts';
 import { promptGithub } from '../../init/github.js';
+import { InitCancelled } from '../../init/errors.js';
 import type { GlobalConfig } from '../../types.js';
 
 vi.mock('@clack/prompts', () => ({
@@ -107,5 +108,18 @@ describe('promptGithub', () => {
     await promptGithub(undefined, false, config);
 
     expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: undefined }));
+  });
+
+  it('throws InitCancelled when text prompt is cancelled', async () => {
+    vi.mocked(isCancel).mockReturnValueOnce(true);
+
+    await expect(promptGithub(undefined, false, null)).rejects.toThrow(InitCancelled);
+  });
+
+  it('throws InitCancelled when password prompt is cancelled', async () => {
+    vi.mocked(text).mockResolvedValue('user');
+    vi.mocked(isCancel).mockReturnValueOnce(false).mockReturnValueOnce(true);
+
+    await expect(promptGithub(undefined, false, null)).rejects.toThrow(InitCancelled);
   });
 });

@@ -8,6 +8,9 @@ import { runCommand } from './helpers.js';
 import { doctorCommand } from '../commands/doctor.js';
 import * as doctorCore from '../../core/doctor/index.js';
 import * as pathsModule from '../../core/paths.js';
+import { resolveCampaign } from '../campaign.js';
+import * as campaignCore from '../../core/campaign/index.js';
+import { CampaignPickerCancelled } from '../../core/campaign/index.js';
 
 vi.mock('@clack/prompts', () => ({
   select: vi.fn(),
@@ -129,5 +132,44 @@ describe('doctor command — interactive campaign picker', () => {
     const { exitCode } = await runCommand(doctorCommand, ['doctor'], withCampaignFlag);
 
     expect(exitCode).toBe(0);
+  });
+});
+
+describe('resolveCampaign', () => {
+  it('returns the campaign from resolveCampaignInteractive', async () => {
+    const spy = vi.spyOn(campaignCore, 'resolveCampaignInteractive').mockResolvedValue('freelance');
+
+    const result = await resolveCampaign({ campaign: 'freelance' });
+    expect(result).toBe('freelance');
+    expect(spy).toHaveBeenCalledWith('freelance', { yes: undefined });
+  });
+
+  it('passes undefined campaign and yes flag', async () => {
+    const spy = vi.spyOn(campaignCore, 'resolveCampaignInteractive').mockResolvedValue('default');
+
+    const result = await resolveCampaign({ yes: true });
+    expect(result).toBe('default');
+    expect(spy).toHaveBeenCalledWith(undefined, { yes: true });
+  });
+
+  it('calls process.exit(0) when picker is cancelled', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit called');
+    });
+    vi.spyOn(campaignCore, 'resolveCampaignInteractive').mockRejectedValue(
+      new CampaignPickerCancelled(),
+    );
+
+    await expect(resolveCampaign({})).rejects.toThrow('process.exit called');
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    exitSpy.mockRestore();
+  });
+
+  it('re-throws non-cancellation errors', async () => {
+    vi.spyOn(campaignCore, 'resolveCampaignInteractive').mockRejectedValue(
+      new Error('disk failure'),
+    );
+
+    await expect(resolveCampaign({})).rejects.toThrow('disk failure');
   });
 });

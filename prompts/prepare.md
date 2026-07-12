@@ -54,6 +54,8 @@ Return a JSON object with the following structure:
 }
 ```
 
+**CRITICAL**: Return ONLY the raw JSON object. No markdown code fences, no `json, no `, no preamble, no explanation. The output must be parseable by `JSON.parse()` directly.
+
 ### Field rules
 
 - **topics**: Generate 3–6 topics. Assign `depth` 1 (overview), 2
@@ -70,8 +72,7 @@ Return a JSON object with the following structure:
   requirements and the candidate's profile.
 - **timeline**: Build a day-by-day plan from the `days until interview`
   value. Include milestones like "review core concepts", "mock
-  interview", "rest day". Validate that `daysBefore` values are within
-  ±20% of the given window.
+  interview", "rest day". **CRITICAL**: Every `daysBefore` value MUST satisfy `daysBefore <= ceil(days_until_interview * 1.2)`. For 7 days → max 8; for 14 days → max 16. Do NOT include daysBefore beyond this bound.
 - **checklist**: 4–8 actionable items the candidate can tick off.
 - **notes**: Optional freeform notes or tips.
 
@@ -82,9 +83,11 @@ Return a JSON object with the following structure:
   books, and reputable engineering blogs.
 - Keep the tone constructive and specific — "read chapter 5 of DDIA"
   not "study distributed systems".
+- **Do not use self-aggrandising language:** "exceptional", "world-class", "outstanding", "remarkable", "best", "passionate about", "obsessed with".
 - If retro cross-reference data is provided, prioritise those weak
   topics first.
 - Total length: 400–800 words across all fields.
 - Do not mention that you are an AI or language model.
-- Return valid JSON only — no markdown fences, no preamble.
+- **Return raw JSON only — absolutely no markdown code fences, no backticks, no preamble, no explanation.** Start with `{` and end with `}`.
 - If additional instructions are provided in the `## Additional instructions` section, follow them as priority.
+- **Refusal detection.** If the candidate profile is empty or unreadable, return a short refusal message (e.g. `{"error": "I cannot generate a prep plan without a candidate profile. Please provide a profile with skills, experience, and education."}`) instead of fabricating content.

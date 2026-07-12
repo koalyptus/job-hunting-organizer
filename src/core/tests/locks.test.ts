@@ -1,3 +1,4 @@
+import { chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -28,6 +29,7 @@ describe('acquireLock', () => {
   });
 
   afterEach(async () => {
+    await chmod(workDir, 0o755).catch(() => {});
     await rm(workDir, { recursive: true, force: true });
   });
 
@@ -78,6 +80,15 @@ describe('acquireLock', () => {
     const result = await acquireLock(target, async () => 'ok');
     expect(result).toBe('ok');
   });
+
+  it('handles release failure in acquireLock gracefully', async () => {
+    const result = await acquireLock(target, async () => {
+      await chmod(workDir, 0o444);
+      return 'ok';
+    });
+    expect(result).toBe('ok');
+    await chmod(workDir, 0o755);
+  });
 });
 
 describe('tryAcquireLock', () => {
@@ -106,5 +117,20 @@ describe('tryAcquireLock', () => {
     const release2 = await tryAcquireLock(target);
     expect(release2).toBeNull();
     await release1!();
+  });
+
+  it('re-throws non-contention errors from lockfile.lock', async () => {
+    await expect(tryAcquireLock(join(workDir, 'nonexistent-subdir', 'lock'))).rejects.toThrow();
+  });
+
+  it('handles release failure gracefully', async () => {
+    const release = await tryAcquireLock(target);
+    expect(release).not.toBeNull();
+
+    await chmod(workDir, 0o444);
+
+    await release!();
+
+    await chmod(workDir, 0o755);
   });
 });

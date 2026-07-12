@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 // TypeScript doesn't expose on named imports from CJS modules with NodeNext.
 import pino, { type Logger, type LoggerOptions } from 'pino';
 import { DEFAULT_LOG_FILENAME, type LogLevel, type LoggerConfig } from '../types.js';
-import { SECRET_PATHS } from '../config.view.js';
+import { SECRET_PATHS } from '../config/config.view.js';
 import { resolveConfigHome } from '../paths.js';
 import { getPackageVersion } from '../package.js';
 

@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { loadGlobalConfig } from '../../core/config.js';
+import { loadGlobalConfig } from '../../core/config/config.js';
 import { resolveConfigHome, resolveConfigPath } from '../../core/paths.js';
-import { redactSecrets } from '../../core/config.view.js';
+import { redactSecrets } from '../../core/config/config.view.js';
 import { userWarn, userError, userOutput } from '../output.js';
 
 /**

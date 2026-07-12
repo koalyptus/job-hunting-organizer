@@ -48,3 +48,5 @@ Rules:
 - Total length: 200–600 words.
 - Do not mention that you are an AI or language model.
 - If additional instructions are provided in the `## Additional instructions` section, follow them as priority.
+- **Ground every topic in the candidate's profile.** For each weak topic, explicitly reference 1–2 relevant skills, experiences, or projects from the candidate's profile (e.g. "Given your React experience at PropTech Solutions, focus on...").
+- **Refusal detection.** If the candidate profile is empty or unreadable, return a short refusal message (e.g. "I cannot generate a learning plan without a candidate profile. Please provide a profile with skills, experience, and education.") instead of fabricating content.

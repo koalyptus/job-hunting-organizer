@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearConfigCache } from '../../../core/config.js';
+import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { showCommand } from '../../commands/show.js';
 import * as showCore from '../../../core/applications/show.js';
@@ -12,6 +12,7 @@ vi.mock('../../../core/applications/show.js', async (importOriginal) => {
   return {
     ...actual,
     readShowData: vi.fn(),
+    readShowFile: vi.fn(),
   };
 });
 
@@ -237,6 +238,60 @@ describe('show command', () => {
       const { stderr, exitCode } = await runCommand(showCommand, ['show', 'nonexistent']);
       expect(exitCode).toBe(1);
       expect(stderr).toContain('application not found');
+    });
+  });
+
+  describe('--jd flag', () => {
+    const slug = '2026-Jun-03-se-test-corp';
+    const jdContent = '# Job Description\n\nWe are looking for...';
+
+    beforeEach(async () => {
+      vi.mocked(showCore.readShowData).mockResolvedValue({
+        frontmatter: mockFrontmatter,
+        body: '',
+        filesPresent: ['meta.md', 'jd.md'],
+      });
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+    });
+
+    it('shows jd.md content after the summary', async () => {
+      vi.mocked(showCore.readShowFile).mockResolvedValue(jdContent);
+
+      const { stdout, exitCode } = await runCommand(showCommand, ['show', slug, '--jd']);
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain(slug);
+      expect(stdout).toContain('job description');
+      expect(stdout).toContain(jdContent);
+    });
+
+    it('shows error when jd.md does not exist', async () => {
+      vi.mocked(showCore.readShowFile).mockRejectedValue(new showCore.ShowError('not found'));
+
+      const { stdout, stderr, exitCode } = await runCommand(showCommand, ['show', slug, '--jd']);
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain(slug);
+      expect(stderr).toContain('jd.md not found');
+    });
+
+    it('includes jd.md content in JSON output', async () => {
+      vi.mocked(showCore.readShowFile).mockResolvedValue(jdContent);
+
+      const { stdout, exitCode } = await runCommand(showCommand, ['show', slug, '--jd', '--json']);
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.slug).toBe(slug);
+      expect(parsed['jd.md']).toBe(jdContent);
+    });
+
+    it('omits jd.md from JSON when file is missing', async () => {
+      vi.mocked(showCore.readShowFile).mockRejectedValue(new showCore.ShowError('not found'));
+
+      const { stdout, exitCode } = await runCommand(showCommand, ['show', slug, '--jd', '--json']);
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.slug).toBe(slug);
+      expect(parsed['jd.md']).toBeUndefined();
     });
   });
 });

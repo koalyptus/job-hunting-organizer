@@ -7,10 +7,10 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
-import { getConfig } from '../config.js';
+import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { readProfile } from '../profile.js';
+import { readProfile } from '../campaign/profile.js';
 import { readApplication } from '../applications/applications.js';
 import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';

@@ -1,5 +1,5 @@
 import { text, password, isCancel } from '@clack/prompts';
-import { clearConfigCache, loadGlobalConfig, getConfigValue } from '../config.js';
+import { clearConfigCache, loadGlobalConfig, getConfigValue } from '../config/config.js';
 import { DEFAULT_LLM_BASE_URL, DEFAULT_LLM_API_KEY, DEFAULT_LLM_MODEL } from './constants.js';
 import { InitCancelled } from './errors.js';
 
