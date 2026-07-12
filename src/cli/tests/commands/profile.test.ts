@@ -79,7 +79,8 @@ describe('profile command', () => {
 
     const { stdout, exitCode } = await runCommand(profileCommand, ['profile', 'show']);
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('# Profile — Test User');
+    // Content is now rendered markdown, so check for the text content without # prefix
+    expect(stdout).toContain('Profile — Test User');
     expect(stdout).toContain('email@test.com');
   });
 

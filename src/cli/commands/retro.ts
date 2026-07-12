@@ -14,6 +14,7 @@ import {
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
+import { renderMarkdown } from '../markdown.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 
@@ -52,7 +53,7 @@ const showCommand = new Command('show')
     try {
       const resolvedSlug = resolveSlug(slug, campaign);
       const content = await showRetro(campaign, resolvedSlug);
-      userOutput(content);
+      userOutput(renderMarkdown(content));
       log.info({ slug: resolvedSlug }, 'retro.show.completed');
     } catch (err) {
       if (err instanceof SlugMissingError) {

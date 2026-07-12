@@ -5,6 +5,7 @@ import type { GlobalOpts } from '../options.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userWarn, userOutput } from '../output.js';
 import { resolveCampaign } from '../campaign.js';
+import { renderMarkdown } from '../markdown.js';
 
 /**
  * `jho profile show` — print the current profile.
@@ -18,7 +19,7 @@ const showCommand = new Command('show')
     try {
       log.info({ campaign }, 'profile.show.started');
       const content = await readProfile(resolveCampaignRoot(campaign));
-      userOutput(content);
+      userOutput(renderMarkdown(content));
       log.info({ campaign }, 'profile.show.completed');
     } catch (err) {
       if (err instanceof ProfileReadError) {

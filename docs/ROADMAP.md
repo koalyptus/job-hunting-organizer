@@ -35,7 +35,7 @@
   - [x] 6c — CLI commands (cover-letter + answer)
   - [x] 6d — Tests, docs & polish
   - [x] 6e — Steer: custom LLM instructions per command
-- [x] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
+- [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
   - [x] 7a — Core: Interviews module
   - [x] 7b — Core: Retro module (LLM-backed learning plan)
   - [x] 7c — Core: Prep module (LLM-backed pre-interview plan)
@@ -45,6 +45,7 @@
   - [x] 7f — CLI: Interview, retro, prepare, doctor, repair commands
   - [x] 7f1 — Interactive campaign picker
   - [x] 7g — Tests, evals & documentation
+  - [ ] 7h — CLI: Markdown-formatted show commands
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
@@ -586,9 +587,36 @@ Wires `writeToolhash()` calls into every existing module that writes tool-manage
 - Update `AGENTS.md` — new modules, updated CLI commands, updated MCP tools list, updated prompt table
 - Help snapshots regenerated
 
-**Deliverable**: All tests pass. Phase 7 complete.
+**Deliverable**: All tests pass. Phase 7g complete.
 
 **Commit**: `test: Phase 7 tests, evals, docs update`
+
+#### 7h — CLI: Markdown-formatted show commands
+
+Renders markdown content in all `show` commands with styled terminal output using `marked` + `marked-terminal`.
+
+- `src/cli/markdown.ts` — shared markdown renderer: `renderMarkdown(content: string): string`
+  - Configures `marked` with `TerminalRenderer` (headings: bold cyan, bullets: green, code spans: yellow, links: blue)
+  - Respects `NO_COLOR` env var via existing `initColors()` integration
+  - `tab: 4` for consistent indentation
+  - `showSectionPrefix: false` to avoid duplicate heading markers
+- `package.json` — add `marked` + `marked-terminal` production dependencies
+- Updated show commands (6 files):
+  - `src/cli/commands/profile.ts` — `userOutput(renderMarkdown(content))`
+  - `src/cli/commands/cover-letter.ts` — render after marker stripping
+  - `src/cli/commands/answer.ts` — render after marker stripping
+  - `src/cli/commands/retro.ts` — render retro content
+  - `src/cli/commands/prepare.ts` — render after marker stripping
+  - `src/cli/commands/show.ts` — render JD content when `--jd` flag used
+- `--json` output keeps raw markdown (machine consumption)
+- Ownership table in `jho show` stays as `cli-table3` (already well-formatted)
+- Tests: `src/cli/tests/markdown.test.ts` — heading rendering, list rendering, code block rendering, NO_COLOR respect
+- Update existing command tests to match rendered output format
+- Update help snapshots
+
+**Deliverable**: All `show` commands render markdown with styled headings, lists, code blocks, and links.
+
+**Commit**: `feat(cli): render markdown content in show commands with marked-terminal`
 
 ---
 

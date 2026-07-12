@@ -18,6 +18,7 @@ import {
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
+import { stripAndRender } from '../markdown.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 
@@ -35,8 +36,7 @@ const showCommand = new Command('show')
     try {
       const resolvedSlug = resolveSlug(slug, campaign);
       const raw = await readPrep(campaign, resolvedSlug);
-      const content = raw.replace(/^<!-- jho:(?:start|end):[^>]+ -->\s*\n?/gm, '');
-      userOutput(content);
+      userOutput(stripAndRender(raw));
       log.info({ slug: resolvedSlug }, 'prepare.show.completed');
     } catch (err) {
       if (err instanceof SlugMissingError) {
