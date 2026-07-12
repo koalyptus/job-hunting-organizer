@@ -34,7 +34,7 @@ const VERSION = getPackageVersion();
 initRootLogger();
 
 const log = getRootLogger();
-log.info({ version: VERSION, args: process.argv.slice(2) }, 'cli.start');
+log.info({ args: process.argv.slice(2) }, 'cli.start');
 
 const program = new Command('jho')
   .version(VERSION)
