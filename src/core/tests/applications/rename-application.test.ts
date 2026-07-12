@@ -162,6 +162,13 @@ describe('renameApplication', () => {
     ).rejects.toThrow(RenameApplicationError);
   });
 
+  it('throws RenameApplicationError when appliedDir does not exist', async () => {
+    const missingDir = join(workDir, 'does-not-exist');
+    await expect(
+      renameApplication(missingDir, '2026-Jun-03-ENG-x', '2026-Jun-03-SE-y'),
+    ).rejects.toThrow(RenameApplicationError);
+  });
+
   it('throws RenameApplicationError when destination already exists', async () => {
     const slug1 = await createApplication({
       appliedDir,

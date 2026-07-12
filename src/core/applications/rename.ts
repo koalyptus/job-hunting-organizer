@@ -8,7 +8,6 @@ import { acquireLock } from '../locks.js';
 import { readFrontmatter, mergeFrontmatter, writeFrontmatter } from '../frontmatter.js';
 import { rebuildIndex } from './index-builder.js';
 import { childLogger } from '../logger/logger.js';
-import type { Frontmatter } from '../types.js';
 
 const log = childLogger({ cmd: 'rename-application' });
 
@@ -31,7 +30,9 @@ export class InvalidSlugError extends RenameApplicationError {
 /** Rejection when renaming the application the user is currently inside. */
 export class SelfRenameError extends RenameApplicationError {
   constructor(oldSlug: string) {
-    super(`refusing to rename application "${oldSlug}" while cwd is inside it`);
+    super(
+      `refusing to rename application "${oldSlug}" while cwd is inside it. Use --from <slug> explicitly, or cd out of the app folder first`,
+    );
     this.name = 'SelfRenameError';
   }
 }
@@ -60,6 +61,10 @@ export async function renameApplication(
   const oldFolder = join(appliedDir, oldSlug);
   const newFolder = join(appliedDir, newSlug);
 
+  if (!existsSync(appliedDir)) {
+    throw new RenameApplicationError(`applied directory not found: ${appliedDir}`);
+  }
+
   if (isUnder(process.cwd(), oldFolder)) {
     throw new SelfRenameError(oldSlug);
   }
@@ -79,7 +84,7 @@ export async function renameApplication(
     const metaPath = join(newFolder, 'meta.md');
     if (existsSync(metaPath)) {
       const { frontmatter, body } = await readFrontmatter(metaPath);
-      const updated = mergeFrontmatter(frontmatter, { slug: newSlug } as Frontmatter);
+      const updated = mergeFrontmatter(frontmatter, { slug: newSlug });
       await writeFrontmatter(metaPath, updated, body);
     }
 

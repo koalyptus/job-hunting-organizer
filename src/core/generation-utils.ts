@@ -1,6 +1,6 @@
 /**
- * Shared utilities for LLM-backed generation modules (cover letter, Q&A).
- * Keeps common logic DRY across `core/cover-letter.ts` and `core/application-qa.ts`.
+ * Shared utilities for LLM-backed generation modules (cover letter, Q&A,
+ * prepare, evals). Keeps common logic DRY across generation workflows.
  */
 import { findRegion } from './markers.js';
 

@@ -43,7 +43,7 @@ export const renameApplicationCommand = new Command('rename-application')
       process.exit(0);
     } catch (err) {
       if (err instanceof SelfRenameError) {
-        userError(`${err.message}\ncd out of the application folder first`);
+        userError(err.message);
         process.exit(1);
       }
       if (err instanceof InvalidSlugError) {
