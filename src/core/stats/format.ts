@@ -53,6 +53,17 @@ export function renderFullStats(
     lines.push(`${style.cyan(label.padEnd(14))} ${count}`);
   }
 
+  // By employment type
+  lines.push('');
+  lines.push(style.bold('By employment type:'));
+  const typeEntries = Object.entries(stats.byEmploymentType).sort((a, b) => b[1] - a[1]);
+  for (const [type, count] of typeEntries) {
+    const pct = Math.round((count / stats.total) * 100);
+    const label = type || '(unspecified)';
+    const percentLabel = style.dim(`(${pct}%)`);
+    lines.push(`${style.cyan(label.padEnd(14))} ${String(count).padStart(3)}   ${percentLabel}`);
+  }
+
   // Funnel
   const { funnel } = stats;
   const interviewPct = stats.total > 0 ? Math.round((funnel.interview / stats.total) * 100) : 0;

@@ -139,6 +139,7 @@ describe('list command', () => {
             targetRole: 'senior-backend-engineer',
             appliedOn: '2026-06-01',
             tags: ['typescript'],
+            employmentType: 'permanent',
           },
           {
             slug: '2026-Jun-02-SE-Beta-456',
@@ -150,6 +151,7 @@ describe('list command', () => {
             targetRole: 'staff-engineer',
             appliedOn: '2026-06-02',
             tags: ['typescript', 'react'],
+            employmentType: 'contract',
           },
           {
             slug: '2026-Jun-06-sparse-entry',
@@ -161,6 +163,7 @@ describe('list command', () => {
             targetRole: '',
             appliedOn: undefined as unknown as string,
             tags: [],
+            employmentType: '',
           },
         ],
       });
@@ -198,6 +201,7 @@ describe('list command', () => {
             targetRole: 'staff-engineer',
             appliedOn: '2026-06-02',
             tags: ['typescript', 'react'],
+            employmentType: 'contract',
           },
         ],
       });
@@ -223,6 +227,7 @@ describe('list command', () => {
             targetRole: 'staff-engineer',
             appliedOn: '2026-06-02',
             tags: ['typescript', 'react'],
+            employmentType: 'contract',
           },
         ],
       });
@@ -248,6 +253,7 @@ describe('list command', () => {
             targetRole: 'senior-backend-engineer',
             appliedOn: '2026-06-01',
             tags: ['typescript'],
+            employmentType: 'permanent',
           },
         ],
       });
@@ -296,6 +302,7 @@ describe('list command', () => {
             targetRole: '',
             appliedOn: '2026-06-03',
             tags: [],
+            employmentType: '',
           },
           {
             slug: '2026-Jun-04-rejected-co',
@@ -307,6 +314,7 @@ describe('list command', () => {
             targetRole: '',
             appliedOn: '2026-06-04',
             tags: [],
+            employmentType: '',
           },
           {
             slug: '2026-Jun-05-withdrawn-co',
@@ -318,6 +326,7 @@ describe('list command', () => {
             targetRole: '',
             appliedOn: '2026-06-05',
             tags: [],
+            employmentType: '',
           },
         ],
       });
@@ -373,6 +382,43 @@ describe('list command', () => {
       expect(stderr).toContain('error');
       expect(stderr).toContain('invalid status');
     });
+
+    it('rejects invalid employment type', async () => {
+      const { stderr, exitCode } = await runCommand(
+        listCommand,
+        ['list', '--campaign', 'default', '--employment-type', 'any-value'],
+        parentSetup,
+      );
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('invalid employment type');
+    });
+
+    it('filters by employment type', async () => {
+      vi.mocked(listCoreModule.runListApplications).mockResolvedValue({
+        entries: [
+          {
+            slug: '2026-Jun-01-SE-Acme-123',
+            status: 'applied',
+            title: 'Software Engineer',
+            company: 'Acme Corp',
+            site: 'Seek',
+            location: 'Sydney NSW',
+            targetRole: 'senior-backend-engineer',
+            appliedOn: '2026-06-01',
+            tags: ['typescript'],
+            employmentType: 'permanent',
+          },
+        ],
+      });
+
+      const { stdout, exitCode } = await runCommand(
+        listCommand,
+        ['list', '--campaign', 'default', '--employment-type', 'permanent'],
+        parentSetup,
+      );
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Acme Corp');
+    });
   });
 
   describe('cwd inference (inside campaign folder)', () => {
@@ -408,6 +454,7 @@ describe('list command', () => {
             targetRole: 'senior-backend-engineer',
             appliedOn: '2026-06-01',
             tags: ['typescript'],
+            employmentType: 'permanent',
           },
         ],
       });
@@ -462,6 +509,7 @@ describe('list command', () => {
             targetRole: '',
             appliedOn: '2026-06-02',
             tags: [],
+            employmentType: '',
           },
         ],
       });

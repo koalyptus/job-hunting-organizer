@@ -117,10 +117,11 @@ jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
 jho track <url> --paste # paste JD from clipboard, extract, create application
 jho track <url> --stdin # read JD from stdin pipe, extract, create application
-jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X] [--steer X]
+jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X] [--steer X] [--employment-type X]
   # update existing application by slug (or cwd-inferred)
   # --steer: custom LLM instructions for JD extraction (stored in jd.md)
-jho list [--status s] [--tag t] [--role <slug>] [--json]
+  # --employment-type: set employment type (permanent|temp|contract|casual|part-time)
+jho list [--status s] [--tag t] [--role <slug>] [--employment-type <type>] [--json]
   # list all applications; filters are AND-combined
 jho show [<slug>]       # slug is optional; inferred from cwd if omitted
 jho cover-letter [<slug>] [--no-save] [--steer <text>]
@@ -145,8 +146,8 @@ jho retro aggregate [--role <slug>] [--include-abandoned]
 jho ownership           # what you can/can't edit
 jho doctor [<slug>]     # diagnose the campaign or a single app; --all
 jho repair [<slug>]     # attempt auto-repair; --all for campaign-wide
-jho stats [--role <slug>] [--since <date|7d|30d|90d>] [--json]
-  # campaign snapshot: counts by status / role / site, funnel, this-month delta
+jho stats [--role <slug>] [--employment-type <type>] [--since <date|7d|30d|90d>] [--json]
+  # campaign snapshot: counts by status / role / site / employment type, funnel, this-month delta
 jho logs [--tail <n>] [--level <level>] [--json] [--path]
   # pretty-print the log file (JSON -> human-readable); --json for raw lines,
   # --path for the file location. Log file is always JSON (for jq/grep/aggregators).
@@ -182,23 +183,23 @@ jho mcp                 # start MCP server
 
 **The one rule**: _If a comment at the top of the file says `jho:...`, the boundary is right there. If not, the file is yours._
 
-| File                                                | Tool writes                                                                   | Edit freely?                                        | Tool behavior on your edit                                      |
-| --------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------- |
-| `meta.md` (the metadata fields at the top)          | yes (rewrites from the job ad + your current status)                          | yes (add your own key:value lines)                  | your extra fields are kept; the rest is rewritten               |
-| `meta.md` (everything below the metadata fields)    | never                                                                         | yes                                                 | kept exactly as you wrote it                                    |
-| `jd.md` (the auto-fetched job ad, at the top)       | yes (replaces it when you re-run `jho track`)                                 | no (the tool owns this section)                     | your edits are lost on the next `jho track`                     |
-| `jd.md` (`<!-- jho:steer: -->` marker)              | when you run `jho track --steer`                                              | yes (edit the marker directly)                      | overwritten by `--steer`; no flag preserves existing            |
-| `jd.md` (everything below the auto-fetched section) | never                                                                         | yes                                                 | kept when you re-run `jho track`                                |
-| `cover-letter.md`                                   | when you re-run `jho cover-letter`; includes `<!-- jho:steer: -->` marker     | yes                                                 | asks before overwriting; steer overwritten by `--steer`         |
-| `qa.md`                                             | appends new entries; `- Steer:` line per entry when `--steer` provided        | yes                                                 | older entries stay as you wrote them; steer stored per-entry    |
-| `interviews.md`                                     | appends new entries; updates the current status line                          | yes (except the current status line)                | change the status with `jho interview mark`                     |
-| `retro.md`                                          | appends a new section per retro                                               | yes (your notes and checklists inside a section)    | older retro sections stay as you wrote them                     |
-| `prepare.md`                                        | rewrites on each `jho prepare`; appends topics on `--add`                     | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
-| `profile.md` (the "Target roles" section)           | suggests roles on `jho campaign init` and `profile rebuild`                   | yes (titles, fields, priority)                      | asks before overwriting                                         |
-| `backups/profile.*.md.bak`                          | created on re-init (before profile overwrite)                                 | no (tool-managed backups)                           | previous profile versions preserved; safe to delete manually    |
-| `notes.md`                                          | never                                                                         | yes                                                 | this file is entirely yours — the tool never reads or writes it |
-| `applied/.index.json`                               | regenerated when the tool reads it (to refresh the listing)                   | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
-| `applied/.counters.json`                            | when two applications need the same folder name (so a -2, -3 suffix is added) | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
+| File                                                | Tool writes                                                                    | Edit freely?                                        | Tool behavior on your edit                                      |
+| --------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------- | --------------------------------------------------------------- |
+| `meta.md` (the metadata fields at the top)          | yes (rewrites from the job ad + your current status; includes employment type) | yes (add your own key:value lines)                  | your extra fields are kept; the rest is rewritten               |
+| `meta.md` (everything below the metadata fields)    | never                                                                          | yes                                                 | kept exactly as you wrote it                                    |
+| `jd.md` (the auto-fetched job ad, at the top)       | yes (replaces it when you re-run `jho track`)                                  | no (the tool owns this section)                     | your edits are lost on the next `jho track`                     |
+| `jd.md` (`<!-- jho:steer: -->` marker)              | when you run `jho track --steer`                                               | yes (edit the marker directly)                      | overwritten by `--steer`; no flag preserves existing            |
+| `jd.md` (everything below the auto-fetched section) | never                                                                          | yes                                                 | kept when you re-run `jho track`                                |
+| `cover-letter.md`                                   | when you re-run `jho cover-letter`; includes `<!-- jho:steer: -->` marker      | yes                                                 | asks before overwriting; steer overwritten by `--steer`         |
+| `qa.md`                                             | appends new entries; `- Steer:` line per entry when `--steer` provided         | yes                                                 | older entries stay as you wrote them; steer stored per-entry    |
+| `interviews.md`                                     | appends new entries; updates the current status line                           | yes (except the current status line)                | change the status with `jho interview mark`                     |
+| `retro.md`                                          | appends a new section per retro                                                | yes (your notes and checklists inside a section)    | older retro sections stay as you wrote them                     |
+| `prepare.md`                                        | rewrites on each `jho prepare`; appends topics on `--add`                      | yes                                                 | asks before overwriting; your edits are kept unless you accept  |
+| `profile.md` (the "Target roles" section)           | suggests roles on `jho campaign init` and `profile rebuild`                    | yes (titles, fields, priority)                      | asks before overwriting                                         |
+| `backups/profile.*.md.bak`                          | created on re-init (before profile overwrite)                                  | no (tool-managed backups)                           | previous profile versions preserved; safe to delete manually    |
+| `notes.md`                                          | never                                                                          | yes                                                 | this file is entirely yours — the tool never reads or writes it |
+| `applied/.index.json`                               | regenerated when the tool reads it (to refresh the listing)                    | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
+| `applied/.counters.json`                            | when two applications need the same folder name (so a -2, -3 suffix is added)  | no (the tool regenerates it; not for human editing) | your edits are lost — it is regenerated automatically           |
 
 Each tool-managed file has a `.toolhash` sidecar. If the file's current hash differs from the sidecar, the tool refuses silent overwrite and shows a diff.
 

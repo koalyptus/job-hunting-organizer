@@ -142,6 +142,7 @@ link: https://au.seek.com/job/92448554?ref=applied
 salary: ''
 tags: [typescript, react, backend]
 targetRole: senior-backend-engineer # slug from profile's ## Target roles; optional
+employmentType: permanent | temp | contract | casual | part-time | '' # optional
 ```
 
 Body: user-owned (untouched by tool).
@@ -639,6 +640,7 @@ jho track --stdin                   # read JD from stdin pipe
   flags: --status s --salary r --tag t,t --note text
          --target-role <slug>          # set the target role slug (from profile ## Target roles)
          --steer <text>                # custom LLM instructions for JD extraction (stored in jd.md)
+         --employment-type <type>      # employment type: permanent|temp|contract|casual|part-time
          --yes --verbose --quiet
   # Create mode (URL or --paste/--stdin): fetch JD, extract via LLM, suggest target role,
   #   prompt to confirm, create application folder with meta.md + jd.md.
@@ -647,7 +649,7 @@ jho track --stdin                   # read JD from stdin pipe
   #   to supply one manually (optional — skip to proceed without). Skipped in
   #   --yes, --paste, --stdin modes.
 
-jho list [--status s] [--tag t] [--role <slug>] [--json]
+jho list [--status s] [--tag t] [--role <slug>] [--employment-type <type>] [--json]
 jho show [<slug>]         # slug is optional; inferred from cwd if omitted
 
 jho cover-letter [<slug>] [--no-save] [--steer <text>]
@@ -684,8 +686,8 @@ jho ownership [--markdown]
 jho doctor [<slug>] [--all]
 jho repair [<slug>] [--all]
 
-jho stats  [--role <slug>] [--since <date>] [--json]
-  # snapshot of the campaign: counts by status, target role, site;
+jho stats  [--role <slug>] [--employment-type <type>] [--since <date>] [--json]
+  # snapshot of the campaign: counts by status, target role, site, employment type;
   # funnel + this-month delta; optional LLM-tinged notes (off by default)
 
 jho help [<cmd>|<topic>]

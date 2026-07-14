@@ -9,6 +9,19 @@ import { toIsoDate, todayIso } from '../date.js';
  * @see {@link ApplicationFrontmatter} for the TypeScript interface (inferred from this schema).
  */
 
+/** Valid employment types. */
+export const EmploymentTypeSchema = z.enum([
+  'permanent',
+  'temp',
+  'contract',
+  'casual',
+  'part-time',
+  '',
+]);
+
+/** Inferred TypeScript type from {@link EmploymentTypeSchema}. */
+export type EmploymentType = z.infer<typeof EmploymentTypeSchema>;
+
 /** Valid application lifecycle statuses. */
 export const ApplicationStatusSchema = z.enum([
   'applied',
@@ -53,6 +66,8 @@ export const ApplicationFrontmatterSchema = z.object({
   tags: z.array(z.string()).default([]),
   /** Slug of the best-matching target role from `profile.md` `## Target roles`. */
   targetRole: z.string().default(''),
+  /** Employment type (e.g. `'permanent'`, `'contract'`, `'part-time'`). */
+  employmentType: EmploymentTypeSchema.default(''),
 });
 
 /** Inferred TypeScript type from {@link ApplicationFrontmatterSchema}. */

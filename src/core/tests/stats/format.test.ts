@@ -16,6 +16,7 @@ const baseStats: CampaignStats = {
   },
   byRole: { 'senior-backend': 3, '': 2 },
   bySite: { Seek: 3, LinkedIn: 2 },
+  byEmploymentType: { permanent: 3, contract: 2 },
   funnel: { applied: 2, interview: 1, offer: 1, accepted: 0 },
   thisMonth: { applied: 1, rejected: 0, offer: 1, withdrawn: 0 },
   since: '2026-06-01',

@@ -67,6 +67,7 @@ function renderSummary(data: Awaited<ReturnType<typeof readShowData>>): void {
     { label: 'Salary', value: frontmatter.salary },
     { label: 'Tags', value: frontmatter.tags.length > 0 ? frontmatter.tags.join(', ') : undefined },
     { label: 'Target role', value: frontmatter.targetRole },
+    { label: 'Type', value: frontmatter.employmentType },
     { label: 'Link', value: frontmatter.link },
   ];
 

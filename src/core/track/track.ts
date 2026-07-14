@@ -23,11 +23,12 @@ import {
   readApplication,
   appendNote,
 } from '../applications/applications.js';
+import { parseEmploymentType } from '../applications/normalize.js';
 import { TrackError, TrackCancelled, NoLinkStoredError, InvalidStatusError } from './errors.js';
 import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
 import type { ExtractedJd, RoleSuggestion } from '../jobs/types.js';
 import { APPLICATION_STATUSES } from '../applications/types.js';
-import type { ApplicationStatus } from '../applications/types.js';
+import type { ApplicationStatus, EmploymentType } from '../applications/types.js';
 import type { TargetRole } from '../types.js';
 import { replaceRegion, replaceSteer } from '../markers.js';
 import { atomicWrite } from '../fs.js';
@@ -62,11 +63,12 @@ interface TrackOptions {
   targetRole?: string;
   /** Note to append to jd.md. */
   note?: string;
-  /**
-   * Custom LLM instructions for JD extraction. When provided, overwrites
+  /** Custom LLM instructions for JD extraction. When provided, overwrites
    * any existing steer in `jd.md`.
    */
   steer?: string;
+  /** Employment type override. */
+  employmentType?: EmploymentType;
   /** Skip confirmation prompts. */
   yes?: boolean;
   /** Re-fetch JD from stored URL (update mode). */
@@ -102,6 +104,7 @@ export function hasTrackUpdateFlags(opts: {
   note?: unknown;
   targetRole?: unknown;
   steer?: unknown;
+  employmentType?: unknown;
 }): boolean {
   return (
     opts.status !== undefined ||
@@ -109,7 +112,8 @@ export function hasTrackUpdateFlags(opts: {
     (opts.tag !== undefined && opts.tag.length > 0) ||
     opts.note !== undefined ||
     opts.targetRole !== undefined ||
-    opts.steer !== undefined
+    opts.steer !== undefined ||
+    opts.employmentType !== undefined
   );
 }
 
@@ -172,6 +176,8 @@ export interface ConfirmAndCreateOptions {
   tags?: string[];
   /** Target role slug override. */
   targetRole?: string;
+  /** Employment type override (overrides LLM-extracted value). */
+  employmentType?: EmploymentType;
   /** Note to append to jd.md. */
   note?: string;
   /**
@@ -193,6 +199,7 @@ function describeChanges(
     salary?: string;
     tags?: string[];
     targetRole?: string;
+    employmentType?: string;
   },
   current: { status?: string },
 ): string[] {
@@ -208,6 +215,9 @@ function describeChanges(
   }
   if (opts.tags !== undefined && opts.tags.length > 0) {
     changes.push(`tags +${opts.tags.join(', ')}`);
+  }
+  if (opts.employmentType !== undefined) {
+    changes.push(`employment type → ${opts.employmentType}`);
   }
   return changes;
 }
@@ -337,6 +347,7 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
     salary,
     tags,
     targetRole,
+    employmentType,
     note,
     steer,
     yes,
@@ -353,7 +364,8 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
     }
   }
 
-  // Create application
+  // Create application: use explicit employmentType override, fall back to LLM-extracted value
+  const appEmploymentType = employmentType ?? parseEmploymentType(jd.employmentType);
   const slug = await createApplication({
     appliedDir,
     title: jd.title,
@@ -366,6 +378,7 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
     location: jd.location,
     link: url,
     description: jd.description,
+    employmentType: appEmploymentType,
   });
 
   // Append note if provided
@@ -385,7 +398,20 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
  * Run the track-create workflow: extract JD → suggest role → confirm → create.
  */
 async function runTrackCreate(opts: TrackOptions): Promise<string> {
-  const { campaign, url, text, status, salary, tags, targetRole, note, steer, yes, log } = opts;
+  const {
+    campaign,
+    url,
+    text,
+    status,
+    salary,
+    tags,
+    targetRole,
+    note,
+    steer,
+    yes,
+    employmentType,
+    log,
+  } = opts;
 
   if (!url && !text) {
     throw new TrackError('No URL or text provided');
@@ -442,7 +468,8 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
     }
   }
 
-  // Step 4: Create application
+  // Step 4: Create application; use explicit employmentType override, fall back to LLM-extracted
+  const appEmploymentType = employmentType ?? parseEmploymentType(jd.employmentType);
   const slug = await createApplication({
     appliedDir,
     title: jd.title,
@@ -455,6 +482,7 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
     location: jd.location,
     link: url,
     description: jd.description,
+    employmentType: appEmploymentType,
   });
 
   // Append note if provided
@@ -481,7 +509,8 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
  * "no changes to apply".
  */
 async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
-  const { campaign, slug, status, salary, tags, targetRole, note, steer, yes } = opts;
+  const { campaign, slug, status, salary, tags, targetRole, note, steer, yes, employmentType } =
+    opts;
 
   if (!slug) {
     throw new TrackError('missing slug');
@@ -500,6 +529,7 @@ async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
     salary?: string;
     tags?: string[];
     targetRole?: string;
+    employmentType?: EmploymentType;
   } = {};
 
   if (status !== undefined) {
@@ -514,12 +544,16 @@ async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
   if (targetRole !== undefined) {
     patch.targetRole = targetRole;
   }
+  if (employmentType !== undefined) {
+    patch.employmentType = employmentType;
+  }
 
   const hasChanges = [
     patch.status !== undefined,
     patch.salary !== undefined,
     patch.tags !== undefined,
     patch.targetRole !== undefined,
+    patch.employmentType !== undefined,
     note !== undefined,
     steer !== undefined,
   ].some(Boolean);
@@ -536,6 +570,7 @@ async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
         salary: patch.salary,
         tags: patch.tags,
         targetRole: patch.targetRole,
+        employmentType: patch.employmentType,
       },
       { status: frontmatter.status },
     );

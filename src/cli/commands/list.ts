@@ -7,7 +7,8 @@ import {
   InvalidListStatusError,
 } from '../../core/list/index.js';
 import { findCampaignFromCwd, resolveDataRoot } from '../../core/paths.js';
-import { APPLICATION_STATUSES } from '../../core/applications/types.js';
+import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../core/applications/types.js';
+import type { EmploymentType } from '../../core/applications/types.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { bold, cyan, dim, statusColor } from '../colors.js';
@@ -25,6 +26,10 @@ export const listCommand = new Command('list')
     [],
   )
   .option('--role <role>', 'filter by target role (requires --campaign or campaign folder)')
+  .option(
+    '--employment-type <type>',
+    'filter by employment type (permanent|temp|contract|casual|part-time)',
+  )
   .option('--json', 'output as JSON')
   .action(async function (opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
@@ -32,6 +37,15 @@ export const listCommand = new Command('list')
     const inferredCampaign =
       explicitCampaign ?? findCampaignFromCwd(process.cwd(), resolveDataRoot());
     const log = getRootLogger().child({ cmd: 'list', campaign: inferredCampaign ?? '(campaigns)' });
+
+    // Validate employment type early
+    if (
+      opts.employmentType !== undefined &&
+      !EMPLOYMENT_TYPES.includes(opts.employmentType as EmploymentType)
+    ) {
+      userError(`invalid employment type: ${opts.employmentType}`);
+      process.exit(1);
+    }
 
     try {
       if (inferredCampaign === null) {
@@ -58,6 +72,7 @@ export const listCommand = new Command('list')
           status: opts.status as string | undefined,
           tags: opts.tag as string[] | undefined,
           targetRole: opts.role as string | undefined,
+          employmentType: opts.employmentType as EmploymentType | undefined,
         });
 
         if (opts.json) {
@@ -80,6 +95,9 @@ export const listCommand = new Command('list')
           userOutput(`  ${dim('Company:')} ${entry.company ?? ''}`);
           userOutput(`  ${dim('Location:')} ${entry.location ?? ''}`);
           userOutput(`  ${dim('Status:')} ${statusColor(entry.status ?? '')}`);
+          if (entry.employmentType) {
+            userOutput(`  ${dim('Type:')} ${entry.employmentType}`);
+          }
           userOutput(`  ${dim('Applied on:')} ${entry.appliedOn ?? ''}`);
         }
         const apps = entries.length === 1 ? 'application' : 'applications';

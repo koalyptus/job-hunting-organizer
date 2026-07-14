@@ -13,7 +13,7 @@ import {
 } from '../paths.js';
 import { listApplications } from '../applications/applications.js';
 import { APPLICATION_STATUSES } from '../applications/types.js';
-import type { ApplicationStatus } from '../applications/types.js';
+import type { ApplicationStatus, EmploymentType } from '../applications/types.js';
 import type { CampaignListing } from '../types.js';
 import type { ApplicationEntry } from '../applications/types.js';
 import { InvalidListStatusError } from './errors.js';
@@ -28,6 +28,8 @@ export interface ListApplicationsOptions {
   tags?: string[];
   /** Filter by target role slug. */
   targetRole?: string;
+  /** Filter by employment type. */
+  employmentType?: EmploymentType;
 }
 
 /**
@@ -91,6 +93,7 @@ export async function runListApplications(
     status,
     tags: opts.tags && opts.tags.length > 0 ? opts.tags : undefined,
     targetRole: opts.targetRole,
+    employmentType: opts.employmentType,
   });
 
   return { entries };

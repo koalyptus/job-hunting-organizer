@@ -43,6 +43,7 @@ const emptyStats: CampaignStats = {
   },
   byRole: {},
   bySite: {},
+  byEmploymentType: {},
   funnel: { applied: 0, interview: 0, offer: 0, accepted: 0 },
   thisMonth: { applied: 0, rejected: 0, offer: 0, withdrawn: 0 },
 };
@@ -61,6 +62,7 @@ const sampleStats: CampaignStats = {
   },
   byRole: { 'senior-backend': 3, '': 2 },
   bySite: { Seek: 3, LinkedIn: 2 },
+  byEmploymentType: { permanent: 3, contract: 2 },
   funnel: { applied: 2, interview: 1, offer: 1, accepted: 0 },
   thisMonth: { applied: 1, rejected: 0, offer: 1, withdrawn: 0 },
   since: '2026-06-01',
@@ -80,6 +82,7 @@ const singleAppStats: CampaignStats = {
   },
   byRole: { 'backend-dev': 1 },
   bySite: { Seek: 1 },
+  byEmploymentType: { permanent: 1 },
   funnel: { applied: 1, interview: 0, offer: 0, accepted: 0 },
   thisMonth: { applied: 0, rejected: 0, offer: 0, withdrawn: 0 },
 };
@@ -98,6 +101,7 @@ const allStatusesStats: CampaignStats = {
   },
   byRole: { '': 5, backend: 3 },
   bySite: { '': 4, Seek: 4 },
+  byEmploymentType: { permanent: 4, contract: 2, 'part-time': 2 },
   funnel: { applied: 1, interview: 1, offer: 0, accepted: 1 },
   thisMonth: { applied: 0, rejected: 1, offer: 0, withdrawn: 1 },
 };
@@ -116,6 +120,7 @@ const noSinceStats: CampaignStats = {
   },
   byRole: {},
   bySite: {},
+  byEmploymentType: {},
   funnel: { applied: 3, interview: 0, offer: 0, accepted: 0 },
   thisMonth: { applied: 0, rejected: 0, offer: 0, withdrawn: 0 },
 };
@@ -388,6 +393,44 @@ describe('stats command', () => {
         targetRole: 'backend',
         since: '30d',
       });
+    });
+
+    it('passes --employment-type to computeStats in single-campaign mode', async () => {
+      vi.mocked(statsCoreModule.computeStats).mockResolvedValue(sampleStats);
+
+      await runCommand(
+        statsCommand,
+        ['stats', '--campaign', 'default', '--employment-type', 'permanent'],
+        parentSetup,
+      );
+
+      expect(statsCoreModule.computeStats).toHaveBeenCalledWith(expect.any(String), {
+        employmentType: 'permanent',
+      });
+    });
+
+    it('passes --employment-type to computeStats in multi-campaign mode', async () => {
+      vi.mocked(pathsModule.listCampaigns).mockResolvedValue([
+        { name: 'default', applicationCount: 5 },
+      ]);
+      vi.mocked(statsCoreModule.computeStats).mockResolvedValue(sampleStats);
+
+      await runCommand(statsCommand, ['stats', '--employment-type', 'contract'], parentSetup);
+
+      expect(statsCoreModule.computeStats).toHaveBeenCalledWith(expect.any(String), {
+        employmentType: 'contract',
+      });
+    });
+
+    it('errors on invalid employment type', async () => {
+      const { exitCode, stderr } = await runCommand(
+        statsCommand,
+        ['stats', '--campaign', 'default', '--employment-type', 'invalid-type'],
+        parentSetup,
+      );
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('error');
+      expect(stderr).toContain('invalid employment type');
     });
   });
 

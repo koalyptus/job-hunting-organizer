@@ -19,7 +19,8 @@ import {
   NoLinkStoredError,
   InvalidStatusError,
 } from '../../core/track/index.js';
-import { APPLICATION_STATUSES } from '../../core/applications/types.js';
+import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../core/applications/types.js';
+import type { EmploymentType } from '../../core/applications/types.js';
 import { ApplicationNotFoundError } from '../../core/applications/index.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError } from '../output.js';
@@ -40,6 +41,7 @@ export const trackCommand = new Command('track')
   .option('--tag <tag>', 'add a tag (repeatable)', collectTags, [])
   .option('--note <text>', 'add a note')
   .option('--target-role <role>', 'target role for the application')
+  .option('--employment-type <type>', 'employment type (permanent|temp|contract|casual|part-time)')
   .option('--steer <text>', 'instructions to guide the LLM output')
   .option('--refresh', 're-fetch job description from stored URL')
   .option('-y, --yes', 'skip confirmation prompts')
@@ -60,6 +62,17 @@ export const trackCommand = new Command('track')
 
     try {
       const status = validateTrackStatus(opts.status as string | undefined);
+
+      // Validate employment type early
+      if (
+        opts.employmentType !== undefined &&
+        !EMPLOYMENT_TYPES.includes(opts.employmentType as (typeof EMPLOYMENT_TYPES)[number])
+      ) {
+        userError(
+          `invalid employment type: ${opts.employmentType}\nhint: use one of: ${EMPLOYMENT_TYPES.filter((t) => t).join(', ')}`,
+        );
+        process.exit(1);
+      }
 
       // Refresh mode takes precedence over create mode
       if (opts.refresh) {
@@ -115,6 +128,7 @@ Next steps:
           tags: (opts.tag as string[] | undefined) ?? [],
           note: opts.note as string | undefined,
           targetRole: opts.targetRole as string | undefined,
+          employmentType: opts.employmentType as EmploymentType | undefined,
           steer: opts.steer as string | undefined,
           yes: opts.yes as boolean | undefined,
         });
@@ -155,6 +169,7 @@ Next steps:
               tags: (opts.tag as string[] | undefined) ?? [],
               note: opts.note as string | undefined,
               targetRole: opts.targetRole as string | undefined,
+              employmentType: opts.employmentType as EmploymentType | undefined,
               steer: opts.steer as string | undefined,
               yes: opts.yes as boolean | undefined,
             }),
