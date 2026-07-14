@@ -23,6 +23,7 @@ import {
   readApplication,
   appendNote,
 } from '../applications/applications.js';
+import { parseEmploymentType } from '../applications/normalize.js';
 import { TrackError, TrackCancelled, NoLinkStoredError, InvalidStatusError } from './errors.js';
 import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
 import type { ExtractedJd, RoleSuggestion } from '../jobs/types.js';
@@ -366,6 +367,7 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
     location: jd.location,
     link: url,
     description: jd.description,
+    employmentType: parseEmploymentType(jd.employmentType),
   });
 
   // Append note if provided
@@ -455,6 +457,7 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
     location: jd.location,
     link: url,
     description: jd.description,
+    employmentType: parseEmploymentType(jd.employmentType),
   });
 
   // Append note if provided

@@ -9,6 +9,7 @@ import * as trackCore from '../../../core/track/track.js';
 import * as clipboardModule from '../../clipboard.js';
 import * as stdinModule from '../../stdin.js';
 import { TrackError, TrackCancelled, NoLinkStoredError } from '../../../core/track/errors.js';
+import { UserInputError } from '../../errors.js';
 import { SlugMissingError } from '../../slug.js';
 import { ApplicationNotFoundError } from '../../../core/applications/index.js';
 import type { TrackSummary } from '../../../core/track/track.js';
@@ -311,6 +312,35 @@ describe('track command', () => {
 
       expect(exitCode).toBe(1);
       expect(stderr).toContain('no changes specified');
+    });
+
+    it('handles TrackError with missing slug hint', async () => {
+      vi.mocked(trackCore.runTrack).mockRejectedValue(new TrackError('missing slug'));
+
+      const { stderr, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--status',
+        'interview',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('missing slug');
+      expect(stderr).toContain('pass a slug, or run from inside the application folder');
+    });
+
+    it('handles UserInputError', async () => {
+      vi.mocked(trackCore.runTrack).mockRejectedValue(new UserInputError('invalid input'));
+
+      const { stderr, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--status',
+        'interview',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('invalid input');
     });
   });
 

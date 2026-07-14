@@ -1,8 +1,9 @@
 ---
-version: 5
+version: 6
 recommendedModel: gpt-4o-mini
 recommendedTemperature: 0.1
 changelog: |
+  v6 — constrain employmentType to enum: permanent, temp, contract, casual, part-time
   v5 — add specific cleanup instructions for boilerplate that slips through
        HTML stripping (accessibility skip links, sign-in prompts, salary widgets,
        report-job sections, action buttons)
@@ -43,7 +44,7 @@ Return **only** a JSON object with these fields:
 - `requirements` (array of strings, optional): Required skills/experience extracted from description.
 - `qualifications` (array of strings, optional): Nice-to-haves, education extracted from description.
 - `benefits` (array of strings, optional): Listed perks/benefits extracted from description.
-- `employmentType` (string, optional): e.g. "full-time", "contract", "part-time".
+- `employmentType` (string, optional): Must be one of: "permanent", "temp", "contract", "casual", "part-time". Map common variants: "full-time" → "permanent", "freelance" → "contract", "internship" → "temp".
 - `seniorityLevel` (string, optional): e.g. "junior", "mid", "senior", "staff", "lead".
 
 ## Rules

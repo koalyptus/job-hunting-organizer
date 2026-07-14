@@ -57,10 +57,20 @@ export async function computeStats(
     return emptyStats(sinceFilterIso);
   }
 
-  // Single pass: byStatus, byRole, bySite, thisMonth, since
+  // Apply employmentType filter
+  if (opts?.employmentType) {
+    entries = entries.filter((e) => e.employmentType === opts.employmentType);
+  }
+
+  if (entries.length === 0) {
+    return emptyStats(sinceFilterIso);
+  }
+
+  // Single pass: byStatus, byRole, bySite, byEmploymentType, thisMonth, since
   const byStatus = initByStatus();
   const byRole: Record<string, number> = {};
   const bySite: Record<string, number> = {};
+  const byEmploymentType: Record<string, number> = {};
   const now = new Date();
   const currentMonth = now.getUTCMonth();
   const currentYear = now.getUTCFullYear();
@@ -78,6 +88,10 @@ export async function computeStats(
     // bySite
     const siteKey = e.site || '';
     bySite[siteKey] = (bySite[siteKey] || 0) + 1;
+
+    // byEmploymentType
+    const typeKey = e.employmentType || '';
+    byEmploymentType[typeKey] = (byEmploymentType[typeKey] || 0) + 1;
 
     // thisMonth
     const d = new Date(e.appliedOn);
@@ -136,6 +150,7 @@ export async function computeStats(
     byStatus,
     byRole,
     bySite,
+    byEmploymentType,
     funnel,
     thisMonth,
     since: earliestAppliedOn,
@@ -156,6 +171,7 @@ function emptyStats(since?: string): CampaignStats {
     byStatus: initByStatus(),
     byRole: {},
     bySite: {},
+    byEmploymentType: {},
     funnel: { applied: 0, interview: 0, offer: 0, accepted: 0 },
     thisMonth: { applied: 0, rejected: 0, offer: 0, withdrawn: 0 },
     since: since ? since : undefined,

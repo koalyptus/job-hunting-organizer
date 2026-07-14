@@ -1,6 +1,6 @@
 import type { paths } from '@octokit/openapi-types';
 import type { Logger } from 'pino';
-import type { ApplicationStatus } from './applications/types.js';
+import type { ApplicationStatus, EmploymentType } from './applications/types.js';
 
 /** Supported calendar providers. */
 export type CalendarProvider = 'ics' | 'outlook' | 'none';
@@ -460,6 +460,8 @@ export interface CampaignStats {
     readonly offer: number;
     readonly withdrawn: number;
   };
+  /** Counts grouped by employment type. Key `''` represents unspecified. */
+  readonly byEmploymentType: Record<string, number>;
   /** Earliest `appliedOn` date in the result set (ISO). Undefined when total is 0. */
   readonly since?: string;
 }
@@ -470,6 +472,8 @@ export interface CampaignStats {
 export interface StatsOptions {
   /** Filter by target role slug. */
   readonly targetRole?: string;
+  /** Filter by employment type. */
+  readonly employmentType?: EmploymentType;
   /** Filter by date: ISO date string or relative duration (`7d`, `30d`, `90d`). */
   readonly since?: string;
 }

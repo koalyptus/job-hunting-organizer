@@ -7,6 +7,7 @@ import {
   StatsError,
   InvalidSinceError,
 } from '../../core/stats/index.js';
+import { EMPLOYMENT_TYPES, type EmploymentType } from '../../core/applications/types.js';
 import type { CampaignStats } from '../../core/types.js';
 import {
   resolveCampaignRoot,
@@ -24,6 +25,10 @@ import { cliColorize } from '../colors.js';
 export const statsCommand = new Command('stats')
   .description('Show a campaign snapshot: counts by status, role, site, funnel')
   .option('--role <role>', 'filter stats by target role')
+  .option(
+    '--employment-type <type>',
+    'filter stats by employment type (permanent|temp|contract|casual|part-time)',
+  )
   .option('--since <date>', 'only count applications since a date (ISO or relative: 7d, 30d, 90d)')
   .option('--include-notes', 'include LLM-extracted abandonment reasons (costs tokens)')
   .option('--json', 'output as JSON')
@@ -34,6 +39,15 @@ export const statsCommand = new Command('stats')
       cmd: 'stats',
       campaign: explicitCampaign ?? '(campaigns)',
     });
+
+    // Validate employment type early
+    if (
+      opts.employmentType !== undefined &&
+      !EMPLOYMENT_TYPES.includes(opts.employmentType as EmploymentType)
+    ) {
+      userError(`invalid employment type: ${opts.employmentType}`);
+      process.exit(1);
+    }
 
     try {
       if (explicitCampaign === undefined) {
@@ -49,6 +63,7 @@ export const statsCommand = new Command('stats')
         const filterOpts = {
           targetRole: opts.role as string | undefined,
           since: opts.since as string | undefined,
+          employmentType: opts.employmentType as EmploymentType | undefined,
         };
 
         const results: { name: string; stats: CampaignStats }[] = [];
@@ -76,6 +91,7 @@ export const statsCommand = new Command('stats')
         const stats = await computeStats(appliedDir, {
           targetRole: opts.role as string | undefined,
           since: opts.since as string | undefined,
+          employmentType: opts.employmentType as EmploymentType | undefined,
         });
 
         if (opts.json) {

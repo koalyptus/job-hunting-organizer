@@ -1,6 +1,6 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import {
   indexPath,
@@ -37,6 +37,7 @@ function makeEntry(overrides: Partial<ApplicationEntry> = {}): ApplicationEntry 
     targetRole: 'senior-backend-engineer',
     appliedOn: '2026-06-03',
     tags: ['typescript'],
+    employmentType: '',
     ...overrides,
   };
 }
@@ -156,6 +157,14 @@ describe('buildIndex', () => {
     const result = await buildIndex(appliedDir);
     expect(result).toHaveLength(0);
   });
+
+  it('skips folders with unreadable meta.md', async () => {
+    const folder = join(appliedDir, '2026-Jun-03-SE-Foo-123');
+    await mkdir(folder, { recursive: true });
+    await writeFile(join(folder, 'meta.md'), '\xff\xfe invalid yaml [[[[', 'utf8');
+    const result = await buildIndex(appliedDir);
+    expect(result).toHaveLength(0);
+  });
 });
 
 describe('rebuildIndex', () => {
@@ -178,6 +187,29 @@ describe('rebuildIndex', () => {
 
     const written = await readIndex(appliedDir);
     expect(written).toHaveLength(1);
+  });
+
+  it('still returns entries when index write fails', async () => {
+    const fsMod = await import('../../fs.js');
+    const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValue(false);
+
+    const folder = join(appliedDir, '2026-Jun-03-SE-Foo-123');
+    await mkdir(folder, { recursive: true });
+    const metaContent = [
+      '---',
+      'slug: 2026-Jun-03-SE-Foo-123',
+      'status: interview',
+      'appliedOn: 2026-06-03',
+      '---',
+      '',
+    ].join('\n');
+    await writeFile(join(folder, 'meta.md'), metaContent, 'utf8');
+
+    const result = await rebuildIndex(appliedDir);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.status).toBe('interview');
+
+    spy.mockRestore();
   });
 });
 

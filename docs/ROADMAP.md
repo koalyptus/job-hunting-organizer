@@ -46,6 +46,7 @@
   - [x] 7f1 — Interactive campaign picker
   - [x] 7g — Tests, evals & documentation
   - [ ] 7h — CLI: Markdown-formatted show commands
+  - [ ] 7i — Core: Employment type in application meta
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
@@ -617,6 +618,28 @@ Renders markdown content in all `show` commands with styled terminal output usin
 **Deliverable**: All `show` commands render markdown with styled headings, lists, code blocks, and links.
 
 **Commit**: `feat(cli): render markdown content in show commands with marked-terminal`
+
+---
+
+#### 7i — Core: Employment type in application meta
+
+Add `employmentType` field (permanent, temp, contract, casual, part-time) to application metadata.
+
+- `src/core/applications/meta-schema.ts` — add `employmentType` field with enum: `permanent | temp | contract | casual | part-time | ''`
+- `src/core/applications/types.ts` — add `EmploymentType` type and update `ApplicationFrontmatter`, `ApplicationEntry`, `CreateApplicationInput`, `UpdateApplicationInput`
+- `src/core/applications/applications.ts` — wire in `createApplication`, `buildUpdates`, `entryFromFrontmatter`, `listApplications` filter
+- `src/core/applications/index-builder.ts` — wire into `entryFromFolder`
+- `src/core/track/track.ts` — pass `jd.employmentType` from `ExtractedJd` into create flow via normalization helper
+- `src/core/applications/normalize.ts` — new normalization helper mapping LLM freeform text to constrained enum
+- `src/cli/commands/show.ts` — add to summary view labels
+- `src/cli/commands/list.ts` — add `--employment-type <type>` filter option
+- `src/cli/commands/stats.ts` — add `--employment-type <type>` filter option, display "by type" grouping
+- `prompts/jd-extract.md` — update v6 to output constrained enum values directly
+- Tests: meta-schema validation, create/update with type, list filter, stats by type, normalization helper
+
+**Deliverable**: `employmentType` persisted in `meta.md` frontmatter, indexed in `.index.json`, filterable in `jho list --employment-type`, shown in `jho show`, available in `jho stats --employment-type`.
+
+**Commit**: `feat(applications): add employment type to application metadata`
 
 ---
 

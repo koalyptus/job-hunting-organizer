@@ -161,13 +161,16 @@ exports[`command --help output > list has consistent help output 1`] = `
 List campaigns, or applications within a campaign
 
 Options:
-  --status <status>  filter by status (requires --campaign or campaign folder)
-  --tag <tag>        filter by tag, repeatable (requires --campaign or campaign
-                     folder) (default: [])
-  --role <role>      filter by target role (requires --campaign or campaign
-                     folder)
-  --json             output as JSON
-  -h, --help         display help for command
+  --status <status>         filter by status (requires --campaign or campaign
+                            folder)
+  --tag <tag>               filter by tag, repeatable (requires --campaign or
+                            campaign folder) (default: [])
+  --role <role>             filter by target role (requires --campaign or
+                            campaign folder)
+  --employment-type <type>  filter by employment type (requires --campaign or
+                            campaign folder)
+  --json                    output as JSON
+  -h, --help                display help for command
 "
 `;
 
@@ -330,12 +333,15 @@ exports[`command --help output > stats has consistent help output 1`] = `
 Show a campaign snapshot: counts by status, role, site, funnel
 
 Options:
-  --role <role>    filter stats by target role
-  --since <date>   only count applications since a date (ISO or relative: 7d,
-                   30d, 90d)
-  --include-notes  include LLM-extracted abandonment reasons (costs tokens)
-  --json           output as JSON
-  -h, --help       display help for command
+  --role <role>             filter stats by target role
+  --employment-type <type>  filter stats by employment type
+                            (permanent|temp|contract|casual|part-time)
+  --since <date>            only count applications since a date (ISO or
+                            relative: 7d, 30d, 90d)
+  --include-notes           include LLM-extracted abandonment reasons (costs
+                            tokens)
+  --json                    output as JSON
+  -h, --help                display help for command
 "
 `;
 

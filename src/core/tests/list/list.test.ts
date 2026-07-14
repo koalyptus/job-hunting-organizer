@@ -28,6 +28,7 @@ describe('runListApplications', () => {
       targetRole: 'senior-backend-engineer',
       appliedOn: '2026-06-01',
       tags: ['typescript'],
+      employmentType: '',
     },
   ];
 

@@ -168,6 +168,18 @@ describe('createApplication', () => {
     });
     expect(existsSync(join(newDir, slug))).toBe(true);
   });
+
+  it('defaults title to empty string when omitted', async () => {
+    const slug = await createApplication({ appliedDir, company: 'X' });
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.title).toBe('');
+  });
+
+  it('defaults company to empty string when omitted', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng' });
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.company).toBe('');
+  });
 });
 
 describe('updateApplication', () => {
@@ -267,6 +279,39 @@ describe('updateApplication', () => {
       expect(entry.status).not.toBe('invalid-status');
     }
   });
+
+  it('updates location', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    await updateApplication(appliedDir, slug, { location: 'Sydney' });
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.location).toBe('Sydney');
+  });
+
+  it('updates site', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    await updateApplication(appliedDir, slug, { site: 'Seek' });
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.site).toBe('Seek');
+  });
+
+  it('updates employmentType', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    await updateApplication(appliedDir, slug, { employmentType: 'contract' });
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.employmentType).toBe('contract');
+  });
+
+  it('handles missing tags in existing frontmatter', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    const metaPath = join(appliedDir, slug, 'meta.md');
+    const raw = await readFile(metaPath, 'utf8');
+    const noTags = raw.replace(/tags:.*\n/, '');
+    await writeFile(metaPath, noTags, 'utf8');
+
+    await updateApplication(appliedDir, slug, { status: 'interview' });
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.status).toBe('interview');
+  });
 });
 
 describe('readApplication', () => {
@@ -346,6 +391,25 @@ describe('listApplications', () => {
     expect(entries[0]!.title).toBe('Eng1');
   });
 
+  it('filters by employmentType', async () => {
+    await createApplication({
+      appliedDir,
+      title: 'Eng1',
+      company: 'A',
+      employmentType: 'permanent',
+    });
+    await createApplication({
+      appliedDir,
+      title: 'Eng2',
+      company: 'B',
+      employmentType: 'contract',
+    });
+
+    const entries = await listApplications(appliedDir, { employmentType: 'contract' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.employmentType).toBe('contract');
+  });
+
   it('returns empty array for non-existent directory', async () => {
     const entries = await listApplications(join(workDir, 'nonexistent'));
     expect(entries).toEqual([]);
@@ -393,6 +457,16 @@ describe('getEntryFromSlug', () => {
 
   it('returns null for non-existent slug', async () => {
     const entry = await getEntryFromSlug(appliedDir, 'nonexistent');
+    expect(entry).toBeNull();
+  });
+
+  it('returns null when meta.md is unreadable', async () => {
+    const slug = '2026-Jun-03-SE-bad-file';
+    const folder = join(appliedDir, slug);
+    await mkdir(folder, { recursive: true });
+    await writeFile(join(folder, 'meta.md'), '---\n: : invalid: yaml: [[[[\n---\n', 'utf8');
+
+    const entry = await getEntryFromSlug(appliedDir, slug);
     expect(entry).toBeNull();
   });
 });

@@ -18,6 +18,20 @@ export const APPLICATION_STATUSES = [
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
 /**
+ * Valid employment types. Empty string means unspecified.
+ */
+export const EMPLOYMENT_TYPES = [
+  'permanent',
+  'temp',
+  'contract',
+  'casual',
+  'part-time',
+  '',
+] as const;
+
+export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number];
+
+/**
  * Zod-inferred frontmatter shape for `meta.md`. Every application folder
  * contains a `meta.md` with tool-managed frontmatter and a user-owned body.
  */
@@ -44,6 +58,8 @@ export interface ApplicationFrontmatter {
   tags: string[];
   /** Slug of the best-matching target role from `profile.md` `## Target roles`. */
   targetRole: string;
+  /** Employment type (e.g. `'permanent'`, `'contract'`). Empty if unspecified. */
+  employmentType: EmploymentType;
 }
 
 /**
@@ -70,6 +86,8 @@ export interface ApplicationEntry {
   appliedOn: string;
   /** Classification tags. */
   tags: string[];
+  /** Employment type (empty string if unspecified). */
+  employmentType: EmploymentType;
 }
 
 /**
@@ -103,6 +121,8 @@ export interface CreateApplicationInput {
   link?: string;
   /** Raw job description text (written to jd.md fetched-jd region). */
   description?: string;
+  /** Employment type. */
+  employmentType?: EmploymentType;
 }
 
 /**
@@ -124,6 +144,8 @@ export interface UpdateApplicationInput {
   site?: string;
   /** New job posting URL. */
   link?: string;
+  /** New employment type. */
+  employmentType?: EmploymentType;
 }
 
 /**

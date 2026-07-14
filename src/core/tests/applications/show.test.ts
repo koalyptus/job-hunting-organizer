@@ -111,6 +111,17 @@ describe('readShowData', () => {
     expect(result.filesPresent).toContain('prepare.md');
     expect(result.filesPresent).toContain('notes.md');
   });
+
+  it('handles non-Error throw from readApplication', async () => {
+    await createApp('2026-Jun-03-se-test-corp');
+    const readAppSpy = vi.spyOn(
+      await import('../../applications/applications.js'),
+      'readApplication',
+    );
+    readAppSpy.mockRejectedValueOnce('boom');
+
+    await expect(readShowData(appliedDir, '2026-Jun-03-se-test-corp')).rejects.toThrow(ShowError);
+  });
 });
 
 describe('readShowFile', () => {

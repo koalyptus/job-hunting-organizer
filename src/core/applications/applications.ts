@@ -17,6 +17,7 @@ import type {
   CreateApplicationInput,
   UpdateApplicationInput,
   ApplicationFrontmatter,
+  EmploymentType,
 } from './types.js';
 import type { Frontmatter } from '../types.js';
 
@@ -75,6 +76,9 @@ function buildUpdates(
   if (patch.link !== undefined) {
     updates.link = patch.link;
   }
+  if (patch.employmentType !== undefined) {
+    updates.employmentType = patch.employmentType;
+  }
   if (patch.tags !== undefined) {
     updates.tags = [...new Set([...existingTags, ...patch.tags])];
   }
@@ -95,6 +99,7 @@ function entryFromFrontmatter(fm: ApplicationFrontmatter): ApplicationEntry {
     site: fm.site,
     location: fm.location,
     targetRole: fm.targetRole,
+    employmentType: fm.employmentType,
     appliedOn: fm.appliedOn,
     tags: fm.tags,
   };
@@ -145,6 +150,7 @@ export async function createApplication(input: CreateApplicationInput): Promise<
       salary: input.salary ?? '',
       tags: input.tags ?? [],
       targetRole: input.targetRole ?? '',
+      employmentType: input.employmentType ?? '',
     };
 
     const metaWritten = await writeFrontmatter(
@@ -274,6 +280,7 @@ export async function listApplications(
     status?: ApplicationStatus;
     targetRole?: string;
     tags?: string[];
+    employmentType?: EmploymentType;
   },
 ): Promise<ApplicationEntry[]> {
   let entries = await readIndex(appliedDir);
@@ -287,6 +294,9 @@ export async function listApplications(
     }
     if (filters.targetRole) {
       entries = entries.filter((e) => e.targetRole === filters.targetRole);
+    }
+    if (filters.employmentType) {
+      entries = entries.filter((e) => e.employmentType === filters.employmentType);
     }
     if (filters.tags && filters.tags.length > 0) {
       entries = entries.filter((e) => filters.tags!.every((t) => e.tags.includes(t)));

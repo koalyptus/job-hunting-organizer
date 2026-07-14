@@ -6,6 +6,7 @@ import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { showCommand } from '../../commands/show.js';
 import * as showCore from '../../../core/applications/show.js';
+import type { ApplicationFrontmatter } from '../../../core/applications/types.js';
 
 vi.mock('../../../core/applications/show.js', async (importOriginal) => {
   const actual = await importOriginal<typeof showCore>();
@@ -20,7 +21,7 @@ describe('show command', () => {
   let testHome: string;
   let originalJhoConfigHome: string | undefined;
   let originalJhoData: string | undefined;
-  const mockFrontmatter = {
+  const mockFrontmatter: ApplicationFrontmatter = {
     slug: '2026-Jun-03-se-test-corp',
     status: 'applied' as const,
     appliedOn: '2026-06-03',
@@ -32,6 +33,7 @@ describe('show command', () => {
     salary: '$100k',
     tags: ['typescript'],
     targetRole: 'senior-engineer',
+    employmentType: '',
   };
 
   beforeEach(async () => {
@@ -162,6 +164,7 @@ describe('show command', () => {
           salary: '',
           tags: [],
           targetRole: '',
+          employmentType: '',
         },
         body: '',
         filesPresent: ['meta.md'],
@@ -178,6 +181,26 @@ describe('show command', () => {
       expect(stdout).not.toContain('Salary');
       expect(stdout).not.toContain('Tags');
       expect(stdout).not.toContain('Target role');
+    });
+
+    it('renders empty file table when no known files present', async () => {
+      vi.mocked(showCore.readShowData).mockResolvedValue({
+        frontmatter: {
+          ...mockFrontmatter,
+          employmentType: 'permanent',
+        },
+        body: '',
+        filesPresent: [],
+      });
+
+      const slug = '2026-Jun-03-se-test-corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stdout, exitCode } = await runCommand(showCommand, ['show', slug]);
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain(slug);
+      expect(stdout).not.toContain('Available files');
     });
 
     it('outputs JSON with --json flag', async () => {

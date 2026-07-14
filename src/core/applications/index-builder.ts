@@ -110,6 +110,7 @@ async function entryFromFolder(folderPath: string): Promise<ApplicationEntry | n
       site: fm.site,
       location: fm.location,
       targetRole: fm.targetRole,
+      employmentType: fm.employmentType,
       appliedOn: fm.appliedOn,
       tags: fm.tags,
     };

@@ -764,7 +764,9 @@ describe('runTrackRefresh', () => {
     vi.clearAllMocks();
   });
 
-  const createMockFrontmatter = (overrides: Partial<ApplicationFrontmatter> = {}) => ({
+  const createMockFrontmatter = (
+    overrides: Partial<ApplicationFrontmatter> = {},
+  ): ApplicationFrontmatter => ({
     slug: '2026-Jun-21-SE-test-co',
     status: 'applied' as const,
     appliedOn: '2026-06-21',
@@ -776,6 +778,7 @@ describe('runTrackRefresh', () => {
     salary: '',
     tags: [] as string[],
     targetRole: '',
+    employmentType: '',
     ...overrides,
   });
 
