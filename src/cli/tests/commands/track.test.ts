@@ -342,6 +342,69 @@ describe('track command', () => {
       expect(exitCode).toBe(1);
       expect(stderr).toContain('invalid input');
     });
+
+    it('rejects invalid employment type', async () => {
+      const { stderr, exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--status',
+        'interview',
+        '--employment-type',
+        'invalid',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('invalid employment type: invalid');
+    });
+
+    it('accepts valid employment type in update', async () => {
+      vi.mocked(trackCore.runTrack).mockResolvedValue({
+        slug: '2026-Jun-21-SE-TestCo',
+        changed: true,
+      });
+
+      const { exitCode } = await runCommand(trackCommand, [
+        'track',
+        '2026-Jun-21-SE-TestCo',
+        '--status',
+        'interview',
+        '--employment-type',
+        'contract',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(trackCore.runTrack).toHaveBeenCalledWith(
+        expect.objectContaining({ employmentType: 'contract' }),
+      );
+    });
+
+    it('accepts valid employment type in create', async () => {
+      const mockSummary: TrackSummary = {
+        jd: {
+          title: 'Senior Engineer',
+          company: 'TestCo',
+          location: 'Remote',
+          description: 'Job description',
+        },
+        suggestion: { roleSlug: '', confidence: 0, reasoning: '' },
+        targetRoles: [],
+      };
+      vi.mocked(trackCore.prepareTrack).mockResolvedValue(mockSummary);
+      vi.mocked(trackCore.confirmAndCreate).mockResolvedValue('2026-Jul-15-SE-TestCo');
+
+      const { exitCode } = await runCommand(trackCommand, [
+        'track',
+        'https://example.com/job',
+        '--employment-type',
+        'part-time',
+        '--yes',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(trackCore.confirmAndCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ employmentType: 'part-time' }),
+      );
+    });
   });
 
   describe('no-arg', () => {

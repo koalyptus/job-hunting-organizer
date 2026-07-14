@@ -195,8 +195,8 @@ describe('parseEmploymentType', () => {
   });
 
   describe('rejection variant', () => {
-    it('returns temp for rejection (fallback for rejection apps)', () => {
-      expect(parseEmploymentType('rejection')).toBe('temp');
+    it('returns empty string for rejection (unspecified)', () => {
+      expect(parseEmploymentType('rejection')).toBe('');
     });
   });
 

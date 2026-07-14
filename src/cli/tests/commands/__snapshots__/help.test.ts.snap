@@ -167,8 +167,8 @@ Options:
                             campaign folder) (default: [])
   --role <role>             filter by target role (requires --campaign or
                             campaign folder)
-  --employment-type <type>  filter by employment type (requires --campaign or
-                            campaign folder)
+  --employment-type <type>  filter by employment type
+                            (permanent|temp|contract|casual|part-time)
   --json                    output as JSON
   -h, --help                display help for command
 "
@@ -351,21 +351,23 @@ exports[`command --help output > track has consistent help output 1`] = `
 Record a new application (or update by slug)
 
 Arguments:
-  urlOrSlug             job posting URL or existing application slug
+  urlOrSlug                 job posting URL or existing application slug
 
 Options:
-  --paste               paste job description from clipboard
-  --stdin               read job description from stdin
-  --status <status>     initial status (one of: applied, interview, offer,
-                        rejected, withdrawn, abandoned, ghosted, accepted)
-  --salary <range>      salary or pay range
-  --tag <tag>           add a tag (repeatable) (default: [])
-  --note <text>         add a note
-  --target-role <role>  target role for the application
-  --steer <text>        instructions to guide the LLM output
-  --refresh             re-fetch job description from stored URL
-  -y, --yes             skip confirmation prompts
-  -h, --help            display help for command
+  --paste                   paste job description from clipboard
+  --stdin                   read job description from stdin
+  --status <status>         initial status (one of: applied, interview, offer,
+                            rejected, withdrawn, abandoned, ghosted, accepted)
+  --salary <range>          salary or pay range
+  --tag <tag>               add a tag (repeatable) (default: [])
+  --note <text>             add a note
+  --target-role <role>      target role for the application
+  --employment-type <type>  employment type
+                            (permanent|temp|contract|casual|part-time)
+  --steer <text>            instructions to guide the LLM output
+  --refresh                 re-fetch job description from stored URL
+  -y, --yes                 skip confirmation prompts
+  -h, --help                display help for command
 "
 `;
 

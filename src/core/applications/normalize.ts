@@ -68,9 +68,9 @@ export function parseEmploymentType(value: string | undefined): EmploymentType {
     return 'casual';
   }
 
-  // Rejection apps: fallback on any user-provided application type
+  // Rejection apps: return unspecified
   if (v === 'rejection') {
-    return 'temp';
+    return '';
   }
 
   // Unknown - return empty to let it be unspecified

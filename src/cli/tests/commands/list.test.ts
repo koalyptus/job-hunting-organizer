@@ -383,31 +383,14 @@ describe('list command', () => {
       expect(stderr).toContain('invalid status');
     });
 
-    it('accepts any employment type (validation happens in core)', async () => {
-      vi.mocked(listCoreModule.runListApplications).mockResolvedValue({
-        entries: [
-          {
-            slug: '2026-Jun-01-SE-Acme-123',
-            status: 'applied',
-            title: 'Software Engineer',
-            company: 'Acme Corp',
-            site: 'Seek',
-            location: 'Sydney NSW',
-            targetRole: 'senior-backend-engineer',
-            appliedOn: '2026-06-01',
-            tags: ['typescript'],
-            employmentType: 'permanent',
-          },
-        ],
-      });
-
-      const { stdout, exitCode } = await runCommand(
+    it('rejects invalid employment type', async () => {
+      const { stderr, exitCode } = await runCommand(
         listCommand,
         ['list', '--campaign', 'default', '--employment-type', 'any-value'],
         parentSetup,
       );
-      expect(exitCode).toBe(0);
-      expect(stdout).toContain('Acme Corp');
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('invalid employment type');
     });
 
     it('filters by employment type', async () => {
