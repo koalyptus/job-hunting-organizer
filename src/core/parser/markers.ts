@@ -12,7 +12,7 @@
 // Single-line "section" markers (`<!-- jho:meta — ... -->`) are informational
 // only; they are matched by a different regex and do not denote a region.
 
-import type { RegionName, Region, ReplaceRegionOptions } from './types.js';
+import type { RegionName, Region, ReplaceRegionOptions } from '../types.js';
 
 /**
  * The set of region names the tool currently emits. Used by

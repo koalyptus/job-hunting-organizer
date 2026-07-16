@@ -1,5 +1,5 @@
 import { MONTH_ABBR } from './date.js';
-import { SLUG_PATTERN } from './slug.js';
+import { SLUG_PATTERN } from './parser/slug.js';
 
 // ── Campaign name ───────────────────────────────────────────────────────────
 

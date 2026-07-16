@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readShowData, readShowFile, ShowError, SHOWABLE_FILES } from '../../applications/show.js';
-import { writeFrontmatter } from '../../frontmatter.js';
-import { replaceRegion } from '../../markers.js';
+import { writeFrontmatter } from '../../parser/frontmatter.js';
+import { replaceRegion } from '../../parser/markers.js';
 
 vi.mock('../../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({

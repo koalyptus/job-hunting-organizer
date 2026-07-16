@@ -6,7 +6,7 @@ import { rebuildIndex } from '../applications/index-builder.js';
 import { readCounters, writeCountersAsync } from '../applications/counters.js';
 import { acquireLock } from '../locks.js';
 import { moduleLogger } from '../logger/logger.js';
-import { SLUG_PATTERN } from '../slug.js';
+import { SLUG_PATTERN } from '../parser/slug.js';
 import type { RepairAction, RepairResult, RepairOptions } from './types.js';
 
 const log = moduleLogger(import.meta.url);

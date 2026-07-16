@@ -10,7 +10,7 @@ import {
   readFrontmatter,
   serializeFrontmatter,
   writeFrontmatter,
-} from '../frontmatter.js';
+} from '../../parser/frontmatter.js';
 
 let workDir: string;
 

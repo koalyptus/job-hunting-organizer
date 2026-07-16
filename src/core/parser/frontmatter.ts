@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dump, load, YAMLException } from 'js-yaml';
-import { atomicWrite } from './fs.js';
-import type { Frontmatter, ParsedFile } from './types.js';
+import { atomicWrite } from '../fs.js';
+import type { Frontmatter, ParsedFile } from '../types.js';
 
 /**
  * Thrown when the YAML in a frontmatter block cannot be parsed, or when

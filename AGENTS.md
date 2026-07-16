@@ -159,6 +159,8 @@ jho mcp                 # start MCP server
 
 **Campaign inference**: every command that targets a campaign accepts `--campaign <name>` (explicit) or infers the campaign from the cwd by walking up to a folder named `campaigns` and using the directory below it. The default is `default`. CLI-only convenience; MCP tool calls always pass an explicit campaign name. If neither an explicit `--campaign` flag nor cwd inference yields a campaign, the `default` campaign is used.
 
+**Natural language**: any command can be invoked in plain English. If `process.argv.slice(2)[0]` contains a space and is not a known command and does not start with `-`, `jho` treats the input as a natural-language prompt. `parseNaturalLanguage` (LLM, json mode, temp 0.1) maps it to a `ParsedCommand`; `dispatchNaturalLanguage` rebuilds a synthetic argv and re-parses it through the existing Commander `program` (`from: 'user'`), so 100% of command logic is reused — nothing is reimplemented. Confidence gates: ≥0.8 auto-run; 0.5–0.8 confirm via `@clack/prompts` (skip with `--yes`); <0.5 error with a rephrase hint. Explicit global flags (`--campaign`, `--yes`, etc.) always override LLM-parsed globals. Requires a configured LLM (same as other LLM-backed commands). See `prompts/nl-command.md` and `src/core/parser/prompt-parser.ts`.
+
 ## MCP tools (planned)
 
 `init`, `extract_jd`, `cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `schedule_interview`, `post_mortem`, `show_retro`, `append_retro`, `aggregate_retros`, `prepare`, `read_profile`, `update_profile`, `get_root`, `get_campaign`, `list_campaigns`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`.

@@ -20,5 +20,11 @@ Examples:
   $ jho help track              # help for the track command
   $ jho help campaign           # help for the campaign topic
   $ jho help cover-letter       # help for cover-letter generation
+  $ jho help natural-language   # help for the natural-language interface
+
+Natural language: most commands can also be run in plain English, e.g.
+  $ jho "list all applications for javascript-developer campaign"
+  $ jho "create cover letter for application-xyz"
+See 'jho help natural-language' for details.
 `,
 );

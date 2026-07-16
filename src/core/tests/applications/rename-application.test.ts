@@ -10,7 +10,7 @@ import {
   SelfRenameError,
 } from '../../applications/rename.js';
 import { createApplication, readApplication, readIndex } from '../../applications/index.js';
-import { writeFrontmatter } from '../../frontmatter.js';
+import { writeFrontmatter } from '../../parser/frontmatter.js';
 import type { Frontmatter } from '../../types.js';
 
 const mockRootLogger = vi.hoisted(() => ({

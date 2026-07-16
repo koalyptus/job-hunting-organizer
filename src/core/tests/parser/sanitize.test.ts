@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeToken, sanitizeUnbounded } from '../sanitize.js';
+import { sanitizeToken, sanitizeUnbounded } from '../../parser/sanitize.js';
 
 describe('sanitizeUnbounded', () => {
   it('lowercases the input', () => {

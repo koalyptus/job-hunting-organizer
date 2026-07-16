@@ -16,7 +16,7 @@ import {
 } from '../../applications/index.js';
 import { todayIso } from '../../date.js';
 import * as fsModule from '../../fs.js';
-import { writeFrontmatter } from '../../frontmatter.js';
+import { writeFrontmatter } from '../../parser/frontmatter.js';
 
 const mockRootLogger = vi.hoisted(() => ({
   debug: vi.fn(),

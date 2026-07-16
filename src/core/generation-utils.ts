@@ -2,7 +2,7 @@
  * Shared utilities for LLM-backed generation modules (cover letter, Q&A,
  * prepare, evals). Keeps common logic DRY across generation workflows.
  */
-import { findRegion } from './markers.js';
+import { findRegion } from './parser/markers.js';
 
 /**
  * Extract the JD text from `jd.md` content by reading the `fetched-jd`

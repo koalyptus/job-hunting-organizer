@@ -1,8 +1,8 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { SLUG_PATTERN, extractDateFromSlug } from '../slug.js';
-import { readFrontmatter } from '../frontmatter.js';
+import { SLUG_PATTERN, extractDateFromSlug } from '../parser/slug.js';
+import { readFrontmatter } from '../parser/frontmatter.js';
 import { safeValidateApplicationFrontmatter } from './meta-schema.js';
 import { debug } from '../debug.js';
 import { atomicWrite } from '../fs.js';

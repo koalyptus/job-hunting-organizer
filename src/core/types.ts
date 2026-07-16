@@ -155,6 +155,19 @@ export interface TargetRole {
 }
 
 /**
+ * Parsed global options available on every command via
+ * `optsWithGlobals()`. Commander stores these on the parent program.
+ */
+export interface GlobalOpts {
+  campaign?: string;
+  verbose?: boolean;
+  quiet?: boolean;
+  yes?: boolean;
+  color?: boolean;
+  logFile?: string;
+}
+
+/**
  * Options for {@link chatComplete}. All fields are optional.
  */
 export interface ChatCompleteOptions {

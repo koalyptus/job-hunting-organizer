@@ -14,7 +14,7 @@ import { readProfile } from '../campaign/profile.js';
 import { readApplication } from '../applications/applications.js';
 import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
-import { extractSteer, replaceSteer } from '../markers.js';
+import { extractSteer, replaceSteer } from '../parser/markers.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
 import { computeHash, writeToolhash } from '../toolhash.js';
 import { moduleLogger } from '../logger/logger.js';

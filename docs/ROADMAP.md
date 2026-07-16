@@ -47,6 +47,7 @@
   - [x] 7g — Tests, evals & documentation
   - [ ] 7h — CLI: Markdown-formatted show commands
   - [ ] 7i — Core: Employment type in application meta
+  - [x] 7j — CLI: Natural-language command interface
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
@@ -94,9 +95,9 @@
 - `core/debug.ts` — `debug` wrapper, namespace `jho:*`
 - `core/fs.ts` — `atomicWrite(path, content)`, `withBackup(path, fn)`
 - `core/locks.ts` — `acquireLock(target, fn)` via `proper-lockfile` (5 retries, 50–500ms backoff, stale-lock detection). Lock granularity: app folder for per-app ops, profile for rebuild, campaign root for global ops. See PLAN §7 "Concurrency / file locks".
-- `core/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction, `SLUG_PATTERN`, `validateSlug(slug)`
-- `core/frontmatter.ts` — `readFrontmatter(path)`, `writeFrontmatter(path, fm, body)` preserving custom fields
-- `core/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
+- `core/parser/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction, `SLUG_PATTERN`, `validateSlug(slug)`
+- `core/parser/frontmatter.ts` — `readFrontmatter(path)`, `writeFrontmatter(path, fm, body)` preserving custom fields
+- `core/parser/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
 - Tests for each module (~80% coverage on these)
 
 ### Phase 2a — Foundation (delivered in PR #2)
@@ -125,9 +126,9 @@ Picks up the more opinionated modules that build on 2a. Unblocks Phase 5 (JD ext
 
 **Scope**:
 
-- `core/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction, `SLUG_PATTERN`, `validateSlug(slug)`
-- `core/frontmatter.ts` — `readFrontmatter(path)`, `writeFrontmatter(path, fm, body)` preserving custom fields
-- `core/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
+- `core/parser/slug.ts` — slug algorithm, `applied/.counters.json` management, jobId extraction, `SLUG_PATTERN`, `validateSlug(slug)`
+- `core/parser/frontmatter.ts` — `readFrontmatter(path)`, `writeFrontmatter(path, fm, body)` preserving custom fields
+- `core/parser/markers.ts` — parse/write `<!-- jho:* -->` markers, identify ownership regions
 - `jho config show` — prints redacted merged config for the inferred campaign
 - `jho ownership` — prints the per-file ownership table
 
@@ -411,7 +412,7 @@ Split into sub-phases for incremental delivery.
 #### 6e — Steer: custom LLM instructions per command
 
 - `src/core/types.ts` — add `steer?: string` to `CoverLetterOptions`, `AnswerOptions`
-- `src/core/markers.ts` — add `extractSteer()` and `replaceSteer()` helpers for `<!-- jho:steer: -->` markers
+- `src/core/parser/markers.ts` — add `extractSteer()` and `replaceSteer()` helpers for `<!-- jho:steer: -->` markers
 - `src/core/track/track.ts` — add `steer?: string` to `TrackOptions`, `ConfirmAndCreateOptions`; write steer to `jd.md` marker
 - `src/core/applications/cover-letter.ts` — read steer from `cover-letter.md`, combine with CLI steer, append `## Additional instructions` to user message, write back
 - `src/core/applications/application-qa.ts` — use steer in user message, write `- Steer:` line to `qa.md` entry
@@ -487,7 +488,7 @@ Split into sub-phases for incremental delivery.
 - `src/core/repair/` — types, repair.ts, index.ts
 - `repairApp(appliedDir, slug, log?)` — rebuilds frontmatter from sibling files, regenerates toolhash, re-adds index entry
 - `repairAll(appliedDir, log?)` — rebuilds `.index.json`, `.counters.json`, walks all app folders running `repairApp` on each
-- Uses `core/fs.ts`, `core/frontmatter.ts`, `core/markers.ts`, `core/slug.ts`, `core/index-builder.ts`
+- Uses `core/fs.ts`, `core/parser/frontmatter.ts`, `core/parser/markers.ts`, `core/parser/slug.ts`, `core/index-builder.ts`
 - Tests: doctor finds known issues (missing file, bad marker, toolhash mismatch), repair fixes them, no-op on clean state, all flag
 
 **Deliverable**: `jho doctor` diagnoses issues. `jho repair` fixes them. Campaign can be recovered from common corruptions.
@@ -640,6 +641,36 @@ Add `employmentType` field (permanent, temp, contract, casual, part-time) to app
 **Deliverable**: `employmentType` persisted in `meta.md` frontmatter, indexed in `.index.json`, filterable in `jho list --employment-type`, shown in `jho show`, available in `jho stats --employment-type`.
 
 **Commit**: `feat(applications): add employment type to application metadata`
+
+---
+
+#### 7j — CLI: Natural-language command interface
+
+Let users invoke any command in plain English. Detection, LLM parsing, and dispatch reuse all existing command logic — no business logic is duplicated.
+
+- `prompts/nl-command.md` — v1 prompt enumerating all 22 commands + globals + few-shot examples for LLM→`ParsedCommand` mapping.
+- `src/core/parser/prompt-parser.ts`:
+  - `looksLikeNaturalLanguage(argv)` — heuristic: first arg has a space AND is not a known command AND doesn't start with `-`.
+  - `extractPromptAndGlobals(argv)` — peel `--campaign/--verbose/--quiet/--yes/--no-color/--log-file` out as globals, return the remaining prompt tokens.
+  - `parseNaturalLanguage(prompt, globals, log)` — LLM call (json mode, temp 0.1, 30s) → `ParsedCommand { command, subcommand?, args, options, confidence }`. Globals are merged over LLM output so explicit flags always win. Throws `PromptParseError` on invalid/unknown command or non-JSON.
+  - `VALID_COMMANDS`, `COMMANDS_WITH_SUBCOMMANDS` — gate-keep the LLM's `command` field against the real CLI surface.
+- `src/cli/nl-dispatch.ts`:
+  - `dispatchNaturalLanguage(parsed, globals, program, log)` — builds a synthetic argv via `buildArgv` and re-parses it through the existing fully-configured Commander `program` (`program.parseAsync(argv, { from: 'user' })`). 100% reuse of command logic.
+  - `buildArgv(parsed, globals)` — globals first, then command, subcommand, positional args, then kebab-cased options (booleans as flags, arrays expanded to repeated flags). Global option keys are skipped (already applied).
+- `src/cli/index.ts`:
+  - Set `program.exitOverride()` before the synthetic re-parse so parse errors surface as user-facing text.
+  - On NL detection: parse, then confidence gate — ≥0.8 auto-run; 0.5–0.8 confirm via `@clack/prompts` (skip with `--yes`); <0.5 error with a rephrase hint.
+  - On `PromptParseError`: friendly message pointing at LLM config / `jho help`.
+- `src/core/tests/parser/prompt-parser.test.ts` — 20 unit tests (mocked chat/parse): heuristics, happy path, subcommands, globals, arrays, confidence, validation errors.
+- `evals/nl-command/` — `cases.ts` (33 cases covering all 22 commands + synonyms + ambiguous), `nl-command.test.ts` (rubric-scored against LLM), `rubric.md`.
+- `src/cli/tests/commands/prompt.test.ts` — 14 integration tests: heuristics, `extractPromptAndGlobals`, full `dispatchNaturalLanguage` re-parse through a Commander program (globals, options, repeated flags, subcommands).
+- Docs: `README.md` "Natural language" section; `src/cli/commands/help.ts` after-text; this file (7j checked).
+
+**Confidence thresholds**: ≥0.8 auto, 0.5–0.8 confirm, <0.5 error. Globals from explicit flags always override LLM-parsed globals.
+
+**Deliverable**: `jho "list all applications for <campaign> campaign"`, `jho "create cover letter for <slug>"`, etc. all resolve to the identical command behaviour; `--yes` for non-interactive use.
+
+**Commit**: `feat(cli): natural-language command interface`
 
 ---
 

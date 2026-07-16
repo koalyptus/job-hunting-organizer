@@ -13,7 +13,7 @@ import { defaultLlmConfig, chatComplete, extractJson } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../campaign/profile.js';
 import { readApplication } from '../applications/applications.js';
-import { replaceRegion, extractSteer, replaceSteer } from '../markers.js';
+import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';

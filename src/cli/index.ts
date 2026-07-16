@@ -25,9 +25,19 @@ import { logsCommand } from './commands/logs.js';
 import { helpCommand } from './commands/help.js';
 import { mcpCommand } from './commands/mcp.js';
 import { initRootLogger } from '../core/logger/root-logger.js';
-import { getRootLogger } from '../core/logger/logger.js';
+import { getRootLogger, logError } from '../core/logger/logger.js';
 import { loadGlobalConfig } from '../core/config/config.js';
 import { initColors } from './colors.js';
+import { withSpinner } from '../core/spinner.js';
+import {
+  looksLikeNaturalLanguage,
+  deriveKnownCommands,
+  extractPromptAndGlobals,
+  parseNaturalLanguage,
+  PromptParseError,
+} from '../core/parser/prompt-parser.js';
+import { dispatchNaturalLanguage, validateParsedCommand } from './nl-dispatch.js';
+import { userError, userOutput } from './output.js';
 
 const VERSION = getPackageVersion();
 
@@ -86,7 +96,78 @@ Data locations (override via env var only):
 
 Per-command global flags (--campaign, --verbose, --quiet, --yes, --no-color, --log-file)
 are available on all commands.
+
+Natural language: you can also invoke commands using plain English, e.g.
+  $ jho "list all applications for javascript-developer campaign"
+  $ jho "create cover letter for application-xyz"
 `,
 );
 
-program.parse();
+// ── Natural language routing ───────────────────────────────────────────────
+// If the first argument looks like natural language (contains spaces and is
+// not a known subcommand), parse it via the LLM and dispatch to the matching
+// command by re-parsing a synthetic argv through the existing program.
+const rawArgs = process.argv.slice(2);
+
+if (looksLikeNaturalLanguage(rawArgs, deriveKnownCommands(program.commands.map((c) => c.name())))) {
+  // Prevent Commander from calling process.exit on parse errors during the
+  // synthetic re-parse below — we want to surface errors as user-facing text.
+  program.exitOverride();
+
+  const { globals, prompt } = extractPromptAndGlobals(rawArgs);
+  const cmdLog = getRootLogger().child({ module: 'nl-route' });
+
+  try {
+    const parsed = await withSpinner('Interpreting command...', 'Command interpreted', () =>
+      parseNaturalLanguage(prompt, globals, cmdLog),
+    );
+
+    // Validate command against registered commands
+    validateParsedCommand(parsed, program);
+
+    // Low confidence (0.5–0.8): echo the parse and require confirmation
+    // unless --yes was passed.
+    if (parsed.confidence < 0.8 && !globals.yes) {
+      const summary =
+        `${parsed.command}` +
+        `${parsed.subcommand ? ` ${parsed.subcommand}` : ''}` +
+        `${parsed.args.length ? ` ${parsed.args.join(' ')}` : ''}` +
+        ` (confidence ${parsed.confidence.toFixed(2)})`;
+      userOutput(`Interpreted as: ${summary}`);
+      const { confirm } = await import('@clack/prompts');
+      const proceed = await confirm({
+        message: 'Run this command?',
+        initialValue: parsed.confidence >= 0.5,
+      });
+      if (!proceed) {
+        userOutput('Cancelled.');
+        process.exit(0);
+      }
+    } else if (parsed.confidence < 0.5) {
+      userError(
+        `Could not confidently interpret: "${prompt}"\n` +
+          `Interpreted as: ${parsed.command}${parsed.subcommand ? ` ${parsed.subcommand}` : ''} ` +
+          `${parsed.args.join(' ')} (confidence ${parsed.confidence.toFixed(2)})\n` +
+          `Hint: rephrase, or run a specific command (see 'jho help').`,
+      );
+      process.exit(1);
+    }
+
+    await dispatchNaturalLanguage(parsed, globals, program, cmdLog);
+  } catch (err) {
+    if (err instanceof PromptParseError) {
+      logError(cmdLog, err, 'nl-route.failed');
+      cmdLog.flush();
+      const hint = err.message.startsWith('LLM call failed')
+        ? '\nHint: natural-language parsing requires an LLM. ' +
+          "Configure one with 'jho init' or set LLM_* env vars. " +
+          "Alternatively run a specific command (see 'jho help')."
+        : '';
+      userError(`${err.message}${hint}`);
+      process.exit(1);
+    }
+    throw err;
+  }
+} else {
+  program.parse();
+}

@@ -12,7 +12,7 @@ import {
   appendNote,
 } from '../../applications/applications.js';
 import { confirmTrackSummary, confirmTrackUpdate } from '../../track/prompts.js';
-import { replaceRegion, replaceSteer } from '../../markers.js';
+import { replaceRegion, replaceSteer } from '../../parser/markers.js';
 import { atomicWrite } from '../../fs.js';
 import type { ApplicationFrontmatter } from '../../applications/types.js';
 
@@ -60,7 +60,7 @@ vi.mock('../../track/prompts.js', () => ({
   confirmTrackUpdate: vi.fn(() => Promise.resolve(true)),
 }));
 
-vi.mock('../../markers.js', () => ({
+vi.mock('../../parser/markers.js', () => ({
   replaceRegion: vi.fn(
     (_content, _name, newContent) =>
       `<!-- jho:start:fetched-jd -->\n${newContent}\n<!-- jho:end:fetched-jd -->`,

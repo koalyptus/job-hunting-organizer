@@ -10,8 +10,8 @@ import {
   extractDateFromSlug,
   SLUG_PATTERN,
   uniqueSlug,
-} from '../slug.js';
-import { validateSlug } from '../validate.js';
+} from '../../parser/slug.js';
+import { validateSlug } from '../../validate.js';
 
 vi.mock('../../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({

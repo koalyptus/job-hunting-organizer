@@ -116,8 +116,8 @@ applied/
 Slugs are intentionally unique but visually noisy. To make the CLI ergonomic, every command that takes a `<slug>` also accepts the implicit form: **omit the slug and run from inside the application folder**.
 
 - `core/paths.ts` exposes `findSlugFromCwd(cwd, appliedDir)` which walks up from `cwd` and returns the basename of the first directory whose name matches the slug pattern above and lives under `appliedDir`. Returns `null` if none found.
-- `core/slug.ts` exports the `SLUG_PATTERN` regex and a `validateSlug(slug)` helper.
-- `core/url.ts` provides `extractJobIdFromUrl(url)` — tries user-supplied patterns from `JHO_URL_PATTERNS` first, then built-in patterns (LinkedIn `/view/<id>`, Indeed `jk=`, Seek trailing numeric, generic trailing 5+ digits excluding years). Returns `null` when no pattern matches.
+- `core/parser/slug.ts` exports the `SLUG_PATTERN` regex and a `validateSlug(slug)` helper.
+- `core/parser/url.ts` provides `extractJobIdFromUrl(url)` — tries user-supplied patterns from `JHO_URL_PATTERNS` first, then built-in patterns (LinkedIn `/view/<id>`, Indeed `jk=`, Seek trailing numeric, generic trailing 5+ digits excluding years). Returns `null` when no pattern matches.
 - **Interactive fallback (future, Phase 5)**: when `jho track <url>` cannot extract a job ID from the URL, the tool interactively prompts the user to supply one manually (an optional input — users can skip it and proceed with no JobId in the slug). This is the CLI-only convenience; MCP `track_application` and `--yes` mode skip the prompt silently.
 - Resolution rule in every CLI command:
   1. If a `<slug>` argument is passed explicitly, use it.
@@ -1142,7 +1142,7 @@ This section captures why the current design is already web-client-friendly and 
 ### Why the design is already web-ready
 
 - **Filesystem as the source of truth.** No DB, no proprietary state. A web client reads and writes the exact same markdown + JSON files as the CLI and MCP server.
-- **`core/*` is the shared layer.** CLI, MCP, and any future web client all call the same `core/paths`, `core/config`, `core/fs`, `core/locks`, `core/slug`, `core/frontmatter`, `core/markers`, the LLM module, calendar providers, etc. A web server is just another consumer of the same core.
+- **`core/*` is the shared layer.** CLI, MCP, and any future web client all call the same `core/paths`, `core/config`, `core/fs`, `core/locks`, `core/parser/slug`, `core/parser/frontmatter`, `core/parser/markers`, the LLM module, calendar providers, etc. A web server is just another consumer of the same core.
 - **Pluggable everywhere that matters.** Generic OpenAI-compatible LLM client, pluggable calendar providers, file-ownership markers that work for any process touching the files.
 - **Markdown everywhere.** A web UI renders `profile.md`, `cover-letter.md`, `retro.md`, etc. with any markdown lib — no data migration needed.
 - **Single-user, local-first posture.** The natural v1 web client is `jho web` → `http://127.0.0.1:7331` with no auth, reading the same campaign root as the CLI. No new privacy story to invent.

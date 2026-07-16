@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getPackageRoot } from './package.js';
-import { parseFrontmatter, getFrontmatterNumber } from './frontmatter.js';
+import { parseFrontmatter, getFrontmatterNumber } from './parser/frontmatter.js';
 
 const DEFAULT_PROMPT_TEMPERATURE = 0.6;
 
