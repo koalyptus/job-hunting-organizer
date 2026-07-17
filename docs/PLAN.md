@@ -61,18 +61,18 @@ There is a small **config home** (holds the global `config.json` and `.locks/`) 
         └── ...
 ```
 
-| Path                                                | Purpose                                                | Git? |
-| --------------------------------------------------- | ------------------------------------------------------ | ---- |
-| `<configHome>/config.json`                          | Global settings (LLM, GitHub, calendar, logging)       | no   |
-| `<configHome>/.locks/`                              | proper-lockfile sidecars                               | no   |
-| `<dataRoot>/campaigns/<name>/config.json`           | Per-campaign settings (profile path, applied dir, KB)  | no   |
-| `<dataRoot>/campaigns/<name>/profile.md`            | Generated profile (per-campaign)                       | no   |
-| `<dataRoot>/campaigns/<name>/cv.<ext>`              | User's CV (path configurable)                          | no   |
-| `<dataRoot>/campaigns/<name>/applied/`              | Per-application folders                                | no   |
-| `<dataRoot>/campaigns/<name>/knowledge-base/`        | User docs (PDF, DOCX, MD, TXT) + tool-owned `github/` cache | no   |
-| `<dataRoot>/campaigns/<name>/outlook-tokens.json`   | MSAL tokens (mode 0600)                                | no   |
-| `$JHO_CONFIG_HOME`                                  | Override of config home (no CLI flag for it by design) | n/a  |
-| `$JHO_DATA`                                         | Override of data root (no CLI flag for it by design)   | n/a  |
+| Path                                              | Purpose                                                     | Git? |
+| ------------------------------------------------- | ----------------------------------------------------------- | ---- |
+| `<configHome>/config.json`                        | Global settings (LLM, GitHub, calendar, logging)            | no   |
+| `<configHome>/.locks/`                            | proper-lockfile sidecars                                    | no   |
+| `<dataRoot>/campaigns/<name>/config.json`         | Per-campaign settings (profile path, applied dir, KB)       | no   |
+| `<dataRoot>/campaigns/<name>/profile.md`          | Generated profile (per-campaign)                            | no   |
+| `<dataRoot>/campaigns/<name>/cv.<ext>`            | User's CV (path configurable)                               | no   |
+| `<dataRoot>/campaigns/<name>/applied/`            | Per-application folders                                     | no   |
+| `<dataRoot>/campaigns/<name>/knowledge-base/`     | User docs (PDF, DOCX, MD, TXT) + tool-owned `github/` cache | no   |
+| `<dataRoot>/campaigns/<name>/outlook-tokens.json` | MSAL tokens (mode 0600)                                     | no   |
+| `$JHO_CONFIG_HOME`                                | Override of config home (no CLI flag for it by design)      | n/a  |
+| `$JHO_DATA`                                       | Override of data root (no CLI flag for it by design)        | n/a  |
 
 Resolution precedence for the **config home**: **`$JHO_CONFIG_HOME` env var → default `~/.job-hunting-organizer/`**. There is no `--config-home` CLI flag; the env var is the only override.
 

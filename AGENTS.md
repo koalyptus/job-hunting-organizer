@@ -178,15 +178,15 @@ jho mcp                 # start MCP server
 
 ## Prompts (versioned LLM templates)
 
-| Prompt              | Phase | Purpose                                          |
-| ------------------- | ----- | ------------------------------------------------ |
-| `profile-build.md`  | 3d    | Generate profile.md from CV + GitHub             |
-| `jd-extract.md`     | 5b    | Extract structured JD from raw text (Tier 1)     |
-| `suggest-role.md`   | 5c    | Suggest best-matching target role from profile   |
-| `cover-letter.md`   | 6a    | Generate tailored cover letter (Tier 2)          |
-| `application-qa.md` | 6b    | Tailor answer to application question (Tier 2)   |
-| `learning-plan.md`  | 7b    | Generate learning plan from weak topics (Tier 2) |
-| `prepare.md`        | 7c    | Generate pre-interview prep plan (Tier 2)        |
+| Prompt              | Phase | Purpose                                              |
+| ------------------- | ----- | ---------------------------------------------------- |
+| `profile-build.md`  | 3d    | Generate profile.md from CV + GitHub                 |
+| `jd-extract.md`     | 5b    | Extract structured JD from raw text (Tier 1)         |
+| `suggest-role.md`   | 5c    | Suggest best-matching target role from profile       |
+| `cover-letter.md`   | 6a    | Generate tailored cover letter (Tier 2)              |
+| `application-qa.md` | 6b    | Tailor answer to application question (Tier 2)       |
+| `learning-plan.md`  | 7b    | Generate learning plan from weak topics (Tier 2)     |
+| `prepare.md`        | 7c    | Generate pre-interview prep plan (Tier 2)            |
 | `nl-command.md`     | 7j    | Map natural-language input to ParsedCommand (Tier 1) |
 
 ## File ownership model
