@@ -55,7 +55,7 @@ There is a small **config home** (holds the global `config.json` and `.locks/`) 
     │   ├── profile.md                                  # generated profile (per-campaign)
     │   ├── cv.<ext>                                    # user's CV (path configurable)
     │   ├── applied/                                    # per-application folders
-    │   ├── knowledge-base/local/                       # raw extracted text cache
+    │   ├── knowledge-base/                             # user docs + tool-owned github/ cache
     │   └── outlook-tokens.json                         # MSAL tokens (mode 0600)
     └── freelance/                                      # second campaign
         └── ...
@@ -69,7 +69,7 @@ There is a small **config home** (holds the global `config.json` and `.locks/`) 
 | `<dataRoot>/campaigns/<name>/profile.md`            | Generated profile (per-campaign)                       | no   |
 | `<dataRoot>/campaigns/<name>/cv.<ext>`              | User's CV (path configurable)                          | no   |
 | `<dataRoot>/campaigns/<name>/applied/`              | Per-application folders                                | no   |
-| `<dataRoot>/campaigns/<name>/knowledge-base/local/` | Raw extracted text cache                               | no   |
+| `<dataRoot>/campaigns/<name>/knowledge-base/`        | User docs (PDF, DOCX, MD, TXT) + tool-owned `github/` cache | no   |
 | `<dataRoot>/campaigns/<name>/outlook-tokens.json`   | MSAL tokens (mode 0600)                                | no   |
 | `$JHO_CONFIG_HOME`                                  | Override of config home (no CLI flag for it by design) | n/a  |
 | `$JHO_DATA`                                         | Override of data root (no CLI flag for it by design)   | n/a  |
@@ -535,7 +535,9 @@ The two layers are *additive*, not an override cascade. `jho config` shows the g
   "linkedin": { "url": "https://linkedin.com/in/example" },
   "applied": { "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/applied" },
   "knowledgeBase": {
-    "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/knowledge-base"
+    "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/knowledge-base",
+    "maxChars": 50000,
+    "sources": ["/home/<user>/notes/interview-tips.md"]
   }
 }
 ```
@@ -614,10 +616,10 @@ The tool is designed for single-user, single-process use today, but the CLI, MCP
 jho                          # top-level overview
 jho --version
 
-jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--yes]
+jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--kb <path>] [--yes]
   # Wizard prompts: campaign name (defaults to "default") → LinkedIn URL (optional) → CV path →
-  #   GitHub user (+token) → LLM baseUrl/key/model → calendar provider → runs profile build →
-  #   reviews generated ## Target roles → writes global + campaign config.json + profile.md
+  #   KB path (optional) → GitHub user (+token) → LLM baseUrl/key/model → calendar provider →
+  #   runs profile build → reviews generated ## Target roles → writes global + campaign config.json + profile.md
 jho config [show|path|edit] [--reveal]
 jho campaign config [show|path|edit] [--reveal]
 jho rename-campaign <new> [--from <old>]
@@ -685,6 +687,9 @@ jho retro    aggregate [--role <slug>] [--include-abandoned]
 jho ownership [--markdown]
 jho doctor [<slug>] [--all]
 jho repair [<slug>] [--all]
+
+jho kb add <path...>       # copy knowledge-base docs (PDF, DOCX, MD, TXT) into campaign
+jho kb update              # re-sync knowledge base from recorded sources
 
 jho stats  [--role <slug>] [--employment-type <type>] [--since <date>] [--json]
   # snapshot of the campaign: counts by status, target role, site, employment type;

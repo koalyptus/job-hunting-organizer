@@ -66,6 +66,10 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       ├── init/        # init wizard orchestration
 │       ├── stats/       # campaign snapshot: counts by status/role/site, funnel, this-month delta
 │       ├── list/        # list applications with filters
+│       ├── parser/      # parsing modules: frontmatter, markers, slug, url, sanitize, prompt-parser
+│       ├── campaign/    # campaign management: profile, KB context/ingest, roles, directories
+│       ├── config/      # config schema (Zod) and read/write/update
+│       ├── logger/      # pino logger factory and utilities
 │       ├── types.ts     # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
 │       └── tests/       # colocated vitest suite
 ├── prompts/            # versioned LLM prompt templates
@@ -98,12 +102,13 @@ npm run eval         # lightweight LLM eval suite (manual)
 ## CLI commands (planned)
 
 ```
-jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--yes]
-  # wizard: LinkedIn URL (optional) → CV path → GitHub user + token → LLM config → calendar →
+jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--kb <path>] [--yes]
+  # wizard: LinkedIn URL (optional) → CV path → KB path (optional) → GitHub user + token → LLM config → calendar →
   #   profile build (LLM) → target-roles review → write config + profile.md
   # --yes: skip prompts (uses env vars for LLM; missing CV/LLM → skeleton profile)
   # --linkedin <url>: skip LinkedIn prompt (JHO_LINKEDIN_URL env var also pre-fills)
   # --profile <path>: copy existing profile.md, skip build
+  # --kb <path>: seed knowledge-base from file/folder (skips KB prompt)
   # Re-init: warns if campaign exists; always merges global config
   # Calendar: ICS / Outlook / None (user can enable later)
   # Graceful degradation: if CV or LLM missing, creates skeleton profile.md
@@ -146,6 +151,8 @@ jho retro aggregate [--role <slug>] [--include-abandoned]
 jho ownership           # what you can/can't edit
 jho doctor [<slug>]     # diagnose the campaign or a single app; --all
 jho repair [<slug>]     # attempt auto-repair; --all for campaign-wide
+jho kb add <path...>       # copy knowledge-base docs (PDF, DOCX, MD, TXT) into campaign
+jho kb update              # re-sync knowledge base from recorded sources
 jho stats [--role <slug>] [--employment-type <type>] [--since <date|7d|30d|90d>] [--json]
   # campaign snapshot: counts by status / role / site / employment type, funnel, this-month delta
 jho logs [--tail <n>] [--level <level>] [--json] [--path]
@@ -180,6 +187,7 @@ jho mcp                 # start MCP server
 | `application-qa.md` | 6b    | Tailor answer to application question (Tier 2)   |
 | `learning-plan.md`  | 7b    | Generate learning plan from weak topics (Tier 2) |
 | `prepare.md`        | 7c    | Generate pre-interview prep plan (Tier 2)        |
+| `nl-command.md`     | 7j    | Map natural-language input to ParsedCommand (Tier 1) |
 
 ## File ownership model
 
@@ -274,7 +282,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 7 — Tracker depth. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 7a (core interviews), 7b (core retro), 7c (core prep), 7d (core doctor & repair), 7e (CLI show), 7f (CLI commands), 7g (tests, evals & docs), 7h (markdown-formatted show commands).
+Phase 7 — Tracker depth. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 7a (core interviews), 7b (core retro), 7c (core prep), 7d (core doctor & repair), 7e (CLI show), 7f (CLI commands), 7g (tests, evals & docs), 7h (markdown-formatted show commands), 7i (employment type in application meta), 7j (natural-language command interface).
 
 ## Cross-platform conventions
 
