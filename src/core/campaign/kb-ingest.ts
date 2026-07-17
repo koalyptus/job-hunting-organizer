@@ -85,7 +85,11 @@ export async function syncKnowledgeBase(
       if (entry.isFile() && extname(entry.name).toLowerCase() === '.json') {
         continue;
       }
-      if (entry.isFile() && !CV_EXTENSIONS.includes(extname(entry.name).toLowerCase())) {
+      if (!entry.isFile()) {
+        // Preserve user subdirs — we only manage individual files.
+        continue;
+      }
+      if (!CV_EXTENSIONS.includes(extname(entry.name).toLowerCase())) {
         // Skip files we don't manage.
         continue;
       }

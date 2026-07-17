@@ -38,17 +38,19 @@ const addCommand = new Command('add')
         all.push(...copied);
         newSources.push(resolved);
       }
+      // Update knowledgeBase.sources with successfully added sources (deduped).
+      if (newSources.length > 0) {
+        const config = loadCampaignConfig(campaign);
+        const existingSources = config.knowledgeBase?.sources ?? [];
+        const mergedSources = Array.from(new Set([...existingSources, ...newSources]));
+        updateCampaignConfig(campaign, {
+          knowledgeBase: { ...config.knowledgeBase, sources: mergedSources },
+        });
+      }
       if (failed.length > 0) {
         userError(`Skipped ${failed.length} path(s) with no supported docs: ${failed.join(', ')}`);
         process.exit(1);
       }
-      // Update knowledgeBase.sources with newly added sources (deduped).
-      const config = loadCampaignConfig(campaign);
-      const existingSources = config.knowledgeBase?.sources ?? [];
-      const mergedSources = Array.from(new Set([...existingSources, ...newSources]));
-      updateCampaignConfig(campaign, {
-        knowledgeBase: { ...config.knowledgeBase, sources: mergedSources },
-      });
       userSuccess(`Copied ${all.length} knowledge-base doc(s) into the campaign.`);
       userOutput(
         `Next: docs are fed into cover-letter, answer, prepare, retro, and profile build.`,
