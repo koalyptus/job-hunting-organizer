@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { userWarn } from '../output.js';
+import { userOutput } from '../output.js';
 
 /**
  * `jho help [<cmd>|<topic>]` — show help for a command or topic.
@@ -7,8 +7,20 @@ import { userWarn } from '../output.js';
 export const helpCommand = new Command('help')
   .description('Show help for a command or topic')
   .argument('[subject]', 'command or topic to get help on')
-  .action(() => {
-    userWarn('jho help: not implemented yet (planned: phase 4d)');
+  .action(function (subject: string | undefined) {
+    const program = this.parent!;
+    if (!subject) {
+      program.help();
+      return;
+    }
+    const cmd = program.commands.find((c) => c.name() === subject || c.aliases().includes(subject));
+    if (cmd) {
+      cmd.help();
+      return;
+    }
+    // Topic help (not a command) - just show program help with a hint
+    userOutput(`No command or topic named "${subject}" found.`);
+    userOutput('Run `jho --help` to see all commands.');
     process.exit(1);
   });
 

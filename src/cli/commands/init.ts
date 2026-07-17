@@ -16,6 +16,7 @@ export const initCommand = new Command('init')
   .option('--linkedin <url>', 'LinkedIn profile URL')
   .option('--github <user>', 'GitHub username')
   .option('--profile <path>', 'copy existing profile.md instead of building')
+  .option('--kb <path>', 'path to a knowledge-base file or folder to ingest')
   .option('--yes', 'non-interactive mode (use env vars/defaults)')
   .action(async function (name: string | undefined, opts) {
     const resolvedName = resolveCampaignName(name);
@@ -29,6 +30,7 @@ export const initCommand = new Command('init')
         linkedin: opts.linkedin as string | undefined,
         github: opts.github as string | undefined,
         profile: opts.profile as string | undefined,
+        kb: opts.kb as string | undefined,
         yes: opts.yes as boolean | undefined,
         log,
       });

@@ -1,6 +1,7 @@
 export * from './campaign.js';
 export * from './directories.js';
 export * from './kb.js';
+export * from './kb-context.js';
 export * from './ownership.js';
 export * from './profile-builder.js';
 export * from './profile.js';

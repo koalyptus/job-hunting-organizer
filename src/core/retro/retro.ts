@@ -15,6 +15,7 @@ import { readApplication } from '../applications/applications.js';
 import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractSteer, replaceSteer } from '../parser/markers.js';
+import { loadKnowledgeBaseContext } from '../campaign/kb-context.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
 import { computeHash, writeToolhash } from '../toolhash.js';
 import { moduleLogger } from '../logger/logger.js';
@@ -303,6 +304,14 @@ async function generateLearningPlan(
     '',
     ...weakTopics.map((topic) => `- ${topic}`),
   ];
+
+  // Feed user knowledge-base docs into the prompt (always-on; see kb-context).
+  const kb = await loadKnowledgeBaseContext(campaignRoot, {
+    maxChars: getConfig(campaign).campaign.knowledgeBase.maxChars,
+  });
+  if (kb) {
+    messageParts.push('', '---', '', '## Knowledge base', '', kb);
+  }
 
   if (steer) {
     messageParts.push(

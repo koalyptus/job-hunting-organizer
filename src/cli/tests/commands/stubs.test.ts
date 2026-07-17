@@ -6,6 +6,7 @@ import { helpCommand } from '../../commands/help.js';
 import { mcpCommand } from '../../commands/mcp.js';
 import { campaignCommand } from '../../commands/campaign.js';
 import { profileCommand } from '../../commands/profile.js';
+import { trackCommand } from '../../commands/track.js';
 
 describe('stub commands exit with correct phase messages', () => {
   it('retro exits with slug missing error when run outside app folder', async () => {
@@ -20,11 +21,26 @@ describe('stub commands exit with correct phase messages', () => {
     expect(stderr).toContain('missing <slug> argument');
   });
 
-  it('help exits with code 1 and mentions phase 4d', async () => {
-    const { stderr, exitCode } = await runCommand(helpCommand, ['help']);
+  it('help shows help output and exits 0', async () => {
+    const { stdout, exitCode } = await runCommand(helpCommand, ['help']);
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('Usage:');
+    expect(stdout).toContain('Commands:');
+  });
+
+  it('shows command-specific help and exits 0', async () => {
+    const { stdout, exitCode } = await runCommand(helpCommand, ['help', 'track'], (parent) =>
+      parent.addCommand(trackCommand),
+    );
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('track');
+    expect(stdout).toContain('Record a new application');
+  });
+
+  it('shows error for unknown topic and exits 1', async () => {
+    const { stdout, exitCode } = await runCommand(helpCommand, ['help', 'nonexistent-topic-xyz']);
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('not implemented yet');
-    expect(stderr).toContain('phase 4d');
+    expect(stdout).toContain('No command or topic named "nonexistent-topic-xyz" found.');
   });
 
   it('mcp exits with code 1 and mentions phase 8', async () => {

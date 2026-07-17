@@ -14,6 +14,7 @@ import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../campaign/profile.js';
 import { readApplication } from './applications.js';
+import { loadKnowledgeBaseContext } from '../campaign/kb-context.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
@@ -121,6 +122,14 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
     '',
     question,
   ];
+
+  // Feed user knowledge-base docs into the prompt (always-on; see kb-context).
+  const kb = await loadKnowledgeBaseContext(campaignRoot, {
+    maxChars: getConfig(campaign).campaign.knowledgeBase.maxChars,
+  });
+  if (kb) {
+    messageParts.push('', '---', '', '## Knowledge base', '', kb);
+  }
 
   // Add steer section if present
   if (steer) {

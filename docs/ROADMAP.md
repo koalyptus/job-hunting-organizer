@@ -690,6 +690,21 @@ Let users invoke any command in plain English. Detection, LLM parsing, and dispa
 
 **Deliverable**: `npx jho-mcp` works in Claude Desktop / Cursor. Glama submission ready.
 
+**Design decisions** (recorded 2026-07-17, before phase start):
+
+- **MCP tools map 1:1 to `core/` functions — no NL pipeline in the server.** Each tool (`track_application`, `list_applications`, etc.) is a thin adapter that validates input with Zod and calls the corresponding `core/` function directly. The server does **not** call `parseNaturalLanguage()`.
+- **Rationale**: with MCP, the _client's_ LLM (Claude, Cursor) does the natural-language → tool-call translation using the tool schemas we expose. By the time a request reaches `jho-mcp` it is already a structured call. Calling `jho`'s own LLM parser would double-translate — extra latency/tokens, worse fidelity (client LLM is typically stronger than the local `jho` LLM), and it would hide capabilities from the client (schemas are what advertise features).
+- **`parseNaturalLanguage()` stays CLI-only.** It exists because CLI free-text input (`jho "show rejected apps"`) has no client LLM to interpret it; the CLI must translate itself. Reusable core assets for any future need: `parseNaturalLanguage`, `ParsedCommand`, `PromptParseError`, `deriveKnownCommands`, `GLOBAL_FLAG_DEFS` (all in `core/parser/prompt-parser.ts`). The CLI-only, Commander-coupled dispatch (`src/cli/nl-dispatch.ts`, `looksLikeNaturalLanguage`, `extractPromptAndGlobals`) is **not** reused by MCP.
+- **No `run_command(prompt)` / free-text MCP tool.** Rejected as an anti-pattern: it defeats structured tools, hides capabilities, adds non-determinism inside the request path, and is redundant given the client LLM already selects the right typed tool. If ever revisited, it would need a Commander-free `ParsedCommand` dispatcher extracted into `core/` (larger refactor, not in scope).
+
+**Docs to update when this phase lands** (keep truthful to what actually ships):
+
+- `README.md` — replace the "Once Phase 8 is shipped…" note with a real "For MCP Clients" setup section.
+- `AGENTS.md` — drop "(planned)" from the `## MCP tools` and `## Resources` headings; reconcile the tool/resource lists with the real Zod schemas; bump "Current phase".
+- `docs/ROADMAP.md` — check the Phase 8 box (`- [x]`).
+- `examples/mcp-clients/{claude-desktop,cursor,continue}.json`, `glama.json` `maintainers`, `package.json` `mcp` field (already in scope above).
+- `docs/help/mcp.md` + `jho help mcp` wiring are **Phase 10**, not required to close Phase 8.
+
 **Commit**: `feat(mcp): full server with tools, resources, prompts, examples`
 
 ---

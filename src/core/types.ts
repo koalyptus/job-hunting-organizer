@@ -313,6 +313,17 @@ export interface CampaignConfig {
   knowledgeBase: {
     /** Absolute path to this campaign's knowledge-base directory. */
     dir: string;
+    /**
+     * Optional character cap for the KB context fed to LLM commands.
+     * When set and exceeded, content is truncated oldest-first and a
+     * `kb.truncated` warning is logged. Undefined means no limit.
+     */
+    maxChars?: number | undefined;
+    /**
+     * Source paths recorded at `jho init` for `jho kb update` to re-sync
+     * from. Empty when the user skipped the optional wizard step.
+     */
+    sources: string[];
   };
 }
 

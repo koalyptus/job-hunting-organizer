@@ -224,6 +224,10 @@ export const CampaignConfigSchema = z.object({
   knowledgeBase: z
     .object({
       dir: z.string().default(''),
+      /** Optional char cap for KB context fed to LLM commands. Undefined = no limit. */
+      maxChars: z.number().int().positive().optional(),
+      /** Source paths recorded at init for `jho kb update` re-sync. */
+      sources: z.array(z.string()).default([]),
     })
-    .default({ dir: '' }),
+    .default({ dir: '', sources: [] }),
 });

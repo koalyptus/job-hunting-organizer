@@ -111,7 +111,18 @@ export async function dispatchNaturalLanguage(
   // Reset any prior parse state and parse the synthetic argv.
   // Commander mutates internal state across parses, so we re-create via a
   // fresh parse of the already-registered program.
-  await program.parseAsync(argv, { from: 'user' });
+  try {
+    await program.parseAsync(argv, { from: 'user' });
+  } catch (err) {
+    // Commander throws a CommanderError with code 'commander.help' and
+    // exitCode 0 when a help command is executed. This is normal behavior -
+    // the help was displayed, we should just exit cleanly.
+    if (err && typeof err === 'object' && 'code' in err && err.code === 'commander.help') {
+      // Help was shown, exit successfully
+      process.exit(0);
+    }
+    throw err;
+  }
 }
 
 /**
