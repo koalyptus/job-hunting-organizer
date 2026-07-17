@@ -174,6 +174,9 @@ async function walkAndCopy(
   for (const item of items) {
     const abs = join(fromDir, item.name);
     if (item.isDirectory()) {
+      if (item.name === 'github') {
+        continue;
+      }
       await walkAndCopy(abs, kbDir, sourceRoot, copied);
       continue;
     }
