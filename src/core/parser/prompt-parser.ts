@@ -66,6 +66,7 @@ const FALLBACK_KNOWN_COMMANDS = new Set([
   'config',
   'help',
   'init',
+  'kb',
   'rename-campaign',
   'remove-campaign',
   'rename-application',

@@ -128,7 +128,15 @@ Show help.
 Initialize a new campaign (or re-init default).
 
 - Args: <name> (optional)
-- Options: --cv, --linkedin, --github, --profile, --yes
+- Options: --cv, --linkedin, --github, --profile, --kb, --yes
+
+### kb
+
+Manage the campaign knowledge base.
+
+- Subcommands: add, update
+- Args: <paths...> (for add subcommand)
+- Options: --campaign
 
 ### rename-campaign
 
@@ -196,7 +204,7 @@ Global options parsed from CLI: {{global_options}}
 
 Return ONLY valid JSON:
 {
-"command": "list|track|show|cover-letter|answer|interview|retro|prepare|profile|stats|doctor|repair|logs|campaign|config|help|init|rename-campaign|remove-campaign|rename-application|remove-application|ownership|mcp|campaign-config",
+"command": "list|track|show|cover-letter|answer|interview|retro|prepare|profile|stats|doctor|repair|logs|campaign|config|help|init|kb|rename-campaign|remove-campaign|rename-application|remove-application|ownership|mcp|campaign-config",
 "subcommand": "optional subcommand for commands that have them",
 "args": ["arg1", "arg2"],
 "options": { "campaign": "default", "status": "interview", "json": true },
@@ -206,7 +214,7 @@ Return ONLY valid JSON:
 ## Rules
 
 1. `command` must be one of the available commands above
-2. `subcommand` only for commands that have subcommands (interview, retro, prepare, profile, campaign, config, help)
+2. `subcommand` only for commands that have subcommands (interview, retro, prepare, profile, campaign, config, help, kb)
 3. `args` is an array of positional arguments (URLs, slugs, names, etc.)
 4. `options` includes both command-specific options and global options
 5. `confidence` 0-1: how certain you are (1 = unambiguous)
@@ -307,3 +315,12 @@ User: "show application 2026-Jan-15-frontend-acme"
 
 User: "generate cover letter for 2026-Jan-15-frontend-acme with steer 'emphasize TypeScript'"
 → { "command": "cover-letter", "args": ["2026-Jan-15-frontend-acme"], "options": { "steer": "emphasize TypeScript" }, "confidence": 0.95 }
+
+User: "add my notes folder to the knowledge base"
+→ { "command": "kb", "subcommand": "add", "args": ["my-notes-folder"], "options": {}, "confidence": 0.9 }
+
+User: "update knowledge base"
+→ { "command": "kb", "subcommand": "update", "args": [], "options": {}, "confidence": 0.95 }
+
+User: "add ~/docs/interview-prep.md to kb"
+→ { "command": "kb", "subcommand": "add", "args": ["~/docs/interview-prep.md"], "options": {}, "confidence": 0.95 }

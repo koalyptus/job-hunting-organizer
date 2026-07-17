@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { userOutput } from '../output.js';
+import { userError } from '../output.js';
 
 /**
  * `jho help [<cmd>|<topic>]` — show help for a command or topic.
@@ -19,8 +19,8 @@ export const helpCommand = new Command('help')
       return;
     }
     // Topic help (not a command) - just show program help with a hint
-    userOutput(`No command or topic named "${subject}" found.`);
-    userOutput('Run `jho --help` to see all commands.');
+    userError(`No command or topic named "${subject}" found.`);
+    userError('Run `jho --help` to see all commands.');
     process.exit(1);
   });
 
@@ -32,11 +32,8 @@ Examples:
   $ jho help track              # help for the track command
   $ jho help campaign           # help for the campaign topic
   $ jho help cover-letter       # help for cover-letter generation
-  $ jho help natural-language   # help for the natural-language interface
-
 Natural language: most commands can also be run in plain English, e.g.
   $ jho "list all applications for javascript-developer campaign"
   $ jho "create cover letter for application-xyz"
-See 'jho help natural-language' for details.
 `,
 );

@@ -38,9 +38,9 @@ describe('stub commands exit with correct phase messages', () => {
   });
 
   it('shows error for unknown topic and exits 1', async () => {
-    const { stdout, exitCode } = await runCommand(helpCommand, ['help', 'nonexistent-topic-xyz']);
+    const { stderr, exitCode } = await runCommand(helpCommand, ['help', 'nonexistent-topic-xyz']);
     expect(exitCode).toBe(1);
-    expect(stdout).toContain('No command or topic named "nonexistent-topic-xyz" found.');
+    expect(stderr).toContain('No command or topic named "nonexistent-topic-xyz" found.');
   });
 
   it('mcp exits with code 1 and mentions phase 8', async () => {
