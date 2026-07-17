@@ -5,6 +5,7 @@ import { pathExists } from '../fs.js';
 import { readCv, CvError } from '../cv.js';
 import { KB_GITHUB, CV_EXTENSIONS } from '../constants.js';
 import { moduleLogger } from '../logger/logger.js';
+import { getConfig } from '../config/config.js';
 
 const log = moduleLogger(import.meta.url);
 
@@ -95,6 +96,23 @@ export async function loadKnowledgeBaseContext(
   }
 
   return parts.join('');
+}
+
+/**
+ * Convenience wrapper: loads the knowledge-base context for a campaign,
+ * automatically resolving `maxChars` from the campaign config.
+ * @param campaignRoot - Absolute path to the campaign root.
+ * @param campaignName - Campaign name (for config lookup).
+ * @returns Concatenated knowledge-base context, or `''` when empty.
+ */
+export async function loadKbContextForCampaign(
+  campaignRoot: string,
+  campaignName: string = 'default',
+): Promise<string> {
+  const { campaign } = getConfig(campaignName);
+  return loadKnowledgeBaseContext(campaignRoot, {
+    maxChars: campaign.knowledgeBase.maxChars,
+  });
 }
 
 /**

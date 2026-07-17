@@ -1,24 +1,11 @@
 import { copyFile, readdir, stat, mkdir, rm } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
-import { homedir } from 'node:os';
 import { resolveKnowledgeBaseDir } from '../paths.js';
 import { pathExists } from '../fs.js';
 import { CV_EXTENSIONS } from '../constants.js';
 import { moduleLogger } from '../logger/logger.js';
-import { isUnder } from '../paths.js';
 
 const log = moduleLogger(import.meta.url);
-
-/** Return the allowed source roots (user home + cwd), evaluated dynamically. */
-function getAllowedSourceRoots(): string[] {
-  return [homedir(), process.cwd()];
-}
-
-/** Check if a source path resolves to within an allowed root (home or cwd). */
-function isAllowedSource(source: string): boolean {
-  const resolved = resolve(source);
-  return getAllowedSourceRoots().some((root) => isUnder(resolved, root));
-}
 
 /**
  * Copy user knowledge-base docs from `source` into the campaign's
@@ -31,9 +18,6 @@ function isAllowedSource(source: string): boolean {
  * @returns The list of destination relative paths that were copied.
  */
 export async function ingestKnowledgeBase(campaignRoot: string, source: string): Promise<string[]> {
-  if (!isAllowedSource(source)) {
-    throw new KbError(`Source path not under allowed roots (home or cwd): ${source}`);
-  }
   const kbDir = resolveKnowledgeBaseDir(campaignRoot);
   await mkdir(kbDir, { recursive: true });
 
