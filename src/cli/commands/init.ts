@@ -68,6 +68,7 @@ Examples:
   $ jho init --cv ./cv.pdf                    # skip CV path prompt
   $ jho init --linkedin https://linkedin.com/in/user  # skip LinkedIn URL prompt
   $ jho init --profile ~/existing-profile.md  # use existing profile
+  $ jho init --kb ~/notes                     # seed knowledge base from folder
   $ jho init --yes                            # non-interactive (uses env vars/defaults)
 `,
 );
