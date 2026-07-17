@@ -32,6 +32,8 @@ export async function handleProfile(opts: {
   linkedinUrl: string | undefined;
   llmConfig: LlmConfig | undefined;
   nonInteractive: boolean;
+  /** Optional character cap for knowledge-base context (forwarded to buildProfile). */
+  maxChars?: number;
   log?: Logger;
 }): Promise<string> {
   const profilePath = resolveProfilePath(opts.campaignRoot);
@@ -70,6 +72,7 @@ export async function handleProfile(opts: {
             linkedinUrl: opts.linkedinUrl,
             llmConfig: opts.llmConfig!,
             campaignRoot: opts.campaignRoot,
+            maxChars: opts.maxChars,
             log: opts.log,
           }),
         'Profile build failed',

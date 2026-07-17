@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { isUrl, extractJobIdFromUrl } from '../url.js';
+import { isUrl, extractJobIdFromUrl } from '../../parser/url.js';
 
 describe('isUrl', () => {
   it('returns true for http URLs', () => {
@@ -151,7 +151,7 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
     process.env.JHO_URL_PATTERNS = JSON.stringify([
       { name: 'custom-board', pattern: '/opening/(\\d+)/', group: 1 },
     ]);
-    const urlModule = await import('../url.js');
+    const urlModule = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId } = urlModule;
     expect(extractJobId('https://example.com/opening/12345/')).toBe('12345');
     expect(extractJobId('https://example.com/opening/67890/?ref=test')).toBe('67890');
@@ -159,7 +159,7 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
 
   it('does not match invalid JSON in environment variable', async () => {
     process.env.JHO_URL_PATTERNS = 'not json';
-    const urlModule = await import('../url.js');
+    const urlModule = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId } = urlModule;
     // Should fall back to built-in patterns
     expect(extractJobId('https://www.linkedin.com/jobs/view/12345')).toBe('12345');
@@ -173,7 +173,7 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
       { name: 'wrong-type', pattern: '/item/(\\d+)/', group: '1' }, // group should be number
       { name: 'invalid-regex', pattern: '/[invalid-regex', group: 1 },
     ]);
-    const urlModule = await import('../url.js');
+    const urlModule = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId } = urlModule;
     // Only the valid pattern should work
     expect(extractJobId('https://example.com/item/42/')).toBe('42');
@@ -185,7 +185,7 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
     process.env.JHO_URL_PATTERNS = JSON.stringify([
       { name: 'override-linkedin', pattern: '/linkedin\\.com\\/jobs\\/view\\/(\\d+)/', group: 1 },
     ]);
-    const urlModule = await import('../url.js');
+    const urlModule = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId } = urlModule;
     // The user pattern matches the same URL as the built-in LinkedIn pattern
     // but we expect it to work (it's the same pattern, so same result)
@@ -195,7 +195,7 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
     process.env.JHO_URL_PATTERNS = JSON.stringify([
       { name: 'custom-generic', pattern: '/id/(\\d+)/', group: 1 },
     ]);
-    const urlModule2 = await import('../url.js');
+    const urlModule2 = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId2 } = urlModule2;
     // The URL matches both the user pattern and the built-in generic pattern.
     // The user pattern should be tried first and win.
@@ -208,7 +208,7 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
     process.env.JHO_URL_PATTERNS = JSON.stringify([
       { name: 'no-match', pattern: '/nomatch/(\\d+)/', group: 1 },
     ]);
-    const urlModule = await import('../url.js');
+    const urlModule = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId } = urlModule;
     expect(extractJobId('https://www.linkedin.com/jobs/view/12345')).toBe('12345');
     expect(extractJobId('https://example.com/listing/98765/')).toBe('98765');
@@ -218,14 +218,14 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
     process.env.JHO_URL_PATTERNS = JSON.stringify([
       { name: 'no-match', pattern: '/nomatch/(\\d+)/', group: 1 },
     ]);
-    const urlModule = await import('../url.js');
+    const urlModule = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId } = urlModule;
     expect(extractJobId('https://example.com/careers')).toBeNull();
   });
 
   it('treats non-array JSON as empty array', async () => {
     process.env.JHO_URL_PATTERNS = JSON.stringify({});
-    const urlModule = await import('../url.js');
+    const urlModule = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId } = urlModule;
     // Should fall back to built-in patterns
     expect(extractJobId('https://www.linkedin.com/jobs/view/12345')).toBe('12345');
@@ -238,7 +238,7 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
       42,
       { name: 'valid', pattern: '/item/(\\d+)/', group: 1 },
     ]);
-    const urlModule = await import('../url.js');
+    const urlModule = await import('../../parser/url.js');
     const { extractJobIdFromUrl: extractJobId } = urlModule;
     // Only the valid pattern should work
     expect(extractJobId('https://example.com/item/42/')).toBe('42');

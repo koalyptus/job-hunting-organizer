@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -18,7 +19,7 @@ describe('getPackageRoot', () => {
 
   it('points to a directory containing package.json', () => {
     const root = getPackageRoot();
-    expect(root.endsWith('job-hunting-organizer')).toBe(true);
+    expect(existsSync(join(root, 'package.json'))).toBe(true);
   });
 });
 

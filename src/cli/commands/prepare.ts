@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { join } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
-import { isUrl } from '../../core/url.js';
+import { isUrl } from '../../core/parser/url.js';
 import { extractJdFromUrl } from '../../core/jobs/extract.js';
 import { defaultLlmConfig } from '../../core/llm.js';
 import { getConfig } from '../../core/config/config.js';

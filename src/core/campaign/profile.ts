@@ -12,6 +12,7 @@ import { chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { resolveProfilePath } from '../paths.js';
 import { getRootLogger } from '../logger/logger.js';
+import { loadKnowledgeBaseContext } from './kb-context.js';
 import type { LlmConfig } from '../types.js';
 
 /**
@@ -60,6 +61,11 @@ interface BuildProfileOptions {
   /** LLM configuration (baseUrl, apiKey, model). */
   llmConfig: LlmConfig;
   /**
+   * Optional character cap for knowledge-base context fed into the
+   * profile build. When omitted, no limit is applied.
+   */
+  maxChars?: number;
+  /**
    * Absolute path to the campaign root. When provided, enables
    * knowledge-base caching: CV and GitHub data are read from cache
    * (if available) and written after a fresh fetch.
@@ -93,8 +99,17 @@ interface BuildProfileResult {
  * @returns The generated profile content, model, and duration.
  */
 export async function buildProfile(options: BuildProfileOptions): Promise<BuildProfileResult> {
-  const { cvPath, githubUser, githubToken, linkedinUrl, llmConfig, campaignRoot, signal, log } =
-    options;
+  const {
+    cvPath,
+    githubUser,
+    githubToken,
+    linkedinUrl,
+    llmConfig,
+    campaignRoot,
+    signal,
+    log,
+    maxChars,
+  } = options;
 
   if (log) {
     log.info({ cvPath, githubUser }, 'profile.build.start');
@@ -145,7 +160,7 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
     )
     .join('\n');
 
-  const userMessage = `## CV Text
+  let userMessage = `## CV Text
 
 ${cv ? cv.text : '(not provided)'}
 
@@ -167,6 +182,14 @@ ${repoSummary || '(no repos found)'}
 ---
 
 Generate the profile markdown following the template above.`;
+
+  // Feed user knowledge-base docs into the prompt (always-on; see kb-context).
+  if (campaignRoot) {
+    const kb = await loadKnowledgeBaseContext(campaignRoot, { maxChars });
+    if (kb) {
+      userMessage += `\n\n---\n\n## Knowledge base\n\n${kb}`;
+    }
+  }
 
   // 5. Call LLM (throws if empty content)
   const result = await chatComplete(

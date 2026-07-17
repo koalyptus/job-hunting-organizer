@@ -66,6 +66,10 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       ├── init/        # init wizard orchestration
 │       ├── stats/       # campaign snapshot: counts by status/role/site, funnel, this-month delta
 │       ├── list/        # list applications with filters
+│       ├── parser/      # parsing modules: frontmatter, markers, slug, url, sanitize, prompt-parser
+│       ├── campaign/    # campaign management: profile, KB context/ingest, roles, directories
+│       ├── config/      # config schema (Zod) and read/write/update
+│       ├── logger/      # pino logger factory and utilities
 │       ├── types.ts     # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
 │       └── tests/       # colocated vitest suite
 ├── prompts/            # versioned LLM prompt templates
@@ -98,12 +102,13 @@ npm run eval         # lightweight LLM eval suite (manual)
 ## CLI commands (planned)
 
 ```
-jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--yes]
-  # wizard: LinkedIn URL (optional) → CV path → GitHub user + token → LLM config → calendar →
+jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--kb <path>] [--yes]
+  # wizard: LinkedIn URL (optional) → CV path → KB path (optional) → GitHub user + token → LLM config → calendar →
   #   profile build (LLM) → target-roles review → write config + profile.md
   # --yes: skip prompts (uses env vars for LLM; missing CV/LLM → skeleton profile)
   # --linkedin <url>: skip LinkedIn prompt (JHO_LINKEDIN_URL env var also pre-fills)
   # --profile <path>: copy existing profile.md, skip build
+  # --kb <path>: seed knowledge-base from file/folder (skips KB prompt)
   # Re-init: warns if campaign exists; always merges global config
   # Calendar: ICS / Outlook / None (user can enable later)
   # Graceful degradation: if CV or LLM missing, creates skeleton profile.md
@@ -146,6 +151,8 @@ jho retro aggregate [--role <slug>] [--include-abandoned]
 jho ownership           # what you can/can't edit
 jho doctor [<slug>]     # diagnose the campaign or a single app; --all
 jho repair [<slug>]     # attempt auto-repair; --all for campaign-wide
+jho kb add <path...>       # copy knowledge-base docs (PDF, DOCX, MD, TXT) into campaign
+jho kb update              # re-sync knowledge base from recorded sources
 jho stats [--role <slug>] [--employment-type <type>] [--since <date|7d|30d|90d>] [--json]
   # campaign snapshot: counts by status / role / site / employment type, funnel, this-month delta
 jho logs [--tail <n>] [--level <level>] [--json] [--path]
@@ -159,6 +166,8 @@ jho mcp                 # start MCP server
 
 **Campaign inference**: every command that targets a campaign accepts `--campaign <name>` (explicit) or infers the campaign from the cwd by walking up to a folder named `campaigns` and using the directory below it. The default is `default`. CLI-only convenience; MCP tool calls always pass an explicit campaign name. If neither an explicit `--campaign` flag nor cwd inference yields a campaign, the `default` campaign is used.
 
+**Natural language**: any command can be invoked in plain English. If `process.argv.slice(2)[0]` contains a space and is not a known command and does not start with `-`, `jho` treats the input as a natural-language prompt. `parseNaturalLanguage` (LLM, json mode, temp 0.1) maps it to a `ParsedCommand`; `dispatchNaturalLanguage` rebuilds a synthetic argv and re-parses it through the existing Commander `program` (`from: 'user'`), so 100% of command logic is reused — nothing is reimplemented. Confidence gates: ≥0.8 auto-run; 0.5–0.8 confirm via `@clack/prompts` (skip with `--yes`); <0.5 error with a rephrase hint. Explicit global flags (`--campaign`, `--yes`, etc.) always override LLM-parsed globals. Requires a configured LLM (same as other LLM-backed commands). See `prompts/nl-command.md` and `src/core/parser/prompt-parser.ts`.
+
 ## MCP tools (planned)
 
 `init`, `extract_jd`, `cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `schedule_interview`, `post_mortem`, `show_retro`, `append_retro`, `aggregate_retros`, `prepare`, `read_profile`, `update_profile`, `get_root`, `get_campaign`, `list_campaigns`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`.
@@ -169,15 +178,16 @@ jho mcp                 # start MCP server
 
 ## Prompts (versioned LLM templates)
 
-| Prompt              | Phase | Purpose                                          |
-| ------------------- | ----- | ------------------------------------------------ |
-| `profile-build.md`  | 3d    | Generate profile.md from CV + GitHub             |
-| `jd-extract.md`     | 5b    | Extract structured JD from raw text (Tier 1)     |
-| `suggest-role.md`   | 5c    | Suggest best-matching target role from profile   |
-| `cover-letter.md`   | 6a    | Generate tailored cover letter (Tier 2)          |
-| `application-qa.md` | 6b    | Tailor answer to application question (Tier 2)   |
-| `learning-plan.md`  | 7b    | Generate learning plan from weak topics (Tier 2) |
-| `prepare.md`        | 7c    | Generate pre-interview prep plan (Tier 2)        |
+| Prompt              | Phase | Purpose                                              |
+| ------------------- | ----- | ---------------------------------------------------- |
+| `profile-build.md`  | 3d    | Generate profile.md from CV + GitHub                 |
+| `jd-extract.md`     | 5b    | Extract structured JD from raw text (Tier 1)         |
+| `suggest-role.md`   | 5c    | Suggest best-matching target role from profile       |
+| `cover-letter.md`   | 6a    | Generate tailored cover letter (Tier 2)              |
+| `application-qa.md` | 6b    | Tailor answer to application question (Tier 2)       |
+| `learning-plan.md`  | 7b    | Generate learning plan from weak topics (Tier 2)     |
+| `prepare.md`        | 7c    | Generate pre-interview prep plan (Tier 2)            |
+| `nl-command.md`     | 7j    | Map natural-language input to ParsedCommand (Tier 1) |
 
 ## File ownership model
 
@@ -272,7 +282,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 7 — Tracker depth. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 7a (core interviews), 7b (core retro), 7c (core prep), 7d (core doctor & repair), 7e (CLI show), 7f (CLI commands), 7g (tests, evals & docs), 7h (markdown-formatted show commands).
+Phase 7 — Tracker depth. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 7a (core interviews), 7b (core retro), 7c (core prep), 7d (core doctor & repair), 7e (CLI show), 7f (CLI commands), 7g (tests, evals & docs), 7h (markdown-formatted show commands), 7i (employment type in application meta), 7j (natural-language command interface).
 
 ## Cross-platform conventions
 

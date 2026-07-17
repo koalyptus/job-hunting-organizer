@@ -16,6 +16,7 @@ export const initCommand = new Command('init')
   .option('--linkedin <url>', 'LinkedIn profile URL')
   .option('--github <user>', 'GitHub username')
   .option('--profile <path>', 'copy existing profile.md instead of building')
+  .option('--kb <path>', 'path to a knowledge-base file or folder to ingest')
   .option('--yes', 'non-interactive mode (use env vars/defaults)')
   .action(async function (name: string | undefined, opts) {
     const resolvedName = resolveCampaignName(name);
@@ -29,6 +30,7 @@ export const initCommand = new Command('init')
         linkedin: opts.linkedin as string | undefined,
         github: opts.github as string | undefined,
         profile: opts.profile as string | undefined,
+        kb: opts.kb as string | undefined,
         yes: opts.yes as boolean | undefined,
         log,
       });
@@ -66,6 +68,7 @@ Examples:
   $ jho init --cv ./cv.pdf                    # skip CV path prompt
   $ jho init --linkedin https://linkedin.com/in/user  # skip LinkedIn URL prompt
   $ jho init --profile ~/existing-profile.md  # use existing profile
+  $ jho init --kb ~/notes                     # seed knowledge base from folder
   $ jho init --yes                            # non-interactive (uses env vars/defaults)
 `,
 );

@@ -5,7 +5,7 @@ import { collectTags, type GlobalOpts } from '../options.js';
 import { readClipboard } from '../clipboard.js';
 import { readStdin } from '../stdin.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
-import { isUrl } from '../../core/url.js';
+import { isUrl } from '../../core/parser/url.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
   runTrack,

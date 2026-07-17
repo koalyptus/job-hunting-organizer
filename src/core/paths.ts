@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathExists } from './fs.js';
 import { getRootLogger } from './logger/logger.js';
-import { SLUG_PATTERN } from './slug.js';
+import { SLUG_PATTERN } from './parser/slug.js';
 import type { CampaignListing } from './types.js';
 
 /**

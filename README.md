@@ -111,6 +111,19 @@ jho logs --json | jq 'select(.level == 50)'    # pipe to jq for filtering
 >
 > **Renaming a campaign**: the folder name is the only thing that identifies a campaign — nothing on disk references it elsewhere, so `jho rename-campaign <old> <new>` (or just `jho rename-campaign <new>` from inside the campaign folder) is enough. It validates the new name, takes a lock, and logs the move. You can also just `mv` the folder directly; the tool will pick up the new name on the next call.
 
+### Natural language
+
+Any command can also be invoked in plain English. If the first argument contains a space and isn't a known command, `jho` asks an LLM to map it to the equivalent command and re-runs the real implementation — no behaviour is reimplemented, so output is identical to the explicit form.
+
+```sh
+jho "list all applications for javascript-developer campaign"
+jho "create cover letter for application-xyz"
+jho "show retro for application-xyz"
+jho "add interview for application-xyz tomorrow at 2pm"
+```
+
+Global flags work too: `jho --yes "list apps"`. Lower-confidence parses are echoed back for confirmation (unless `--yes`); very low confidence errors out with a rephrase hint. Natural-language parsing requires a configured LLM (same as the other LLM-backed commands).
+
 ## As an MCP server
 
 Once Phase 8 is shipped, this package ships an MCP server. Add to your MCP client config:

@@ -1,5 +1,5 @@
 import { copyFile, mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { text, confirm, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignRoot, resolveDataRoot, resolveProfilePath, ensureRoot } from '../paths.js';
 import { pathExists } from '../fs.js';
@@ -26,6 +26,7 @@ import { promptGithub } from './github.js';
 import { promptLlm, loadExistingConfig } from './llm.js';
 import { promptCalendar } from './calendar.js';
 import { createDirectories } from '../campaign/directories.js';
+import { ingestKnowledgeBase } from '../campaign/kb-ingest.js';
 import { handleProfile } from '../campaign/profile-builder.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
@@ -119,6 +120,24 @@ export async function runInit(opts: InitOptions): Promise<void> {
     cvPath = existingCvPath;
   }
 
+  // --- Step 2b: Knowledge-base source (optional) ---
+  const envKbPath = process.env['JHO_KB_PATH'];
+  let kbPath = (opts.kb ?? envKbPath)?.trim() || undefined;
+
+  if (!kbPath && !opts.yes) {
+    const input = await text({
+      message:
+        'Path to a knowledge-base file or folder (PDF, DOCX, MD, TXT)? (optional, press Enter to skip)',
+      placeholder: '',
+    });
+
+    if (isCancel(input)) {
+      throw new InitCancelled();
+    }
+
+    kbPath = input?.trim() || undefined;
+  }
+
   // Validate CV path with retry loop
   while (cvPath) {
     const result = await validateCvPath(cvPath);
@@ -176,6 +195,19 @@ export async function runInit(opts: InitOptions): Promise<void> {
       // --- Step 5: Create directory structure ---
       const { kbDir } = await createDirectories(campaignRoot);
 
+      // --- Step 5b: Ingest optional knowledge-base source ---
+      const kbSources: string[] = [];
+      if (kbPath) {
+        const kbSourceAbs = resolve(campaignRoot, kbPath);
+        const copied = await ingestKnowledgeBase(campaignRoot, kbSourceAbs);
+        if (copied.length > 0) {
+          kbSources.push(kbSourceAbs);
+          clackLog.info(`Copied ${copied.length} knowledge-base doc(s) into ${kbDir}`);
+        } else {
+          clackLog.warn(`No supported docs found at ${kbPath} (expected PDF, DOCX, MD, TXT)`);
+        }
+      }
+
       // --- Step 6: Write configs early (so CV path is saved even if profile build fails) ---
       const profilePath = resolveProfilePath(campaignRoot);
 
@@ -212,7 +244,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
         profile: { path: profilePath },
         cv: { path: cvPath ?? '' },
         linkedin: { url: linkedinUrl ?? '' },
-        knowledgeBase: { dir: kbDir },
+        knowledgeBase: { dir: kbDir, sources: kbSources },
       });
 
       // --- Step 7: Profile build (may fail — config is already saved) ---
@@ -235,6 +267,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
         linkedinUrl,
         llmConfig,
         nonInteractive: opts.yes ?? false,
+        maxChars: loadCampaignConfig(name).knowledgeBase.maxChars,
         log,
       });
     },

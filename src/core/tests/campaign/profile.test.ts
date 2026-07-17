@@ -18,6 +18,7 @@ vi.mock('../../llm.js', () => ({
 
 vi.mock('../../package.js', () => ({
   getPackageRoot: vi.fn(() => '/mock/package/root'),
+  getPackageVersion: vi.fn(() => '0.0.0'),
 }));
 
 vi.mock('../../campaign/kb.js', () => ({

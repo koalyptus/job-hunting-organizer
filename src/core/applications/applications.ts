@@ -1,15 +1,15 @@
 import { mkdir, rm, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { uniqueSlug } from '../slug.js';
-import { writeFrontmatter, readFrontmatter, mergeFrontmatter } from '../frontmatter.js';
+import { uniqueSlug } from '../parser/slug.js';
+import { writeFrontmatter, readFrontmatter, mergeFrontmatter } from '../parser/frontmatter.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { getRootLogger, moduleLogger } from '../logger/logger.js';
 import { computeHash, writeToolhash } from '../toolhash.js';
 import { ApplicationFrontmatterSchema } from './meta-schema.js';
 import { upsertIndexEntry, removeIndexEntry, readIndex, rebuildIndex } from './index-builder.js';
-import { replaceRegion } from '../markers.js';
+import { replaceRegion } from '../parser/markers.js';
 import { toIsoDateString, todayIso } from '../date.js';
 import type {
   ApplicationEntry,

@@ -14,7 +14,8 @@ import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../campaign/profile.js';
 import { extractTargetRoles } from '../campaign/target-roles.js';
 import { readApplication } from './applications.js';
-import { replaceRegion, extractSteer, replaceSteer } from '../markers.js';
+import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';
+import { loadKbContextForCampaign } from '../campaign/kb-context.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
@@ -132,6 +133,12 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
     '',
     roleSummary,
   ];
+
+  // Feed user knowledge-base docs into the prompt (always-on; see kb-context).
+  const kb = await loadKbContextForCampaign(campaignRoot, campaign);
+  if (kb) {
+    messageParts.push('', '---', '', '## Knowledge base', '', kb);
+  }
 
   // Add steer section if present
   if (steer) {

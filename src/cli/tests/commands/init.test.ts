@@ -151,6 +151,7 @@ describe('init command', () => {
     vi.mocked(text)
       .mockResolvedValueOnce('') // LinkedIn
       .mockResolvedValueOnce('') // CV
+      .mockResolvedValueOnce('') // KB (skip)
       .mockResolvedValueOnce('testuser') // GitHub
       .mockResolvedValueOnce(''); // LLM
     vi.mocked(select).mockResolvedValueOnce('ics');
@@ -361,6 +362,7 @@ describe('init command', () => {
     vi.mocked(text)
       .mockResolvedValueOnce('') // LinkedIn (skip)
       .mockResolvedValueOnce(cvPath) // CV
+      .mockResolvedValueOnce('') // KB (skip)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce('https://llm.example.com/v1') // LLM base URL
       .mockResolvedValueOnce('model-name'); // LLM model
@@ -644,6 +646,7 @@ describe('init command', () => {
     vi.mocked(text)
       .mockResolvedValueOnce('') // LinkedIn
       .mockResolvedValueOnce('/nonexistent/cv.pdf') // CV (invalid)
+      .mockResolvedValueOnce('') // KB (skip)
       .mockResolvedValueOnce(validCv) // CV retry (valid)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM

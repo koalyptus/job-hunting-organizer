@@ -55,24 +55,24 @@ There is a small **config home** (holds the global `config.json` and `.locks/`) 
     │   ├── profile.md                                  # generated profile (per-campaign)
     │   ├── cv.<ext>                                    # user's CV (path configurable)
     │   ├── applied/                                    # per-application folders
-    │   ├── knowledge-base/local/                       # raw extracted text cache
+    │   ├── knowledge-base/                             # user docs + tool-owned github/ cache
     │   └── outlook-tokens.json                         # MSAL tokens (mode 0600)
     └── freelance/                                      # second campaign
         └── ...
 ```
 
-| Path                                                | Purpose                                                | Git? |
-| --------------------------------------------------- | ------------------------------------------------------ | ---- |
-| `<configHome>/config.json`                          | Global settings (LLM, GitHub, calendar, logging)       | no   |
-| `<configHome>/.locks/`                              | proper-lockfile sidecars                               | no   |
-| `<dataRoot>/campaigns/<name>/config.json`           | Per-campaign settings (profile path, applied dir, KB)  | no   |
-| `<dataRoot>/campaigns/<name>/profile.md`            | Generated profile (per-campaign)                       | no   |
-| `<dataRoot>/campaigns/<name>/cv.<ext>`              | User's CV (path configurable)                          | no   |
-| `<dataRoot>/campaigns/<name>/applied/`              | Per-application folders                                | no   |
-| `<dataRoot>/campaigns/<name>/knowledge-base/local/` | Raw extracted text cache                               | no   |
-| `<dataRoot>/campaigns/<name>/outlook-tokens.json`   | MSAL tokens (mode 0600)                                | no   |
-| `$JHO_CONFIG_HOME`                                  | Override of config home (no CLI flag for it by design) | n/a  |
-| `$JHO_DATA`                                         | Override of data root (no CLI flag for it by design)   | n/a  |
+| Path                                              | Purpose                                                     | Git? |
+| ------------------------------------------------- | ----------------------------------------------------------- | ---- |
+| `<configHome>/config.json`                        | Global settings (LLM, GitHub, calendar, logging)            | no   |
+| `<configHome>/.locks/`                            | proper-lockfile sidecars                                    | no   |
+| `<dataRoot>/campaigns/<name>/config.json`         | Per-campaign settings (profile path, applied dir, KB)       | no   |
+| `<dataRoot>/campaigns/<name>/profile.md`          | Generated profile (per-campaign)                            | no   |
+| `<dataRoot>/campaigns/<name>/cv.<ext>`            | User's CV (path configurable)                               | no   |
+| `<dataRoot>/campaigns/<name>/applied/`            | Per-application folders                                     | no   |
+| `<dataRoot>/campaigns/<name>/knowledge-base/`     | User docs (PDF, DOCX, MD, TXT) + tool-owned `github/` cache | no   |
+| `<dataRoot>/campaigns/<name>/outlook-tokens.json` | MSAL tokens (mode 0600)                                     | no   |
+| `$JHO_CONFIG_HOME`                                | Override of config home (no CLI flag for it by design)      | n/a  |
+| `$JHO_DATA`                                       | Override of data root (no CLI flag for it by design)        | n/a  |
 
 Resolution precedence for the **config home**: **`$JHO_CONFIG_HOME` env var → default `~/.job-hunting-organizer/`**. There is no `--config-home` CLI flag; the env var is the only override.
 
@@ -116,8 +116,8 @@ applied/
 Slugs are intentionally unique but visually noisy. To make the CLI ergonomic, every command that takes a `<slug>` also accepts the implicit form: **omit the slug and run from inside the application folder**.
 
 - `core/paths.ts` exposes `findSlugFromCwd(cwd, appliedDir)` which walks up from `cwd` and returns the basename of the first directory whose name matches the slug pattern above and lives under `appliedDir`. Returns `null` if none found.
-- `core/slug.ts` exports the `SLUG_PATTERN` regex and a `validateSlug(slug)` helper.
-- `core/url.ts` provides `extractJobIdFromUrl(url)` — tries user-supplied patterns from `JHO_URL_PATTERNS` first, then built-in patterns (LinkedIn `/view/<id>`, Indeed `jk=`, Seek trailing numeric, generic trailing 5+ digits excluding years). Returns `null` when no pattern matches.
+- `core/parser/slug.ts` exports the `SLUG_PATTERN` regex and a `validateSlug(slug)` helper.
+- `core/parser/url.ts` provides `extractJobIdFromUrl(url)` — tries user-supplied patterns from `JHO_URL_PATTERNS` first, then built-in patterns (LinkedIn `/view/<id>`, Indeed `jk=`, Seek trailing numeric, generic trailing 5+ digits excluding years). Returns `null` when no pattern matches.
 - **Interactive fallback (future, Phase 5)**: when `jho track <url>` cannot extract a job ID from the URL, the tool interactively prompts the user to supply one manually (an optional input — users can skip it and proceed with no JobId in the slug). This is the CLI-only convenience; MCP `track_application` and `--yes` mode skip the prompt silently.
 - Resolution rule in every CLI command:
   1. If a `<slug>` argument is passed explicitly, use it.
@@ -535,7 +535,9 @@ The two layers are *additive*, not an override cascade. `jho config` shows the g
   "linkedin": { "url": "https://linkedin.com/in/example" },
   "applied": { "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/applied" },
   "knowledgeBase": {
-    "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/knowledge-base"
+    "dir": "/home/<user>/job-hunting-organizer-data/campaigns/freelance/knowledge-base",
+    "maxChars": 50000,
+    "sources": ["/home/<user>/notes/interview-tips.md"]
   }
 }
 ```
@@ -614,10 +616,10 @@ The tool is designed for single-user, single-process use today, but the CLI, MCP
 jho                          # top-level overview
 jho --version
 
-jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--yes]
+jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--kb <path>] [--yes]
   # Wizard prompts: campaign name (defaults to "default") → LinkedIn URL (optional) → CV path →
-  #   GitHub user (+token) → LLM baseUrl/key/model → calendar provider → runs profile build →
-  #   reviews generated ## Target roles → writes global + campaign config.json + profile.md
+  #   KB path (optional) → GitHub user (+token) → LLM baseUrl/key/model → calendar provider →
+  #   runs profile build → reviews generated ## Target roles → writes global + campaign config.json + profile.md
 jho config [show|path|edit] [--reveal]
 jho campaign config [show|path|edit] [--reveal]
 jho rename-campaign <new> [--from <old>]
@@ -685,6 +687,9 @@ jho retro    aggregate [--role <slug>] [--include-abandoned]
 jho ownership [--markdown]
 jho doctor [<slug>] [--all]
 jho repair [<slug>] [--all]
+
+jho kb add <path...>       # copy knowledge-base docs (PDF, DOCX, MD, TXT) into campaign
+jho kb update              # re-sync knowledge base from recorded sources
 
 jho stats  [--role <slug>] [--employment-type <type>] [--since <date>] [--json]
   # snapshot of the campaign: counts by status, target role, site, employment type;
@@ -1142,7 +1147,7 @@ This section captures why the current design is already web-client-friendly and 
 ### Why the design is already web-ready
 
 - **Filesystem as the source of truth.** No DB, no proprietary state. A web client reads and writes the exact same markdown + JSON files as the CLI and MCP server.
-- **`core/*` is the shared layer.** CLI, MCP, and any future web client all call the same `core/paths`, `core/config`, `core/fs`, `core/locks`, `core/slug`, `core/frontmatter`, `core/markers`, the LLM module, calendar providers, etc. A web server is just another consumer of the same core.
+- **`core/*` is the shared layer.** CLI, MCP, and any future web client all call the same `core/paths`, `core/config`, `core/fs`, `core/locks`, `core/parser/slug`, `core/parser/frontmatter`, `core/parser/markers`, the LLM module, calendar providers, etc. A web server is just another consumer of the same core.
 - **Pluggable everywhere that matters.** Generic OpenAI-compatible LLM client, pluggable calendar providers, file-ownership markers that work for any process touching the files.
 - **Markdown everywhere.** A web UI renders `profile.md`, `cover-letter.md`, `retro.md`, etc. with any markdown lib — no data migration needed.
 - **Single-user, local-first posture.** The natural v1 web client is `jho web` → `http://127.0.0.1:7331` with no auth, reading the same campaign root as the CLI. No new privacy story to invent.

@@ -1,9 +1,9 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { readFrontmatter } from '../frontmatter.js';
+import { readFrontmatter } from '../parser/frontmatter.js';
 import { safeValidateApplicationFrontmatter } from '../applications/meta-schema.js';
-import { SLUG_PATTERN } from '../slug.js';
+import { SLUG_PATTERN } from '../parser/slug.js';
 import { readToolhash, computeHash, TOOL_MANAGED_FILES } from '../toolhash.js';
 import { readIndex, indexPath } from '../applications/index-builder.js';
 import { moduleLogger } from '../logger/logger.js';

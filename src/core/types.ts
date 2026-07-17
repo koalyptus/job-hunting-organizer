@@ -155,6 +155,19 @@ export interface TargetRole {
 }
 
 /**
+ * Parsed global options available on every command via
+ * `optsWithGlobals()`. Commander stores these on the parent program.
+ */
+export interface GlobalOpts {
+  campaign?: string;
+  verbose?: boolean;
+  quiet?: boolean;
+  yes?: boolean;
+  color?: boolean;
+  logFile?: string;
+}
+
+/**
  * Options for {@link chatComplete}. All fields are optional.
  */
 export interface ChatCompleteOptions {
@@ -300,6 +313,17 @@ export interface CampaignConfig {
   knowledgeBase: {
     /** Absolute path to this campaign's knowledge-base directory. */
     dir: string;
+    /**
+     * Optional character cap for the KB context fed to LLM commands.
+     * When set and exceeded, content is truncated oldest-first and a
+     * `kb.truncated` warning is logged. Undefined means no limit.
+     */
+    maxChars?: number | undefined;
+    /**
+     * Source paths recorded at `jho init` for `jho kb update` to re-sync
+     * from. Empty when the user skipped the optional wizard step.
+     */
+    sources: string[];
   };
 }
 

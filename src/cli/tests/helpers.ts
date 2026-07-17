@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, CommanderError } from 'commander';
 
 /**
  * Run a commander command via `parseAsync` with mocked stdout, stderr,
@@ -44,6 +44,12 @@ export async function runCommand(
   } catch (e: unknown) {
     if (e instanceof Error && e.message.startsWith('EXIT_')) {
       exitCode = parseInt(e.message.replace('EXIT_', ''), 10);
+    } else if (e && typeof e === 'object' && 'code' in e && e.code === 'commander.help') {
+      // Commander throws this when .help() is called - it's a successful exit (0)
+      exitCode = 0;
+    } else if (e instanceof CommanderError) {
+      // Other CommanderError cases (unknown command, version, etc.)
+      exitCode = e.exitCode ?? 1;
     } else {
       throw e;
     }

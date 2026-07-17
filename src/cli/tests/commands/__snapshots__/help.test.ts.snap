@@ -129,6 +129,7 @@ Options:
   --linkedin <url>  LinkedIn profile URL
   --github <user>   GitHub username
   --profile <path>  copy existing profile.md instead of building
+  --kb <path>       path to a knowledge-base file or folder to ingest
   --yes             non-interactive mode (use env vars/defaults)
   -h, --help        display help for command
 "

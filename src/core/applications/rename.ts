@@ -3,9 +3,9 @@ import { performance } from 'node:perf_hooks';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { isUnder } from '../paths.js';
-import { SLUG_PATTERN } from '../slug.js';
+import { SLUG_PATTERN } from '../parser/slug.js';
 import { acquireLock } from '../locks.js';
-import { readFrontmatter, mergeFrontmatter, writeFrontmatter } from '../frontmatter.js';
+import { readFrontmatter, mergeFrontmatter, writeFrontmatter } from '../parser/frontmatter.js';
 import { rebuildIndex } from './index-builder.js';
 import { childLogger } from '../logger/logger.js';
 

@@ -9,7 +9,7 @@ import {
   parseRegions,
   replaceRegion,
   replaceSteer,
-} from '../markers.js';
+} from '../../parser/markers.js';
 
 describe('isKnownRegionName', () => {
   it('accepts known region names', () => {
