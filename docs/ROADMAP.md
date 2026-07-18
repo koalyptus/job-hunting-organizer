@@ -45,8 +45,8 @@
   - [x] 7f — CLI: Interview, retro, prepare, doctor, repair commands
   - [x] 7f1 — Interactive campaign picker
   - [x] 7g — Tests, evals & documentation
-  - [ ] 7h — CLI: Markdown-formatted show commands
-  - [ ] 7i — Core: Employment type in application meta
+  - [x] 7h — CLI: Markdown-formatted show commands
+  - [x] 7i — Core: Employment type in application meta
   - [x] 7j — CLI: Natural-language command interface
   - [x] 7k — CLI: Interviewer column + env vars in help
 - [ ] **Phase 8** — MCP server
