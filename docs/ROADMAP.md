@@ -45,9 +45,10 @@
   - [x] 7f — CLI: Interview, retro, prepare, doctor, repair commands
   - [x] 7f1 — Interactive campaign picker
   - [x] 7g — Tests, evals & documentation
-  - [ ] 7h — CLI: Markdown-formatted show commands
-  - [ ] 7i — Core: Employment type in application meta
+  - [x] 7h — CLI: Markdown-formatted show commands
+  - [x] 7i — Core: Employment type in application meta
   - [x] 7j — CLI: Natural-language command interface
+  - [x] 7k — CLI: Interviewer column + env vars in help
 - [ ] **Phase 8** — MCP server
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
@@ -671,6 +672,20 @@ Let users invoke any command in plain English. Detection, LLM parsing, and dispa
 **Deliverable**: `jho "list all applications for <campaign> campaign"`, `jho "create cover letter for <slug>"`, etc. all resolve to the identical command behaviour; `--yes` for non-interactive use.
 
 **Commit**: `feat(cli): natural-language command interface`
+
+---
+
+#### 7k — CLI: Interviewer column + env vars in help
+
+Two deliverables:
+
+1. **Interviewer column** in `jho interview list` table — the `InterviewEntry` type already has `interviewers: string` but it was not displayed. Added `Interviewer` header and row cell between Duration and Status.
+
+2. **Full env var documentation** in `jho --help` — expanded from 2 env vars to 15+, grouped into Data locations, LLM configuration, Logging, Init wizard pre-fills, and Advanced sections. Secrets (GITHUB_TOKEN, MS_GRAPH_CLIENT_SECRET) remain documented only in `docs/configuration.md`.
+
+**Deliverable**: `jho interview list` shows interviewer names. `jho --help` documents all env vars.
+
+**Commit**: `feat(cli): interviewer column in list table and env vars in help`
 
 ---
 

@@ -343,8 +343,18 @@ function formatInterviewTable(entries: InterviewEntry[]): string {
   }
 
   const table = new Table({
-    head: [dim('#'), dim('Type'), dim('When'), dim('Duration'), dim('Status'), dim('Location')],
+    head: [
+      dim('#'),
+      dim('Type'),
+      dim('When'),
+      dim('Duration'),
+      dim('Interviewer'),
+      dim('Status'),
+      dim('Location'),
+    ],
+    colWidths: [3, 12, 16, 9, 14, 11, 40],
     style: { head: [] },
+    wordWrap: true,
   });
 
   for (const entry of entries) {
@@ -353,6 +363,7 @@ function formatInterviewTable(entries: InterviewEntry[]): string {
       interviewTypeColor(entry.type),
       entry.when,
       `${entry.duration} min`,
+      entry.interviewers || dim('-'),
       interviewStatusColor(entry.status),
       entry.location || dim('-'),
     ]);
