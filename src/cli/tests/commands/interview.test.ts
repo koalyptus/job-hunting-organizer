@@ -225,6 +225,8 @@ describe('interview command', () => {
       expect(stdout).toContain('interviews.md');
       expect(stdout).toContain('ICS file:');
       expect(stdout).toContain('Next steps:');
+      expect(stdout).toContain('Interviewer');
+      expect(stdout).toContain('A. Smith');
       expect(interviewsCore.addInterview).toHaveBeenCalledWith(
         expect.any(String),
         slug,
@@ -508,6 +510,7 @@ describe('interview command', () => {
       const { stdout, exitCode } = await runCommand(interviewCommand, ['interview', 'list', slug]);
 
       expect(exitCode).toBe(0);
+      expect(stdout).toContain('Interviewer');
       expect(stdout).toContain('1');
       expect(stdout).toContain('technical');
       expect(stdout).toContain('scheduled');

@@ -93,8 +93,27 @@ program.addHelpText(
   'after',
   `
 Data locations (override via env var only):
-  $JHO_CONFIG_HOME       Override the global config home (default: ~/.job-hunting-organizer/)
-  $JHO_DATA              Override the campaign data root (default: ~/job-hunting-organizer-data/)
+  $JHO_CONFIG_HOME        Override the global config home (default: ~/.job-hunting-organizer/)
+  $JHO_DATA               Override the campaign data root (default: ~/job-hunting-organizer-data/)
+  $JHO_DEFAULT_CAMPAIGN   Override the default campaign name (default: "default")
+
+LLM configuration (override via env var; falls back to campaign config):
+  $LLM_BASE_URL           LLM API base URL
+  $LLM_API_KEY            LLM API key
+  $LLM_MODEL              LLM model identifier
+
+Logging:
+  $JHO_LOG_LEVEL          Override log level (default: from config)
+  $JHO_LOG_FILE           Override log file path (default: <configHome>/jho.log)
+
+Init wizard pre-fills:
+  $JHO_CV_PATH            Pre-fill CV path
+  $JHO_LINKEDIN_URL       Pre-fill LinkedIn profile URL
+  $JHO_KB_PATH            Pre-fill knowledge base path
+
+Advanced:
+  $JHO_URL_PATTERNS       Custom job-ID extraction patterns (JSON array)
+  $NO_COLOR               Disable ANSI color output (standard)
 
 Per-command global flags (--campaign, --verbose, --quiet, --yes, --no-color, --log-file)
 are available on all commands.
