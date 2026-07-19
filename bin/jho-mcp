@@ -1,27 +1,7 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { startServer } from '../dist/mcp/server.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-function readVersion() {
-  const candidates = [
-    resolve(__dirname, '..', 'package.json'),
-    resolve(__dirname, '..', '..', 'package.json'),
-  ];
-  for (const p of candidates) {
-    try {
-      const pkg = JSON.parse(readFileSync(p, 'utf8'));
-      if (typeof pkg.version === 'string') return pkg.version;
-    } catch {
-      // try next
-    }
-  }
-  return '0.0.0';
-}
-
-const version = readVersion();
-process.stderr.write(`jho-mcp ${version} (not yet implemented — phase 8)\n`);
-process.exit(0);
+startServer().catch((err) => {
+  process.stderr.write(`jho-mcp: ${err instanceof Error ? err.message : String(err)}\n`);
+  process.exit(1);
+});

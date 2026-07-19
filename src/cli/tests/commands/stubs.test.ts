@@ -43,11 +43,9 @@ describe('stub commands exit with correct phase messages', () => {
     expect(stderr).toContain('No command or topic named "nonexistent-topic-xyz" found.');
   });
 
-  it('mcp exits with code 1 and mentions phase 8', async () => {
-    const { stderr, exitCode } = await runCommand(mcpCommand, ['mcp']);
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain('not implemented yet');
-    expect(stderr).toContain('phase 8');
+  it('mcp starts and exits cleanly when no stdio input', async () => {
+    const { exitCode } = await runCommand(mcpCommand, ['mcp']);
+    expect(exitCode).toBe(0);
   });
 
   it('profile rebuild exits with code 1 and mentions phase 4c', async () => {
