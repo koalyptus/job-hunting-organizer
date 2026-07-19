@@ -50,6 +50,14 @@
   - [x] 7j — CLI: Natural-language command interface
   - [x] 7k — CLI: Interviewer column + env vars in help
 - [ ] **Phase 8** — MCP server
+  - [x] 8a — Server scaffold, campaign resolver, error handler
+  - [ ] 8b — Read-only tools
+  - [ ] 8c — Write + CRUD tools
+  - [ ] 8d — LLM-backed tools
+  - [ ] 8e — Resources + prompts
+  - [ ] 8f — bin/jho-mcp + package config
+  - [ ] 8g — Integration tests
+  - [ ] 8h — Examples + docs + polish
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
 
@@ -691,17 +699,108 @@ Two deliverables:
 
 ## Phase 8 — MCP server
 
-**Scope**:
+Split into sub-phases for incremental delivery.
 
-- `src/mcp/server.ts` — `@modelcontextprotocol/sdk` server, stdio transport
-- All tools wired to `core/`, including `get_stats { role?, since?, includeNotes? }` (mirrors `jho stats` from Phase 5)
-- Resources and prompts
-- `bin/jho-mcp` shebang complete
-- `examples/mcp-clients/{claude-desktop,cursor,continue}.json`
-- README "For MCP Clients" section
-- Smoke test
+#### 8a — Server scaffold, campaign resolver, error handler (delivered)
+
+- `src/mcp/server.ts` — `McpServer` + `StdioServerTransport` from `@modelcontextprotocol/sdk`
+- `src/mcp/logger.ts` — stderr-only pino logger
+- `src/mcp/schemas.ts` — Zod input schemas for all planned tools
+- `src/mcp/error-handler.ts` — maps 13 core error classes to MCP `isError` responses
+- `bin/jho-mcp` — shebang entry, imports `startServer()`
+- `src/cli/commands/mcp.ts` — `jho mcp` wired to `startServer()`
+- Tests: server creation, version resolution, error handler, schemas
+
+**Commit**: `feat(mcp): server scaffold, error handler, and input schemas`
+
+#### 8b — Read-only tools
+
+Register 11 read-only tools:
+
+- `list_applications` — list/filter applications from `.index.json`
+- `show_application` — read `meta.md` + `jd.md` for a single app
+- `list_interviews` — parse `interviews.md` into structured entries
+- `read_profile` — read `profile.md` content
+- `get_stats` — compute campaign statistics
+- `get_root` — resolve campaign root path
+- `get_campaign` — campaign metadata
+- `list_campaigns` — list all campaigns
+- `ownership` — file ownership table
+- `doctor` — run diagnostics
+- `repair` — auto-repair issues
+
+Each tool: Zod input validation, calls `core/` function directly, returns JSON content.
+
+**Commit**: `feat(mcp): register read-only tools`
+
+#### 8c — Write + CRUD tools
+
+Register 8 write tools:
+
+- `track_application` — create/update application (calls `runTrack`)
+- `add_interview` — append interview entry
+- `mark_interview` — update interview status
+- `update_profile` — write `profile.md`
+- `update_config` — merge config patch
+- `init` — initialize campaign
+- `post_mortem` — generate retro learning plan
+- `append_retro` — add weak topics to existing retro
+
+All write tools use `yes: true` (non-interactive). No LLM calls in this sub-phase.
+
+**Commit**: `feat(mcp): register write and CRUD tools`
+
+#### 8d — LLM-backed tools
+
+Register 5 tools that call LLM via `core/`:
+
+- `cover_letter` — generate tailored cover letter
+- `answer_question` — answer application question
+- `extract_jd` — extract structured JD from URL/text
+- `prepare` — generate pre-interview plan
+- `aggregate_retros` — cross-app weak topic aggregation
+
+**Commit**: `feat(mcp): register LLM-backed tools`
+
+#### 8e — Resources + prompts
+
+Register 6 resources and 3 prompts:
+
+- Resources: `campaign://root`, `campaign://applied`, `campaign://profile`, `campaign://config`, `campaign://stats`, `global://config`
+- Prompts: `cover-letter`, `interview-prep`, `retro`
+
+**Commit**: `feat(mcp): register resources and prompts`
+
+#### 8f — bin/jho-mcp + package config
+
+- Finalize `bin/jho-mcp` shebang
+- Update `package.json` `mcp` field with tool list
 - Update `glama.json` `maintainers` to real GitHub user
-- Update `package.json` `mcp` field
+- Verify `npm pack` includes correct files
+
+**Commit**: `feat(mcp): finalize bin entry and package metadata`
+
+#### 8g — Integration tests
+
+- In-memory MCP client tests using `InMemoryTransport`
+- Test each tool end-to-end with temp campaign data
+- Test error handling paths
+- Test resource reads and prompt generation
+
+**Commit**: `test(mcp): integration tests with in-memory transport`
+
+#### 8h — Examples + docs + polish
+
+- `examples/mcp-clients/claude-desktop.json`
+- `examples/mcp-clients/cursor.json`
+- `examples/mcp-clients/continue.json`
+- Update `README.md` — "For MCP Clients" setup section
+- Update `AGENTS.md` — reconcile tool/resource lists
+- Update `docs/ROADMAP.md` — check Phase 8
+
+**Commit**: `docs(mcp): client examples, README, and AGENTS.md update`
+
+---
 
 **Deliverable**: `npx jho-mcp` works in Claude Desktop / Cursor. Glama submission ready.
 

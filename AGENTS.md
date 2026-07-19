@@ -282,7 +282,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 7 — Tracker depth. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 7a (core interviews), 7b (core retro), 7c (core prep), 7d (core doctor & repair), 7e (CLI show), 7f (CLI commands), 7g (tests, evals & docs), 7h (markdown-formatted show commands), 7i (employment type in application meta), 7j (natural-language command interface).
+Phase 8 — MCP server. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 8a (server scaffold, campaign resolver, error handler), 8b (read-only tools), 8c (write + CRUD tools), 8d (LLM-backed tools), 8e (resources + prompts), 8f (bin/jho-mcp + package config), 8g (integration tests), 8h (examples + docs + polish).
 
 ## Cross-platform conventions
 
