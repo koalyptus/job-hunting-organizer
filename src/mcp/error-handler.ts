@@ -13,6 +13,24 @@ import { StatsError } from '../core/stats/errors.js';
 import { ListError } from '../core/list/errors.js';
 import { InitError } from '../core/init/errors.js';
 
+type ErrorConstructor = new (...args: never[]) => Error;
+
+const ERROR_PREFIXES: Map<ErrorConstructor, string> = new Map([
+  [ApplicationNotFoundError, 'Application not found'],
+  [InterviewNotFoundError, 'Interview not found'],
+  [CoverLetterError, 'Cover letter error'],
+  [AnswerError, 'Answer generation error'],
+  [TrackError, 'Track error'],
+  [RepairError, 'Repair error'],
+  [DoctorError, 'Doctor error'],
+  [RetroError, 'Retro error'],
+  [PrepError, 'Prep error'],
+  [ProfileReadError, 'Profile error'],
+  [StatsError, 'Stats error'],
+  [ListError, 'List error'],
+  [InitError, 'Init error'],
+]);
+
 /**
  * Map a known core error class to a user-friendly MCP tool error response.
  * Unknown errors are passed through with their original message.
@@ -23,95 +41,13 @@ import { InitError } from '../core/init/errors.js';
 export function handleToolError(err: unknown): CallToolResult {
   const msg = err instanceof Error ? err.message : String(err);
 
-  if (err instanceof ApplicationNotFoundError) {
-    return {
-      content: [{ type: 'text', text: `Application not found: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof InterviewNotFoundError) {
-    return {
-      content: [{ type: 'text', text: `Interview not found: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof CoverLetterError) {
-    return {
-      content: [{ type: 'text', text: `Cover letter error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof AnswerError) {
-    return {
-      content: [{ type: 'text', text: `Answer generation error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof TrackError) {
-    return {
-      content: [{ type: 'text', text: `Track error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof RepairError) {
-    return {
-      content: [{ type: 'text', text: `Repair error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof DoctorError) {
-    return {
-      content: [{ type: 'text', text: `Doctor error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof RetroError) {
-    return {
-      content: [{ type: 'text', text: `Retro error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof PrepError) {
-    return {
-      content: [{ type: 'text', text: `Prep error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof ProfileReadError) {
-    return {
-      content: [{ type: 'text', text: `Profile error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof StatsError) {
-    return {
-      content: [{ type: 'text', text: `Stats error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof ListError) {
-    return {
-      content: [{ type: 'text', text: `List error: ${msg}` }],
-      isError: true,
-    };
-  }
-
-  if (err instanceof InitError) {
-    return {
-      content: [{ type: 'text', text: `Init error: ${msg}` }],
-      isError: true,
-    };
+  for (const [ctor, prefix] of ERROR_PREFIXES) {
+    if (err instanceof ctor) {
+      return {
+        content: [{ type: 'text', text: `${prefix}: ${msg}` }],
+        isError: true,
+      };
+    }
   }
 
   return {
