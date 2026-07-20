@@ -11,7 +11,7 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete, extractJson } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { readProfile } from '../campaign/profile.js';
+import { readProfile } from '../campaign/profile-read.js';
 import { readApplication } from '../applications/applications.js';
 import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';
 import { loadKbContextForCampaign } from '../campaign/kb-context.js';
@@ -70,35 +70,8 @@ export const PrepPlanSchema = z.object({
 
 // ─── Error classes ───────────────────────────────────────────────────────────
 
-/**
- * Thrown when prep plan generation fails.
- */
-export class PrepError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'PrepError';
-  }
-}
-
-/**
- * Thrown when no prep plan exists for an application.
- */
-export class PrepNotFoundError extends PrepError {
-  constructor(slug: string) {
-    super(`prep not found: ${slug}`);
-    this.name = 'PrepNotFoundError';
-  }
-}
-
-/**
- * Thrown when reading an existing prep plan fails.
- */
-export class PrepReadError extends PrepError {
-  constructor(message: string) {
-    super(message);
-    this.name = 'PrepReadError';
-  }
-}
+import { PrepError, PrepNotFoundError, PrepReadError } from './prepare-errors.js';
+export { PrepError, PrepNotFoundError, PrepReadError } from './prepare-errors.js';
 
 // ─── Formatting ──────────────────────────────────────────────────────────────
 

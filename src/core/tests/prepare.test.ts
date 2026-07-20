@@ -557,7 +557,7 @@ describe('generatePrep', () => {
     const slug = '2026-Jun-01-SE-Test-Corp';
     await setupApp(slug);
 
-    const profileMod = await import('../campaign/profile.js');
+    const profileMod = await import('../campaign/profile-read.js');
     const spy = vi.spyOn(profileMod, 'readProfile').mockRejectedValueOnce(42);
 
     await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
@@ -648,7 +648,7 @@ describe('generatePrepFromText', () => {
   });
 
   it('wraps non-Error profile read failures in PrepError', async () => {
-    const profileMod = await import('../campaign/profile.js');
+    const profileMod = await import('../campaign/profile-read.js');
     const spy = vi.spyOn(profileMod, 'readProfile').mockRejectedValueOnce('string error');
 
     await expect(

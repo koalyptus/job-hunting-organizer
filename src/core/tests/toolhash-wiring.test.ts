@@ -80,7 +80,7 @@ vi.mock('../prompts.js', () => ({
   })),
 }));
 
-vi.mock('../campaign/profile.js', () => ({
+vi.mock('../campaign/profile-read.js', () => ({
   readProfile: vi.fn(async () => '# Profile\n\nExperienced engineer.'),
 }));
 

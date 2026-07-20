@@ -1,4 +1,7 @@
-import { readFile } from 'node:fs/promises';
+/**
+ * Heavy profile build module. Contains only the LLM-driven profile builder
+ * that pulls in CV parsing, GitHub API, and LLM dependencies.
+ */
 import type { Logger } from 'pino';
 import { readCv } from '../cv.js';
 import { fetchGithubUser, fetchGithubRepos } from '../github.js';
@@ -10,8 +13,6 @@ import {
 } from './kb.js';
 import { chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { resolveProfilePath } from '../paths.js';
-import { getRootLogger } from '../logger/logger.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
 import type { LlmConfig } from '../types.js';
 
@@ -19,32 +20,6 @@ import type { LlmConfig } from '../types.js';
  * Maximum number of GitHub repositories to include in the profile build prompt.
  */
 const MAX_REPOS_FOR_PROFILE = 20;
-
-/**
- * Error thrown when the profile file cannot be read.
- */
-export class ProfileReadError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ProfileReadError';
-  }
-}
-
-/**
- * Read the profile file for a campaign. Returns the file content as a string.
- * @param campaignRoot - Absolute path to the campaign root directory.
- * @returns The profile markdown content.
- * @throws {ProfileReadError} if the file does not exist or cannot be read.
- */
-export async function readProfile(campaignRoot: string): Promise<string> {
-  const profilePath = resolveProfilePath(campaignRoot);
-  try {
-    return await readFile(profilePath, 'utf8');
-  } catch {
-    getRootLogger().warn({ path: profilePath }, 'profile.read.missing');
-    throw new ProfileReadError(`no profile found at ${profilePath}`);
-  }
-}
 
 /**
  * Options for {@link buildProfile}.

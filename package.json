@@ -15,7 +15,19 @@
   "mcp": {
     "transport": "stdio",
     "command": "jho-mcp",
-    "tools": []
+    "tools": [
+      "list_applications",
+      "show_application",
+      "list_interviews",
+      "read_profile",
+      "get_stats",
+      "get_root",
+      "get_campaign",
+      "list_campaigns",
+      "ownership",
+      "doctor",
+      "repair"
+    ]
   },
   "files": [
     "bin",

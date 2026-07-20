@@ -10,7 +10,7 @@ import { RepairError } from '../../core/repair/repair.js';
 import { DoctorError } from '../../core/doctor/doctor.js';
 import { RetroError } from '../../core/retro/retro.js';
 import { PrepError } from '../../core/prepare/prepare.js';
-import { ProfileReadError } from '../../core/campaign/profile.js';
+import { ProfileReadError } from '../../core/campaign/profile-read.js';
 import { StatsError } from '../../core/stats/errors.js';
 import { ListError } from '../../core/list/errors.js';
 import { InitError } from '../../core/init/errors.js';

@@ -12,7 +12,7 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { readProfile } from '../campaign/profile.js';
+import { readProfile } from '../campaign/profile-read.js';
 import { readApplication } from './applications.js';
 import { loadKbContextForCampaign } from '../campaign/kb-context.js';
 import { atomicWrite } from '../fs.js';
@@ -24,15 +24,8 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
 /** Prompt template name (without `.md`). */
 const PROMPT_NAME = 'application-qa';
 
-/**
- * Thrown when the Q&A generation fails.
- */
-export class AnswerError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AnswerError';
-  }
-}
+import { AnswerError, QaReadError } from './application-qa-errors.js';
+export { AnswerError, QaReadError } from './application-qa-errors.js';
 
 /**
  * Format a timestamp for the Q&A header.
@@ -254,16 +247,6 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
     model: result.model,
     durationMs: result.durationMs,
   };
-}
-
-/**
- * Thrown when the Q&A file cannot be read.
- */
-export class QaReadError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'QaReadError';
-  }
 }
 
 /**

@@ -4,7 +4,8 @@ export * from './kb.js';
 export * from './kb-context.js';
 export * from './ownership.js';
 export * from './profile-builder.js';
-export * from './profile.js';
+export * from './profile-read.js';
+export * from './profile-build.js';
 export {
   RemoveCampaignError,
   InferCampaignError as RemoveCampaignInferError,

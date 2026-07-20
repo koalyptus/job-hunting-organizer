@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { getPackageVersion } from '../core/package.js';
 import { mcpLogger } from './logger.js';
+import { registerTools } from './tools.js';
 
 /** MCP server name advertised to clients. */
 const SERVER_NAME = 'jho-mcp';
@@ -25,7 +26,7 @@ export function createServer(): McpServer {
 export async function startServer(): Promise<void> {
   const server = createServer();
 
-  // Phase 8b: registerTools(server);
+  registerTools(server);
   // Phase 8e: registerResources(server);
   // Phase 8e: registerPrompts(server);
 

@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { readProfile, ProfileReadError } from '../../campaign/profile.js';
+import { readProfile, ProfileReadError } from '../../campaign/profile-read.js';
 
 describe('readProfile', () => {
   let testHome: string;

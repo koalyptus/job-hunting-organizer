@@ -55,7 +55,7 @@ export const ReadProfileInput = z.object({
 /** Zod schema for `get_stats` tool input. */
 export const GetStatsInput = z.object({
   campaign: CampaignParam,
-  role: TargetRoleFilter,
+  targetRole: TargetRoleFilter,
   since: z.string().optional().describe('Filter by date range (e.g. "7d", "30d", "2026-01-01")'),
   employmentType: EmploymentTypeFilter,
 });

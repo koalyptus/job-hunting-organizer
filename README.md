@@ -2,7 +2,7 @@
 
 A local-first CLI and MCP server for running a job-hunting campaign.
 
-> **Status:** under active development. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress. Currently at **Phase 1** (skeleton).
+> **Status:** under active development. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress. Currently at **Phase 8** (MCP server).
 
 ## What it does
 

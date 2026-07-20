@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { GithubUser, GithubRepo } from '../../types.js';
-import { buildProfile } from '../../campaign/profile.js';
+import { buildProfile } from '../../campaign/profile-build.js';
 
 vi.mock('../../cv.js', () => ({
   readCv: vi.fn(),
