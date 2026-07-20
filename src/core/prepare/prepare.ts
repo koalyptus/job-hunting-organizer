@@ -11,7 +11,7 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete, extractJson } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { readProfile } from '../campaign/profile.js';
+import { readProfile } from '../campaign/profile-read.js';
 import { readApplication } from '../applications/applications.js';
 import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';
 import { loadKbContextForCampaign } from '../campaign/kb-context.js';

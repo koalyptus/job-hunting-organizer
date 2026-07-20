@@ -11,7 +11,7 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { readProfile } from '../campaign/profile.js';
+import { readProfile } from '../campaign/profile-read.js';
 import { extractTargetRoles } from '../campaign/target-roles.js';
 import { readApplication } from './applications.js';
 import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { select } from '@clack/prompts';
-import { buildProfile } from '../../campaign/profile.js';
+import { buildProfile } from '../../campaign/profile-build.js';
 import { handleProfile } from '../../campaign/profile-builder.js';
 import type * as FsModule from '../../fs.js';
 import { atomicWrite } from '../../fs.js';
@@ -21,7 +21,7 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-vi.mock('../../campaign/profile.js', () => ({
+vi.mock('../../campaign/profile-build.js', () => ({
   buildProfile: vi.fn(() =>
     Promise.resolve({
       content:

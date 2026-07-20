@@ -7,7 +7,7 @@ import { mcpLogger } from '../logger.js';
 export function registerOwnership(server: McpServer): void {
   server.tool(
     'ownership',
-    'Show file ownership rules (which files the tool writes, which you can edit)',
+    'Show file ownership rules (which files the tool writes, which you can edit). Returns a human-readable markdown table, not JSON.',
     OwnershipInput.shape,
     async () => {
       try {

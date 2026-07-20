@@ -12,6 +12,7 @@ import { ProfileReadError } from '../core/campaign/profile-read.js';
 import { StatsError } from '../core/stats/errors.js';
 import { ListError } from '../core/list/errors.js';
 import { InitError } from '../core/init/errors.js';
+import { ShowError } from '../core/applications/show.js';
 
 type ErrorConstructor = new (...args: never[]) => Error;
 
@@ -29,6 +30,7 @@ const ERROR_PREFIXES: Map<ErrorConstructor, string> = new Map([
   [StatsError, 'Stats error'],
   [ListError, 'List error'],
   [InitError, 'Init error'],
+  [ShowError, 'Show error'],
 ]);
 
 /**

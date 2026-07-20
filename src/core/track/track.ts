@@ -13,7 +13,7 @@ import { isUrl } from '../parser/url.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig } from '../llm.js';
 import { moduleLogger } from '../logger/logger.js';
-import { readProfile } from '../campaign/profile.js';
+import { readProfile } from '../campaign/profile-read.js';
 import { extractTargetRoles } from '../campaign/target-roles.js';
 import { extractJdFromUrl, extractJdFromText } from '../jobs/extract.js';
 import { suggestTargetRole } from '../jobs/suggest.js';

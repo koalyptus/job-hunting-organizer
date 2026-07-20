@@ -7,7 +7,7 @@ import { mcpLogger } from '../logger.js';
 export function registerListApplications(server: McpServer): void {
   server.tool(
     'list_applications',
-    'List applications with optional status, tag, role, and employment type filters',
+    'List applications with optional status, tags, role, and employment type filters',
     ListApplicationsInput.shape,
     async (args) => {
       try {

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { resolveCampaignRoot } from '../../core/paths.js';
-import { readProfile, ProfileReadError } from '../../core/campaign/profile.js';
+import { readProfile, ProfileReadError } from '../../core/campaign/profile-read.js';
 import type { GlobalOpts } from '../options.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userWarn, userOutput } from '../output.js';

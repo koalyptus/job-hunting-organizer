@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer } from './helpers.js';
+import { fakeServer, getTextContent } from './helpers.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -39,8 +39,7 @@ describe('get_root tool', () => {
     const cb = getCallback()!;
 
     const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
-    const item = result.content[0]!;
-    const data = JSON.parse('text' in item ? item.text : '{}');
+    const data = JSON.parse(getTextContent(result));
     expect(data.root).toBe('/data/campaigns/default');
     expect(resolveCampaignRoot).toHaveBeenCalledWith('default');
   });
@@ -58,7 +57,6 @@ describe('get_root tool', () => {
 
     const result = await cb({ campaign: 'nonexistent' }, { signal: AbortSignal.timeout(3000) });
     expect(result.isError).toBe(true);
-    const item = result.content[0]!;
-    expect('text' in item ? item.text : '').toContain('campaign not found');
+    expect(getTextContent(result)).toContain('campaign not found');
   });
 });

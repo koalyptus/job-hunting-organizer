@@ -3,7 +3,7 @@ import { log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
 import { resolveProfilePath } from '../paths.js';
 import { pathExists, atomicWrite } from '../fs.js';
-import { buildProfile } from './profile.js';
+import { buildProfile } from './profile-build.js';
 import { extractTargetRoles, replaceTargetRoles } from './target-roles.js';
 import { withSpinner } from '../spinner.js';
 import type { LlmConfig } from '../types.js';

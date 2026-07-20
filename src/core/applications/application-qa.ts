@@ -12,7 +12,7 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
-import { readProfile } from '../campaign/profile.js';
+import { readProfile } from '../campaign/profile-read.js';
 import { readApplication } from './applications.js';
 import { loadKbContextForCampaign } from '../campaign/kb-context.js';
 import { atomicWrite } from '../fs.js';

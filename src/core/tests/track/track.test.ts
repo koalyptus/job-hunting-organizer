@@ -3,7 +3,7 @@ import { runTrack, runTrackRefresh, prepareTrack, confirmAndCreate } from '../..
 import { TrackError, TrackCancelled, NoLinkStoredError } from '../../track/errors.js';
 import { extractJdFromUrl, extractJdFromText } from '../../jobs/extract.js';
 import { suggestTargetRole } from '../../jobs/suggest.js';
-import { readProfile } from '../../campaign/profile.js';
+import { readProfile } from '../../campaign/profile-read.js';
 import { extractTargetRoles } from '../../campaign/target-roles.js';
 import {
   createApplication,
@@ -26,7 +26,7 @@ vi.mock('../../llm.js', () => ({
   defaultLlmConfig: vi.fn(() => ({ baseUrl: 'http://test', apiKey: 'key', model: 'model' })),
 }));
 
-vi.mock('../../campaign/profile.js', () => ({
+vi.mock('../../campaign/profile-read.js', () => ({
   readProfile: vi.fn(),
 }));
 
