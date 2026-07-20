@@ -24,15 +24,8 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
 /** Prompt template name (without `.md`). */
 const PROMPT_NAME = 'application-qa';
 
-/**
- * Thrown when the Q&A generation fails.
- */
-export class AnswerError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AnswerError';
-  }
-}
+import { AnswerError, QaReadError } from './application-qa-errors.js';
+export { AnswerError, QaReadError } from './application-qa-errors.js';
 
 /**
  * Format a timestamp for the Q&A header.
@@ -254,16 +247,6 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
     model: result.model,
     durationMs: result.durationMs,
   };
-}
-
-/**
- * Thrown when the Q&A file cannot be read.
- */
-export class QaReadError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'QaReadError';
-  }
 }
 
 /**

@@ -88,11 +88,12 @@ describe('MCP schemas', () => {
     it('accepts all optional fields', () => {
       const result = GetStatsInput.parse({
         campaign: 'default',
-        role: 'frontend',
+        targetRole: 'frontend',
         since: '30d',
         employmentType: 'permanent',
       });
       expect(result.since).toBe('30d');
+      expect(result.targetRole).toBe('frontend');
     });
   });
 

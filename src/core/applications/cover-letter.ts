@@ -25,15 +25,8 @@ import type { CoverLetterOptions, CoverLetterResult } from '../types.js';
 /** Prompt template name (without `.md`). */
 const PROMPT_NAME = 'cover-letter';
 
-/**
- * Thrown when the cover letter generation fails.
- */
-export class CoverLetterError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'CoverLetterError';
-  }
-}
+import { CoverLetterError, CoverLetterReadError } from './cover-letter-errors.js';
+export { CoverLetterError, CoverLetterReadError } from './cover-letter-errors.js';
 
 /**
  * Generate a tailored cover letter for an application. Reads the
@@ -216,16 +209,6 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
     model: result.model,
     durationMs: result.durationMs,
   };
-}
-
-/**
- * Thrown when the cover letter cannot be read.
- */
-export class CoverLetterReadError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'CoverLetterReadError';
-  }
 }
 
 /**

@@ -41,19 +41,8 @@ const FIELD_PATTERN = /^- ([\w -]+):\s*(.*)$/;
 const WEAK_TOPIC_PATTERN = /^- (.+?)(?: — (.+))?$/;
 const H3_PATTERN = /^### (.+)$/;
 
-export class RetroError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'RetroError';
-  }
-}
-
-export class RetroNotFoundError extends RetroError {
-  constructor(slug: string) {
-    super(`retro not found: ${slug}`);
-    this.name = 'RetroNotFoundError';
-  }
-}
+import { RetroError, RetroNotFoundError } from './retro-errors.js';
+export { RetroError, RetroNotFoundError } from './retro-errors.js';
 
 /**
  * Parse the H2 heading line into its three components.

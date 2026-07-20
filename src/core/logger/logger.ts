@@ -31,7 +31,7 @@ import { getPackageVersion } from '../package.js';
  * The user can always override or extend this list via
  * `logging.redactPaths` in the config.
  */
-const DEFAULT_REDACT_PATHS: readonly string[] = [
+export const DEFAULT_REDACT_PATHS: readonly string[] = [
   '*.apiKey',
   '*.token',
   '*.clientSecret',
