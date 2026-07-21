@@ -152,6 +152,7 @@ export const PostMortemInput = z.object({
   weakTopics: z.array(z.string()).optional().describe('Weak topics to include'),
   notes: z.string().optional().describe('Additional notes'),
   steer: z.string().optional().describe('Custom LLM instructions'),
+  status: z.string().optional().describe('Status at the time of writing'),
 });
 
 /** Zod schema for `append_retro` tool input. */
@@ -161,6 +162,8 @@ export const AppendRetroInput = z.object({
   weakTopics: z.array(z.string()).optional().describe('Weak topics to add'),
   notes: z.string().optional().describe('Additional notes'),
   steer: z.string().optional().describe('Custom LLM instructions'),
+  status: z.string().optional().describe('Status at the time of writing'),
+  noCarryOver: z.boolean().optional().describe('Do not carry prior weak topics/notes forward'),
 });
 
 /** Zod schema for `cover_letter` tool input. */

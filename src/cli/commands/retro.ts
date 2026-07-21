@@ -14,7 +14,7 @@ import {
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
-import { renderMarkdown } from '../markdown.js';
+import { stripAndRender } from '../markdown.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 
@@ -53,7 +53,7 @@ const showCommand = new Command('show')
     try {
       const resolvedSlug = resolveSlug(slug, campaign);
       const content = await showRetro(campaign, resolvedSlug);
-      userOutput(renderMarkdown(content));
+      userOutput(stripAndRender(content));
       log.info({ slug: resolvedSlug }, 'retro.show.completed');
     } catch (err) {
       if (err instanceof SlugMissingError) {
@@ -123,8 +123,8 @@ const appendCommand = new Command('append')
       }
 
       const result = await withSpinner(
-        'Regenerating learning plan...',
-        'Learning plan updated',
+        'Adding weak topics and regenerating section...',
+        'New retro section added',
         () =>
           appendRetro({
             slug: resolvedSlug,
@@ -132,6 +132,11 @@ const appendCommand = new Command('append')
             weakTopics,
             notes: parentOpts?.notes as string | undefined,
             steer: parentOpts?.steer as string | undefined,
+            status: parentOpts?.status as string | undefined,
+            // Commander sets carryOver=false for --no-carry-over. The negated
+            // option name differs from the internal property name, so we
+            // map explicitly rather than spreading parentOpts directly.
+            noCarryOver: parentOpts?.carryOver === false,
           }),
         'Failed to update learning plan',
       );
@@ -186,6 +191,8 @@ appendCommand.addHelpText(
 The slug is optional. When omitted, it is inferred from the current directory.
 
 Options (use before the subcommand on the retro command, e.g. jho retro --weak-topics "..." append):
+  --status <value>   Override the status shown on the new H2 (defaults to interview/app status)
+  --no-carry-over    Do not copy prior weak topics/notes forward into the new section
   --weak-topics      Comma-separated weak topics to add
   --notes            Additional context notes
   --steer            Custom LLM instructions for this retro
@@ -193,6 +200,8 @@ Options (use before the subcommand on the retro command, e.g. jho retro --weak-t
 Examples:
   $ jho retro append                                        # interactive: prompts for weak topics
   $ jho retro --weak-topics "Behavioural, SQL" append       # non-interactive
+  $ jho retro --status interviewing append                  # set status for the new section
+  $ jho retro --no-carry-over append                        # append without carry-over
   $ jho retro append 2026-Jan-15-frontend-acme-12345        # explicit slug
 `,
 );
@@ -253,9 +262,16 @@ Examples:
  * Slug is optional; inferred from cwd when omitted.
  */
 export const retroCommand = new Command('retro')
-  .description('Post-mortem for failed interviews (slug inferred from cwd if omitted)')
+  .description(
+    'Retro / reflection at any stage of an application (slug inferred from cwd if omitted)',
+  )
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
   .option('--interview <index>', 'retro for a specific interview index')
+  .option(
+    '--status <value>',
+    'status at the time of writing (defaults to application/interview status)',
+  )
+  .option('--no-carry-over', 'do not carry prior weak topics/notes forward when appending')
   .option(
     '--weak-topics <topics>',
     'comma-separated weak topics (prompts interactively if omitted)',
@@ -296,6 +312,7 @@ export const retroCommand = new Command('retro')
             notes: opts.notes as string | undefined,
             steer: opts.steer as string | undefined,
             interviewId: opts.interview ? parseInt(opts.interview as string, 10) : undefined,
+            status: opts.status as string | undefined,
           }),
         'Failed to generate learning plan',
       );

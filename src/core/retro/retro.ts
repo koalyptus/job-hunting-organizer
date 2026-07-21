@@ -12,6 +12,7 @@ import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../campaign/profile-read.js';
 import { readApplication } from '../applications/applications.js';
+import { listInterviews } from '../interviews/interviews.js';
 import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractSteer, replaceSteer } from '../parser/markers.js';
@@ -33,7 +34,7 @@ const log = moduleLogger(import.meta.url);
 const PROMPT_NAME = 'learning-plan';
 
 const RETRO_MARKER =
-  '<!-- jho:retro — post-mortem for failed interviews. Tool appends a new H2 per retro; never overwrites prior retros. -->';
+  '<!-- jho:retro — reflection captured at any stage of the application. Tool appends a new H2 per retro; never overwrites prior retros. -->';
 
 const H2_PATTERN = /^## (.+)$/;
 const RETRO_HEADING_PATTERN = /^Retro for interview: (.+?) — (.+?) \[(.+?)\]$/;
@@ -195,9 +196,7 @@ function parseRetroSection(heading: string, body: string[], index: number): Retr
  * Build the full content of a new `retro.md` file.
  */
 function buildNewFileContent(title: string, company: string, section: string): string {
-  return [RETRO_MARKER, '', `# Post-mortem — ${title} @ ${company}`, '', section.trim(), ''].join(
-    '\n',
-  );
+  return [RETRO_MARKER, '', `# Retro — ${title} @ ${company}`, '', section.trim(), ''].join('\n');
 }
 
 /**
@@ -207,21 +206,23 @@ function buildNewFileContent(title: string, company: string, section: string): s
 function buildSection(
   when: string,
   interviewId: number | undefined,
+  interviewType: string | undefined,
   weakTopics: string[],
   notes: string | undefined,
   generatedPlan: string,
+  status: string,
 ): string {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
-  const status = 'failed';
-  const title = interviewId !== undefined ? `Interview #${interviewId}` : 'Post-mortem';
+  const title = interviewId !== undefined ? `Interview #${interviewId}` : 'Reflection';
 
   const lines: string[] = [
     `## Retro for interview: ${when} — ${title} [${status}]`,
     '',
     `- Date: ${dateStr}`,
     ...(interviewId !== undefined ? [`- Interview id: ${interviewId}`] : []),
-    '- Status at the time: failed',
+    ...(interviewId !== undefined && interviewType ? [`- Interview type: ${interviewType}`] : []),
+    `- Status at the time: ${status}`,
     '',
     '### Weak topics',
     '',
@@ -235,6 +236,30 @@ function buildSection(
   lines.push('', '### Learning plan', '', generatedPlan.trim());
 
   return lines.join('\n');
+}
+
+/**
+ * Resolve the default retro status and interview type when the caller does
+ * not override them.
+ *
+ * Preference order: when linked to an interview, use that interview's
+ * recorded status and type; otherwise fall back to the application's
+ * current `meta.md` status with no type.
+ */
+async function resolveInterviewData(
+  appliedDir: string,
+  slug: string,
+  interviewId: number | undefined,
+  appStatus: string,
+): Promise<{ status: string | undefined; type: string | undefined }> {
+  if (interviewId !== undefined) {
+    const interviews = await listInterviews(appliedDir, slug);
+    const interview = interviews[interviewId - 1];
+    if (interview) {
+      return { status: interview.status, type: interview.type };
+    }
+  }
+  return { status: appStatus, type: undefined };
 }
 
 /**
@@ -384,6 +409,16 @@ export async function startRetro(opts: StartRetroInput): Promise<StartRetroResul
   // Use provided steer or fall back to existing steer from file
   const effectiveSteer = steer ?? existingSteer;
 
+  // Resolve the retro status and interview type: explicit override wins;
+  // otherwise source from the linked interview or fall back to the app meta.
+  const { status: sourcedStatus, type: interviewType } = await resolveInterviewData(
+    appliedDir,
+    slug,
+    interviewId,
+    app.frontmatter.status,
+  );
+  const status = opts.status ?? sourcedStatus ?? 'unknown';
+
   // Generate the learning plan
   const plan = await generateLearningPlan(
     slug,
@@ -400,9 +435,11 @@ export async function startRetro(opts: StartRetroInput): Promise<StartRetroResul
       .replace('T', ' ')
       .replace(/\.\d{3}Z$/, ''),
     interviewId,
+    interviewType,
     weakTopics,
     notes,
     plan.content,
+    status,
   );
 
   return acquireLock(appFolder, async () => {
@@ -444,11 +481,12 @@ export async function startRetro(opts: StartRetroInput): Promise<StartRetroResul
 }
 
 /**
- * Append new weak topics to the last retro section and regenerate the
- * learning plan. Reads existing weak topics, merges with new ones (dedup
- * by line), calls the LLM, and replaces the last section's learning plan.
+ * Append a new retro section carrying the prior section's weak topics and
+ * notes forward (unless `noCarryOver` is set). Generates a focused learning
+ * plan via LLM for the *new* weak topics only — never regenerates the
+ * entire learning plan body from scratch.
  *
- * @returns The regenerated plan content and metadata.
+ * @returns The generated plan content and metadata for the new section.
  * @throws {RetroError} if no retro exists or LLM call fails.
  */
 export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroResult> {
@@ -458,6 +496,8 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
     weakTopics: additionalTopics,
     notes: incomingNotes,
     steer,
+    status,
+    noCarryOver,
     log: externalLog,
   } = opts;
   const logger = externalLog ?? log;
@@ -468,20 +508,41 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
 
   const campaignRoot = resolveCampaignRoot(campaign);
   const appliedDir = resolveAppliedDir(campaignRoot);
-  const appFolder = join(appliedDir, slug);
-  const retroPath = join(appFolder, 'retro.md');
+  const retroPath = join(appliedDir, slug, 'retro.md');
 
-  // Read existing retro file for steer extraction (outside lock)
+  // Read existing retro to locate the last section and any stored steer
   let existingContent: string;
+  let existingSteer: string | undefined;
   try {
     existingContent = await readFile(retroPath, 'utf8');
+    existingSteer = extractSteer(existingContent);
   } catch {
     throw new RetroError(`No retro found for "${slug}".\nGenerate one with: jho retro ${slug}`);
   }
 
-  const existingSteer = extractSteer(existingContent);
-  const effectiveSteer = steer ?? existingSteer;
+  const priorSections = parseRetroFile(existingContent);
+  if (priorSections.length === 0) {
+    throw new RetroError(`No retro sections found for "${slug}"`);
+  }
 
+  const prior = priorSections[priorSections.length - 1]!;
+
+  // Carry forward weak topics/notes from the prior section
+  let combinedTopics: string[];
+  let combinedNotes: string;
+  if (noCarryOver) {
+    combinedTopics = [...additionalTopics];
+    combinedNotes = incomingNotes?.trim() ?? '';
+  } else {
+    const priorLabels = prior.weakTopics.map((wt) =>
+      wt.detail ? `${wt.topic} — ${wt.detail}` : wt.topic,
+    );
+    const existingLabels = new Set(priorLabels);
+    combinedTopics = [...priorLabels, ...additionalTopics.filter((t) => !existingLabels.has(t))];
+    combinedNotes = [prior.notes, incomingNotes].filter(Boolean).join('\n').trim();
+  }
+
+  // Resolve the status for this new section
   let app;
   try {
     app = await readApplication(appliedDir, slug);
@@ -492,112 +553,58 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
     const msg = err instanceof Error ? err.message : String(err);
     throw new RetroError(`Failed to read application: ${msg}`);
   }
-
-  const sections = parseRetroFile(existingContent);
-  if (sections.length === 0) {
-    throw new RetroError(`No retro sections found for "${slug}"`);
-  }
-
-  const lastSection = sections[sections.length - 1]!;
-
-  // Merge existing weak topic lines with new ones (dedup)
-  const existingLabels = new Set(
-    lastSection.weakTopics.map((weakTopic) =>
-      weakTopic.detail ? `${weakTopic.topic} — ${weakTopic.detail}` : weakTopic.topic,
-    ),
+  const { status: sourcedStatus, type: interviewType } = await resolveInterviewData(
+    appliedDir,
+    slug,
+    prior.interviewId,
+    app.frontmatter.status,
   );
-  const combinedTopics = [
-    ...lastSection.weakTopics.map((weakTopic) =>
-      weakTopic.detail ? `${weakTopic.topic} — ${weakTopic.detail}` : weakTopic.topic,
-    ),
-    ...additionalTopics.filter((topic) => !existingLabels.has(topic)),
-  ];
+  const effectiveStatus = status ?? sourcedStatus ?? 'unknown';
 
-  const combinedNotes = [lastSection.notes, incomingNotes].filter(Boolean).join('\n').trim();
-
-  // Regenerate learning plan with all weak topics (outside lock)
-  const plan = await generateLearningPlan(
+  // Generate learning plan for ONLY the new/additional weak topics
+  const effectiveSteer = steer ?? existingSteer;
+  const newPlan = await generateLearningPlan(
     slug,
     campaign,
-    combinedTopics,
+    additionalTopics, // Only the new topics — not the combined list
     effectiveSteer,
     externalLog,
     app.frontmatter,
   );
 
-  // Rebuild and persist (inside lock)
-  return acquireLock(appFolder, async () => {
-    let content: string;
-    try {
-      content = await readFile(retroPath, 'utf8');
-    } catch {
-      throw new RetroError(`No retro found for "${slug}".\nGenerate one with: jho retro ${slug}`);
-    }
+  const section = buildSection(
+    new Date()
+      .toISOString()
+      .replace('T', ' ')
+      .replace(/\.\d{3}Z$/, ''),
+    prior.interviewId,
+    interviewType,
+    combinedTopics, // Full list appears in the weak-topics field
+    combinedNotes,
+    newPlan.content,
+    effectiveStatus,
+  );
 
-    const currentSections = parseRetroFile(content);
-    if (currentSections.length === 0) {
-      throw new RetroError(`No retro sections found for "${slug}"`);
-    }
+  return acquireLock(join(appliedDir, slug), async () => {
+    const fileContent = existingContent.trimEnd() + '\n\n' + section.trim() + '\n';
 
-    // Replace the last H2 section in the raw content
-    const lines = content.split('\n');
-    let sectionCount = 0;
-    let sectionStartIndex = -1;
-    let sectionEndIndex = lines.length;
+    const finalContent = steer !== undefined ? replaceSteer(fileContent, steer) : fileContent;
 
-    for (let i = 0; i < lines.length; i++) {
-      const match = lines[i]!.match(H2_PATTERN);
-      if (match) {
-        sectionCount++;
-        if (sectionCount === currentSections.length) {
-          sectionStartIndex = i;
-        } else if (sectionCount > currentSections.length) {
-          sectionEndIndex = i;
-          break;
-        }
-      }
-    }
-
-    if (sectionStartIndex === -1) {
-      throw new RetroError('Failed to locate last retro section for update');
-    }
-
-    // Rebuild the section with updated weak topics, notes, and learning plan
-    const newSection = buildSection(
-      lastSection.when,
-      lastSection.interviewId,
-      combinedTopics,
-      combinedNotes,
-      plan.content,
-    );
-
-    const newLines = [
-      ...lines.slice(0, sectionStartIndex),
-      newSection,
-      ...lines.slice(sectionEndIndex),
-    ];
-    let fileContent = newLines.join('\n');
-
-    // Persist steer marker when explicitly provided
-    if (steer !== undefined) {
-      fileContent = replaceSteer(fileContent, steer);
-    }
-
-    const written = await atomicWrite(retroPath, fileContent);
+    const written = await atomicWrite(retroPath, finalContent);
     if (!written) {
       throw new RetroError(`Failed to write retro.md for ${slug}`);
     }
 
-    // Write toolhash sidecar for retro.md
-    await writeToolhash(retroPath, computeHash(fileContent));
+    await writeToolhash(retroPath, computeHash(finalContent));
 
-    logger.info({ slug, retroIndex: currentSections.length }, 'retro.appended');
+    const sectionIndex = priorSections.length + 1;
+    logger.info({ slug, retroIndex: sectionIndex }, 'retro.appended');
     return {
-      content: plan.content,
-      wordCount: countWords(plan.content),
-      model: plan.model,
-      durationMs: plan.durationMs,
-      index: currentSections.length,
+      content: newPlan.content,
+      wordCount: countWords(newPlan.content),
+      model: newPlan.model,
+      durationMs: newPlan.durationMs,
+      index: sectionIndex,
     };
   });
 }

@@ -65,6 +65,8 @@ export interface StartRetroInput {
   readonly interviewId?: number;
   /** Custom LLM instructions for this retro. */
   readonly steer?: string;
+  /** Status at the time of writing (overrides application/interview status). */
+  readonly status?: string;
   /** Optional pino logger. */
   readonly log?: Logger;
 }
@@ -98,6 +100,10 @@ export interface AppendRetroOptions {
   readonly notes?: string;
   /** Custom LLM instructions for this retro. */
   readonly steer?: string;
+  /** Status at the time of writing (overrides application/interview status). */
+  readonly status?: string;
+  /** When true, do not carry the prior section's weak topics/notes into the new section. */
+  readonly noCarryOver?: boolean;
   /** Optional pino logger. */
   readonly log?: Logger;
 }
