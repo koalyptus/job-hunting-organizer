@@ -57,7 +57,7 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       │   ├── rename.ts          # rename application folder (atomic rename + meta.md update + index rebuild)
 │       │   └── types.ts           # application-specific types
 │       ├── interviews/  # interview pipeline management (no LLM, H2-based append-only)
-│       ├── retro/       # post-mortem retros with LLM-backed learning plans + cross-app aggregation
+│       ├── retro/       # reflection retros (any stage) with LLM-backed learning plans + cross-app aggregation
 │       ├── prepare/     # pre-interview prep plans (LLM-backed, toolhash sidecar)
 │       ├── doctor/      # campaign diagnostics
 │       ├── repair/      # auto-repair (frontmatter, indexes, counters)
@@ -142,7 +142,7 @@ jho interview [<slug>] {add,list,mark,notes}  # manage interview pipeline; --whe
 jho prepare [<slug>]    # pre-interview prep: topics to brush up, behavioural, timeline (from JD + profile); --add, --text, --days, --steer, --json
 jho prepare <url>       # ad-hoc prep from URL (print to stdout, don't save)
 jho prepare --text "..."# ad-hoc prep from pasted text
-jho retro [<slug>]      # post-mortem for failed interviews; generates a learning plan; --steer <text>, --interview <n>
+jho retro [<slug>]      # reflection at any stage; generates a learning plan; --steer <text>, --interview <n>, --status <value>
 jho retro show [<slug>] # display existing retro
 jho retro append [<slug>] [--weak-topics <topics>] [--notes <text>] [--steer <text>]
                         # add weak topics to existing retro

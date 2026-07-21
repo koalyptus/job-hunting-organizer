@@ -207,6 +207,44 @@ describe('retro command', () => {
       );
     });
 
+    it('passes --status to startRetro', async () => {
+      vi.mocked(retroCore.startRetro).mockResolvedValue({
+        content: 'Learning plan content',
+        wordCount: 5,
+        model: 'test-model',
+        durationMs: 100,
+        index: 1,
+      });
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+      await writeFile(
+        join(campaignDir, 'applied', slug, 'meta.md'),
+        '---\nslug: ' +
+          slug +
+          '\ntitle: Software Engineer\ncompany: Test Corp\nstatus: applied\n---\n',
+      );
+
+      const { exitCode } = await runCommand(retroCommand, [
+        'retro',
+        slug,
+        '--weak-topics',
+        'System design',
+        '--status',
+        'interviewing',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(retroCore.startRetro).toHaveBeenCalledWith(
+        expect.objectContaining({
+          slug,
+          weakTopics: ['System design'],
+          status: 'interviewing',
+        }),
+      );
+    });
+
     it('generates retro via interactive prompt', async () => {
       vi.mocked(clack.text).mockResolvedValue('Dynamic programming, Graphs');
 
@@ -312,6 +350,22 @@ describe('retro command', () => {
       expect(stdout).toContain('Existing retro content');
     });
 
+    it('strips the marker comment before rendering show output', async () => {
+      vi.mocked(retroCore.showRetro).mockResolvedValue(
+        '<!-- jho:retro — reflection captured at any stage of the application. Tool appends a new H2 per retro; never overwrites prior retros. -->\n\n# Retro — SE @ Corp\n\nBody text here.',
+      );
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stdout, exitCode } = await runCommand(retroCommand, ['retro', 'show', slug]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).not.toContain('<!-- jho:retro');
+      expect(stdout).toContain('Body text here.');
+    });
+
     it('exits with error when retro not found', async () => {
       vi.mocked(retroCore.showRetro).mockRejectedValue(new RetroNotFoundError('No retro found'));
 
@@ -366,6 +420,41 @@ describe('retro command', () => {
       expect(clack.text).not.toHaveBeenCalled();
       expect(retroCore.appendRetro).toHaveBeenCalledWith(
         expect.objectContaining({ weakTopics: ['Behavioural'] }),
+      );
+    });
+
+    it('passes --status and --no-carry-over to appendRetro', async () => {
+      vi.mocked(retroCore.appendRetro).mockResolvedValue({
+        content: 'Updated learning plan',
+        wordCount: 10,
+        model: 'test-model',
+        durationMs: 100,
+        index: 2,
+      });
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stdout, exitCode } = await runCommand(retroCommand, [
+        'retro',
+        'append',
+        slug,
+        '--weak-topics',
+        'Behavioural',
+        '--status',
+        'interviewing',
+        '--no-carry-over',
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Updated learning plan');
+      expect(retroCore.appendRetro).toHaveBeenCalledWith(
+        expect.objectContaining({
+          weakTopics: ['Behavioural'],
+          status: 'interviewing',
+          noCarryOver: true,
+        }),
       );
     });
 

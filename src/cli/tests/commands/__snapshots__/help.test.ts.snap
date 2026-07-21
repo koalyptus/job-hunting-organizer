@@ -291,13 +291,18 @@ Options:
 exports[`command --help output > retro has consistent help output 1`] = `
 "Usage: retro [options] [command] [slug]
 
-Post-mortem for failed interviews (slug inferred from cwd if omitted)
+Retro / reflection at any stage of an application (slug inferred from cwd if
+omitted)
 
 Arguments:
   slug                    application slug (inferred from cwd if omitted)
 
 Options:
   --interview <index>     retro for a specific interview index
+  --status <value>        status at the time of writing (defaults to
+                          application/interview status)
+  --no-carry-over         do not carry prior weak topics/notes forward when
+                          appending
   --weak-topics <topics>  comma-separated weak topics (prompts interactively if
                           omitted)
   --notes <text>          additional context notes

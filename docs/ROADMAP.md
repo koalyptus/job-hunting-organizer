@@ -49,6 +49,7 @@
   - [x] 7i — Core: Employment type in application meta
   - [x] 7j — CLI: Natural-language command interface
   - [x] 7k — CLI: Interviewer column + env vars in help
+  - [x] 7l — Retro enhancements (markup strip, status field, true append, MCP logger coverage)
 - [ ] **Phase 8** — MCP server
   - [x] 8a — Server scaffold, campaign resolver, error handler
   - [ ] 8b — Read-only tools
@@ -694,6 +695,19 @@ Two deliverables:
 **Deliverable**: `jho interview list` shows interviewer names. `jho --help` documents all env vars.
 
 **Commit**: `feat(cli): interviewer column in list table and env vars in help`
+
+#### 7l — Retro enhancements (markup strip, status field, true append, MCP logger coverage)
+
+Four small fixes/enhancements to the retro surface, plus a coverage gap close:
+
+1. **`jho retro show` was leaking the `<!-- jho:retro — … -->` comment into terminal output.** The CLI used `renderMarkdown` (which passes raw markdown through). Switched to `stripAndRender` so the comment is stripped first, then the remaining markdown is rendered.
+2. **Status field on the retro H2 was ungoverned.** Added `status?: string` plumbing through `StartRetroInput` and `AppendRetroOptions`. New `resolveStatus()` helper sources the default: linked interview's `Status` field, else the application's `meta.md` `status`, else `'unknown'`. `--status <value>` overrides. Renamed the H1 from `Post-mortem` to `Retro` and rewrote `RETRO_MARKER` to a neutral comment that no longer claims "never overwrites prior retros" (no longer accurate after the append change below).
+3. **`jho retro append` was a full regeneration.** It delegated to `startRetro`, which called the LLM with the full JD + profile + KB + the *combined* weak topics, regenerating the entire learning plan body from scratch. The new `appendRetro` is its own direct path: it reads the prior section, computes a combined weak-topics list (carried forward + new), calls `generateLearningPlan` with **only the new weak topics**, and appends a new H2 with the combined list in metadata but a focused LLM output. The spinner message was updated from `Regenerating learning plan...` to `Adding weak topics and regenerating section...`. `--no-carry-over` continues to suppress carry-forward.
+4. **`mcp/logger.ts` branch coverage was 50%.** The ternary `config.redactPaths.length > 0 ? [...config.redactPaths] : [...DEFAULT_REDACT_PATHS]` only ever exercised one arm under the live config. Refactored `mcp/logger.ts` to export `createMcpLogger(config?)` so the test file (`src/mcp/tests/logger.test.ts`) can drive both branches with a static import. Coverage: 100% statements, 100% branches, 100% functions, 100% lines.
+
+**Deliverable**: `jho retro show` shows clean output. `jho retro --status <value>` (and per-subcommand on `append`) sets a real status. `jho retro append` adds a new H2 with focused LLM output instead of regenerating the full plan. `mcp/logger.ts` at 100% branch coverage.
+
+**Commit**: `feat(retro): strip marker in show, status field, true append, mcp logger coverage`
 
 ---
 

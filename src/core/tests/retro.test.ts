@@ -458,10 +458,109 @@ describe('startRetro', () => {
       'utf8',
     );
     expect(retroContent).toContain('<!-- jho:retro');
-    expect(retroContent).toContain('# Post-mortem — Software Engineer @ Foo Inc');
+    expect(retroContent).toContain('# Retro — Software Engineer @ Foo Inc');
     expect(retroContent).toContain('Weak topics');
     expect(retroContent).toContain('System design — consistency models');
     expect(retroContent).toContain(mockPlanContent);
+  });
+
+  it('uses provided status and round-trips through the parser', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: mockPlanContent,
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await startRetro({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      weakTopics: ['System design — consistency models'],
+      status: 'unknown',
+    });
+
+    const retroContent = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'retro.md'),
+      'utf8',
+    );
+    expect(retroContent).toContain('[unknown]');
+    expect(retroContent).toContain('- Status at the time: unknown');
+
+    const sections = parseRetroFile(retroContent);
+    expect(sections[0]!.status).toBe('unknown');
+    expect(sections[0]!.statusAtTime).toBe('unknown');
+  });
+
+  it('defaults status to the application meta.md status when not provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp'); // meta.md status: applied
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: mockPlanContent,
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await startRetro({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      weakTopics: ['System design'],
+    });
+
+    const retroContent = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'retro.md'),
+      'utf8',
+    );
+    expect(retroContent).toContain('[applied]');
+    expect(retroContent).toContain('- Status at the time: applied');
+  });
+
+  it('uses the linked interview status when --interview is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // Write an interviews.md with interview #1 status "passed"
+    const appDir = join(appliedDir, '2026-Jun-01-SE-Test-Corp');
+    await writeFile(
+      join(appDir, 'interviews.md'),
+      [
+        '<!-- jho:interview-log ... -->',
+        '',
+        '# Interviews — Software Engineer @ Foo Inc',
+        '',
+        '## 2026-06-17 14:00 — Technical',
+        '',
+        '- Type: technical',
+        '- Status: passed',
+        '',
+      ].join('\n'),
+    );
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: mockPlanContent,
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await startRetro({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      weakTopics: ['System design'],
+      interviewId: 1,
+    });
+
+    const retroContent = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'retro.md'),
+      'utf8',
+    );
+    expect(retroContent).toContain('[passed]');
+    expect(retroContent).toContain('- Interview id: 1');
+    expect(retroContent).toContain('- Status at the time: passed');
   });
 
   it('accepts notes and interviewId', async () => {
@@ -904,7 +1003,7 @@ describe('appendRetro', () => {
     await writeFile(join(appDir, 'retro.md'), existingRetro);
   }
 
-  it('adds new weak topics and regenerates learning plan', async () => {
+  it('adds a new H2 section, preserving the prior section body', async () => {
     await setupAppWithRetro('2026-Jun-01-SE-Test-Corp');
 
     mockChatComplete.mockResolvedValueOnce({
@@ -922,19 +1021,62 @@ describe('appendRetro', () => {
     });
 
     expect(result.content).toBe(mockPlanContent);
-    expect(result.index).toBe(1); // Still first section
+    expect(result.index).toBe(2); // New H2 section appended
 
     const retroContent = await readFile(
       join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'retro.md'),
       'utf8',
     );
-    // Original weak topic preserved
-    expect(retroContent).toContain('System design — consistency models');
-    // New weak topic added
-    expect(retroContent).toContain('Behavioural — conflict story');
-    // Old plan replaced with new
+
+    // The prior section is preserved (never overwritten)
+    const sections = parseRetroFile(retroContent);
+    expect(sections).toHaveLength(2);
+    expect(sections[0]!.body).toContain('Old plan content.');
+
+    // LLM was called with only the new weak topics
+    const userArg = mockChatComplete.mock.calls[0]?.[0]?.find(
+      (m: { role: string }) => m.role === 'user',
+    )?.content as string;
+    expect(userArg).toContain('- Behavioural');
+    expect(userArg).not.toContain('System design');
+
+    // New section carries forward prior + new weak topics
+    expect(sections[1]!.weakTopics[0]!.topic).toBe('System design');
+    expect(sections[1]!.weakTopics[1]!.topic).toBe('Behavioural');
+    // New plan present; old plan still present in the preserved prior section
     expect(retroContent).toContain(mockPlanContent);
-    expect(retroContent).not.toContain('Old plan content.');
+    expect(retroContent).toContain('Old plan content.');
+  });
+
+  it('does not carry prior weak topics/notes forward with --no-carry-over', async () => {
+    await setupAppWithRetro('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: mockPlanContent,
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await appendRetro({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      weakTopics: ['Behavioural — conflict story'],
+      noCarryOver: true,
+    });
+
+    const retroContent = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'retro.md'),
+      'utf8',
+    );
+    const sections = parseRetroFile(retroContent);
+    expect(sections).toHaveLength(2);
+    // New section only holds the newly supplied topic, not the carried-over one
+    expect(sections[1]!.weakTopics).toHaveLength(1);
+    expect(sections[1]!.weakTopics[0]!.topic).toBe('Behavioural');
+    // Prior section still retains its original weak topic
+    expect(sections[0]!.weakTopics[0]!.topic).toBe('System design');
   });
 
   it('deduplicates weak topics', async () => {
