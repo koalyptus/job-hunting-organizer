@@ -52,8 +52,8 @@
   - [x] 7l — Retro enhancements (markup strip, status field, true append, MCP logger coverage)
 - [ ] **Phase 8** — MCP server
   - [x] 8a — Server scaffold, campaign resolver, error handler
-  - [ ] 8b — Read-only tools
-  - [ ] 8c — Write + CRUD tools
+  - [x] 8b — Read-only tools
+  - [x] 8c — Write + CRUD tools
   - [ ] 8d — LLM-backed tools
   - [ ] 8e — Resources + prompts
   - [ ] 8f — bin/jho-mcp + package config
