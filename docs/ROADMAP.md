@@ -52,8 +52,8 @@
   - [x] 7l — Retro enhancements (markup strip, status field, true append, MCP logger coverage)
 - [ ] **Phase 8** — MCP server
   - [x] 8a — Server scaffold, campaign resolver, error handler
-  - [ ] 8b — Read-only tools
-  - [ ] 8c — Write + CRUD tools
+  - [x] 8b — Read-only tools
+  - [x] 8c — Write + CRUD tools
   - [ ] 8d — LLM-backed tools
   - [ ] 8e — Resources + prompts
   - [ ] 8f — bin/jho-mcp + package config
@@ -760,7 +760,7 @@ Register 8 write tools:
 - `post_mortem` — generate retro learning plan
 - `append_retro` — add weak topics to existing retro
 
-All write tools use `yes: true` (non-interactive). No LLM calls in this sub-phase.
+All write tools follow the read-only tool registration pattern. `track_application` and `init` pass `yes: true` to skip interactive prompts. `post_mortem` and `append_retro` call LLM internally through `startRetro`/`appendRetro` (owned by Phase 8d's LLM-backed tool contract).
 
 **Commit**: `feat(mcp): register write and CRUD tools`
 

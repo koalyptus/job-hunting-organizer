@@ -18,6 +18,7 @@ import { coverLetterCommand } from './commands/cover-letter.js';
 import { answerCommand } from './commands/answer.js';
 import { interviewCommand } from './commands/interview.js';
 import { retroCommand } from './commands/retro.js';
+import { confirm } from '@clack/prompts';
 import { prepareCommand } from './commands/prepare.js';
 import { doctorCommand } from './commands/doctor.js';
 import { repairCommand } from './commands/repair.js';
@@ -155,7 +156,6 @@ if (looksLikeNaturalLanguage(rawArgs, deriveKnownCommands(program.commands.map((
         `${parsed.args.length ? ` ${parsed.args.join(' ')}` : ''}` +
         ` (confidence ${parsed.confidence.toFixed(2)})`;
       userOutput(`Interpreted as: ${summary}`);
-      const { confirm } = await import('@clack/prompts');
       const proceed = await confirm({
         message: 'Run this command?',
         initialValue: parsed.confidence >= 0.5,

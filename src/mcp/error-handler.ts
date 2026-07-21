@@ -9,6 +9,7 @@ import { DoctorError } from '../core/doctor/doctor.js';
 import { RetroError } from '../core/retro/retro-errors.js';
 import { PrepError } from '../core/prepare/prepare-errors.js';
 import { ProfileReadError } from '../core/campaign/profile-read.js';
+import { ProfileWriteError } from '../core/campaign/profile-writer.js';
 import { StatsError } from '../core/stats/errors.js';
 import { ListError } from '../core/list/errors.js';
 import { InitError } from '../core/init/errors.js';
@@ -27,6 +28,7 @@ const ERROR_PREFIXES: Map<ErrorConstructor, string> = new Map([
   [RetroError, 'Retro error'],
   [PrepError, 'Prep error'],
   [ProfileReadError, 'Profile error'],
+  [ProfileWriteError, 'Profile write error'],
   [StatsError, 'Stats error'],
   [ListError, 'List error'],
   [InitError, 'Init error'],

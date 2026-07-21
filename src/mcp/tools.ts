@@ -10,14 +10,22 @@ import { registerListCampaigns } from './tools/list-campaigns.js';
 import { registerOwnership } from './tools/ownership-tool.js';
 import { registerDoctor } from './tools/doctor-tool.js';
 import { registerRepair } from './tools/repair-tool.js';
+import { registerTrackApplication } from './tools/track-application.js';
+import { registerAddInterview } from './tools/add-interview.js';
+import { registerMarkInterview } from './tools/mark-interview.js';
+import { registerUpdateProfile } from './tools/update-profile.js';
+import { registerUpdateConfig } from './tools/update-config.js';
+import { registerInit } from './tools/init-tool.js';
+import { registerPostMortem } from './tools/post-mortem.js';
+import { registerAppendRetro } from './tools/append-retro-tool.js';
 
 /**
- * Register all Phase 8b read-only tools on the MCP server.
+ * Register all Phase 8b read-only tools and Phase 8c write tools on the MCP server.
  * Called once from {@link startServer} after server creation.
  *
  * Each tool validates input with its pre-defined Zod schema,
  * calls a `core/` function directly, and returns JSON content.
- * No LLM, no NL pipeline, no interactive prompts.
+ * Interactive tools (`track_application`, `init`) pass `yes: true` to skip prompts.
  */
 export function registerTools(server: McpServer): void {
   registerListApplications(server);
@@ -31,4 +39,12 @@ export function registerTools(server: McpServer): void {
   registerOwnership(server);
   registerDoctor(server);
   registerRepair(server);
+  registerTrackApplication(server);
+  registerAddInterview(server);
+  registerMarkInterview(server);
+  registerUpdateProfile(server);
+  registerUpdateConfig(server);
+  registerInit(server);
+  registerPostMortem(server);
+  registerAppendRetro(server);
 }
