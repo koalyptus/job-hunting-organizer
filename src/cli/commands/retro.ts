@@ -133,6 +133,9 @@ const appendCommand = new Command('append')
             notes: parentOpts?.notes as string | undefined,
             steer: parentOpts?.steer as string | undefined,
             status: parentOpts?.status as string | undefined,
+            // Commander sets carryOver=false for --no-carry-over. The negated
+            // option name differs from the internal property name, so we
+            // map explicitly rather than spreading parentOpts directly.
             noCarryOver: parentOpts?.carryOver === false,
           }),
         'Failed to update learning plan',
@@ -188,6 +191,8 @@ appendCommand.addHelpText(
 The slug is optional. When omitted, it is inferred from the current directory.
 
 Options (use before the subcommand on the retro command, e.g. jho retro --weak-topics "..." append):
+  --status <value>   Override the status shown on the new H2 (defaults to interview/app status)
+  --no-carry-over    Do not copy prior weak topics/notes forward into the new section
   --weak-topics      Comma-separated weak topics to add
   --notes            Additional context notes
   --steer            Custom LLM instructions for this retro
@@ -195,6 +200,8 @@ Options (use before the subcommand on the retro command, e.g. jho retro --weak-t
 Examples:
   $ jho retro append                                        # interactive: prompts for weak topics
   $ jho retro --weak-topics "Behavioural, SQL" append       # non-interactive
+  $ jho retro --status interviewing append                  # set status for the new section
+  $ jho retro --no-carry-over append                        # append without carry-over
   $ jho retro append 2026-Jan-15-frontend-acme-12345        # explicit slug
 `,
 );

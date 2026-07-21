@@ -560,6 +560,7 @@ describe('startRetro', () => {
     );
     expect(retroContent).toContain('[passed]');
     expect(retroContent).toContain('- Interview id: 1');
+    expect(retroContent).toContain('- Interview type: technical');
     expect(retroContent).toContain('- Status at the time: passed');
   });
 

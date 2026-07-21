@@ -206,6 +206,7 @@ function buildNewFileContent(title: string, company: string, section: string): s
 function buildSection(
   when: string,
   interviewId: number | undefined,
+  interviewType: string | undefined,
   weakTopics: string[],
   notes: string | undefined,
   generatedPlan: string,
@@ -220,6 +221,7 @@ function buildSection(
     '',
     `- Date: ${dateStr}`,
     ...(interviewId !== undefined ? [`- Interview id: ${interviewId}`] : []),
+    ...(interviewId !== undefined && interviewType ? [`- Interview type: ${interviewType}`] : []),
     `- Status at the time: ${status}`,
     '',
     '### Weak topics',
@@ -237,26 +239,27 @@ function buildSection(
 }
 
 /**
- * Resolve the default retro status when the caller does not override it.
+ * Resolve the default retro status and interview type when the caller does
+ * not override them.
  *
  * Preference order: when linked to an interview, use that interview's
- * recorded status; otherwise fall back to the application's current
- * `meta.md` status. Returns `undefined` if neither source is available.
+ * recorded status and type; otherwise fall back to the application's
+ * current `meta.md` status with no type.
  */
-async function resolveStatus(
+async function resolveInterviewData(
   appliedDir: string,
   slug: string,
   interviewId: number | undefined,
   appStatus: string,
-): Promise<string | undefined> {
+): Promise<{ status: string | undefined; type: string | undefined }> {
   if (interviewId !== undefined) {
     const interviews = await listInterviews(appliedDir, slug);
     const interview = interviews[interviewId - 1];
-    if (interview?.status) {
-      return interview.status;
+    if (interview) {
+      return { status: interview.status, type: interview.type };
     }
   }
-  return appStatus;
+  return { status: appStatus, type: undefined };
 }
 
 /**
@@ -406,10 +409,14 @@ export async function startRetro(opts: StartRetroInput): Promise<StartRetroResul
   // Use provided steer or fall back to existing steer from file
   const effectiveSteer = steer ?? existingSteer;
 
-  // Resolve the retro status: explicit override wins; otherwise source it.
-  // When linked to an interview, prefer that interview's status; otherwise
-  // fall back to the application's current meta.md status.
-  const sourcedStatus = await resolveStatus(appliedDir, slug, interviewId, app.frontmatter.status);
+  // Resolve the retro status and interview type: explicit override wins;
+  // otherwise source from the linked interview or fall back to the app meta.
+  const { status: sourcedStatus, type: interviewType } = await resolveInterviewData(
+    appliedDir,
+    slug,
+    interviewId,
+    app.frontmatter.status,
+  );
   const status = opts.status ?? sourcedStatus ?? 'unknown';
 
   // Generate the learning plan
@@ -428,6 +435,7 @@ export async function startRetro(opts: StartRetroInput): Promise<StartRetroResul
       .replace('T', ' ')
       .replace(/\.\d{3}Z$/, ''),
     interviewId,
+    interviewType,
     weakTopics,
     notes,
     plan.content,
@@ -545,7 +553,7 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
     const msg = err instanceof Error ? err.message : String(err);
     throw new RetroError(`Failed to read application: ${msg}`);
   }
-  const sourcedStatus = await resolveStatus(
+  const { status: sourcedStatus, type: interviewType } = await resolveInterviewData(
     appliedDir,
     slug,
     prior.interviewId,
@@ -570,13 +578,14 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
       .replace('T', ' ')
       .replace(/\.\d{3}Z$/, ''),
     prior.interviewId,
+    interviewType,
     combinedTopics, // Full list appears in the weak-topics field
     combinedNotes,
     newPlan.content,
     effectiveStatus,
   );
 
-  return acquireLock(appFolder(appliedDir, slug), async () => {
+  return acquireLock(join(appliedDir, slug), async () => {
     const fileContent = existingContent.trimEnd() + '\n\n' + section.trim() + '\n';
 
     const finalContent = steer !== undefined ? replaceSteer(fileContent, steer) : fileContent;
@@ -598,13 +607,6 @@ export async function appendRetro(opts: AppendRetroOptions): Promise<StartRetroR
       index: sectionIndex,
     };
   });
-}
-/**
- * Small helper: resolve the lock folder path for an application given its
- * `appliedDir` + slug.
- */
-function appFolder(appliedDir: string, slug: string): string {
-  return join(appliedDir, slug);
 }
 
 /**
