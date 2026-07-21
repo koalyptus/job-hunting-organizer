@@ -23,6 +23,14 @@ vi.mock('../logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
+vi.mock('../locks.js', async () => {
+  const actual = await vi.importActual('../locks.js');
+  return {
+    ...actual,
+    acquireLock: vi.fn((_: string, fn: () => unknown) => fn()),
+  };
+});
+
 describe('writeProfile', () => {
   beforeEach(() => {
     vi.clearAllMocks();

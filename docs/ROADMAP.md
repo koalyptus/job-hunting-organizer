@@ -760,7 +760,7 @@ Register 8 write tools:
 - `post_mortem` — generate retro learning plan
 - `append_retro` — add weak topics to existing retro
 
-All write tools use `yes: true` (non-interactive). No LLM calls in this sub-phase.
+All write tools follow the read-only tool registration pattern. `track_application` and `init` pass `yes: true` to skip interactive prompts. `post_mortem` and `append_retro` call LLM internally through `startRetro`/`appendRetro` (owned by Phase 8d's LLM-backed tool contract).
 
 **Commit**: `feat(mcp): register write and CRUD tools`
 

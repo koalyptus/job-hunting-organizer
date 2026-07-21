@@ -25,7 +25,7 @@ import { registerAppendRetro } from './tools/append-retro-tool.js';
  *
  * Each tool validates input with its pre-defined Zod schema,
  * calls a `core/` function directly, and returns JSON content.
- * All Phase 8c tools pass `yes: true` to skip interactive prompts.
+ * Interactive tools (`track_application`, `init`) pass `yes: true` to skip prompts.
  */
 export function registerTools(server: McpServer): void {
   registerListApplications(server);
