@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { resolveCampaignRoot } from '../../../core/paths.js';
+import { readProfile } from '../../../core/campaign/profile-read.js';
+import { registerReadProfile } from '../../tools/read-profile.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
-vi.mock('../../../core/paths.js', async () => ({
+vi.mock('../../../core/paths.js', () => ({
   resolveCampaignRoot: vi.fn(),
   resolveAppliedDir: vi.fn(),
   resolveDataRoot: vi.fn(),
@@ -20,12 +24,9 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  return {
-    ReadProfileInput: z.object({ campaign: z.string() }),
-  };
-});
+vi.mock('../../schemas.js', () => ({
+  ReadProfileInput: z.object({ campaign: z.string() }),
+}));
 
 vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -41,12 +42,9 @@ describe('read_profile tool', () => {
   });
 
   it('returns profile content', async () => {
-    const { resolveCampaignRoot } = await import('../../../core/paths.js');
-    const { readProfile } = await import('../../../core/campaign/profile-read.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(readProfile).mockResolvedValue('# Candidate Profile\n\nExperienced engineer...');
 
-    const { registerReadProfile } = await import('../../tools/read-profile.js');
     const { server, getCallback } = fakeServer();
     registerReadProfile(server);
     const cb = getCallback()!;
@@ -57,14 +55,11 @@ describe('read_profile tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { resolveCampaignRoot } = await import('../../../core/paths.js');
-    const { readProfile } = await import('../../../core/campaign/profile-read.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(readProfile).mockImplementation(() => {
       throw new Error('test error');
     });
 
-    const { registerReadProfile } = await import('../../tools/read-profile.js');
     const { server, getCallback } = fakeServer();
     registerReadProfile(server);
     const cb = getCallback()!;

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { appendRetro } from '../../../core/retro/retro.js';
+import { registerAppendRetro } from '../../tools/append-retro-tool.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,8 +16,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -34,7 +36,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/retro/retro.js', async () => ({
+vi.mock('../../../core/retro/retro.js', () => ({
   appendRetro: vi.fn().mockResolvedValue({
     content: '# New Section\nMore study.',
     wordCount: 8,
@@ -50,7 +52,6 @@ describe('append_retro tool', () => {
   });
 
   it('appends weak topics to existing retro', async () => {
-    const { appendRetro } = await import('../../../core/retro/retro.js');
     vi.mocked(appendRetro).mockResolvedValue({
       content: '# New Section\nMore study.',
       wordCount: 8,
@@ -59,7 +60,6 @@ describe('append_retro tool', () => {
       index: 2,
     });
 
-    const { registerAppendRetro } = await import('../../tools/append-retro-tool.js');
     const { server, getCallback } = fakeServer();
     registerAppendRetro(server);
     const cb = getCallback()!;
@@ -89,7 +89,6 @@ describe('append_retro tool', () => {
   });
 
   it('appends with undefined weak topics (defaults to empty)', async () => {
-    const { appendRetro } = await import('../../../core/retro/retro.js');
     vi.mocked(appendRetro).mockResolvedValue({
       content: '# Empty',
       wordCount: 1,
@@ -98,7 +97,6 @@ describe('append_retro tool', () => {
       index: 3,
     });
 
-    const { registerAppendRetro } = await import('../../tools/append-retro-tool.js');
     const { server, getCallback } = fakeServer();
     registerAppendRetro(server);
     const cb = getCallback()!;
@@ -121,10 +119,8 @@ describe('append_retro tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { appendRetro } = await import('../../../core/retro/retro.js');
     vi.mocked(appendRetro).mockRejectedValue(new Error('at least one new weak topic is required'));
 
-    const { registerAppendRetro } = await import('../../tools/append-retro-tool.js');
     const { server, getCallback } = fakeServer();
     registerAppendRetro(server);
     const cb = getCallback()!;

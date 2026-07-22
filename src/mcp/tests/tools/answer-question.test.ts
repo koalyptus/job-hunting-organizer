@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { answerQuestion } from '../../../core/applications/application-qa.js';
+import { registerAnswerQuestion } from '../../tools/answer-question.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,8 +16,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -31,7 +33,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/applications/application-qa.js', async () => ({
+vi.mock('../../../core/applications/application-qa.js', () => ({
   answerQuestion: vi.fn().mockResolvedValue({
     answer: 'The candidate has 5 years of experience in React.',
     wordCount: 12,
@@ -46,7 +48,6 @@ describe('answer_question tool', () => {
   });
 
   it('answers a question with explicit steer', async () => {
-    const { answerQuestion } = await import('../../../core/applications/application-qa.js');
     vi.mocked(answerQuestion).mockResolvedValue({
       answer: 'The candidate has 5 years of experience in React.',
       wordCount: 12,
@@ -54,7 +55,6 @@ describe('answer_question tool', () => {
       durationMs: 4000,
     });
 
-    const { registerAnswerQuestion } = await import('../../tools/answer-question.js');
     const { server, getCallback } = fakeServer();
     registerAnswerQuestion(server);
     const cb = getCallback()!;
@@ -80,7 +80,6 @@ describe('answer_question tool', () => {
   });
 
   it('answers question with undefined steer (defaults)', async () => {
-    const { answerQuestion } = await import('../../../core/applications/application-qa.js');
     vi.mocked(answerQuestion).mockResolvedValue({
       answer: 'The candidate has 3 years of experience in Node.js.',
       wordCount: 8,
@@ -88,7 +87,6 @@ describe('answer_question tool', () => {
       durationMs: 2000,
     });
 
-    const { registerAnswerQuestion } = await import('../../tools/answer-question.js');
     const { server, getCallback } = fakeServer();
     registerAnswerQuestion(server);
     const cb = getCallback()!;
@@ -112,10 +110,8 @@ describe('answer_question tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { answerQuestion } = await import('../../../core/applications/application-qa.js');
     vi.mocked(answerQuestion).mockRejectedValue(new Error('LLM refused to answer the question'));
 
-    const { registerAnswerQuestion } = await import('../../tools/answer-question.js');
     const { server, getCallback } = fakeServer();
     registerAnswerQuestion(server);
     const cb = getCallback()!;

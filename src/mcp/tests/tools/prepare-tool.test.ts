@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { generatePrep } from '../../../core/prepare/prepare.js';
+import { registerPrepare } from '../../tools/prepare-tool.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,8 +16,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -31,7 +33,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/prepare/prepare.js', async () => ({
+vi.mock('../../../core/prepare/prepare.js', () => ({
   generatePrep: vi.fn().mockResolvedValue({
     content: '# Prep plan\nStudy algorithms.',
     wordCount: 20,
@@ -46,7 +48,6 @@ describe('prepare tool', () => {
   });
 
   it('generates a prep plan with explicit days and steer', async () => {
-    const { generatePrep } = await import('../../../core/prepare/prepare.js');
     vi.mocked(generatePrep).mockResolvedValue({
       content: '# Prep plan\nStudy algorithms.',
       wordCount: 20,
@@ -54,7 +55,6 @@ describe('prepare tool', () => {
       durationMs: 6000,
     });
 
-    const { registerPrepare } = await import('../../tools/prepare-tool.js');
     const { server, getCallback } = fakeServer();
     registerPrepare(server);
     const cb = getCallback()!;
@@ -75,7 +75,6 @@ describe('prepare tool', () => {
   });
 
   it('generates prep plan with undefined days and steer (defaults)', async () => {
-    const { generatePrep } = await import('../../../core/prepare/prepare.js');
     vi.mocked(generatePrep).mockResolvedValue({
       content: '# Prep plan\nDefault plan.',
       wordCount: 5,
@@ -83,7 +82,6 @@ describe('prepare tool', () => {
       durationMs: 3000,
     });
 
-    const { registerPrepare } = await import('../../tools/prepare-tool.js');
     const { server, getCallback } = fakeServer();
     registerPrepare(server);
     const cb = getCallback()!;
@@ -103,10 +101,8 @@ describe('prepare tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { generatePrep } = await import('../../../core/prepare/prepare.js');
     vi.mocked(generatePrep).mockRejectedValue(new Error('Failed to read JD'));
 
-    const { registerPrepare } = await import('../../tools/prepare-tool.js');
     const { server, getCallback } = fakeServer();
     registerPrepare(server);
     const cb = getCallback()!;

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { startRetro } from '../../../core/retro/retro.js';
+import { registerPostMortem } from '../../tools/post-mortem.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,8 +16,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -33,7 +35,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/retro/retro.js', async () => ({
+vi.mock('../../../core/retro/retro.js', () => ({
   startRetro: vi.fn().mockResolvedValue({
     content: '# Learning Plan\nStudy X.',
     wordCount: 10,
@@ -49,7 +51,6 @@ describe('post_mortem tool', () => {
   });
 
   it('generates a retro learning plan with explicit weak topics', async () => {
-    const { startRetro } = await import('../../../core/retro/retro.js');
     vi.mocked(startRetro).mockResolvedValue({
       content: '# Learning Plan\nStudy X.',
       wordCount: 10,
@@ -58,7 +59,6 @@ describe('post_mortem tool', () => {
       index: 1,
     });
 
-    const { registerPostMortem } = await import('../../tools/post-mortem.js');
     const { server, getCallback } = fakeServer();
     registerPostMortem(server);
     const cb = getCallback()!;
@@ -81,7 +81,6 @@ describe('post_mortem tool', () => {
   });
 
   it('generates retro with undefined weak topics (defaults to empty array)', async () => {
-    const { startRetro } = await import('../../../core/retro/retro.js');
     vi.mocked(startRetro).mockResolvedValue({
       content: '# Empty Plan',
       wordCount: 2,
@@ -90,7 +89,6 @@ describe('post_mortem tool', () => {
       index: 1,
     });
 
-    const { registerPostMortem } = await import('../../tools/post-mortem.js');
     const { server, getCallback } = fakeServer();
     registerPostMortem(server);
     const cb = getCallback()!;
@@ -112,10 +110,8 @@ describe('post_mortem tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { startRetro } = await import('../../../core/retro/retro.js');
     vi.mocked(startRetro).mockRejectedValue(new Error('at least one weak topic is required'));
 
-    const { registerPostMortem } = await import('../../tools/post-mortem.js');
     const { server, getCallback } = fakeServer();
     registerPostMortem(server);
     const cb = getCallback()!;

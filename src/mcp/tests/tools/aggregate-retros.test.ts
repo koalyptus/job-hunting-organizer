@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { aggregateRetros } from '../../../core/retro/aggregate.js';
+import { registerAggregateRetros } from '../../tools/aggregate-retros.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,8 +16,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   return {
     AggregateRetrosInput: z.object({
@@ -34,7 +36,7 @@ vi.mock('../../../core/paths.js', () => ({
   resolveAppliedDir: vi.fn(() => '/data/campaigns/default/applied'),
 }));
 
-vi.mock('../../../core/retro/aggregate.js', async () => ({
+vi.mock('../../../core/retro/aggregate.js', () => ({
   aggregateRetros: vi.fn().mockResolvedValue([
     { label: 'System design — consistency models', count: 3, apps: ['app1', 'app2', 'app3'] },
     { label: 'Behavioral — STAR format', count: 2, apps: ['app1', 'app4'] },
@@ -47,13 +49,11 @@ describe('aggregate_retros tool', () => {
   });
 
   it('aggregates retros with target role filter', async () => {
-    const { aggregateRetros } = await import('../../../core/retro/aggregate.js');
     vi.mocked(aggregateRetros).mockResolvedValue([
       { label: 'System design — consistency models', count: 3, apps: ['app1', 'app2', 'app3'] },
       { label: 'Behavioral — STAR format', count: 2, apps: ['app1', 'app4'] },
     ]);
 
-    const { registerAggregateRetros } = await import('../../tools/aggregate-retros.js');
     const { server, getCallback } = fakeServer();
     registerAggregateRetros(server);
     const cb = getCallback()!;
@@ -73,12 +73,10 @@ describe('aggregate_retros tool', () => {
   });
 
   it('aggregates retros with undefined filters (defaults)', async () => {
-    const { aggregateRetros } = await import('../../../core/retro/aggregate.js');
     vi.mocked(aggregateRetros).mockResolvedValue([
       { label: 'System design — consistency models', count: 1, apps: ['app1'] },
     ]);
 
-    const { registerAggregateRetros } = await import('../../tools/aggregate-retros.js');
     const { server, getCallback } = fakeServer();
     registerAggregateRetros(server);
     const cb = getCallback()!;
@@ -93,10 +91,8 @@ describe('aggregate_retros tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { aggregateRetros } = await import('../../../core/retro/aggregate.js');
     vi.mocked(aggregateRetros).mockRejectedValue(new Error('Failed to list applications'));
 
-    const { registerAggregateRetros } = await import('../../tools/aggregate-retros.js');
     const { server, getCallback } = fakeServer();
     registerAggregateRetros(server);
     const cb = getCallback()!;

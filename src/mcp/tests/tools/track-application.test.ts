@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
+import { runTrack } from '../../../core/track/track.js';
+import { registerTrackApplication } from '../../tools/track-application.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,10 +17,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  const { APPLICATION_STATUSES, EMPLOYMENT_TYPES } =
-    await import('../../../core/applications/types.js');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -39,7 +40,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/track/track.js', async () => ({
+vi.mock('../../../core/track/track.js', () => ({
   runTrack: vi.fn().mockResolvedValue({ slug: 'test-app', changed: true }),
 }));
 
@@ -49,10 +50,8 @@ describe('track_application tool', () => {
   });
 
   it('creates an application from URL', async () => {
-    const { runTrack } = await import('../../../core/track/track.js');
     vi.mocked(runTrack).mockResolvedValue({ slug: 'new-app', changed: true });
 
-    const { registerTrackApplication } = await import('../../tools/track-application.js');
     const { server, getCallback } = fakeServer();
     registerTrackApplication(server);
     const cb = getCallback()!;
@@ -68,10 +67,8 @@ describe('track_application tool', () => {
   });
 
   it('updates an existing application by slug', async () => {
-    const { runTrack } = await import('../../../core/track/track.js');
     vi.mocked(runTrack).mockResolvedValue({ slug: 'existing-app', changed: true });
 
-    const { registerTrackApplication } = await import('../../tools/track-application.js');
     const { server, getCallback } = fakeServer();
     registerTrackApplication(server);
     const cb = getCallback()!;
@@ -86,10 +83,8 @@ describe('track_application tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { runTrack } = await import('../../../core/track/track.js');
     vi.mocked(runTrack).mockRejectedValue(new Error('failed to track'));
 
-    const { registerTrackApplication } = await import('../../tools/track-application.js');
     const { server, getCallback } = fakeServer();
     registerTrackApplication(server);
     const cb = getCallback()!;

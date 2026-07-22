@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { generateCoverLetter } from '../../../core/applications/cover-letter.js';
+import { registerCoverLetter } from '../../tools/cover-letter.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,8 +16,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -30,7 +32,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/applications/cover-letter.js', async () => ({
+vi.mock('../../../core/applications/cover-letter.js', () => ({
   generateCoverLetter: vi.fn().mockResolvedValue({
     content: '# Cover Letter\nDear Hiring Manager...',
     wordCount: 42,
@@ -45,7 +47,6 @@ describe('cover_letter tool', () => {
   });
 
   it('generates a cover letter with explicit steer', async () => {
-    const { generateCoverLetter } = await import('../../../core/applications/cover-letter.js');
     vi.mocked(generateCoverLetter).mockResolvedValue({
       content: '# Cover Letter\nDear Hiring Manager...',
       wordCount: 42,
@@ -53,7 +54,6 @@ describe('cover_letter tool', () => {
       durationMs: 5000,
     });
 
-    const { registerCoverLetter } = await import('../../tools/cover-letter.js');
     const { server, getCallback } = fakeServer();
     registerCoverLetter(server);
     const cb = getCallback()!;
@@ -73,7 +73,6 @@ describe('cover_letter tool', () => {
   });
 
   it('generates cover letter with undefined steer (defaults)', async () => {
-    const { generateCoverLetter } = await import('../../../core/applications/cover-letter.js');
     vi.mocked(generateCoverLetter).mockResolvedValue({
       content: '# Cover Letter\nDefault steer.',
       wordCount: 10,
@@ -81,7 +80,6 @@ describe('cover_letter tool', () => {
       durationMs: 3000,
     });
 
-    const { registerCoverLetter } = await import('../../tools/cover-letter.js');
     const { server, getCallback } = fakeServer();
     registerCoverLetter(server);
     const cb = getCallback()!;
@@ -100,10 +98,8 @@ describe('cover_letter tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { generateCoverLetter } = await import('../../../core/applications/cover-letter.js');
     vi.mocked(generateCoverLetter).mockRejectedValue(new Error('Failed to read JD'));
 
-    const { registerCoverLetter } = await import('../../tools/cover-letter.js');
     const { server, getCallback } = fakeServer();
     registerCoverLetter(server);
     const cb = getCallback()!;

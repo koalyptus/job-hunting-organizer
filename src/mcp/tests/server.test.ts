@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { createServer, startServer } from '../server.js';
 
 vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
   StdioServerTransport: vi.fn().mockImplementation(() => ({
@@ -9,13 +10,11 @@ vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
 
 describe('createServer', () => {
   it('returns an McpServer instance', async () => {
-    const { createServer } = await import('../server.js');
     const server = createServer();
     expect(server).toBeDefined();
   }, 30_000);
 
   it('has server info with name and version', async () => {
-    const { createServer } = await import('../server.js');
     const server = createServer();
     const info = (
       server as unknown as { server: { _serverInfo: { name: string; version: string } } }
@@ -28,7 +27,6 @@ describe('createServer', () => {
 
 describe('startServer', () => {
   it('connects to stdio transport', async () => {
-    const { startServer } = await import('../server.js');
     await startServer();
   }, 30_000);
 });

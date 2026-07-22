@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { fakeServer, getTextContent } from './helpers.js';
 import { extractJdFromUrl, extractJdFromText } from '../../../core/jobs/extract.js';
 import { registerExtractJd } from '../../tools/extract-jd.js';
@@ -15,8 +16,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   return {
     ExtractJdInput: z.object({

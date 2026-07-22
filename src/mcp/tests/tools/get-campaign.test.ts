@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { loadCampaignConfig } from '../../../core/config/config.js';
+import { registerGetCampaign } from '../../tools/get-campaign.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,22 +16,19 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  return {
-    GetCampaignInput: z.object({ campaign: z.string() }),
-  };
-});
+vi.mock('../../schemas.js', () => ({
+  GetCampaignInput: z.object({ campaign: z.string() }),
+}));
 
 vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/config/config.js', async () => ({
+vi.mock('../../../core/config/config.js', () => ({
   loadCampaignConfig: vi.fn(),
 }));
 
-vi.mock('../../../core/config/config.view.js', async () => ({
+vi.mock('../../../core/config/config.view.js', () => ({
   redactSecrets: vi.fn((c: unknown) => c),
 }));
 
@@ -38,14 +38,12 @@ describe('get_campaign tool', () => {
   });
 
   it('returns redacted campaign config', async () => {
-    const { loadCampaignConfig } = await import('../../../core/config/config.js');
     vi.mocked(loadCampaignConfig).mockReturnValue({
       version: 1,
       profile: '/data/campaigns/default/profile.md',
       applied: '/data/campaigns/default/applied',
     } as never);
 
-    const { registerGetCampaign } = await import('../../tools/get-campaign.js');
     const { server, getCallback } = fakeServer();
     registerGetCampaign(server);
     const cb = getCallback()!;
@@ -56,12 +54,10 @@ describe('get_campaign tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { loadCampaignConfig } = await import('../../../core/config/config.js');
     vi.mocked(loadCampaignConfig).mockImplementation(() => {
       throw new Error('test error');
     });
 
-    const { registerGetCampaign } = await import('../../tools/get-campaign.js');
     const { server, getCallback } = fakeServer();
     registerGetCampaign(server);
     const cb = getCallback()!;
