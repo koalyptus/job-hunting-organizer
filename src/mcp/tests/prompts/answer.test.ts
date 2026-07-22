@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer } from './helpers.js';
-import { startRetro } from '../../../core/retro/retro.js';
-import { registerPostMortemPrompt } from '../../prompts/post-mortem.js';
+import { answerQuestion } from '../../../core/applications/application-qa.js';
+import { registerAnswerPrompt } from '../../prompts/answer.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -12,56 +12,68 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/retro/retro.js', () => ({
-  startRetro: vi.fn().mockResolvedValue({ learningPlan: 'test learning plan' }),
+vi.mock('../../../core/applications/application-qa.js', () => ({
+  answerQuestion: vi.fn().mockResolvedValue({ answer: 'test answer' }),
 }));
 
-describe('post_mortem prompt', () => {
+describe('answer prompt', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('returns post-mortem message', async () => {
+  it('returns answer message', async () => {
     const { server, getHandler } = fakeServer();
-    registerPostMortemPrompt(server);
+    registerAnswerPrompt(server);
     const handler = getHandler()!;
 
-    const result = await handler({ campaign: 'default', slug: 'test-app' });
+    const result = await handler({
+      campaign: 'default',
+      slug: 'test-app',
+      question: 'test question',
+    });
     expect(result.messages).toBeDefined();
     expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
     expect(message.role).toBe('assistant');
     expect(message.content.type).toBe('text');
     const data = JSON.parse(message.content.text);
-    expect(data.learningPlan).toBe('test learning plan');
+    expect(data.answer).toBe('test answer');
   });
 
   it('returns error when core function fails', async () => {
-    vi.mocked(startRetro).mockRejectedValue(new Error('test error'));
+    vi.mocked(answerQuestion).mockRejectedValue(new Error('test error'));
 
     const { server, getHandler } = fakeServer();
-    registerPostMortemPrompt(server);
+    registerAnswerPrompt(server);
     const handler = getHandler()!;
 
-    const result = await handler({ campaign: 'default', slug: 'test-app' });
+    const result = await handler({
+      campaign: 'default',
+      slug: 'test-app',
+      question: 'test question',
+    });
     expect(result.messages).toBeDefined();
     expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
-    expect(message.content.text).toContain('Error generating post-mortem');
+    expect(message.content.text).toContain('Error answering question');
     expect(message.content.text).toContain('test error');
   });
 
   it('handles non-Error exception', async () => {
-    vi.mocked(startRetro).mockRejectedValue('string error');
+    vi.mocked(answerQuestion).mockRejectedValue('string error');
 
     const { server, getHandler } = fakeServer();
-    registerPostMortemPrompt(server);
+    registerAnswerPrompt(server);
     const handler = getHandler()!;
 
-    const result = await handler({ campaign: 'default', slug: 'test-app' });
+    const result = await handler({
+      campaign: 'default',
+      slug: 'test-app',
+      question: 'test question',
+    });
     expect(result.messages).toBeDefined();
     const message = result.messages[0]!;
-    expect(message.content.text).toContain('Error generating post-mortem');
+    expect(message.content.text).toContain('Error answering question');
     expect(message.content.text).toContain('string error');
   });
 });

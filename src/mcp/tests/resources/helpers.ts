@@ -28,14 +28,9 @@ export function fakeServer(): {
         callback: ResourceHandler,
       ) => {
         handler = callback;
-        const template = uriOrTemplate as {
-          listCallback?: ListHandler;
-          _callbacks?: { list?: ListHandler };
-        };
+        const template = uriOrTemplate as { listCallback?: ListHandler };
         if (typeof template?.listCallback === 'function') {
           listHandler = template.listCallback;
-        } else if (typeof template?._callbacks?.list === 'function') {
-          listHandler = template._callbacks.list;
         }
       },
     } as unknown as McpServer,

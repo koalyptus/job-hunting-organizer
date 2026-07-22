@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer } from './helpers.js';
-import { generatePrep } from '../../../core/prepare/prepare.js';
-import { registerInterviewPrepPrompt } from '../../prompts/interview-prep.js';
+import { startRetro } from '../../../core/retro/retro.js';
+import { registerRetroPrompt } from '../../prompts/retro.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -12,18 +12,18 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/prepare/prepare.js', () => ({
-  generatePrep: vi.fn().mockResolvedValue({ prep: 'test prep content' }),
+vi.mock('../../../core/retro/retro.js', () => ({
+  startRetro: vi.fn().mockResolvedValue({ learningPlan: 'test learning plan' }),
 }));
 
-describe('interview_prep prompt', () => {
+describe('retro prompt', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('returns interview prep message', async () => {
+  it('returns retro message', async () => {
     const { server, getHandler } = fakeServer();
-    registerInterviewPrepPrompt(server);
+    registerRetroPrompt(server);
     const handler = getHandler()!;
 
     const result = await handler({ campaign: 'default', slug: 'test-app' });
@@ -33,35 +33,35 @@ describe('interview_prep prompt', () => {
     expect(message.role).toBe('assistant');
     expect(message.content.type).toBe('text');
     const data = JSON.parse(message.content.text);
-    expect(data.prep).toBe('test prep content');
+    expect(data.learningPlan).toBe('test learning plan');
   });
 
   it('returns error when core function fails', async () => {
-    vi.mocked(generatePrep).mockRejectedValue(new Error('test error'));
+    vi.mocked(startRetro).mockRejectedValue(new Error('test error'));
 
     const { server, getHandler } = fakeServer();
-    registerInterviewPrepPrompt(server);
+    registerRetroPrompt(server);
     const handler = getHandler()!;
 
     const result = await handler({ campaign: 'default', slug: 'test-app' });
     expect(result.messages).toBeDefined();
     expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
-    expect(message.content.text).toContain('Error generating interview prep');
+    expect(message.content.text).toContain('Error generating retro');
     expect(message.content.text).toContain('test error');
   });
 
   it('handles non-Error exception', async () => {
-    vi.mocked(generatePrep).mockRejectedValue('string error');
+    vi.mocked(startRetro).mockRejectedValue('string error');
 
     const { server, getHandler } = fakeServer();
-    registerInterviewPrepPrompt(server);
+    registerRetroPrompt(server);
     const handler = getHandler()!;
 
     const result = await handler({ campaign: 'default', slug: 'test-app' });
     expect(result.messages).toBeDefined();
     const message = result.messages[0]!;
-    expect(message.content.text).toContain('Error generating interview prep');
+    expect(message.content.text).toContain('Error generating retro');
     expect(message.content.text).toContain('string error');
   });
 });

@@ -1,9 +1,9 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { registerAnswerQuestionPrompt } from './answer-question.js';
+import { registerAnswerPrompt } from './answer.js';
 import { registerCoverLetterPrompt } from './cover-letter.js';
 import { registerExtractJdPrompt } from './extract-jd.js';
-import { registerInterviewPrepPrompt } from './interview-prep.js';
-import { registerPostMortemPrompt } from './post-mortem.js';
+import { registerInterviewPrompt } from './interview.js';
+import { registerRetroPrompt } from './retro.js';
 
 /**
  * Register all MCP prompts on the server.
@@ -14,8 +14,8 @@ import { registerPostMortemPrompt } from './post-mortem.js';
  */
 export function registerPrompts(server: McpServer): void {
   registerCoverLetterPrompt(server);
-  registerInterviewPrepPrompt(server);
-  registerAnswerQuestionPrompt(server);
+  registerInterviewPrompt(server);
+  registerAnswerPrompt(server);
   registerExtractJdPrompt(server);
-  registerPostMortemPrompt(server);
+  registerRetroPrompt(server);
 }

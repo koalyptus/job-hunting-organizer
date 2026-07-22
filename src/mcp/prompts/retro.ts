@@ -1,23 +1,22 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { answerQuestion } from '../../core/applications/application-qa.js';
+import { startRetro } from '../../core/retro/retro.js';
 import { mcpLogger } from '../logger.js';
 
-export function registerAnswerQuestionPrompt(server: McpServer): void {
+export function registerRetroPrompt(server: McpServer): void {
   server.registerPrompt(
-    'answer_question',
+    'retro',
     {
-      description: 'Answer a question for an application',
+      description: 'Generate a post-mortem learning plan for an application',
       argsSchema: {
         campaign: z.string().describe('Campaign name'),
         slug: z.string().describe('Application slug'),
-        question: z.string().describe('Question to answer'),
       },
     },
-    async ({ campaign, slug, question }) => {
+    async ({ campaign, slug }) => {
       try {
-        mcpLogger.debug({ campaign, slug }, 'prompt.answer_question.start');
-        const result = await answerQuestion({ campaign, slug, question });
+        mcpLogger.debug({ campaign, slug }, 'prompt.retro.start');
+        const result = await startRetro({ campaign, slug, weakTopics: [] });
         return {
           messages: [
             {
@@ -36,7 +35,7 @@ export function registerAnswerQuestionPrompt(server: McpServer): void {
               role: 'assistant',
               content: {
                 type: 'text',
-                text: `Error answering question: ${err instanceof Error ? err.message : String(err)}`,
+                text: `Error generating retro: ${err instanceof Error ? err.message : String(err)}`,
               },
             },
           ],

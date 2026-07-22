@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { generatePrep } from '../../core/prepare/prepare.js';
 import { mcpLogger } from '../logger.js';
 
-export function registerInterviewPrepPrompt(server: McpServer): void {
+export function registerInterviewPrompt(server: McpServer): void {
   server.registerPrompt(
-    'interview_prep',
+    'interview',
     {
       description: 'Generate a pre-interview prep plan for an application',
       argsSchema: {
@@ -15,7 +15,7 @@ export function registerInterviewPrepPrompt(server: McpServer): void {
     },
     async ({ campaign, slug }) => {
       try {
-        mcpLogger.debug({ campaign, slug }, 'prompt.interview_prep.start');
+        mcpLogger.debug({ campaign, slug }, 'prompt.interview.start');
         const result = await generatePrep({ campaign, slug });
         return {
           messages: [

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer } from './helpers.js';
 import { loadGlobalConfig } from '../../../core/config/config.js';
+import { redactSecrets } from '../../../core/config/config.view.js';
 import { registerConfig } from '../../resources/config.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -13,7 +14,14 @@ vi.mock('../../logger.js', () => ({
 }));
 
 vi.mock('../../../core/config/config.js', () => ({
-  loadGlobalConfig: vi.fn().mockReturnValue({ llm: { provider: 'openai' } }),
+  loadGlobalConfig: vi.fn().mockReturnValue({ llm: { apiKey: 'sk-abc123', provider: 'openai' } }),
+}));
+
+vi.mock('../../../core/config/config.view.js', () => ({
+  redactSecrets: vi.fn().mockImplementation((config) => ({
+    ...config,
+    llm: { ...config.llm, apiKey: '***' },
+  })),
 }));
 
 describe('config resource', () => {
@@ -21,7 +29,7 @@ describe('config resource', () => {
     vi.clearAllMocks();
   });
 
-  it('returns global config', async () => {
+  it('returns global config with redacted secrets', async () => {
     const { server, getHandler } = fakeServer();
     registerConfig(server);
     const handler = getHandler()!;
@@ -32,7 +40,11 @@ describe('config resource', () => {
     const content = result.contents[0]!;
     expect(content.mimeType).toBe('application/json');
     const data = JSON.parse(content.text);
-    expect(data.llm).toBeDefined();
+    expect(data.llm.apiKey).toBe('***');
+    expect(redactSecrets).toHaveBeenCalledOnce();
+    expect(redactSecrets).toHaveBeenCalledWith({
+      llm: { apiKey: 'sk-abc123', provider: 'openai' },
+    });
   });
 
   it('returns error when core function fails', async () => {

@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { loadGlobalConfig } from '../../core/config/config.js';
+import { redactSecrets } from '../../core/config/config.view.js';
 import { mcpLogger } from '../logger.js';
 
 export function registerConfig(server: McpServer): void {
@@ -13,7 +14,7 @@ export function registerConfig(server: McpServer): void {
     async (uri) => {
       try {
         mcpLogger.debug('resource.config.read');
-        const config = loadGlobalConfig();
+        const config = redactSecrets(loadGlobalConfig());
         return {
           contents: [
             {

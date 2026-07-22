@@ -27,7 +27,7 @@ export function registerExtractJdPrompt(server: McpServer): void {
         }
         const result = url
           ? await extractJdFromUrl(url, llmConfig)
-          : await extractJdFromText(text!, llmConfig);
+          : await extractJdFromText(text as string, llmConfig);
         return {
           messages: [
             {
