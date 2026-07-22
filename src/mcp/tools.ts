@@ -18,9 +18,14 @@ import { registerUpdateConfig } from './tools/update-config.js';
 import { registerInit } from './tools/init-tool.js';
 import { registerPostMortem } from './tools/post-mortem.js';
 import { registerAppendRetro } from './tools/append-retro-tool.js';
+import { registerCoverLetter } from './tools/cover-letter.js';
+import { registerAnswerQuestion } from './tools/answer-question.js';
+import { registerExtractJd } from './tools/extract-jd.js';
+import { registerPrepare } from './tools/prepare-tool.js';
+import { registerAggregateRetros } from './tools/aggregate-retros.js';
 
 /**
- * Register all Phase 8b read-only tools and Phase 8c write tools on the MCP server.
+ * Register all Phase 8b read-only tools, Phase 8c write tools, and Phase 8d LLM-backed tools on the MCP server.
  * Called once from {@link startServer} after server creation.
  *
  * Each tool validates input with its pre-defined Zod schema,
@@ -47,4 +52,9 @@ export function registerTools(server: McpServer): void {
   registerInit(server);
   registerPostMortem(server);
   registerAppendRetro(server);
+  registerCoverLetter(server);
+  registerAnswerQuestion(server);
+  registerExtractJd(server);
+  registerPrepare(server);
+  registerAggregateRetros(server);
 }
