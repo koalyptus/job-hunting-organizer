@@ -12,10 +12,11 @@ export function registerCoverLetter(server: McpServer): void {
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.cover_letter.start');
+        const { slug, campaign, steer } = args;
         const result = await generateCoverLetter({
-          slug: args.slug,
-          campaign: args.campaign,
-          steer: args.steer,
+          slug,
+          campaign,
+          ...(steer ? { steer } : {}),
         });
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],

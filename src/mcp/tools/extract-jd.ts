@@ -13,7 +13,10 @@ export function registerExtractJd(server: McpServer): void {
     ExtractJdInput.shape,
     async (args) => {
       try {
-        mcpLogger.debug({ campaign: args.campaign, url: args.url }, 'tool.extract_jd.start');
+        mcpLogger.debug(
+          { campaign: args.campaign, url: args.url, text: args.text },
+          'tool.extract_jd.start',
+        );
         const { global } = getConfig(args.campaign);
         const llmConfig = defaultLlmConfig(global);
 
