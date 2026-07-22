@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { writeProfile } from '../../../core/campaign/profile-writer.js';
+import { registerUpdateProfile } from '../../tools/update-profile.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,8 +16,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   return {
     UpdateProfileInput: z.object({
@@ -28,7 +30,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/campaign/profile-writer.js', async () => ({
+vi.mock('../../../core/campaign/profile-writer.js', () => ({
   writeProfile: vi.fn().mockResolvedValue(true),
 }));
 
@@ -38,10 +40,8 @@ describe('update_profile tool', () => {
   });
 
   it('writes profile and returns success', async () => {
-    const { writeProfile } = await import('../../../core/campaign/profile-writer.js');
     vi.mocked(writeProfile).mockResolvedValue(true);
 
-    const { registerUpdateProfile } = await import('../../tools/update-profile.js');
     const { server, getCallback } = fakeServer();
     registerUpdateProfile(server);
     const cb = getCallback()!;
@@ -56,10 +56,8 @@ describe('update_profile tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { writeProfile } = await import('../../../core/campaign/profile-writer.js');
     vi.mocked(writeProfile).mockRejectedValue(new Error('failed to write profile'));
 
-    const { registerUpdateProfile } = await import('../../tools/update-profile.js');
     const { server, getCallback } = fakeServer();
     registerUpdateProfile(server);
     const cb = getCallback()!;

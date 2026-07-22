@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { runListCampaigns } from '../../../core/list/list.js';
+import { registerListCampaigns } from '../../tools/list-campaigns.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,18 +16,15 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  return {
-    ListCampaignsInput: z.object({}),
-  };
-});
+vi.mock('../../schemas.js', () => ({
+  ListCampaignsInput: z.object({}),
+}));
 
 vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/list/list.js', async () => ({
+vi.mock('../../../core/list/list.js', () => ({
   runListCampaigns: vi.fn(),
   runListApplications: vi.fn(),
 }));
@@ -35,12 +35,10 @@ describe('list_campaigns tool', () => {
   });
 
   it('returns campaign list', async () => {
-    const { runListCampaigns } = await import('../../../core/list/list.js');
     vi.mocked(runListCampaigns).mockResolvedValue({
       campaigns: [{ name: 'default', applicationCount: 0 }],
     });
 
-    const { registerListCampaigns } = await import('../../tools/list-campaigns.js');
     const { server, getCallback } = fakeServer();
     registerListCampaigns(server);
     const cb = getCallback()!;
@@ -52,12 +50,10 @@ describe('list_campaigns tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { runListCampaigns } = await import('../../../core/list/list.js');
     vi.mocked(runListCampaigns).mockImplementation(() => {
       throw new Error('test error');
     });
 
-    const { registerListCampaigns } = await import('../../tools/list-campaigns.js');
     const { server, getCallback } = fakeServer();
     registerListCampaigns(server);
     const cb = getCallback()!;

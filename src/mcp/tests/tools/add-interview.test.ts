@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { INTERVIEW_TYPES } from '../../../core/interviews/types.js';
+import { addInterview } from '../../../core/interviews/interviews.js';
+import { registerAddInterview } from '../../tools/add-interview.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,9 +17,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  const { INTERVIEW_TYPES } = await import('../../../core/interviews/types.js');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -36,7 +38,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/interviews/interviews.js', async () => ({
+vi.mock('../../../core/interviews/interviews.js', () => ({
   addInterview: vi.fn().mockResolvedValue({ index: 1 }),
 }));
 
@@ -51,10 +53,8 @@ describe('add_interview tool', () => {
   });
 
   it('adds an interview and returns the index', async () => {
-    const { addInterview } = await import('../../../core/interviews/interviews.js');
     vi.mocked(addInterview).mockResolvedValue({ index: 3 });
 
-    const { registerAddInterview } = await import('../../tools/add-interview.js');
     const { server, getCallback } = fakeServer();
     registerAddInterview(server);
     const cb = getCallback()!;
@@ -83,10 +83,8 @@ describe('add_interview tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { addInterview } = await import('../../../core/interviews/interviews.js');
     vi.mocked(addInterview).mockRejectedValue(new Error('application not found'));
 
-    const { registerAddInterview } = await import('../../tools/add-interview.js');
     const { server, getCallback } = fakeServer();
     registerAddInterview(server);
     const cb = getCallback()!;

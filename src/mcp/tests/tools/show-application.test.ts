@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
+import { readShowData, readShowFile, ShowError } from '../../../core/applications/show.js';
+import { registerShowApplication } from '../../tools/show-application.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
-vi.mock('../../../core/paths.js', async () => ({
+vi.mock('../../../core/paths.js', () => ({
   resolveCampaignRoot: vi.fn(),
   resolveAppliedDir: vi.fn(),
   resolveDataRoot: vi.fn(),
@@ -20,19 +24,16 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  return {
-    ShowApplicationInput: z.object({ campaign: z.string(), slug: z.string() }),
-  };
-});
+vi.mock('../../schemas.js', () => ({
+  ShowApplicationInput: z.object({ campaign: z.string(), slug: z.string() }),
+}));
 
 vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/applications/show.js', async () => {
-  const actual = await vi.importActual('../../../core/applications/show.js');
+vi.mock('../../../core/applications/show.js', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return { ...actual, readShowData: vi.fn(), readShowFile: vi.fn() };
 });
 
@@ -57,8 +58,6 @@ describe('show_application tool', () => {
   });
 
   it('returns frontmatter and body', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { readShowData, readShowFile } = await import('../../../core/applications/show.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(readShowData).mockResolvedValue({
@@ -68,7 +67,6 @@ describe('show_application tool', () => {
     });
     vi.mocked(readShowFile).mockResolvedValue('# Job Description\n\nWe are hiring...');
 
-    const { registerShowApplication } = await import('../../tools/show-application.js');
     const { server, getCallback } = fakeServer();
     registerShowApplication(server);
     const cb = getCallback()!;
@@ -83,8 +81,6 @@ describe('show_application tool', () => {
   });
 
   it('returns empty jdContent when jd.md is missing', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { readShowData, readShowFile } = await import('../../../core/applications/show.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(readShowData).mockResolvedValue({
@@ -92,10 +88,8 @@ describe('show_application tool', () => {
       body: '',
       filesPresent: [],
     });
-    const { ShowError } = await import('../../../core/applications/show.js');
     vi.mocked(readShowFile).mockRejectedValue(new ShowError('File not found: jd.md'));
 
-    const { registerShowApplication } = await import('../../tools/show-application.js');
     const { server, getCallback } = fakeServer();
     registerShowApplication(server);
     const cb = getCallback()!;
@@ -110,13 +104,10 @@ describe('show_application tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { readShowData } = await import('../../../core/applications/show.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(readShowData).mockRejectedValue(new Error('test error'));
 
-    const { registerShowApplication } = await import('../../tools/show-application.js');
     const { server, getCallback } = fakeServer();
     registerShowApplication(server);
     const cb = getCallback()!;
@@ -130,8 +121,6 @@ describe('show_application tool', () => {
   });
 
   it('propagates non-ShowError from readShowFile', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { readShowData, readShowFile } = await import('../../../core/applications/show.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(readShowData).mockResolvedValue({
@@ -141,7 +130,6 @@ describe('show_application tool', () => {
     });
     vi.mocked(readShowFile).mockRejectedValue(new Error('disk failure'));
 
-    const { registerShowApplication } = await import('../../tools/show-application.js');
     const { server, getCallback } = fakeServer();
     registerShowApplication(server);
     const cb = getCallback()!;

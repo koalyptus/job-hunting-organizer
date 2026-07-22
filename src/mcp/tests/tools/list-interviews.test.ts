@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
+import { listInterviews } from '../../../core/interviews/interviews.js';
+import { registerListInterviews } from '../../tools/list-interviews.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
-vi.mock('../../../core/paths.js', async () => ({
+vi.mock('../../../core/paths.js', () => ({
   resolveCampaignRoot: vi.fn(),
   resolveAppliedDir: vi.fn(),
   resolveDataRoot: vi.fn(),
@@ -20,18 +24,15 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  return {
-    ListInterviewsInput: z.object({ campaign: z.string(), slug: z.string() }),
-  };
-});
+vi.mock('../../schemas.js', () => ({
+  ListInterviewsInput: z.object({ campaign: z.string(), slug: z.string() }),
+}));
 
 vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/interviews/interviews.js', async () => ({
+vi.mock('../../../core/interviews/interviews.js', () => ({
   listInterviews: vi.fn(),
   addInterview: vi.fn(),
   markInterviewStatus: vi.fn(),
@@ -46,13 +47,10 @@ describe('list_interviews tool', () => {
   });
 
   it('returns interview entries', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { listInterviews } = await import('../../../core/interviews/interviews.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(listInterviews).mockResolvedValue([]);
 
-    const { registerListInterviews } = await import('../../tools/list-interviews.js');
     const { server, getCallback } = fakeServer();
     registerListInterviews(server);
     const cb = getCallback()!;
@@ -66,15 +64,12 @@ describe('list_interviews tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { listInterviews } = await import('../../../core/interviews/interviews.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(listInterviews).mockImplementation(() => {
       throw new Error('test error');
     });
 
-    const { registerListInterviews } = await import('../../tools/list-interviews.js');
     const { server, getCallback } = fakeServer();
     registerListInterviews(server);
     const cb = getCallback()!;

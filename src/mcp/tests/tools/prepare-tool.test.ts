@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { startRetro } from '../../../core/retro/retro.js';
-import { registerPostMortem } from '../../tools/post-mortem.js';
+import { generatePrep } from '../../../core/prepare/prepare.js';
+import { registerPrepare } from '../../tools/prepare-tool.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -20,13 +20,11 @@ vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
-    PostMortemInput: z.object({
+    PrepareInput: z.object({
       campaign: CampaignParam,
       slug: SlugParam,
-      weakTopics: z.array(z.string()).optional(),
-      notes: z.string().optional(),
-      steer: z.string().optional(),
-      status: z.string().optional(),
+      steer: z.string().optional().describe('Custom LLM instructions'),
+      days: z.number().int().positive().optional().describe('Days until interview'),
     }),
   };
 });
@@ -35,92 +33,85 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/retro/retro.js', () => ({
-  startRetro: vi.fn().mockResolvedValue({
-    content: '# Learning Plan\nStudy X.',
-    wordCount: 10,
+vi.mock('../../../core/prepare/prepare.js', () => ({
+  generatePrep: vi.fn().mockResolvedValue({
+    content: '# Prep plan\nStudy algorithms.',
+    wordCount: 20,
     model: 'gpt-4',
-    durationMs: 5000,
-    index: 1,
+    durationMs: 6000,
   }),
 }));
 
-describe('post_mortem tool', () => {
+describe('prepare tool', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('generates a retro learning plan with explicit weak topics', async () => {
-    vi.mocked(startRetro).mockResolvedValue({
-      content: '# Learning Plan\nStudy X.',
-      wordCount: 10,
+  it('generates a prep plan with explicit days and steer', async () => {
+    vi.mocked(generatePrep).mockResolvedValue({
+      content: '# Prep plan\nStudy algorithms.',
+      wordCount: 20,
       model: 'gpt-4',
-      durationMs: 5000,
-      index: 1,
+      durationMs: 6000,
     });
 
     const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
+    registerPrepare(server);
     const cb = getCallback()!;
 
     const result = await cb(
-      { campaign: 'default', slug: 'test-app', weakTopics: ['algorithms', 'system-design'] },
+      { campaign: 'default', slug: 'test-app', days: 14, steer: 'Focus on system design' },
       { signal: AbortSignal.timeout(3000) },
     );
-    expect(startRetro).toHaveBeenCalledWith({
+    expect(generatePrep).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
-      weakTopics: ['algorithms', 'system-design'],
-      notes: undefined,
-      steer: undefined,
-      status: undefined,
+      steer: 'Focus on system design',
+      days: 14,
     });
     const parsed = JSON.parse(getTextContent(result));
-    expect(parsed.content).toContain('Learning Plan');
-    expect(parsed.index).toBe(1);
+    expect(parsed.content).toContain('Prep plan');
+    expect(parsed.wordCount).toBe(20);
   });
 
-  it('generates retro with undefined weak topics (defaults to empty array)', async () => {
-    vi.mocked(startRetro).mockResolvedValue({
-      content: '# Empty Plan',
-      wordCount: 2,
+  it('generates prep plan with undefined days and steer (defaults)', async () => {
+    vi.mocked(generatePrep).mockResolvedValue({
+      content: '# Prep plan\nDefault plan.',
+      wordCount: 5,
       model: 'gpt-4',
-      durationMs: 1000,
-      index: 1,
+      durationMs: 3000,
     });
 
     const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
+    registerPrepare(server);
     const cb = getCallback()!;
 
     const result = await cb(
       { campaign: 'default', slug: 'test-app' },
       { signal: AbortSignal.timeout(3000) },
     );
-    expect(startRetro).toHaveBeenCalledWith({
+    expect(generatePrep).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
-      weakTopics: [],
-      notes: undefined,
       steer: undefined,
-      status: undefined,
+      days: undefined,
     });
     const parsed = JSON.parse(getTextContent(result));
-    expect(parsed.content).toContain('Empty Plan');
+    expect(parsed.content).toContain('Default plan');
   });
 
   it('returns error when core function fails', async () => {
-    vi.mocked(startRetro).mockRejectedValue(new Error('at least one weak topic is required'));
+    vi.mocked(generatePrep).mockRejectedValue(new Error('Failed to read JD'));
 
     const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
+    registerPrepare(server);
     const cb = getCallback()!;
 
     const result = await cb(
-      { campaign: 'default', slug: 'test-app', weakTopics: [] },
+      { campaign: 'default', slug: 'test-app' },
       { signal: AbortSignal.timeout(3000) },
     );
     expect(result.isError).toBe(true);
-    expect(getTextContent(result)).toContain('at least one weak topic is required');
+    expect(getTextContent(result)).toContain('Failed to read JD');
   });
 });

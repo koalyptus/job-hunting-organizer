@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
+import { runListApplications } from '../../../core/list/list.js';
+import { registerListApplications } from '../../tools/list-applications.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,10 +17,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  const { APPLICATION_STATUSES, EMPLOYMENT_TYPES } =
-    await import('../../../core/applications/types.js');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -49,7 +50,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/list/list.js', async () => ({
+vi.mock('../../../core/list/list.js', () => ({
   runListApplications: vi.fn().mockResolvedValue({ entries: [] }),
 }));
 
@@ -59,12 +60,10 @@ describe('list_applications tool', () => {
   });
 
   it('returns filtered entries', async () => {
-    const { runListApplications } = await import('../../../core/list/list.js');
     vi.mocked(runListApplications).mockResolvedValue({
       entries: [{ slug: 'test-app', status: 'applied' }] as never[],
     });
 
-    const { registerListApplications } = await import('../../tools/list-applications.js');
     const { server, getCallback } = fakeServer();
     registerListApplications(server);
     const cb = getCallback()!;
@@ -76,12 +75,10 @@ describe('list_applications tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { runListApplications } = await import('../../../core/list/list.js');
     vi.mocked(runListApplications).mockImplementation(() => {
       throw new Error('test error');
     });
 
-    const { registerListApplications } = await import('../../tools/list-applications.js');
     const { server, getCallback } = fakeServer();
     registerListApplications(server);
     const cb = getCallback()!;

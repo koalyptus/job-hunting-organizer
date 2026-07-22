@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
+import { diagnoseCampaign, diagnoseApp } from '../../../core/doctor/doctor.js';
+import { registerDoctor } from '../../tools/doctor-tool.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
-vi.mock('../../../core/paths.js', async () => ({
+vi.mock('../../../core/paths.js', () => ({
   resolveCampaignRoot: vi.fn(),
   resolveAppliedDir: vi.fn(),
   resolveDataRoot: vi.fn(),
@@ -20,18 +24,15 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  return {
-    DoctorInput: z.object({ campaign: z.string(), slug: z.string().optional() }),
-  };
-});
+vi.mock('../../schemas.js', () => ({
+  DoctorInput: z.object({ campaign: z.string(), slug: z.string().optional() }),
+}));
 
 vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/doctor/doctor.js', async () => ({
+vi.mock('../../../core/doctor/doctor.js', () => ({
   diagnoseCampaign: vi.fn(),
   diagnoseApp: vi.fn(),
   DoctorError: class DoctorError extends Error {},
@@ -43,13 +44,10 @@ describe('doctor tool', () => {
   });
 
   it('diagnoses campaign when no slug provided', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { diagnoseCampaign } = await import('../../../core/doctor/doctor.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(diagnoseCampaign).mockResolvedValue([]);
 
-    const { registerDoctor } = await import('../../tools/doctor-tool.js');
     const { server, getCallback } = fakeServer();
     registerDoctor(server);
     const cb = getCallback()!;
@@ -61,13 +59,10 @@ describe('doctor tool', () => {
   });
 
   it('diagnoses single app when slug provided', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { diagnoseApp } = await import('../../../core/doctor/doctor.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(diagnoseApp).mockResolvedValue([]);
 
-    const { registerDoctor } = await import('../../tools/doctor-tool.js');
     const { server, getCallback } = fakeServer();
     registerDoctor(server);
     const cb = getCallback()!;
@@ -83,15 +78,12 @@ describe('doctor tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { diagnoseCampaign } = await import('../../../core/doctor/doctor.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(diagnoseCampaign).mockImplementation(() => {
       throw new Error('test error');
     });
 
-    const { registerDoctor } = await import('../../tools/doctor-tool.js');
     const { server, getCallback } = fakeServer();
     registerDoctor(server);
     const cb = getCallback()!;

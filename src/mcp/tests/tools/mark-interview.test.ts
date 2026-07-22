@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { INTERVIEW_STATUSES } from '../../../core/interviews/types.js';
+import { markInterviewStatus, appendInterviewNotes } from '../../../core/interviews/interviews.js';
+import { registerMarkInterview } from '../../tools/mark-interview.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,9 +17,7 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  const { INTERVIEW_STATUSES } = await import('../../../core/interviews/types.js');
+vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
@@ -33,7 +35,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/interviews/interviews.js', async () => ({
+vi.mock('../../../core/interviews/interviews.js', () => ({
   markInterviewStatus: vi.fn().mockResolvedValue(true),
   appendInterviewNotes: vi.fn().mockResolvedValue(true),
 }));
@@ -49,10 +51,8 @@ describe('mark_interview tool', () => {
   });
 
   it('marks an interview status with 0-based to 1-based index conversion', async () => {
-    const { markInterviewStatus } = await import('../../../core/interviews/interviews.js');
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
 
-    const { registerMarkInterview } = await import('../../tools/mark-interview.js');
     const { server, getCallback } = fakeServer();
     registerMarkInterview(server);
     const cb = getCallback()!;
@@ -70,12 +70,9 @@ describe('mark_interview tool', () => {
   });
 
   it('appends notes when notes are provided', async () => {
-    const { markInterviewStatus, appendInterviewNotes } =
-      await import('../../../core/interviews/interviews.js');
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockResolvedValue(true);
 
-    const { registerMarkInterview } = await import('../../tools/mark-interview.js');
     const { server, getCallback } = fakeServer();
     registerMarkInterview(server);
     const cb = getCallback()!;
@@ -103,12 +100,9 @@ describe('mark_interview tool', () => {
   });
 
   it('skips notes append when notes are not provided', async () => {
-    const { markInterviewStatus, appendInterviewNotes } =
-      await import('../../../core/interviews/interviews.js');
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockResolvedValue(true);
 
-    const { registerMarkInterview } = await import('../../tools/mark-interview.js');
     const { server, getCallback } = fakeServer();
     registerMarkInterview(server);
     const cb = getCallback()!;
@@ -121,12 +115,9 @@ describe('mark_interview tool', () => {
   });
 
   it('returns error when appendInterviewNotes fails', async () => {
-    const { markInterviewStatus, appendInterviewNotes } =
-      await import('../../../core/interviews/interviews.js');
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockRejectedValue(new Error('interviews.md not found'));
 
-    const { registerMarkInterview } = await import('../../tools/mark-interview.js');
     const { server, getCallback } = fakeServer();
     registerMarkInterview(server);
     const cb = getCallback()!;
@@ -146,10 +137,8 @@ describe('mark_interview tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { markInterviewStatus } = await import('../../../core/interviews/interviews.js');
     vi.mocked(markInterviewStatus).mockRejectedValue(new Error('interview not found'));
 
-    const { registerMarkInterview } = await import('../../tools/mark-interview.js');
     const { server, getCallback } = fakeServer();
     registerMarkInterview(server);
     const cb = getCallback()!;

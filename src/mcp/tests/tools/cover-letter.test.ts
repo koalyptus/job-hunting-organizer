@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { startRetro } from '../../../core/retro/retro.js';
-import { registerPostMortem } from '../../tools/post-mortem.js';
+import { generateCoverLetter } from '../../../core/applications/cover-letter.js';
+import { registerCoverLetter } from '../../tools/cover-letter.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -20,13 +20,10 @@ vi.mock('../../schemas.js', () => {
   const CampaignParam = z.string();
   const SlugParam = z.string();
   return {
-    PostMortemInput: z.object({
+    CoverLetterInput: z.object({
       campaign: CampaignParam,
       slug: SlugParam,
-      weakTopics: z.array(z.string()).optional(),
-      notes: z.string().optional(),
-      steer: z.string().optional(),
-      status: z.string().optional(),
+      steer: z.string().optional().describe('Custom LLM instructions'),
     }),
   };
 });
@@ -35,92 +32,83 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/retro/retro.js', () => ({
-  startRetro: vi.fn().mockResolvedValue({
-    content: '# Learning Plan\nStudy X.',
-    wordCount: 10,
+vi.mock('../../../core/applications/cover-letter.js', () => ({
+  generateCoverLetter: vi.fn().mockResolvedValue({
+    content: '# Cover Letter\nDear Hiring Manager...',
+    wordCount: 42,
     model: 'gpt-4',
     durationMs: 5000,
-    index: 1,
   }),
 }));
 
-describe('post_mortem tool', () => {
+describe('cover_letter tool', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('generates a retro learning plan with explicit weak topics', async () => {
-    vi.mocked(startRetro).mockResolvedValue({
-      content: '# Learning Plan\nStudy X.',
-      wordCount: 10,
+  it('generates a cover letter with explicit steer', async () => {
+    vi.mocked(generateCoverLetter).mockResolvedValue({
+      content: '# Cover Letter\nDear Hiring Manager...',
+      wordCount: 42,
       model: 'gpt-4',
       durationMs: 5000,
-      index: 1,
     });
 
     const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
+    registerCoverLetter(server);
     const cb = getCallback()!;
 
     const result = await cb(
-      { campaign: 'default', slug: 'test-app', weakTopics: ['algorithms', 'system-design'] },
+      { campaign: 'default', slug: 'test-app', steer: 'Be concise' },
       { signal: AbortSignal.timeout(3000) },
     );
-    expect(startRetro).toHaveBeenCalledWith({
+    expect(generateCoverLetter).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
-      weakTopics: ['algorithms', 'system-design'],
-      notes: undefined,
-      steer: undefined,
-      status: undefined,
+      steer: 'Be concise',
     });
     const parsed = JSON.parse(getTextContent(result));
-    expect(parsed.content).toContain('Learning Plan');
-    expect(parsed.index).toBe(1);
+    expect(parsed.content).toContain('Cover Letter');
+    expect(parsed.wordCount).toBe(42);
   });
 
-  it('generates retro with undefined weak topics (defaults to empty array)', async () => {
-    vi.mocked(startRetro).mockResolvedValue({
-      content: '# Empty Plan',
-      wordCount: 2,
+  it('generates cover letter with undefined steer (defaults)', async () => {
+    vi.mocked(generateCoverLetter).mockResolvedValue({
+      content: '# Cover Letter\nDefault steer.',
+      wordCount: 10,
       model: 'gpt-4',
-      durationMs: 1000,
-      index: 1,
+      durationMs: 3000,
     });
 
     const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
+    registerCoverLetter(server);
     const cb = getCallback()!;
 
     const result = await cb(
       { campaign: 'default', slug: 'test-app' },
       { signal: AbortSignal.timeout(3000) },
     );
-    expect(startRetro).toHaveBeenCalledWith({
+    expect(generateCoverLetter).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
-      weakTopics: [],
-      notes: undefined,
       steer: undefined,
-      status: undefined,
     });
     const parsed = JSON.parse(getTextContent(result));
-    expect(parsed.content).toContain('Empty Plan');
+    expect(parsed.content).toContain('Default steer');
   });
 
   it('returns error when core function fails', async () => {
-    vi.mocked(startRetro).mockRejectedValue(new Error('at least one weak topic is required'));
+    vi.mocked(generateCoverLetter).mockRejectedValue(new Error('Failed to read JD'));
 
     const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
+    registerCoverLetter(server);
     const cb = getCallback()!;
 
     const result = await cb(
-      { campaign: 'default', slug: 'test-app', weakTopics: [] },
+      { campaign: 'default', slug: 'test-app' },
       { signal: AbortSignal.timeout(3000) },
     );
     expect(result.isError).toBe(true);
-    expect(getTextContent(result)).toContain('at least one weak topic is required');
+    expect(getTextContent(result)).toContain('Failed to read JD');
   });
 });

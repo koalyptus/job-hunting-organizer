@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { runInit } from '../../../core/init/wizard.js';
+import { registerInit } from '../../tools/init-tool.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -13,23 +16,20 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  return {
-    InitInput: z.object({
-      campaign: z.string().optional(),
-      cvPath: z.string().optional(),
-      githubUser: z.string().optional(),
-      linkedinUrl: z.string().optional(),
-    }),
-  };
-});
+vi.mock('../../schemas.js', () => ({
+  InitInput: z.object({
+    campaign: z.string().optional(),
+    cvPath: z.string().optional(),
+    githubUser: z.string().optional(),
+    linkedinUrl: z.string().optional(),
+  }),
+}));
 
 vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/init/wizard.js', async () => ({
+vi.mock('../../../core/init/wizard.js', () => ({
   runInit: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -39,10 +39,8 @@ describe('init tool', () => {
   });
 
   it('initializes a campaign with default name and returns ok', async () => {
-    const { runInit } = await import('../../../core/init/wizard.js');
     vi.mocked(runInit).mockResolvedValue(undefined);
 
-    const { registerInit } = await import('../../tools/init-tool.js');
     const { server, getCallback } = fakeServer();
     registerInit(server);
     const cb = getCallback()!;
@@ -60,10 +58,8 @@ describe('init tool', () => {
   });
 
   it('initializes with custom CV, GitHub, and LinkedIn', async () => {
-    const { runInit } = await import('../../../core/init/wizard.js');
     vi.mocked(runInit).mockResolvedValue(undefined);
 
-    const { registerInit } = await import('../../tools/init-tool.js');
     const { server, getCallback } = fakeServer();
     registerInit(server);
     const cb = getCallback()!;
@@ -89,10 +85,8 @@ describe('init tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { runInit } = await import('../../../core/init/wizard.js');
     vi.mocked(runInit).mockRejectedValue(new Error('invalid campaign name'));
 
-    const { registerInit } = await import('../../tools/init-tool.js');
     const { server, getCallback } = fakeServer();
     registerInit(server);
     const cb = getCallback()!;

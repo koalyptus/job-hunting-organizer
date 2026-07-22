@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fakeServer, getTextContent } from './helpers.js';
+import { z } from 'zod';
+import { EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
+import { computeStats } from '../../../core/stats/stats.js';
+import { registerGetStats } from '../../tools/get-stats.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
-vi.mock('../../../core/paths.js', async () => ({
+vi.mock('../../../core/paths.js', () => ({
   resolveCampaignRoot: vi.fn(),
   resolveAppliedDir: vi.fn(),
   resolveDataRoot: vi.fn(),
@@ -20,24 +25,20 @@ vi.mock('../../error-handler.js', () => ({
   })),
 }));
 
-vi.mock('../../schemas.js', async () => {
-  const { z } = await import('zod');
-  const { EMPLOYMENT_TYPES } = await import('../../../core/applications/types.js');
-  return {
-    GetStatsInput: z.object({
-      campaign: z.string(),
-      targetRole: z.string().optional(),
-      since: z.string().optional(),
-      employmentType: z.enum(EMPLOYMENT_TYPES).optional(),
-    }),
-  };
-});
+vi.mock('../../schemas.js', () => ({
+  GetStatsInput: z.object({
+    campaign: z.string(),
+    targetRole: z.string().optional(),
+    since: z.string().optional(),
+    employmentType: z.enum(EMPLOYMENT_TYPES).optional(),
+  }),
+}));
 
 vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/stats/stats.js', async () => ({
+vi.mock('../../../core/stats/stats.js', () => ({
   computeStats: vi.fn(),
 }));
 
@@ -47,8 +48,6 @@ describe('get_stats tool', () => {
   });
 
   it('returns stats object', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { computeStats } = await import('../../../core/stats/stats.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(computeStats).mockResolvedValue({
@@ -70,7 +69,6 @@ describe('get_stats tool', () => {
       thisMonth: { applied: 2, rejected: 0, offer: 0, withdrawn: 0 },
     });
 
-    const { registerGetStats } = await import('../../tools/get-stats.js');
     const { server, getCallback } = fakeServer();
     registerGetStats(server);
     const cb = getCallback()!;
@@ -81,15 +79,12 @@ describe('get_stats tool', () => {
   });
 
   it('returns error when core function fails', async () => {
-    const { resolveCampaignRoot, resolveAppliedDir } = await import('../../../core/paths.js');
-    const { computeStats } = await import('../../../core/stats/stats.js');
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(computeStats).mockImplementation(() => {
       throw new Error('test error');
     });
 
-    const { registerGetStats } = await import('../../tools/get-stats.js');
     const { server, getCallback } = fakeServer();
     registerGetStats(server);
     const cb = getCallback()!;
