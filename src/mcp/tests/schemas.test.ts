@@ -20,6 +20,7 @@ import {
   PostMortemInput,
   AppendRetroInput,
   CoverLetterInput,
+  ReadCoverLetterInput,
   AnswerQuestionInput,
   ExtractJdInput,
   PrepareInput,
@@ -258,6 +259,23 @@ describe('MCP schemas', () => {
   describe('CoverLetterInput', () => {
     it('accepts valid input', () => {
       expect(CoverLetterInput.parse({ campaign: 'default', slug: 'acme' })).toBeDefined();
+    });
+  });
+
+  describe('ReadCoverLetterInput', () => {
+    it('accepts valid input', () => {
+      expect(ReadCoverLetterInput.parse({ campaign: 'default', slug: 'acme' })).toEqual({
+        campaign: 'default',
+        slug: 'acme',
+      });
+    });
+
+    it('rejects missing campaign', () => {
+      expect(() => ReadCoverLetterInput.parse({ slug: 'acme' })).toThrow();
+    });
+
+    it('rejects missing slug', () => {
+      expect(() => ReadCoverLetterInput.parse({ campaign: 'default' })).toThrow();
     });
   });
 

@@ -170,6 +170,12 @@ export const CoverLetterInput = z.object({
   steer: z.string().optional().describe('Custom LLM instructions'),
 });
 
+/** Zod schema for `read_cover_letter` tool input. */
+export const ReadCoverLetterInput = z.object({
+  campaign: CampaignParam,
+  slug: SlugParam,
+});
+
 /** Zod schema for `answer_question` tool input. */
 export const AnswerQuestionInput = z.object({
   campaign: CampaignParam,

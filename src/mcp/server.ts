@@ -3,6 +3,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { getPackageVersion } from '../core/package.js';
 import { mcpLogger } from './logger.js';
 import { registerTools } from './tools.js';
+import { registerResources } from './resources/index.js';
+import { registerPrompts } from './prompts/index.js';
 
 /** MCP server name advertised to clients. */
 const SERVER_NAME = 'jho-mcp';
@@ -27,8 +29,8 @@ export async function startServer(): Promise<void> {
   const server = createServer();
 
   registerTools(server);
-  // Phase 8e: registerResources(server);
-  // Phase 8e: registerPrompts(server);
+  registerResources(server);
+  registerPrompts(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

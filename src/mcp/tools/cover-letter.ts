@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { CoverLetterInput } from '../schemas.js';
+import { CoverLetterInput, ReadCoverLetterInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { generateCoverLetter } from '../../core/applications/cover-letter.js';
+import { generateCoverLetter, readCoverLetter } from '../../core/applications/cover-letter.js';
 import { mcpLogger } from '../logger.js';
 
 export function registerCoverLetter(server: McpServer): void {
@@ -20,6 +20,29 @@ export function registerCoverLetter(server: McpServer): void {
         });
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (err) {
+        return handleToolError(err);
+      }
+    },
+  );
+}
+
+export function registerReadCoverLetter(server: McpServer): void {
+  server.tool(
+    'read_cover_letter',
+    'Read an existing saved cover letter for an application',
+    ReadCoverLetterInput.shape,
+    async (args) => {
+      try {
+        mcpLogger.debug(
+          { campaign: args.campaign, slug: args.slug },
+          'tool.read_cover_letter.start',
+        );
+        const { slug, campaign } = args;
+        const content = await readCoverLetter(campaign, slug);
+        return {
+          content: [{ type: 'text', text: content }],
         };
       } catch (err) {
         return handleToolError(err);
