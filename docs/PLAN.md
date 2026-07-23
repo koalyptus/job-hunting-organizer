@@ -779,6 +779,7 @@ docs/help/
 init                       { cvPath, githubUser, repos?, name?, email? }
 extract_jd                 { url? | text? }
 cover_letter               { slug? | url? | text?, save? }
+read_cover_letter          { slug }
 answer_question            { slug?, question, imageBase64?, mimeType? }
 track_application          { url? | text?, status?, salary?, tag?, note?, targetRole? }
 list_applications          { status?, tag?, role? }

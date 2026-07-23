@@ -1,7 +1,10 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { ApplicationNotFoundError } from '../core/applications/applications.js';
 import { InterviewNotFoundError } from '../core/interviews/interviews.js';
-import { CoverLetterError } from '../core/applications/cover-letter-errors.js';
+import {
+  CoverLetterError,
+  CoverLetterReadError,
+} from '../core/applications/cover-letter-errors.js';
 import { AnswerError } from '../core/applications/application-qa-errors.js';
 import { TrackError } from '../core/track/errors.js';
 import { RepairError } from '../core/repair/repair.js';
@@ -21,6 +24,7 @@ const ERROR_PREFIXES: Map<ErrorConstructor, string> = new Map([
   [ApplicationNotFoundError, 'Application not found'],
   [InterviewNotFoundError, 'Interview not found'],
   [CoverLetterError, 'Cover letter error'],
+  [CoverLetterReadError, 'Cover letter read error'],
   [AnswerError, 'Answer generation error'],
   [TrackError, 'Track error'],
   [RepairError, 'Repair error'],

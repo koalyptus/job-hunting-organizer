@@ -138,7 +138,7 @@ This package ships an MCP server for AI assistants. Add to your MCP client confi
 }
 ```
 
-The server is under active development (Phase 8). Tools are being added incrementally: `init`, `extract_jd`, `cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `read_profile`, `update_profile`, `get_root`, `get_campaign`, `list_campaigns`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`, `post_mortem`, `append_retro`, `aggregate_retros`, `prepare`.
+The server is under active development (Phase 8). Tools are being added incrementally: `init`, `extract_jd`, `cover_letter`, `read_cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `read_profile`, `update_profile`, `get_root`, `get_campaign`, `list_campaigns`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`, `post_mortem`, `append_retro`, `aggregate_retros`, `prepare`.
 
 ## Documentation
 

@@ -4,6 +4,7 @@ import { handleToolError } from '../error-handler.js';
 import { ApplicationNotFoundError } from '../../core/applications/applications.js';
 import { InterviewNotFoundError } from '../../core/interviews/interviews.js';
 import { CoverLetterError } from '../../core/applications/cover-letter.js';
+import { CoverLetterReadError } from '../../core/applications/cover-letter-errors.js';
 import { AnswerError } from '../../core/applications/application-qa.js';
 import { TrackError } from '../../core/track/errors.js';
 import { RepairError } from '../../core/repair/repair.js';
@@ -43,6 +44,13 @@ describe('handleToolError', () => {
     expect(result.isError).toBe(true);
     expect(getText(result)).toContain('Cover letter error');
     expect(getText(result)).toContain('missing jd');
+  });
+
+  it('maps CoverLetterReadError', () => {
+    const result = handleToolError(new CoverLetterReadError('no cover letter found'));
+    expect(result.isError).toBe(true);
+    expect(getText(result)).toContain('Cover letter read error');
+    expect(getText(result)).toContain('no cover letter found');
   });
 
   it('maps AnswerError', () => {

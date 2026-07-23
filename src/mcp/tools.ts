@@ -18,7 +18,7 @@ import { registerUpdateConfig } from './tools/update-config.js';
 import { registerInit } from './tools/init-tool.js';
 import { registerPostMortem } from './tools/post-mortem.js';
 import { registerAppendRetro } from './tools/append-retro-tool.js';
-import { registerCoverLetter } from './tools/cover-letter.js';
+import { registerCoverLetter, registerReadCoverLetter } from './tools/cover-letter.js';
 import { registerAnswerQuestion } from './tools/answer-question.js';
 import { registerExtractJd } from './tools/extract-jd.js';
 import { registerPrepare } from './tools/prepare-tool.js';
@@ -53,6 +53,7 @@ export function registerTools(server: McpServer): void {
   registerPostMortem(server);
   registerAppendRetro(server);
   registerCoverLetter(server);
+  registerReadCoverLetter(server);
   registerAnswerQuestion(server);
   registerExtractJd(server);
   registerPrepare(server);
