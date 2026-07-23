@@ -5,12 +5,12 @@ import {
   CoverLetterError,
   CoverLetterReadError,
 } from '../core/applications/cover-letter-errors.js';
-import { AnswerError } from '../core/applications/application-qa-errors.js';
+import { AnswerError, QaReadError } from '../core/applications/application-qa-errors.js';
 import { TrackError } from '../core/track/errors.js';
 import { RepairError } from '../core/repair/repair.js';
 import { DoctorError } from '../core/doctor/doctor.js';
-import { RetroError } from '../core/retro/retro-errors.js';
-import { PrepError } from '../core/prepare/prepare-errors.js';
+import { RetroError, RetroNotFoundError } from '../core/retro/retro-errors.js';
+import { PrepError, PrepReadError } from '../core/prepare/prepare-errors.js';
 import { ProfileReadError } from '../core/campaign/profile-read.js';
 import { ProfileWriteError } from '../core/campaign/profile-writer.js';
 import { StatsError } from '../core/stats/errors.js';
@@ -26,11 +26,14 @@ const ERROR_PREFIXES: Map<ErrorConstructor, string> = new Map([
   [CoverLetterError, 'Cover letter error'],
   [CoverLetterReadError, 'Cover letter read error'],
   [AnswerError, 'Answer generation error'],
+  [QaReadError, 'Q&A read error'],
   [TrackError, 'Track error'],
   [RepairError, 'Repair error'],
   [DoctorError, 'Doctor error'],
   [RetroError, 'Retro error'],
+  [RetroNotFoundError, 'Retro not found'],
   [PrepError, 'Prep error'],
+  [PrepReadError, 'Prep read error'],
   [ProfileReadError, 'Profile error'],
   [ProfileWriteError, 'Profile write error'],
   [StatsError, 'Stats error'],

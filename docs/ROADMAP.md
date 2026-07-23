@@ -52,9 +52,9 @@
   - [x] 7l — Retro enhancements (markup strip, status field, true append, MCP logger coverage)
 - [ ] **Phase 8** — MCP server
   - [x] 8a — Server scaffold, campaign resolver, error handler
-  - [x] 8b — Read-only tools
+  - [x] 8b — Read-only tools (13 registered; 5 CLI read commands missing — see gap analysis)
   - [x] 8c — Write + CRUD tools
-  - [ ] 8d — LLM-backed tools
+  - [x] 8d — LLM-backed tools
   - [ ] 8e — Resources + prompts
   - [ ] 8f — bin/jho-mcp + package config
   - [ ] 8g — Integration tests
@@ -727,9 +727,9 @@ Split into sub-phases for incremental delivery.
 
 **Commit**: `feat(mcp): server scaffold, error handler, and input schemas`
 
-#### 8b — Read-only tools
+#### 8b — Read-only tools (delivered)
 
-Register 11 read-only tools:
+Register 13 read-only tools (11 from original plan + 2 additional):
 
 - `list_applications` — list/filter applications from `.index.json`
 - `show_application` — read `meta.md` + `jd.md` for a single app
@@ -742,8 +742,14 @@ Register 11 read-only tools:
 - `ownership` — file ownership table
 - `doctor` — run diagnostics
 - `repair` — auto-repair issues
+- `read_cover_letter` — read existing cover letter (added alongside `cover_letter` write tool)
+- `aggregate_retros` — cross-app weak topic aggregation (added alongside `post_mortem`/`append_retro`)
+- `extract_jd` — extract structured JD from URL/text (added as LLM-backed read tool)
 
 Each tool: Zod input validation, calls `core/` function directly, returns JSON content.
+
+**Gap analysis**: 5 CLI read commands have no MCP equivalent — see `.lavish/mcp-read-gap-analysis.html` for implementation plan:
+`read_config` (`jho config show`), `read_logs` (`jho logs`), `read_retro` (`jho retro show`), `read_prep` (`jho prepare show`), `read_qa` (`jho answer show`). All reuse existing core utilities — no duplication.
 
 **Commit**: `feat(mcp): register read-only tools`
 

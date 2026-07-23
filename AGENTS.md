@@ -168,9 +168,19 @@ jho mcp                 # start MCP server
 
 **Natural language**: any command can be invoked in plain English. If `process.argv.slice(2)[0]` contains a space and is not a known command and does not start with `-`, `jho` treats the input as a natural-language prompt. `parseNaturalLanguage` (LLM, json mode, temp 0.1) maps it to a `ParsedCommand`; `dispatchNaturalLanguage` rebuilds a synthetic argv and re-parses it through the existing Commander `program` (`from: 'user'`), so 100% of command logic is reused — nothing is reimplemented. Confidence gates: ≥0.8 auto-run; 0.5–0.8 confirm via `@clack/prompts` (skip with `--yes`); <0.5 error with a rephrase hint. Explicit global flags (`--campaign`, `--yes`, etc.) always override LLM-parsed globals. Requires a configured LLM (same as other LLM-backed commands). See `prompts/nl-command.md` and `src/core/parser/prompt-parser.ts`.
 
-## MCP tools (planned)
+## MCP tools (implemented)
 
-`init`, `extract_jd`, `cover_letter`, `read_cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `schedule_interview`, `post_mortem`, `show_retro`, `append_retro`, `aggregate_retros`, `prepare`, `read_profile`, `update_profile`, `get_root`, `get_campaign`, `list_campaigns`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`.
+### Read-only tools (13)
+
+`list_applications`, `show_application`, `list_interviews`, `read_profile`, `get_stats`, `get_root`, `get_campaign`, `list_campaigns`, `ownership`, `doctor`, `repair`, `read_cover_letter`, `aggregate_retros`, `extract_jd`
+
+### Write + CRUD tools (13)
+
+`init`, `track_application`, `add_interview`, `mark_interview`, `update_profile`, `update_config`, `post_mortem`, `append_retro`, `cover_letter`, `answer_question`, `prepare`
+
+### Missing read tools (5 — see gap analysis in `.lavish/mcp-read-gap-analysis.html`)
+
+`read_config` (reads global config, CLI: `jho config show`), `read_logs` (reads log file, CLI: `jho logs`), `read_retro` (reads retro, CLI: `jho retro show`), `read_prep` (reads prep plan, CLI: `jho prepare show`), `read_qa` (reads Q&A, CLI: `jho answer show`)
 
 ## Resources (planned)
 
@@ -282,7 +292,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 8 — MCP server. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 8a (server scaffold, campaign resolver, error handler), 8b (read-only tools), 8c (write + CRUD tools), 8d (LLM-backed tools), 8e (resources + prompts), 8f (bin/jho-mcp + package config), 8g (integration tests), 8h (examples + docs + polish).
+Phase 8 — MCP server. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 8a (server scaffold, campaign resolver, error handler), 8b (read-only tools — 13 registered; 5 CLI read commands missing, see `.lavish/mcp-read-gap-analysis.html`), 8c (write + CRUD tools), 8d (LLM-backed tools), 8e (resources + prompts), 8f (bin/jho-mcp + package config), 8g (integration tests), 8h (examples + docs + polish).
 
 ## Cross-platform conventions
 

@@ -26,7 +26,12 @@
       "list_campaigns",
       "ownership",
       "doctor",
-      "repair"
+      "repair",
+      "read_config",
+      "read_logs",
+      "read_retro",
+      "read_prep",
+      "read_qa"
     ]
   },
   "files": [

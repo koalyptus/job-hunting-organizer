@@ -205,3 +205,34 @@ export const AggregateRetrosInput = z.object({
   targetRole: TargetRoleFilter,
   includeAbandoned: z.boolean().optional().describe('Include abandoned applications'),
 });
+
+/** Zod schema for `read_config` tool input. */
+export const ReadConfigInput = z.object({});
+
+/** Zod schema for `read_logs` tool input. */
+export const ReadLogsInput = z.object({
+  tail: z.number().int().positive().optional().describe('Show only the last N lines'),
+  level: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+    .optional()
+    .describe('Filter by minimum level'),
+  json: z.boolean().optional().describe('Output raw JSON lines instead of pretty-printing'),
+});
+
+/** Zod schema for `read_retro` tool input. */
+export const ReadRetroInput = z.object({
+  campaign: CampaignParam,
+  slug: SlugParam,
+});
+
+/** Zod schema for `read_prep` tool input. */
+export const ReadPrepInput = z.object({
+  campaign: CampaignParam,
+  slug: SlugParam,
+});
+
+/** Zod schema for `read_qa` tool input. */
+export const ReadQaInput = z.object({
+  campaign: CampaignParam,
+  slug: SlugParam,
+});

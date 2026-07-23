@@ -23,6 +23,11 @@ import { registerAnswerQuestion } from './tools/answer-question.js';
 import { registerExtractJd } from './tools/extract-jd.js';
 import { registerPrepare } from './tools/prepare-tool.js';
 import { registerAggregateRetros } from './tools/aggregate-retros.js';
+import { registerReadConfig } from './tools/read-config.js';
+import { registerReadLogs } from './tools/read-logs.js';
+import { registerReadRetro } from './tools/read-retro.js';
+import { registerReadPrep } from './tools/read-prep.js';
+import { registerReadQa } from './tools/read-qa.js';
 
 /**
  * Register all Phase 8b read-only tools, Phase 8c write tools, and Phase 8d LLM-backed tools on the MCP server.
@@ -58,4 +63,9 @@ export function registerTools(server: McpServer): void {
   registerExtractJd(server);
   registerPrepare(server);
   registerAggregateRetros(server);
+  registerReadConfig(server);
+  registerReadLogs(server);
+  registerReadRetro(server);
+  registerReadPrep(server);
+  registerReadQa(server);
 }
