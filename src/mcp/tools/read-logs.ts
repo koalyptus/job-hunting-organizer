@@ -39,7 +39,7 @@ export function registerReadLogs(server: McpServer): void {
             debug: 20,
             trace: 10,
           };
-          const minLevel = levelMap[args.level.toLowerCase()] ?? 30;
+          const minLevel = levelMap[args.level] ?? 30;
           filteredLines = allLines.filter((line) => {
             try {
               const entry = JSON.parse(line) as { level?: number };
