@@ -13,6 +13,7 @@ export function registerReadRetro(server: McpServer): void {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.read_retro.start');
         const content = await showRetro(args.campaign, args.slug);
+        mcpLogger.debug({ slug: args.slug }, 'tool.read_retro.done');
         return {
           content: [{ type: 'text', text: content }],
         };

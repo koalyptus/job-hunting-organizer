@@ -19,6 +19,7 @@ export function registerInit(server: McpServer): void {
           linkedin: args.linkedinUrl,
           yes: true,
         });
+        mcpLogger.debug({ campaign: args.campaign }, 'tool.init.done');
         return {
           content: [{ type: 'text', text: JSON.stringify({ status: 'ok' }, null, 2) }],
         };

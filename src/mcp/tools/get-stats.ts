@@ -20,6 +20,7 @@ export function registerGetStats(server: McpServer): void {
           since: args.since,
           employmentType: args.employmentType,
         });
+        mcpLogger.debug({ campaign: args.campaign }, 'tool.get_stats.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }],
         };

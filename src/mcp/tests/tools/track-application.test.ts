@@ -32,6 +32,7 @@ vi.mock('../../schemas.js', () => {
       employmentType: z.enum(EMPLOYMENT_TYPES).optional(),
       note: z.string().optional(),
       steer: z.string().optional(),
+      refresh: z.boolean().optional(),
     }),
   };
 });

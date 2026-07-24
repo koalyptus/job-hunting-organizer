@@ -19,6 +19,7 @@ export function registerAggregateRetros(server: McpServer): void {
           role: args.targetRole,
           includeAbandoned: args.includeAbandoned,
         });
+        mcpLogger.debug({ campaign: args.campaign }, 'tool.aggregate_retros.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

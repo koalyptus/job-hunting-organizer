@@ -13,6 +13,7 @@ export function registerListCampaigns(server: McpServer): void {
       try {
         mcpLogger.debug('tool.list_campaigns.start');
         const { campaigns } = await runListCampaigns();
+        mcpLogger.debug({ count: campaigns.length }, 'tool.list_campaigns.done');
         return {
           content: [{ type: 'text', text: JSON.stringify({ campaigns }, null, 2) }],
         };

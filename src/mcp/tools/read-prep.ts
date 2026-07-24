@@ -13,6 +13,7 @@ export function registerReadPrep(server: McpServer): void {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.read_prep.start');
         const content = await readPrep(args.campaign, args.slug);
+        mcpLogger.debug({ slug: args.slug }, 'tool.read_prep.done');
         return {
           content: [{ type: 'text', text: content }],
         };

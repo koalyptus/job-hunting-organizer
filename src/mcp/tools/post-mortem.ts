@@ -20,6 +20,7 @@ export function registerPostMortem(server: McpServer): void {
           steer: args.steer,
           status: args.status,
         });
+        mcpLogger.debug({ slug: args.slug }, 'tool.post_mortem.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

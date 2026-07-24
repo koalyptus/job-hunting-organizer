@@ -25,6 +25,8 @@ vi.mock('../../schemas.js', () => {
       slug: SlugParam,
       question: z.string().describe('Question to answer'),
       steer: z.string().optional().describe('Custom LLM instructions'),
+      noSave: z.boolean().optional().describe('Do not save to file (stdout only)'),
+      imagePath: z.string().optional().describe('Path to image file (screenshot of the question)'),
     }),
   };
 });

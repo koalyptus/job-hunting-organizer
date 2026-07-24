@@ -15,6 +15,7 @@ export function registerGetCampaign(server: McpServer): void {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.get_campaign.start');
         const config = loadCampaignConfig(args.campaign);
         const redactedConfig = redactSecrets(config);
+        mcpLogger.debug({ campaign: args.campaign }, 'tool.get_campaign.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(redactedConfig, null, 2) }],
         };

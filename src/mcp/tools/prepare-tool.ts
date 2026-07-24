@@ -18,6 +18,7 @@ export function registerPrepare(server: McpServer): void {
           steer: args.steer,
           days: args.days,
         });
+        mcpLogger.debug({ slug: args.slug }, 'tool.prepare.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
