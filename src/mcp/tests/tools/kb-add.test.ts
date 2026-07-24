@@ -1,13 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { fakeServer, getTextContent } from './helpers.js';
 import { registerKbAdd } from '../../tools/kb-add.js';
 import { ingestKnowledgeBase } from '../../../core/campaign/kb-ingest.js';
 import { loadCampaignConfig } from '../../../core/config/config.js';
-
-const { z } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('zod');
-});
 
 const { KbError } = vi.hoisted(() => {
   class KbError extends Error {

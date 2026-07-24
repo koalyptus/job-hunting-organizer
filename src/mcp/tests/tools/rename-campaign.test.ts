@@ -1,12 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { fakeServer, getTextContent } from './helpers.js';
 import { registerRenameCampaign } from '../../tools/rename-campaign.js';
 import { renameCampaign } from '../../../core/campaign/rename-campaign.js';
-
-const { z } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('zod');
-});
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),

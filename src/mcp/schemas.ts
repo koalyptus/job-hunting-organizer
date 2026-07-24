@@ -201,6 +201,7 @@ export const PrepareInput = z.object({
   slug: SlugParam,
   steer: z.string().optional().describe('Custom LLM instructions'),
   days: z.number().int().positive().optional().describe('Days until interview'),
+  topics: z.array(z.string()).optional().describe('Topic names to brush up on'),
 });
 
 /** Zod schema for `aggregate_retros` tool input. */

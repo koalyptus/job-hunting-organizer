@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { fakeServer, getTextContent } from './helpers.js';
 import { registerKbUpdate } from '../../tools/kb-update.js';
 import { syncKnowledgeBase } from '../../../core/campaign/kb-ingest.js';
@@ -17,14 +18,9 @@ vi.mock('../../error-handler.js', () => ({
 }));
 
 vi.mock('../../schemas.js', () => ({
-  KbUpdateInput: {
-    shape: {
-      campaign: {
-        parse: (input: unknown) => input,
-        safeParse: (input: unknown) => ({ success: true, data: input }),
-      },
-    },
-  },
+  KbUpdateInput: z.object({
+    campaign: z.string(),
+  }),
 }));
 
 vi.mock('../../logger.js', () => ({
