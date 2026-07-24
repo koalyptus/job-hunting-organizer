@@ -17,6 +17,8 @@ import {
 import { todayIso } from '../../date.js';
 import * as fsModule from '../../fs.js';
 import { writeFrontmatter } from '../../parser/frontmatter.js';
+import { writeToolhash, computeHash } from '../../toolhash.js';
+import { writeCountersAsync, readCountersAsync } from '../../applications/counters.js';
 
 const mockRootLogger = vi.hoisted(() => ({
   debug: vi.fn(),
@@ -414,6 +416,45 @@ describe('listApplications', () => {
     const entries = await listApplications(join(workDir, 'nonexistent'));
     expect(entries).toEqual([]);
   });
+
+  it('prunes stale index entries whose folders no longer exist', async () => {
+    const slug1 = await createApplication({ appliedDir, title: 'Eng1', company: 'A' });
+    const slug2 = await createApplication({ appliedDir, title: 'Eng2', company: 'B' });
+
+    // Inject a stale ghost entry directly into the index file
+    const current = await readIndex(appliedDir);
+    const ghostEntry = {
+      slug: '2026-Jan-01-ghost-entry',
+      status: 'applied' as const,
+      title: 'Ghost',
+      company: 'Nowhere',
+      site: '',
+      location: '',
+      targetRole: '',
+      appliedOn: '2026-01-01',
+      tags: [],
+      employmentType: '' as const,
+    };
+    await writeFile(
+      join(appliedDir, '.index.json'),
+      JSON.stringify([...current, ghostEntry], null, 2),
+    );
+
+    // Verify the ghost entry is in the index
+    const beforePrune = await readIndex(appliedDir);
+    expect(beforePrune).toHaveLength(3);
+
+    // listApplications should prune the ghost and return only real entries
+    const entries = await listApplications(appliedDir);
+    expect(entries).toHaveLength(2);
+    expect(entries.map((e) => e.slug)).toContain(slug1);
+    expect(entries.map((e) => e.slug)).toContain(slug2);
+    expect(entries.map((e) => e.slug)).not.toContain('2026-Jan-01-ghost-entry');
+
+    // Index file should be rewritten without the ghost
+    const afterPrune = await readIndex(appliedDir);
+    expect(afterPrune).toHaveLength(2);
+  });
 });
 
 describe('deleteApplication', () => {
@@ -437,6 +478,38 @@ describe('deleteApplication', () => {
   it('returns false for non-existent slug', async () => {
     const result = await deleteApplication(appliedDir, 'nonexistent');
     expect(result).toBe(false);
+  });
+
+  it('removes .toolhash sidecars with the folder', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    const metaPath = join(appliedDir, slug, 'meta.md');
+    const content = await readFile(metaPath, 'utf8');
+    await writeToolhash(metaPath, computeHash(content));
+
+    expect(existsSync(join(metaPath + '.toolhash'))).toBe(true);
+    await deleteApplication(appliedDir, slug);
+    expect(existsSync(join(metaPath + '.toolhash'))).toBe(false);
+  });
+
+  it('cleans .counters.json entry for the deleted slug', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    await writeCountersAsync(appliedDir, { [slug]: 2, 'other-slug': 1 });
+
+    await deleteApplication(appliedDir, slug);
+
+    const counters = await readCountersAsync(appliedDir);
+    expect(counters[slug]).toBeUndefined();
+    expect(counters['other-slug']).toBe(1);
+  });
+
+  it('preserves .gitkeep in applied/ after deletion', async () => {
+    const gitkeep = join(appliedDir, '.gitkeep');
+    await writeFile(gitkeep, '');
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+
+    await deleteApplication(appliedDir, slug);
+
+    expect(existsSync(gitkeep)).toBe(true);
   });
 });
 

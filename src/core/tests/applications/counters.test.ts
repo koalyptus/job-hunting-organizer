@@ -7,6 +7,7 @@ import {
   readCounters,
   readCountersAsync,
   writeCountersAsync,
+  removeCounterEntry,
 } from '../../applications/index.js';
 
 let workDir: string;
@@ -130,5 +131,38 @@ describe('readCollisionSuffix', () => {
     readCollisionSuffix('a', workDir);
     const after = readFile(join(workDir, '.counters.json'), 'utf8');
     expect(await before).toEqual(await after);
+  });
+});
+
+describe('removeCounterEntry', () => {
+  it('removes an existing counter entry', async () => {
+    await writeCountersAsync(workDir, { 'base-slug': 3, other: 1 });
+    const result = await removeCounterEntry(workDir, 'base-slug');
+    expect(result).toBe(true);
+    expect(await readCountersAsync(workDir)).toEqual({ other: 1 });
+  });
+
+  it('is a no-op when the entry does not exist', async () => {
+    await writeCountersAsync(workDir, { 'other-slug': 2 });
+    const result = await removeCounterEntry(workDir, 'nonexistent');
+    expect(result).toBe(true);
+    expect(await readCountersAsync(workDir)).toEqual({ 'other-slug': 2 });
+  });
+
+  it('preserves other entries', async () => {
+    await writeCountersAsync(workDir, { a: 1, b: 2, c: 3 });
+    await removeCounterEntry(workDir, 'b');
+    expect(await readCountersAsync(workDir)).toEqual({ a: 1, c: 3 });
+  });
+
+  it('handles missing counters file gracefully', async () => {
+    const result = await removeCounterEntry(workDir, 'anything');
+    expect(result).toBe(true);
+  });
+
+  it('removes the last entry and leaves an empty object', async () => {
+    await writeCountersAsync(workDir, { 'only-one': 1 });
+    await removeCounterEntry(workDir, 'only-one');
+    expect(await readCountersAsync(workDir)).toEqual({});
   });
 });

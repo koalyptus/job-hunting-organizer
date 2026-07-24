@@ -5,6 +5,12 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { diagnoseCampaign, diagnoseApp } from '../../core/doctor/doctor.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `doctor` tool on the MCP server.
+ * Diagnose campaign or application issues (missing files, invalid frontmatter, toolhash mismatches).
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerDoctor(server: McpServer): void {
   server.tool(
     'doctor',

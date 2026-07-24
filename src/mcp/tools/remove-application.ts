@@ -8,10 +8,17 @@ import {
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `remove_application` tool on the MCP server.
+ * Permanently removes an application folder and cleans up all
+ * associated metadata (index entry, toolhash sidecars, collision counters).
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerRemoveApplication(server: McpServer): void {
   server.tool(
     'remove_application',
-    'Permanently remove an application folder',
+    'Permanently remove an application folder — cleans metadata, index, and sidecars',
     RemoveApplicationInput.shape,
     async (args) => {
       try {

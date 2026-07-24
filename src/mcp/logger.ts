@@ -5,6 +5,11 @@ import { resolveConfigHome } from '../core/paths.js';
 import { resolve } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
 
+/**
+ * Ensure the MCP log directory exists and return the log file path.
+ *
+ * @returns The full path to the MCP log file.
+ */
 function ensureMcpLogDir(): string {
   const configHome = resolveConfigHome();
   if (!existsSync(configHome)) {
@@ -13,6 +18,12 @@ function ensureMcpLogDir(): string {
   return resolve(configHome, 'jho-mcp.log');
 }
 
+/**
+ * Create a Pino logger configured for the MCP server.
+ * Writes structured JSON logs to the MCP log file with redaction support.
+ *
+ * @returns A configured Pino logger instance.
+ */
 export function createMcpLogger() {
   const config = defaultLoggerConfig({ disableFileLogging: true });
   const redactPaths =
@@ -28,12 +39,17 @@ export function createMcpLogger() {
       },
       timestamp: pino.stdTimeFunctions.isoTime,
     },
-    pino.destination(ensureMcpLogDir()),
+    pino.destination({ dest: ensureMcpLogDir(), sync: true }),
   );
 }
 
 export const mcpLogger = createMcpLogger();
 
+/**
+ * Get the full path to the MCP log file.
+ *
+ * @returns The absolute path to jho-mcp.log.
+ */
 export function getMcpLogPath(): string {
   return resolve(resolveConfigHome(), 'jho-mcp.log');
 }

@@ -3,6 +3,7 @@ import { fakeServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerRemoveApplication } from '../../tools/remove-application.js';
 import { deleteApplication } from '../../../core/applications/applications.js';
+import { mcpLogger } from '../../logger.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -61,6 +62,15 @@ describe('remove_application tool', () => {
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.slug).toBe('test-app');
     expect(parsed.removed).toBe(true);
+
+    expect(vi.mocked(mcpLogger.debug)).toHaveBeenCalledWith(
+      { campaign: 'default', slug: 'test-app' },
+      'tool.remove_application.start',
+    );
+    expect(vi.mocked(mcpLogger.debug)).toHaveBeenCalledWith(
+      { slug: 'test-app' },
+      'tool.remove_application.done',
+    );
   });
 
   it('returns error when application not found', async () => {

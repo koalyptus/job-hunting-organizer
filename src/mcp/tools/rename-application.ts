@@ -5,6 +5,12 @@ import { renameApplication } from '../../core/applications/rename.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `rename_application` tool on the MCP server.
+ * Rename an application folder.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerRenameApplication(server: McpServer): void {
   server.tool(
     'rename_application',

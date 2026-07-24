@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { startRetro } from '../../core/retro/retro.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `post_mortem` tool on the MCP server.
+ * Generate a post-mortem learning plan for an application.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerPostMortem(server: McpServer): void {
   server.tool(
     'post_mortem',

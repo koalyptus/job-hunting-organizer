@@ -5,6 +5,12 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { repairApp, repairAll } from '../../core/repair/repair.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `repair` tool on the MCP server.
+ * Repair application toolhash sidecars, rebuild index and counters.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerRepair(server: McpServer): void {
   server.tool(
     'repair',

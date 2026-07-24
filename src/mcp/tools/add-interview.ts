@@ -5,6 +5,12 @@ import { addInterview } from '../../core/interviews/interviews.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `add_interview` tool on the MCP server.
+ * Add a new interview entry for an application.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerAddInterview(server: McpServer): void {
   server.tool(
     'add_interview',

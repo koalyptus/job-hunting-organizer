@@ -7,6 +7,12 @@ import { mcpLogger } from '../logger.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+/**
+ * Register the `read_logs` tool on the MCP server.
+ * Read the log file with optional filtering (tail, level, JSON format).
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerReadLogs(server: McpServer): void {
   server.tool(
     'read_logs',
