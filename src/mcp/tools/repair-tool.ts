@@ -19,6 +19,7 @@ export function registerRepair(server: McpServer): void {
           ? await repairApp(resolveAppliedDir(campaignRoot), args.slug)
           : await repairAll(campaignRoot);
 
+        mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.repair.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(repairResult, null, 2) }],
         };

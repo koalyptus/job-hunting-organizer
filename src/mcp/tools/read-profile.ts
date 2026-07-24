@@ -15,6 +15,7 @@ export function registerReadProfile(server: McpServer): void {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.read_profile.start');
         const campaignRoot = resolveCampaignRoot(args.campaign);
         const profileContent = await readProfile(campaignRoot);
+        mcpLogger.debug({ campaign: args.campaign }, 'tool.read_profile.done');
         return {
           content: [{ type: 'text', text: JSON.stringify({ content: profileContent }, null, 2) }],
         };

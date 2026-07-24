@@ -13,6 +13,7 @@ export function registerReadQa(server: McpServer): void {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.read_qa.start');
         const content = await readQa(args.campaign, args.slug);
+        mcpLogger.debug({ slug: args.slug }, 'tool.read_qa.done');
         return {
           content: [{ type: 'text', text: content }],
         };

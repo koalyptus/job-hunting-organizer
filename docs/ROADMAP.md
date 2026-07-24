@@ -57,6 +57,7 @@
   - [x] 8d — LLM-backed tools
   - [ ] 8e — Resources + prompts
   - [ ] 8f — bin/jho-mcp + package config
+  - [x] 8f1 — MCP feature parity with CLI (tools, options, logging)
   - [ ] 8g — Integration tests
   - [ ] 8h — Examples + docs + polish
 - [ ] **Phase 9** — Calendar providers
@@ -799,6 +800,38 @@ Register 6 resources and 3 prompts:
 - Verify `npm pack` includes correct files
 
 **Commit**: `feat(mcp): finalize bin entry and package metadata`
+
+#### 8f1 — MCP feature parity with CLI
+
+Extends the MCP server with feature parity to the CLI, adds logging
+foundation, and fills gaps in the tool surface.
+
+**New MCP Tools**:
+
+- `remove_application` — permanently delete an application folder
+- `rename_application` — rename an application folder
+- `remove_campaign` — permanently delete a campaign folder
+- `rename_campaign` — rename a campaign folder
+- `read_campaign_config` — read campaign-level configuration (redacted)
+- `kb_add` — copy knowledge-base docs into the campaign
+- `kb_update` — re-sync knowledge base from recorded sources
+
+**New options on existing tools**:
+
+- `track_application` — `refresh`: re-fetch JD from stored URL
+- `cover_letter` — `noSave`: do not save to file (returns content only)
+- `answer_question` — `noSave`: do not save to file (returns content only)
+- `answer_question` — `imagePath`: path to image file for multimodal input
+- `prepare` — `topics`: topic names to brush up on
+
+**Logging foundation**:
+
+- Tool execution errors are logged through `mcpLogger.error()`
+- Tool completion events are logged (`tool.<name>.done`)
+- Global `uncaughtException` and `unhandledRejection` handlers log through MCP logger
+- `read_logs` tool now combines both CLI and MCP log files
+
+**Commit**: `feat(mcp): feature parity tools, options, and logging`
 
 #### 8g — Integration tests
 

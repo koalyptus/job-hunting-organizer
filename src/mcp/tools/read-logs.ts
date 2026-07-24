@@ -17,16 +17,29 @@ export function registerReadLogs(server: McpServer): void {
         mcpLogger.debug({ tail: args.tail, level: args.level }, 'tool.read_logs.start');
         const configHome = resolveConfigHome();
         const logFile = resolve(configHome, DEFAULT_LOG_FILENAME);
+        const mcpLogFile = resolve(configHome, 'jho-mcp.log');
 
-        if (!existsSync(logFile)) {
+        const cliLogExists = existsSync(logFile);
+        const mcpLogExists = existsSync(mcpLogFile);
+
+        if (!cliLogExists && !mcpLogExists) {
           return {
-            content: [{ type: 'text', text: `No log file at ${logFile}\n(Run a command first.)` }],
+            content: [{ type: 'text', text: 'No log files found.\n(Run a command first.)' }],
             isError: true,
           };
         }
 
-        const content = readFileSync(logFile, 'utf8');
-        const allLines = content.split('\n').filter((line) => line.trim() !== '');
+        const allLines: string[] = [];
+
+        if (mcpLogExists) {
+          const content = readFileSync(mcpLogFile, 'utf8');
+          allLines.push(...content.split('\n').filter((line) => line.trim() !== ''));
+        }
+
+        if (cliLogExists) {
+          const content = readFileSync(logFile, 'utf8');
+          allLines.push(...content.split('\n').filter((line) => line.trim() !== ''));
+        }
 
         // Apply --level filter (minimum level: include entries >= minLevel)
         let filteredLines = allLines;
@@ -59,15 +72,15 @@ export function registerReadLogs(server: McpServer): void {
           };
         }
 
-        if (args.json) {
-          return {
-            content: [{ type: 'text', text: lines.join('\n') }],
-          };
-        }
+        const mcpNote = mcpLogExists ? `(includes both CLI and MCP logs)` : '';
+        const result = mcpNote ? `${mcpNote}\n${lines.join('\n')}` : lines.join('\n');
 
-        // Return raw lines without pino-pretty formatting (MCP clients can format if needed)
+        mcpLogger.debug(
+          { lines: lines.length, files: { cli: cliLogExists, mcp: mcpLogExists } },
+          'tool.read_logs.done',
+        );
         return {
-          content: [{ type: 'text', text: lines.join('\n') }],
+          content: [{ type: 'text', text: result }],
         };
       } catch (err) {
         return handleToolError(err);

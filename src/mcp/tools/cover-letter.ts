@@ -12,12 +12,14 @@ export function registerCoverLetter(server: McpServer): void {
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.cover_letter.start');
-        const { slug, campaign, steer } = args;
+        const { slug, campaign } = args;
         const result = await generateCoverLetter({
           slug,
           campaign,
-          ...(steer ? { steer } : {}),
+          ...(args.steer ? { steer: args.steer } : {}),
+          ...(args.noSave ? { noSave: args.noSave } : {}),
         });
+        mcpLogger.debug({ slug, wordCount: result.wordCount }, 'tool.cover_letter.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
@@ -41,6 +43,7 @@ export function registerReadCoverLetter(server: McpServer): void {
         );
         const { slug, campaign } = args;
         const content = await readCoverLetter(campaign, slug);
+        mcpLogger.debug({ campaign, slug }, 'tool.read_cover_letter.done');
         return {
           content: [{ type: 'text', text: content }],
         };

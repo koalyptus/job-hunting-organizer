@@ -29,6 +29,7 @@ export function registerMarkInterview(server: McpServer): void {
             notes: args.notes,
           });
         }
+        mcpLogger.debug({ slug: args.slug, index: args.index }, 'tool.mark_interview.done');
         return {
           content: [{ type: 'text', text: JSON.stringify({ success: result }, null, 2) }],
         };

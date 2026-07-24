@@ -1,4 +1,5 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { mcpLogger } from './logger.js';
 import { ApplicationNotFoundError } from '../core/applications/applications.js';
 import { InterviewNotFoundError } from '../core/interviews/interviews.js';
 import {
@@ -17,8 +18,20 @@ import { StatsError } from '../core/stats/errors.js';
 import { ListError } from '../core/list/errors.js';
 import { InitError } from '../core/init/errors.js';
 import { ShowError } from '../core/applications/show.js';
+import { RemoveCampaignError, RemoveCancelled } from '../core/campaign/remove-campaign.js';
+import {
+  RenameError,
+  InvalidNameError as RenameInvalidNameError,
+} from '../core/campaign/rename-campaign.js';
+import {
+  RenameApplicationError,
+  InvalidSlugError,
+  SelfRenameError,
+} from '../core/applications/rename.js';
+import { KbError } from '../core/campaign/kb-ingest.js';
 
-type ErrorConstructor = new (...args: never[]) => Error;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ErrorConstructor = new (...args: any[]) => Error;
 
 const ERROR_PREFIXES: Map<ErrorConstructor, string> = new Map([
   [ApplicationNotFoundError, 'Application not found'],
@@ -40,7 +53,15 @@ const ERROR_PREFIXES: Map<ErrorConstructor, string> = new Map([
   [ListError, 'List error'],
   [InitError, 'Init error'],
   [ShowError, 'Show error'],
-]);
+  [RenameApplicationError, 'Rename application error'],
+  [InvalidSlugError, 'Invalid slug'],
+  [SelfRenameError, 'Self-rename error'],
+  [RemoveCampaignError, 'Remove campaign error'],
+  [RemoveCancelled, 'Remove cancelled'],
+  [RenameError, 'Rename campaign error'],
+  [RenameInvalidNameError, 'Invalid campaign name'],
+  [KbError, 'Knowledge base error'],
+] as [ErrorConstructor, string][]);
 
 /**
  * Map a known core error class to a user-friendly MCP tool error response.
@@ -51,6 +72,8 @@ const ERROR_PREFIXES: Map<ErrorConstructor, string> = new Map([
  */
 export function handleToolError(err: unknown): CallToolResult {
   const msg = err instanceof Error ? err.message : String(err);
+
+  mcpLogger.error({ err }, 'tool.error');
 
   for (const [ctor, prefix] of ERROR_PREFIXES) {
     if (err instanceof ctor) {

@@ -21,6 +21,7 @@ export function registerAppendRetro(server: McpServer): void {
           status: args.status,
           noCarryOver: args.noCarryOver,
         });
+        mcpLogger.debug({ slug: args.slug }, 'tool.append_retro.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

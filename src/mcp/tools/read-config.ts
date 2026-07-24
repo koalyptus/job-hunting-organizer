@@ -14,6 +14,7 @@ export function registerReadConfig(server: McpServer): void {
       try {
         mcpLogger.debug('tool.read_config.start');
         const config = redactSecrets(loadGlobalConfig());
+        mcpLogger.debug('tool.read_config.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(config, null, 2) }],
         };

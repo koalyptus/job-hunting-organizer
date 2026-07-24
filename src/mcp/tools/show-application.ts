@@ -31,6 +31,7 @@ export function registerShowApplication(server: McpServer): void {
           // jd.md may not exist yet
         }
 
+        mcpLogger.debug({ slug: args.slug }, 'tool.show_application.done');
         return {
           content: [
             {

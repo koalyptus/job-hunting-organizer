@@ -18,6 +18,7 @@ export function registerListApplications(server: McpServer): void {
           employmentType: args.employmentType,
           tags: args.tags,
         });
+        mcpLogger.debug({ count: entries.length }, 'tool.list_applications.done');
         return {
           content: [{ type: 'text', text: JSON.stringify({ entries }, null, 2) }],
         };

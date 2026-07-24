@@ -13,6 +13,7 @@ export function registerGetRoot(server: McpServer): void {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.get_root.start');
         const root = resolveCampaignRoot(args.campaign);
+        mcpLogger.debug({ root }, 'tool.get_root.done');
         return {
           content: [{ type: 'text', text: JSON.stringify({ root }, null, 2) }],
         };

@@ -27,6 +27,7 @@ export function registerExtractJd(server: McpServer): void {
         const result = url
           ? await extractJdFromUrl(url, llmConfig)
           : await extractJdFromText(text!, llmConfig);
+        mcpLogger.debug({ campaign: args.campaign }, 'tool.extract_jd.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

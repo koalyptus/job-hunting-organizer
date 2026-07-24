@@ -26,8 +26,13 @@ export function registerTrackApplication(server: McpServer): void {
           employmentType: args.employmentType,
           note: args.note,
           steer: args.steer,
+          refresh: args.refresh,
           yes: true,
         });
+        mcpLogger.debug(
+          { slug: result.slug, changed: result.changed },
+          'tool.track_application.done',
+        );
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

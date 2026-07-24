@@ -13,6 +13,7 @@ export function registerOwnership(server: McpServer): void {
       try {
         mcpLogger.debug('tool.ownership.start');
         const ownership = renderOwnership({ markdown: true });
+        mcpLogger.debug('tool.ownership.done');
         return {
           content: [{ type: 'text', text: ownership }],
         };

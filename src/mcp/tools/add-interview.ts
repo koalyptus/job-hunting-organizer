@@ -23,6 +23,7 @@ export function registerAddInterview(server: McpServer): void {
           interviewers: args.interviewers?.join(', '),
           location: args.location,
         });
+        mcpLogger.debug({ slug: args.slug }, 'tool.add_interview.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

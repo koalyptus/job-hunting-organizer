@@ -17,7 +17,10 @@ export function registerAnswerQuestion(server: McpServer): void {
           campaign: args.campaign,
           question: args.question,
           steer: args.steer,
+          noSave: args.noSave,
+          imagePath: args.imagePath,
         });
+        mcpLogger.debug({ slug: args.slug }, 'tool.answer_question.done');
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };

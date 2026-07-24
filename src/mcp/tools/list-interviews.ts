@@ -16,6 +16,7 @@ export function registerListInterviews(server: McpServer): void {
         const campaignRoot = resolveCampaignRoot(args.campaign);
         const appliedDir = resolveAppliedDir(campaignRoot);
         const interviews = await listInterviews(appliedDir, args.slug);
+        mcpLogger.debug({ slug: args.slug, count: interviews.length }, 'tool.list_interviews.done');
         return {
           content: [{ type: 'text', text: JSON.stringify({ interviews }, null, 2) }],
         };

@@ -100,6 +100,7 @@ export const TrackApplicationInput = z.object({
   employmentType: z.enum(EMPLOYMENT_TYPES).optional().describe('Employment type'),
   note: z.string().optional().describe('Note to append to jd.md'),
   steer: z.string().optional().describe('Custom LLM instructions for JD extraction'),
+  refresh: z.boolean().optional().describe('Re-fetch JD from stored URL'),
 });
 
 /** Zod schema for `add_interview` tool input. */
@@ -168,6 +169,7 @@ export const CoverLetterInput = z.object({
   campaign: CampaignParam,
   slug: SlugParam,
   steer: z.string().optional().describe('Custom LLM instructions'),
+  noSave: z.boolean().optional().describe('Do not save to file (stdout only)'),
 });
 
 /** Zod schema for `read_cover_letter` tool input. */
@@ -182,6 +184,8 @@ export const AnswerQuestionInput = z.object({
   slug: SlugParam,
   question: z.string().describe('Question to answer'),
   steer: z.string().optional().describe('Custom LLM instructions'),
+  noSave: z.boolean().optional().describe('Do not save to file (stdout only)'),
+  imagePath: z.string().optional().describe('Path to image file (screenshot of the question)'),
 });
 
 /** Zod schema for `extract_jd` tool input. */
@@ -197,6 +201,7 @@ export const PrepareInput = z.object({
   slug: SlugParam,
   steer: z.string().optional().describe('Custom LLM instructions'),
   days: z.number().int().positive().optional().describe('Days until interview'),
+  topics: z.array(z.string()).optional().describe('Topic names to brush up on'),
 });
 
 /** Zod schema for `aggregate_retros` tool input. */
@@ -235,4 +240,46 @@ export const ReadPrepInput = z.object({
 export const ReadQaInput = z.object({
   campaign: CampaignParam,
   slug: SlugParam,
+});
+
+/** Zod schema for `remove_campaign` tool input. */
+export const RemoveCampaignInput = z.object({
+  campaign: CampaignParam,
+  confirm: z.boolean().optional().describe('Skip confirmation prompt'),
+});
+
+/** Zod schema for `rename_campaign` tool input. */
+export const RenameCampaignInput = z.object({
+  from: CampaignParam.describe('Current campaign name'),
+  to: z.string().describe('New campaign name'),
+});
+
+/** Zod schema for `read_campaign_config` tool input. */
+export const ReadCampaignConfigInput = z.object({
+  campaign: CampaignParam,
+});
+
+/** Zod schema for `remove_application` tool input. */
+export const RemoveApplicationInput = z.object({
+  campaign: CampaignParam,
+  slug: SlugParam,
+  confirm: z.boolean().optional().describe('Skip confirmation prompt'),
+});
+
+/** Zod schema for `rename_application` tool input. */
+export const RenameApplicationInput = z.object({
+  campaign: CampaignParam,
+  from: SlugParam.describe('Current application slug'),
+  to: SlugParam.describe('New application slug'),
+});
+
+/** Zod schema for `kb_add` tool input. */
+export const KbAddInput = z.object({
+  campaign: CampaignParam,
+  paths: z.array(z.string()).describe('One or more file or folder paths to ingest'),
+});
+
+/** Zod schema for `kb_update` tool input. */
+export const KbUpdateInput = z.object({
+  campaign: CampaignParam,
 });

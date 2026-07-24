@@ -19,6 +19,10 @@ export function registerDoctor(server: McpServer): void {
           ? await diagnoseApp(resolveAppliedDir(campaignRoot), args.slug)
           : await diagnoseCampaign(campaignRoot);
 
+        mcpLogger.debug(
+          { campaign: args.campaign, slug: args.slug, issueCount: issues.length },
+          'tool.doctor.done',
+        );
         return {
           content: [{ type: 'text', text: JSON.stringify({ issues }, null, 2) }],
         };

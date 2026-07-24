@@ -28,6 +28,13 @@ import { registerReadLogs } from './tools/read-logs.js';
 import { registerReadRetro } from './tools/read-retro.js';
 import { registerReadPrep } from './tools/read-prep.js';
 import { registerReadQa } from './tools/read-qa.js';
+import { registerRemoveCampaign } from './tools/remove-campaign.js';
+import { registerRenameCampaign } from './tools/rename-campaign.js';
+import { registerReadCampaignConfig } from './tools/read-campaign-config.js';
+import { registerRemoveApplication } from './tools/remove-application.js';
+import { registerRenameApplication } from './tools/rename-application.js';
+import { registerKbAdd } from './tools/kb-add.js';
+import { registerKbUpdate } from './tools/kb-update.js';
 
 /**
  * Register all Phase 8b read-only tools, Phase 8c write tools, and Phase 8d LLM-backed tools on the MCP server.
@@ -68,4 +75,11 @@ export function registerTools(server: McpServer): void {
   registerReadRetro(server);
   registerReadPrep(server);
   registerReadQa(server);
+  registerRemoveApplication(server);
+  registerRenameApplication(server);
+  registerRemoveCampaign(server);
+  registerRenameCampaign(server);
+  registerReadCampaignConfig(server);
+  registerKbAdd(server);
+  registerKbUpdate(server);
 }
