@@ -58,6 +58,7 @@
   - [ ] 8e — Resources + prompts
   - [ ] 8f — bin/jho-mcp + package config
   - [x] 8f1 — MCP feature parity with CLI (tools, options, logging)
+  - [x] 8f2 — Metadata cleanup on remove + JSDoc coverage
   - [ ] 8g — Integration tests
   - [ ] 8h — Examples + docs + polish
 - [ ] **Phase 9** — Calendar providers
@@ -832,6 +833,40 @@ foundation, and fills gaps in the tool surface.
 - `read_logs` tool now combines both CLI and MCP log files
 
 **Commit**: `feat(mcp): feature parity tools, options, and logging`
+
+#### 8f2 — Metadata cleanup on remove + JSDoc coverage
+
+Ensures remove operations clean all associated metadata and adds JSDoc
+documentation to every undocumented MCP function.
+
+**Metadata cleanup**:
+
+- `src/core/applications/counters.ts` — add `removeCounterEntry(appliedDir, key)` helper
+- `src/core/applications/applications.ts` — wire counter cleanup into `deleteApplication`
+- `src/mcp/tools/remove-application.ts` — update tool description to mention metadata cleanup
+
+**Stale index pruning**:
+
+- `src/core/applications/applications.ts` — `listApplications` now filters index entries against disk existence; rewrites index atomically when stale entries are found
+
+**Sonic-boom crash fix**:
+
+- `src/core/logger/logger.ts` — silent logger uses `pino.destination({ sync: true })` so `autoEnd` handler is never registered
+- `src/mcp/logger.ts` — MCP logger destination uses `sync: true` for consistency
+
+**JSDoc coverage**:
+
+- `src/mcp/tools/*.ts` — add JSDoc to all 34 undocumented `register*` functions
+- `src/mcp/server.ts` — add JSDoc to `safeLogFatal`, `createServer`, `startServer`
+- `src/mcp/logger.ts` — add JSDoc to `ensureMcpLogDir`, `createMcpLogger`, `getMcpLogPath`
+
+**Tests**:
+
+- `src/core/tests/applications/counters.test.ts` — `removeCounterEntry` tests (happy path, no-op, preserves other entries, missing file, last entry)
+- `src/core/tests/applications/applications.test.ts` — metadata cleanup tests (toolhash removal, counter cleanup, gitkeep preservation, stale index pruning)
+- `src/core/tests/stats/stats.test.ts` — `writeIndex` helper creates folders matching entries to survive stale-index pruning
+
+**Commit**: `feat(mcp): metadata cleanup on remove, JSDoc coverage`
 
 #### 8g — Integration tests
 

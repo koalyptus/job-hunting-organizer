@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { readPrep } from '../../core/prepare/index.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `read_prep` tool on the MCP server.
+ * Read an existing pre-interview prep plan for an application.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerReadPrep(server: McpServer): void {
   server.tool(
     'read_prep',

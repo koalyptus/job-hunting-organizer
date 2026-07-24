@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { removeCampaign } from '../../core/campaign/remove-campaign.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `remove_campaign` tool on the MCP server.
+ * Permanently removes a campaign folder and clears the config cache.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerRemoveCampaign(server: McpServer): void {
   server.tool(
     'remove_campaign',

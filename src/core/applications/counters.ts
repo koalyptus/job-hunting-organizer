@@ -104,6 +104,22 @@ export async function readCountersAsync(appliedDir: string): Promise<Counters> {
 }
 
 /**
+ * Remove a single collision counter entry by key. No-op if the key
+ * does not exist. Rewrites the counters file atomically.
+ * @param appliedDir - The absolute path to the campaign's `applied/` folder.
+ * @param key - The counter key to remove (typically the base slug).
+ * @returns `true` on success.
+ */
+export async function removeCounterEntry(appliedDir: string, key: string): Promise<boolean> {
+  const counters = await readCountersAsync(appliedDir);
+  if (!(key in counters)) {
+    return true;
+  }
+  delete counters[key];
+  return writeCountersAsync(appliedDir, counters);
+}
+
+/**
  * Write the counters file asynchronously using atomic write.
  * @param appliedDir - The absolute path to the campaign's `applied/` folder.
  * @param counters - The counters to write.

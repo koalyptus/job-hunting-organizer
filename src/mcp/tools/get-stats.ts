@@ -5,6 +5,12 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { computeStats } from '../../core/stats/stats.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `get_stats` tool on the MCP server.
+ * Compute campaign statistics: counts by status, role, site, employment type, funnel, and this-month delta.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerGetStats(server: McpServer): void {
   server.tool(
     'get_stats',

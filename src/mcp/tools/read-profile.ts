@@ -5,6 +5,12 @@ import { resolveCampaignRoot } from '../../core/paths.js';
 import { readProfile } from '../../core/campaign/profile-read.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `read_profile` tool on the MCP server.
+ * Read the candidate profile for a campaign.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerReadProfile(server: McpServer): void {
   server.tool(
     'read_profile',

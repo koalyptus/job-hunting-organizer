@@ -22,6 +22,7 @@ export {
   readCountersAsync,
   writeCountersAsync,
   readCollisionSuffix,
+  removeCounterEntry,
 } from './counters.js';
 export {
   ApplicationFrontmatterSchema,

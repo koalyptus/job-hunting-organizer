@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { runInit } from '../../core/init/wizard.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `init` tool on the MCP server.
+ * Initialize a new campaign with optional CV, GitHub, and LinkedIn.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerInit(server: McpServer): void {
   server.tool(
     'init',

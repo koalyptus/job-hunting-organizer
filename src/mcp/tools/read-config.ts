@@ -5,6 +5,12 @@ import { loadGlobalConfig } from '../../core/config/config.js';
 import { redactSecrets } from '../../core/config/config.view.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `read_config` tool on the MCP server.
+ * Read global configuration (secrets redacted).
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerReadConfig(server: McpServer): void {
   server.tool(
     'read_config',

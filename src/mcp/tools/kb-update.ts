@@ -6,6 +6,12 @@ import { resolveCampaignRoot } from '../../core/paths.js';
 import { loadCampaignConfig } from '../../core/config/config.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `kb_update` tool on the MCP server.
+ * Re-sync the knowledge base from sources recorded at init.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerKbUpdate(server: McpServer): void {
   server.tool(
     'kb_update',

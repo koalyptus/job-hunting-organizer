@@ -18,7 +18,12 @@ describe('computeStats', () => {
     await rm(testDir, { recursive: true, force: true });
   });
 
-  async function writeIndex(entries: object[]) {
+  async function writeIndex(entries: Record<string, unknown>[]) {
+    for (const entry of entries) {
+      const slug = entry.slug as string;
+      const dir = join(appliedDir, slug);
+      await mkdir(dir, { recursive: true });
+    }
     await writeFile(join(appliedDir, '.index.json'), JSON.stringify(entries, null, 2) + '\n');
   }
 

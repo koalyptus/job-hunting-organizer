@@ -92,7 +92,11 @@ export function createLogger(config: LoggerConfig): Logger {
     // Silence the logger when there is no file destination. Without this
     // guard pino defaults to stdout, which would pollute command output.
     options.level = 'silent';
-    return pino(options);
+    // pino() without a destination creates an async sonic-boom whose
+    // autoEnd handler throws "sonic boom is not ready yet" on exit.
+    // Pass a sync destination so the fd is opened immediately and
+    // on-exit-leak-free never registers the autoEnd handler.
+    return pino(options, pino.destination({ sync: true }));
   }
   mkdirSync(dirname(config.file), { recursive: true });
   // Use pino.destination with sync: true so writes are flushed to disk

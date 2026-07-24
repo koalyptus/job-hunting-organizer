@@ -5,6 +5,12 @@ import { markInterviewStatus, appendInterviewNotes } from '../../core/interviews
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `mark_interview` tool on the MCP server.
+ * Change the status of an existing interview.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerMarkInterview(server: McpServer): void {
   server.tool(
     'mark_interview',

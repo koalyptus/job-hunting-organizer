@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { renameCampaign } from '../../core/campaign/rename-campaign.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `rename_campaign` tool on the MCP server.
+ * Rename a campaign folder.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerRenameCampaign(server: McpServer): void {
   server.tool(
     'rename_campaign',

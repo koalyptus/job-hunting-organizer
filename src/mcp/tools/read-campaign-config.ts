@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { loadCampaignConfig } from '../../core/config/config.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `read_campaign_config` tool on the MCP server.
+ * Read campaign configuration (redacted).
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerReadCampaignConfig(server: McpServer): void {
   server.tool(
     'read_campaign_config',

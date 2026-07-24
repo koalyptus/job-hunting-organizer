@@ -5,6 +5,12 @@ import { loadCampaignConfig } from '../../core/config/config.js';
 import { redactSecrets } from '../../core/config/config.view.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `get_campaign` tool on the MCP server.
+ * Get campaign configuration (secrets redacted).
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerGetCampaign(server: McpServer): void {
   server.tool(
     'get_campaign',

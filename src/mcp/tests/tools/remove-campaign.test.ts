@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { fakeServer, getTextContent } from './helpers.js';
 import { registerRemoveCampaign } from '../../tools/remove-campaign.js';
 import { removeCampaign } from '../../../core/campaign/remove-campaign.js';
+import { mcpLogger } from '../../logger.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -59,6 +60,41 @@ describe('remove_campaign tool', () => {
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.campaign).toBe('test-campaign');
     expect(parsed.removed).toBe(true);
+
+    expect(vi.mocked(mcpLogger.debug)).toHaveBeenCalledWith(
+      { campaign: 'test-campaign' },
+      'tool.remove_campaign.start',
+    );
+    expect(vi.mocked(mcpLogger.debug)).toHaveBeenCalledWith(
+      { campaign: 'test-campaign' },
+      'tool.remove_campaign.done',
+    );
+  });
+
+  it('passes confirm=true explicitly', async () => {
+    const { server, getCallback } = fakeServer();
+    registerRemoveCampaign(server);
+    const cb = getCallback()!;
+
+    const result = await cb(
+      { campaign: 'test-campaign', confirm: true },
+      { signal: AbortSignal.timeout(3000) },
+    );
+    expect(JSON.parse(getTextContent(result)).removed).toBe(true);
+    expect(vi.mocked(removeCampaign)).toHaveBeenCalledWith('test-campaign', { skipConfirm: true });
+  });
+
+  it('passes confirm=false explicitly', async () => {
+    const { server, getCallback } = fakeServer();
+    registerRemoveCampaign(server);
+    const cb = getCallback()!;
+
+    const result = await cb(
+      { campaign: 'test-campaign', confirm: false },
+      { signal: AbortSignal.timeout(3000) },
+    );
+    expect(JSON.parse(getTextContent(result)).removed).toBe(true);
+    expect(vi.mocked(removeCampaign)).toHaveBeenCalledWith('test-campaign', { skipConfirm: false });
   });
 
   it('returns error when core function fails', async () => {

@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { renderOwnership } from '../../core/campaign/ownership.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `ownership` tool on the MCP server.
+ * Show file ownership rules (which files the tool writes, which you can edit).
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerOwnership(server: McpServer): void {
   server.tool(
     'ownership',

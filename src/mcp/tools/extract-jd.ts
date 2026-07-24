@@ -6,6 +6,12 @@ import { defaultLlmConfig } from '../../core/llm.js';
 import { extractJdFromUrl, extractJdFromText } from '../../core/jobs/extract.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `extract_jd` tool on the MCP server.
+ * Extract structured job description from a URL or raw text.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerExtractJd(server: McpServer): void {
   server.tool(
     'extract_jd',

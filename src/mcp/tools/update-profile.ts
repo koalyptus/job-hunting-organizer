@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { writeProfile } from '../../core/campaign/profile-writer.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `update_profile` tool on the MCP server.
+ * Overwrite the campaign profile.md with new markdown content.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerUpdateProfile(server: McpServer): void {
   server.tool(
     'update_profile',

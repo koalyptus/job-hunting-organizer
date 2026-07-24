@@ -5,6 +5,12 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { readShowData, readShowFile, ShowError } from '../../core/applications/show.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `show_application` tool on the MCP server.
+ * Show a single application: metadata (meta.md) and job description (jd.md).
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerShowApplication(server: McpServer): void {
   server.tool(
     'show_application',
