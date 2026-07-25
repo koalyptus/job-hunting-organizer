@@ -19,7 +19,7 @@ describe('CLI: remove-application command', () => {
     await cleanupTestDir(env.testHome);
   });
 
-  it('removes an application with -y flag', async () => {
+  it('removes an application with --yes flag', async () => {
     const slug = await createApplication({
       appliedDir: env.appliedDir,
       title: 'Remove App',
@@ -29,7 +29,7 @@ describe('CLI: remove-application command', () => {
     const { stdout, exitCode } = await runCommand(removeApplicationCommand, [
       'remove-application',
       slug,
-      '-y',
+      '--yes',
     ]);
 
     expect(exitCode).toBe(0);

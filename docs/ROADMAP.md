@@ -35,7 +35,7 @@
   - [x] 6c — CLI commands (cover-letter + answer)
   - [x] 6d — Tests, docs & polish
   - [x] 6e — Steer: custom LLM instructions per command
-- [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
+- [x] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
   - [x] 7a — Core: Interviews module
   - [x] 7b — Core: Retro module (LLM-backed learning plan)
   - [x] 7c — Core: Prep module (LLM-backed pre-interview plan)
@@ -55,12 +55,13 @@
   - [x] 8b — Read-only tools (13 registered; 5 CLI read commands missing — see gap analysis)
   - [x] 8c — Write + CRUD tools
   - [x] 8d — LLM-backed tools
-  - [ ] 8e — Resources + prompts
-  - [ ] 8f — bin/jho-mcp + package config
+  - [x] 8e — Resources + prompts
+  - [x] 8f — bin/jho-mcp + package config
   - [x] 8f1 — MCP feature parity with CLI (tools, options, logging)
   - [x] 8f2 — Metadata cleanup on remove + JSDoc coverage
   - [ ] 8g — Integration tests
   - [ ] 8h — Examples + docs + polish
+  - [ ] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
 - [ ] **Phase 9** — Calendar providers
 - [ ] **Phase 10** — Polish & public readiness
 

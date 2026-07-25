@@ -47,6 +47,8 @@ import {
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 
+import { mockLlmResponse, mockLlmJsonResponse } from '../mocks.js';
+
 const mockChatComplete = vi.hoisted(() => vi.fn());
 
 vi.mock('../../src/core/llm.js', async (importOriginal) => {
@@ -79,11 +81,13 @@ vi.mock('../../src/core/logger/logger.js', async (importOriginal) => {
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
+      flush: vi.fn(),
       child: vi.fn(() => ({
         debug: vi.fn(),
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),
+        flush: vi.fn(),
       })),
     })),
     moduleLogger: vi.fn(() => ({
@@ -101,20 +105,6 @@ vi.mock('../../src/core/logger/logger.js', async (importOriginal) => {
     })),
   };
 });
-
-function mockLlmResponse(content: string) {
-  mockChatComplete.mockResolvedValue({
-    content,
-    model: 'test-model',
-    finishReason: 'stop',
-    usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
-    durationMs: 100,
-  });
-}
-
-function mockLlmJsonResponse(obj: unknown) {
-  mockLlmResponse(JSON.stringify(obj, null, 2));
-}
 
 async function createProfile(dataRoot: string, campaign = 'default'): Promise<void> {
   const campaignDir = join(dataRoot, 'campaigns', campaign);
@@ -709,7 +699,7 @@ describe('MCP tool handlers: answer_question (LLM-backed)', () => {
       title: 'QA App',
       company: 'QACo',
     });
-    mockLlmResponse('I am a passionate developer with strong TypeScript skills.');
+    mockLlmResponse(mockChatComplete, 'I am a passionate developer with strong TypeScript skills.');
 
     const { server, getCallback } = fakeServer();
     registerAnswerQuestion(server);
@@ -717,7 +707,7 @@ describe('MCP tool handlers: answer_question (LLM-backed)', () => {
 
     const result = await cb(
       { campaign: 'default', slug, question: 'Tell me about yourself', noSave: false },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     const parsed = JSON.parse(getTextContent(result));
@@ -731,7 +721,7 @@ describe('MCP tool handlers: answer_question (LLM-backed)', () => {
       title: 'NoSave',
       company: 'NoSaveCo',
     });
-    mockLlmResponse('Short answer.');
+    mockLlmResponse(mockChatComplete, 'Short answer.');
 
     const { server, getCallback } = fakeServer();
     registerAnswerQuestion(server);
@@ -739,7 +729,7 @@ describe('MCP tool handlers: answer_question (LLM-backed)', () => {
 
     const result = await cb(
       { campaign: 'default', slug, question: 'Why this role?', noSave: true },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     const parsed = JSON.parse(getTextContent(result));
@@ -769,7 +759,7 @@ describe('MCP tool handlers: append_retro (LLM-backed)', () => {
       company: 'RetroCo',
     });
     await createRetroFile(env.appliedDir, slug);
-    mockLlmResponse('Updated learning plan: focus on system design patterns.');
+    mockLlmResponse(mockChatComplete, 'Updated learning plan: focus on system design patterns.');
 
     const { server, getCallback } = fakeServer();
     registerAppendRetro(server);
@@ -782,7 +772,7 @@ describe('MCP tool handlers: append_retro (LLM-backed)', () => {
         weakTopics: ['SQL queries', 'System design'],
         notes: 'Second attempt',
       },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     const parsed = JSON.parse(getTextContent(result));
@@ -803,7 +793,7 @@ describe('MCP tool handlers: append_retro (LLM-backed)', () => {
 
     const result = await cb(
       { campaign: 'default', slug, weakTopics: ['System design'] },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     expect(result.isError).toBe(true);
@@ -832,7 +822,10 @@ describe('MCP tool handlers: cover_letter (LLM-backed)', () => {
       company: 'CLCo',
       location: 'Remote',
     });
-    mockLlmResponse('Dear Hiring Manager,\n\nI am excited to apply for this role.\n\nBest regards');
+    mockLlmResponse(
+      mockChatComplete,
+      'Dear Hiring Manager,\n\nI am excited to apply for this role.\n\nBest regards',
+    );
 
     const { server: genServer, getCallback: genCb } = fakeServer();
     registerCoverLetter(genServer);
@@ -840,7 +833,7 @@ describe('MCP tool handlers: cover_letter (LLM-backed)', () => {
 
     const genResult = await gen(
       { campaign: 'default', slug, noSave: false },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     const genParsed = JSON.parse(getTextContent(genResult));
@@ -876,7 +869,7 @@ describe('MCP tool handlers: extract_jd (LLM-backed)', () => {
   });
 
   it('extracts JD from text', async () => {
-    mockLlmJsonResponse({
+    mockLlmJsonResponse(mockChatComplete, {
       title: 'Software Engineer',
       company: 'TechCo',
       location: 'Remote',
@@ -893,7 +886,7 @@ describe('MCP tool handlers: extract_jd (LLM-backed)', () => {
 
     const result = await cb(
       { campaign: 'default', text: 'We are looking for a Software Engineer...' },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     const parsed = JSON.parse(getTextContent(result));
@@ -1072,6 +1065,7 @@ describe('MCP tool handlers: post_mortem (LLM-backed)', () => {
       company: 'PMCo',
     });
     mockLlmResponse(
+      mockChatComplete,
       'Learning plan: review system design patterns and practice behavioural questions.',
     );
 
@@ -1086,7 +1080,7 @@ describe('MCP tool handlers: post_mortem (LLM-backed)', () => {
         weakTopics: ['System design', 'Behavioural'],
         notes: 'Struggled with both',
       },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     const parsed = JSON.parse(getTextContent(result));
@@ -1107,7 +1101,7 @@ describe('MCP tool handlers: post_mortem (LLM-backed)', () => {
 
     const result = await cb(
       { campaign: 'default', slug, weakTopics: [] },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     expect(result.isError).toBe(true);
@@ -1135,7 +1129,7 @@ describe('MCP tool handlers: prepare (LLM-backed)', () => {
       title: 'Prep App',
       company: 'PrepCo',
     });
-    mockLlmJsonResponse({
+    mockLlmJsonResponse(mockChatComplete, {
       topics: [
         {
           title: 'TypeScript',
@@ -1157,7 +1151,7 @@ describe('MCP tool handlers: prepare (LLM-backed)', () => {
 
     const genResult = await gen(
       { campaign: 'default', slug, days: 7 },
-      { signal: AbortSignal.timeout(10000) },
+      { signal: AbortSignal.timeout(5000) },
     );
 
     const genParsed = JSON.parse(getTextContent(genResult));

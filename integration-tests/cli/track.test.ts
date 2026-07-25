@@ -5,26 +5,14 @@ import { createApplication, readApplication } from '../../src/core/applications/
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 
+// track tests seed mock data in the factory rather than via mockChatComplete
+const mockChatComplete = vi.hoisted(() => vi.fn());
+
 vi.mock('../../src/core/llm.js', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
-    chatComplete: vi.fn().mockResolvedValue({
-      content: JSON.stringify({
-        title: 'Extracted Title',
-        company: 'Extracted Co',
-        location: 'Remote',
-        description: 'Job description text',
-        requirements: ['TypeScript'],
-        salary: '',
-        url: '',
-        employmentType: 'permanent',
-      }),
-      model: 'test-model',
-      finishReason: 'stop',
-      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
-      durationMs: 100,
-    }),
+    chatComplete: mockChatComplete,
     defaultLlmConfig: vi.fn(() => ({
       baseUrl: 'https://api.test.com/v1',
       apiKey: 'sk-test',

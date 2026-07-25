@@ -6,6 +6,11 @@ import { createApplication, updateApplication } from '../../src/core/application
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 
+/**
+ * Add --campaign to the parent command, matching the production CLI wiring
+ * in src/cli/index.ts where --campaign is a top-level global option.
+ * runCommand creates a fresh parent without that option, so we inject it here.
+ */
 function withCampaignParent(parent: Command) {
   parent.option('--campaign <name>', 'campaign name');
 }

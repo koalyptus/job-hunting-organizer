@@ -5,7 +5,10 @@ export default defineConfig({
     environment: 'node',
     include: ['integration-tests/**/*.test.ts'],
     setupFiles: ['./src/test-setup.ts'],
-    testTimeout: 10000,
+    testTimeout: 5000,
     passWithNoTests: true,
+    coverage: {
+      exclude: ['src/**/*.test.ts', 'src/**/tests/**', 'integration-tests/**'],
+    },
   },
 });

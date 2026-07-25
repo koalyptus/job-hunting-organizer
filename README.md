@@ -60,13 +60,17 @@ npm run test:integration
 ```
 integration-tests/
 ├── helpers.ts              # Shared setup utilities
+├── mocks.ts                # Shared vitest mock factories
 ├── cli/                    # CLI tests (Commander parseAsync)
 │   ├── application-lifecycle.test.ts
 │   ├── campaign-init.test.ts
 │   └── doctor-diagnostics.test.ts
 ├── mcp/                    # MCP tests (tool dispatch)
 │   └── tools-e2e.test.ts
-└── fixtures/               # Recorded LLM responses
+└── cli/                    # CLI tests (Commander parseAsync)
+    ├── application-lifecycle.test.ts
+    ├── campaign-init.test.ts
+    └── doctor-diagnostics.test.ts
 ```
 
 **What's mocked vs real**:
@@ -76,7 +80,7 @@ integration-tests/
 | CLI parsing | Real       | Real              |
 | Core logic  | Mocked     | **Real**          |
 | Filesystem  | Real       | Real              |
-| LLM         | Mocked     | Mocked (fixtures) |
+| LLM         | Mocked     | Mocked            |
 | Logger      | Mocked     | Mocked            |
 
 **Adding a new test**:
