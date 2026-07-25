@@ -34,13 +34,56 @@ The binaries are then available at `./bin/jho` and `./bin/jho-mcp`.
 ## Build & test commands
 
 ```sh
-npm run build        # tsup → dist/
-npm run typecheck    # tsc --noEmit
-npm run lint         # eslint
-npm run format:check # prettier
-npm test             # vitest
-npm run eval         # lightweight LLM eval suite (manual)
+npm run build            # tsup → dist/
+npm run typecheck        # tsc --noEmit
+npm run lint             # eslint
+npm run format:check     # prettier
+npm test                 # vitest (unit tests)
+npm run test:integration # vitest (integration tests)
+npm run eval             # lightweight LLM eval suite (manual)
 ```
+
+### Integration tests
+
+End-to-end tests exercising the full CLI or MCP stack with real filesystem operations.
+
+**Location**: `integration-tests/`
+
+**Run**:
+
+```sh
+npm run test:integration
+```
+
+**Structure**:
+
+```
+integration-tests/
+├── helpers.ts              # Shared setup utilities
+├── cli/                    # CLI tests (Commander parseAsync)
+│   ├── application-lifecycle.test.ts
+│   ├── campaign-init.test.ts
+│   └── doctor-diagnostics.test.ts
+├── mcp/                    # MCP tests (tool dispatch)
+│   └── tools-e2e.test.ts
+└── fixtures/               # Recorded LLM responses
+```
+
+**What's mocked vs real**:
+
+| Layer       | Unit Tests | Integration Tests |
+| ----------- | ---------- | ----------------- |
+| CLI parsing | Real       | Real              |
+| Core logic  | Mocked     | **Real**          |
+| Filesystem  | Real       | Real              |
+| LLM         | Mocked     | Mocked (fixtures) |
+| Logger      | Mocked     | Mocked            |
+
+**Adding a new test**:
+
+1. CLI: Add to `integration-tests/cli/`, use `runCommand()` from `src/cli/tests/helpers.ts`
+2. MCP: Add to `integration-tests/mcp/`, use `fakeServer()` from `src/mcp/tests/tools/helpers.ts`
+3. Mock only logger and LLM — never mock the layer under test
 
 ### Cross-platform notes
 

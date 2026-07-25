@@ -892,7 +892,7 @@ documentation to every undocumented MCP function.
 - Test error handling paths
 - Test resource reads and prompt generation
 
-**Commit**: `test(mcp): integration tests with in-memory transport`
+**Commit**: `test(mcp): introduce integration tests`
 
 #### 8h — Examples + docs + polish
 
@@ -904,6 +904,35 @@ documentation to every undocumented MCP function.
 - Update `docs/ROADMAP.md` — check Phase 8
 
 **Commit**: `docs(mcp): client examples, README, and AGENTS.md update`
+
+#### 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
+
+Replace the monolithic `@modelcontextprotocol/sdk` (v1) with the split v2 packages
+(`@modelcontextprotocol/server` + `@modelcontextprotocol/client`).
+This enables `InMemoryTransport` for proper integration testing and adopts the 2026-07-28 protocol revision.
+
+**Trigger**: landed when `@modelcontextprotocol/server` + `@modelcontextprotocol/client` ship stable (expected July 28 2026).
+
+**Migration**:
+
+- Run codemod: `npx @modelcontextprotocol/codemod@beta v1-to-v2 .` — handles import path rewrites (61 sites across ~40 files), `package.json` dependency swap, `.tool()` → `.registerTool()`, `.prompt()` → `.registerPrompt()`, `.resource()` → `.registerResource()`
+- Fix remaining type errors from `tsc --noEmit` (manual: `StdioServerTransport` import path, `CallToolResult` type routing, server entry point adaptation)
+- Upgrade `zod` v3 → v4 (`^4.2.0` required by v2 SDK)
+- Rewrite test infrastructure: `fakeServer()` → `InMemoryTransport.createLinkedPair()` + `Client` for integration tests
+- Rewrite `src/mcp/server.ts` — `createServer` + `StdioServerTransport` wiring for v2
+
+**Scope summary**:
+
+| v1 (current)                                | v2 (target)                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------------- |
+| `@modelcontextprotocol/sdk`                 | `@modelcontextprotocol/server` + `@modelcontextprotocol/client`            |
+| `@modelcontextprotocol/sdk/server/mcp.js`   | `@modelcontextprotocol/server`                                             |
+| `@modelcontextprotocol/sdk/server/stdio.js` | `@modelcontextprotocol/server/stdio`                                       |
+| `@modelcontextprotocol/sdk/types.js`        | `@modelcontextprotocol/server`                                             |
+| `.tool(name, desc, shape, handler)`         | `.registerTool(name, { description, inputSchema }, handler)`               |
+| No `InMemoryTransport`                      | `InMemoryTransport.createLinkedPair()` from `@modelcontextprotocol/client` |
+
+**Commit**: `feat(mcp): upgrade to @modelcontextprotocol/server + client v2`
 
 ---
 

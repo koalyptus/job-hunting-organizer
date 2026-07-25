@@ -19,10 +19,13 @@ for (const [name, phase] of [
   ['stats', '5'],
 ] as const) {
   campaignCommand.addCommand(
-    new Command(name).action(() => {
-      userWarn(`jho campaign ${name}: not implemented yet (planned: phase ${phase})`);
-      process.exit(1);
-    }),
+    new Command(name)
+      .allowUnknownOption()
+      .allowExcessArguments()
+      .action(() => {
+        userWarn(`jho campaign ${name}: not implemented yet (planned: phase ${phase})`);
+        process.exit(1);
+      }),
   );
 }
 
