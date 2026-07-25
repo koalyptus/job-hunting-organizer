@@ -322,13 +322,13 @@ export async function listApplications(
       const term = filters.filter.toLowerCase();
       entries = entries.filter(
         (e) =>
-          e.title?.toLowerCase().includes(term) ||
-          e.company?.toLowerCase().includes(term) ||
-          e.location?.toLowerCase().includes(term) ||
-          e.slug?.toLowerCase().includes(term) ||
-          e.targetRole?.toLowerCase().includes(term) ||
-          e.site?.toLowerCase().includes(term) ||
-          e.tags?.some((t) => t.toLowerCase().includes(term)),
+          e.title.toLowerCase().includes(term) ||
+          e.company.toLowerCase().includes(term) ||
+          e.location.toLowerCase().includes(term) ||
+          e.slug.toLowerCase().includes(term) ||
+          e.targetRole.toLowerCase().includes(term) ||
+          e.site.toLowerCase().includes(term) ||
+          e.tags.some((t) => t.toLowerCase().includes(term)),
       );
     }
   }
