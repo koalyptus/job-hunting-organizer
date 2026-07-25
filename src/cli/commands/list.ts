@@ -30,6 +30,7 @@ export const listCommand = new Command('list')
     '--employment-type <type>',
     'filter by employment type (permanent|temp|contract|casual|part-time)',
   )
+  .option('--filter <term>', 'filter by arbitrary text (case-insensitive)')
   .option('--json', 'output as JSON')
   .action(async function (opts) {
     const globals = this.parent?.opts() as GlobalOpts | undefined;
@@ -73,6 +74,7 @@ export const listCommand = new Command('list')
           tags: opts.tag as string[] | undefined,
           targetRole: opts.role as string | undefined,
           employmentType: opts.employmentType as EmploymentType | undefined,
+          filter: opts.filter as string | undefined,
         });
 
         if (opts.json) {
@@ -134,6 +136,8 @@ Examples:
   $ jho list --campaign default                 # list all applications
   $ jho list --campaign default --status interview  # filter by status
   $ jho list --campaign default --tag remote        # filter by tag
+  $ jho list --campaign default --filter "Acme"     # search by company
+  $ jho list --campaign default --filter "remote"   # search across fields
   $ jho list --campaign default --json              # applications as JSON
 `,
 );

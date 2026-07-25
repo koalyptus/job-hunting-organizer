@@ -121,4 +121,20 @@ describe('runListApplications', () => {
       expect.objectContaining({ targetRole: 'senior-backend-engineer' }),
     );
   });
+
+  it('passes filter to listApplications when present', async () => {
+    await runListApplications('default', { filter: 'Acme' });
+    expect(applicationsModule.listApplications).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ filter: 'Acme' }),
+    );
+  });
+
+  it('does not pass filter to listApplications when undefined', async () => {
+    await runListApplications('default', {});
+    expect(applicationsModule.listApplications).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.not.objectContaining({ filter: expect.anything() }),
+    );
+  });
 });

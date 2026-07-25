@@ -711,6 +711,23 @@ Four small fixes/enhancements to the retro surface, plus a coverage gap close:
 
 **Commit**: `feat(retro): strip marker in show, status field, true append, mcp logger coverage`
 
+#### 7n — CLI: General-purpose text filter for list command
+
+Add `--filter <term>` flag to `jho list` for case-insensitive text matching across application fields (title, company, location, tags, slug, role, site).
+
+**Scope**:
+
+- `src/core/list/list.ts` — add `filter?: string` to `ListApplicationsOptions`
+- `src/core/applications/applications.ts` — implement text matching in `listApplications()`
+- `src/cli/commands/list.ts` — add `--filter` option, update help text
+- `src/mcp/schemas.ts` — add `filter` field to `ListApplicationsInput`
+- `src/mcp/tools/list-applications.ts` — pass `filter` to core
+- Tests: core, applications, CLI
+
+**Deliverable**: `jho list --campaign default --filter "Acme"` shows only Acme Corp applications. Filter combines with existing structured filters (AND logic).
+
+**Commit**: `feat(list): add --filter flag for general-purpose text search`
+
 ---
 
 ## Phase 8 — MCP server
