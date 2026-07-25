@@ -455,6 +455,100 @@ describe('listApplications', () => {
     const afterPrune = await readIndex(appliedDir);
     expect(afterPrune).toHaveLength(2);
   });
+
+  it('filters by text (case-insensitive)', async () => {
+    await createApplication({ appliedDir, title: 'Software Engineer', company: 'Acme Corp' });
+    await createApplication({ appliedDir, title: 'Backend Developer', company: 'Beta Inc' });
+
+    const entries = await listApplications(appliedDir, { filter: 'acme' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.company).toBe('Acme Corp');
+  });
+
+  it('filters by title substring', async () => {
+    await createApplication({ appliedDir, title: 'Software Engineer', company: 'A' });
+    await createApplication({ appliedDir, title: 'Product Manager', company: 'B' });
+
+    const entries = await listApplications(appliedDir, { filter: 'software' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.title).toBe('Software Engineer');
+  });
+
+  it('filters by location substring', async () => {
+    await createApplication({
+      appliedDir,
+      title: 'Eng1',
+      company: 'A',
+      location: 'Sydney NSW',
+    });
+    await createApplication({
+      appliedDir,
+      title: 'Eng2',
+      company: 'B',
+      location: 'Melbourne VIC',
+    });
+
+    const entries = await listApplications(appliedDir, { filter: 'sydney' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.location).toBe('Sydney NSW');
+  });
+
+  it('filters by tag substring', async () => {
+    await createApplication({ appliedDir, title: 'Eng1', company: 'A', tags: ['typescript'] });
+    await createApplication({ appliedDir, title: 'Eng2', company: 'B', tags: ['python'] });
+
+    const entries = await listApplications(appliedDir, { filter: 'script' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.tags).toContain('typescript');
+  });
+
+  it('filters by slug substring', async () => {
+    const slug1 = await createApplication({
+      appliedDir,
+      title: 'Eng1',
+      company: 'Acme',
+      appliedOn: '2026-06-01',
+    });
+    await createApplication({
+      appliedDir,
+      title: 'Eng2',
+      company: 'Beta',
+      appliedOn: '2026-06-02',
+    });
+
+    const entries = await listApplications(appliedDir, { filter: 'acme' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.slug).toBe(slug1);
+  });
+
+  it('combines filter with status filter (AND logic)', async () => {
+    const slug1 = await createApplication({ appliedDir, title: 'Eng1', company: 'Acme' });
+
+    await createApplication({ appliedDir, title: 'Eng3', company: 'Beta' });
+    await updateApplication(appliedDir, slug1, { status: 'interview' });
+
+    const entries = await listApplications(appliedDir, {
+      status: 'interview',
+      filter: 'acme',
+    });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.slug).toBe(slug1);
+  });
+
+  it('returns empty when filter matches nothing', async () => {
+    await createApplication({ appliedDir, title: 'Eng1', company: 'Acme' });
+
+    const entries = await listApplications(appliedDir, { filter: 'nonexistent' });
+    expect(entries).toHaveLength(0);
+  });
+
+  it('returns all entries when filter is empty string', async () => {
+    await createApplication({ appliedDir, title: 'Eng1', company: 'A' });
+    await createApplication({ appliedDir, title: 'Eng2', company: 'B' });
+
+    const entries = await listApplications(appliedDir, { filter: '' });
+    expect(entries).toHaveLength(2);
+  });
 });
 
 describe('deleteApplication', () => {

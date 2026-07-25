@@ -30,6 +30,8 @@ export interface ListApplicationsOptions {
   targetRole?: string;
   /** Filter by employment type. */
   employmentType?: EmploymentType;
+  /** General-purpose text filter (case-insensitive). */
+  filter?: string;
 }
 
 /**
@@ -94,6 +96,7 @@ export async function runListApplications(
     tags: opts.tags && opts.tags.length > 0 ? opts.tags : undefined,
     targetRole: opts.targetRole,
     employmentType: opts.employmentType,
+    filter: opts.filter,
   });
 
   return { entries };

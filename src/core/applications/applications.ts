@@ -288,6 +288,7 @@ export async function listApplications(
     targetRole?: string;
     tags?: string[];
     employmentType?: EmploymentType;
+    filter?: string;
   },
 ): Promise<ApplicationEntry[]> {
   let entries = await readIndex(appliedDir);
@@ -316,6 +317,19 @@ export async function listApplications(
     }
     if (filters.tags && filters.tags.length > 0) {
       entries = entries.filter((e) => filters.tags!.every((t) => e.tags.includes(t)));
+    }
+    if (filters.filter) {
+      const term = filters.filter.toLowerCase();
+      entries = entries.filter(
+        (e) =>
+          e.title?.toLowerCase().includes(term) ||
+          e.company?.toLowerCase().includes(term) ||
+          e.location?.toLowerCase().includes(term) ||
+          e.slug?.toLowerCase().includes(term) ||
+          e.targetRole?.toLowerCase().includes(term) ||
+          e.site?.toLowerCase().includes(term) ||
+          e.tags?.some((t) => t.toLowerCase().includes(term)),
+      );
     }
   }
 

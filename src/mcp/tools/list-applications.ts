@@ -23,6 +23,7 @@ export function registerListApplications(server: McpServer): void {
           targetRole: args.targetRole,
           employmentType: args.employmentType,
           tags: args.tags,
+          filter: args.filter,
         });
         mcpLogger.debug({ count: entries.length }, 'tool.list_applications.done');
         return {

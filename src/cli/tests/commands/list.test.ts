@@ -419,6 +419,53 @@ describe('list command', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Acme Corp');
     });
+
+    it('filters by text with --filter', async () => {
+      vi.mocked(listCoreModule.runListApplications).mockResolvedValue({
+        entries: [
+          {
+            slug: '2026-Jun-01-SE-Acme-123',
+            status: 'applied',
+            title: 'Software Engineer',
+            company: 'Acme Corp',
+            site: 'Seek',
+            location: 'Sydney NSW',
+            targetRole: 'senior-backend-engineer',
+            appliedOn: '2026-06-01',
+            tags: ['typescript'],
+            employmentType: 'permanent',
+          },
+        ],
+      });
+
+      const { exitCode } = await runCommand(
+        listCommand,
+        ['list', '--campaign', 'default', '--filter', 'Acme'],
+        parentSetup,
+      );
+      expect(exitCode).toBe(0);
+      expect(listCoreModule.runListApplications).toHaveBeenCalledWith(
+        'default',
+        expect.objectContaining({ filter: 'Acme' }),
+      );
+    });
+
+    it('combines --filter with --status', async () => {
+      vi.mocked(listCoreModule.runListApplications).mockResolvedValue({
+        entries: [],
+      });
+
+      const { exitCode } = await runCommand(
+        listCommand,
+        ['list', '--campaign', 'default', '--status', 'interview', '--filter', 'Acme'],
+        parentSetup,
+      );
+      expect(exitCode).toBe(0);
+      expect(listCoreModule.runListApplications).toHaveBeenCalledWith(
+        'default',
+        expect.objectContaining({ status: 'interview', filter: 'Acme' }),
+      );
+    });
   });
 
   describe('cwd inference (inside campaign folder)', () => {
