@@ -12,13 +12,13 @@ A local-first CLI and MCP server for running a job-hunting campaign.
 4. **Tailors answers** to application questions — given as text or as a screenshot.
 5. **Tracks every application** in a structured folder per role, with the full interview pipeline.
 6. After a failed interview, **captures your weak topics and generates a personal learning plan** for each, then aggregates recurring weak areas across applications.
-7. **Schedules interviews** to your calendar (ICS by default; Microsoft Outlook opt-in).
+7. **Schedules interviews** via an ICS file you can import into any calendar.
 
 ## Privacy
 
 > **Your data stays local.** `job-hunting-organizer` reads your CV from a path you configure, fetches job descriptions from URLs you provide, and calls the LLM endpoint _you_ configure. Nothing is sent to the tool author or to any third party. With a local model (Ollama, OpenCode, LM Studio) the LLM call stays on your machine. The tool has zero telemetry, zero analytics, and zero outbound calls except those you explicitly configure.
 
-All user data lives outside the repo under two external directories. The **config home** (default `~/.job-hunting-organizer/`, override with `$JHO_CONFIG_HOME`) holds the global `config.json` (LLM endpoint, GitHub token, calendar) and `.locks/`. The **data root** (default `~/job-hunting-organizer-data/`, override with `$JHO_DATA`) holds `campaigns/<name>/` and all per-campaign working data — each campaign has its own `profile.md`, `applied/`, and `knowledge-base/`. Nothing user-specific is committed to this repo. You can run multiple independent campaigns by creating more under `campaigns/`.
+All user data lives outside the repo under two external directories. The **config home** (default `~/.job-hunting-organizer/`, override with `$JHO_CONFIG_HOME`) holds the global `config.json` (LLM endpoint, GitHub token) and `.locks/`. The **data root** (default `~/job-hunting-organizer-data/`, override with `$JHO_DATA`) holds `campaigns/<name>/` and all per-campaign working data — each campaign has its own `profile.md`, `applied/`, and `knowledge-base/`. Nothing user-specific is committed to this repo. You can run multiple independent campaigns by creating more under `campaigns/`.
 
 The data layout (folder-per-application, markdown + JSON, no DB) leaves room for an optional local web client in the future. The CLI and MCP server are the v1 surfaces; see `docs/PLAN.md` §20 for the forward-looking design notes.
 

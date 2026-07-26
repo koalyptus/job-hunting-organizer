@@ -17,7 +17,7 @@ The tool stores its state under **two** directories under the user's home: a sma
 
 ```
 ~/job-hunting-organizer/                       # config home (override with $JHO_CONFIG_HOME)
-├── config.json                                # global: LLM, GitHub, calendar, logging
+├── config.json                                # global: LLM, GitHub, logging
 └── .locks/                                    # proper-lockfile sidecars
 
 ~/job-hunting-organizer-data/                  # data root (override with $JHO_DATA)
@@ -124,14 +124,13 @@ npm run eval         # lightweight LLM eval suite (manual)
 
 ```
 jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--kb <path>] [--yes]
-  # wizard: LinkedIn URL (optional) → CV path → KB path (optional) → GitHub user + token → LLM config → calendar →
+  # wizard: LinkedIn URL (optional) → CV path → KB path (optional) → GitHub user + token → LLM config →
   #   profile build (LLM) → target-roles review → write config + profile.md
   # --yes: skip prompts (uses env vars for LLM; missing CV/LLM → skeleton profile)
   # --linkedin <url>: skip LinkedIn prompt (JHO_LINKEDIN_URL env var also pre-fills)
   # --profile <path>: copy existing profile.md, skip build
   # --kb <path>: seed knowledge-base from file/folder (skips KB prompt)
   # Re-init: warns if campaign exists; always merges global config
-  # Calendar: ICS / Outlook / None (user can enable later)
   # Graceful degradation: if CV or LLM missing, creates skeleton profile.md
 jho config show|path    # show the global config (in the config home); secrets redacted
 jho campaign config show|path  # show the active campaign's config (in the data root); secrets redacted

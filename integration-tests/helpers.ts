@@ -26,10 +26,6 @@ export async function createTestCampaign(name = 'default'): Promise<TestEnv> {
       dataRoot,
       llm: { baseUrl: 'http://localhost:11434/v1', apiKey: 'test-key', model: 'test-model' },
       github: { user: 'testuser', token: '', repos: [] },
-      calendar: {
-        defaultProvider: 'ics',
-        outlook: { tenantId: '', clientId: '', clientSecret: '' },
-      },
       logging: { level: 'silent', file: '', redactPaths: [] },
     }),
   );

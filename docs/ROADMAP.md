@@ -64,8 +64,7 @@
   - [ ] 8g — Integration tests
   - [ ] 8h — Examples + docs + polish
   - [ ] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
-- [ ] **Phase 9** — Calendar providers
-- [ ] **Phase 10** — Polish & public readiness
+- [ ] **Phase 9** — Polish & public readiness
 
 ---
 
