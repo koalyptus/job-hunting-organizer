@@ -33,6 +33,7 @@ export const ListApplicationsInput = z.object({
   tags: TagsFilter,
   targetRole: TargetRoleFilter,
   employmentType: EmploymentTypeFilter,
+  filter: z.string().optional().describe('General-purpose text filter (case-insensitive)'),
 });
 
 /** Zod schema for `show_application` tool input. */

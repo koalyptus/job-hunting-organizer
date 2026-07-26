@@ -170,6 +170,7 @@ Options:
                             campaign folder)
   --employment-type <type>  filter by employment type
                             (permanent|temp|contract|casual|part-time)
+  --filter <term>           filter by arbitrary text (case-insensitive)
   --json                    output as JSON
   -h, --help                display help for command
 "

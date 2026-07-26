@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { answerQuestion } from '../../core/applications/application-qa.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `answer_question` tool on the MCP server.
+ * Answer a question for an application and append it to qa.md.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerAnswerQuestion(server: McpServer): void {
   server.tool(
     'answer_question',

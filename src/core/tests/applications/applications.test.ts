@@ -17,6 +17,8 @@ import {
 import { todayIso } from '../../date.js';
 import * as fsModule from '../../fs.js';
 import { writeFrontmatter } from '../../parser/frontmatter.js';
+import { writeToolhash, computeHash } from '../../toolhash.js';
+import { writeCountersAsync, readCountersAsync } from '../../applications/counters.js';
 
 const mockRootLogger = vi.hoisted(() => ({
   debug: vi.fn(),
@@ -414,6 +416,139 @@ describe('listApplications', () => {
     const entries = await listApplications(join(workDir, 'nonexistent'));
     expect(entries).toEqual([]);
   });
+
+  it('prunes stale index entries whose folders no longer exist', async () => {
+    const slug1 = await createApplication({ appliedDir, title: 'Eng1', company: 'A' });
+    const slug2 = await createApplication({ appliedDir, title: 'Eng2', company: 'B' });
+
+    // Inject a stale ghost entry directly into the index file
+    const current = await readIndex(appliedDir);
+    const ghostEntry = {
+      slug: '2026-Jan-01-ghost-entry',
+      status: 'applied' as const,
+      title: 'Ghost',
+      company: 'Nowhere',
+      site: '',
+      location: '',
+      targetRole: '',
+      appliedOn: '2026-01-01',
+      tags: [],
+      employmentType: '' as const,
+    };
+    await writeFile(
+      join(appliedDir, '.index.json'),
+      JSON.stringify([...current, ghostEntry], null, 2),
+    );
+
+    // Verify the ghost entry is in the index
+    const beforePrune = await readIndex(appliedDir);
+    expect(beforePrune).toHaveLength(3);
+
+    // listApplications should prune the ghost and return only real entries
+    const entries = await listApplications(appliedDir);
+    expect(entries).toHaveLength(2);
+    expect(entries.map((e) => e.slug)).toContain(slug1);
+    expect(entries.map((e) => e.slug)).toContain(slug2);
+    expect(entries.map((e) => e.slug)).not.toContain('2026-Jan-01-ghost-entry');
+
+    // Index file should be rewritten without the ghost
+    const afterPrune = await readIndex(appliedDir);
+    expect(afterPrune).toHaveLength(2);
+  });
+
+  it('filters by text (case-insensitive)', async () => {
+    await createApplication({ appliedDir, title: 'Software Engineer', company: 'Acme Corp' });
+    await createApplication({ appliedDir, title: 'Backend Developer', company: 'Beta Inc' });
+
+    const entries = await listApplications(appliedDir, { filter: 'acme' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.company).toBe('Acme Corp');
+  });
+
+  it('filters by title substring', async () => {
+    await createApplication({ appliedDir, title: 'Software Engineer', company: 'A' });
+    await createApplication({ appliedDir, title: 'Product Manager', company: 'B' });
+
+    const entries = await listApplications(appliedDir, { filter: 'software' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.title).toBe('Software Engineer');
+  });
+
+  it('filters by location substring', async () => {
+    await createApplication({
+      appliedDir,
+      title: 'Eng1',
+      company: 'A',
+      location: 'Sydney NSW',
+    });
+    await createApplication({
+      appliedDir,
+      title: 'Eng2',
+      company: 'B',
+      location: 'Melbourne VIC',
+    });
+
+    const entries = await listApplications(appliedDir, { filter: 'sydney' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.location).toBe('Sydney NSW');
+  });
+
+  it('filters by tag substring', async () => {
+    await createApplication({ appliedDir, title: 'Eng1', company: 'A', tags: ['typescript'] });
+    await createApplication({ appliedDir, title: 'Eng2', company: 'B', tags: ['python'] });
+
+    const entries = await listApplications(appliedDir, { filter: 'script' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.tags).toContain('typescript');
+  });
+
+  it('filters by slug substring', async () => {
+    const slug1 = await createApplication({
+      appliedDir,
+      title: 'Eng1',
+      company: 'Acme',
+      appliedOn: '2026-06-01',
+    });
+    await createApplication({
+      appliedDir,
+      title: 'Eng2',
+      company: 'Beta',
+      appliedOn: '2026-06-02',
+    });
+
+    const entries = await listApplications(appliedDir, { filter: 'acme' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.slug).toBe(slug1);
+  });
+
+  it('combines filter with status filter (AND logic)', async () => {
+    const slug1 = await createApplication({ appliedDir, title: 'Eng1', company: 'Acme' });
+
+    await createApplication({ appliedDir, title: 'Eng3', company: 'Beta' });
+    await updateApplication(appliedDir, slug1, { status: 'interview' });
+
+    const entries = await listApplications(appliedDir, {
+      status: 'interview',
+      filter: 'acme',
+    });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.slug).toBe(slug1);
+  });
+
+  it('returns empty when filter matches nothing', async () => {
+    await createApplication({ appliedDir, title: 'Eng1', company: 'Acme' });
+
+    const entries = await listApplications(appliedDir, { filter: 'nonexistent' });
+    expect(entries).toHaveLength(0);
+  });
+
+  it('returns all entries when filter is empty string', async () => {
+    await createApplication({ appliedDir, title: 'Eng1', company: 'A' });
+    await createApplication({ appliedDir, title: 'Eng2', company: 'B' });
+
+    const entries = await listApplications(appliedDir, { filter: '' });
+    expect(entries).toHaveLength(2);
+  });
 });
 
 describe('deleteApplication', () => {
@@ -437,6 +572,38 @@ describe('deleteApplication', () => {
   it('returns false for non-existent slug', async () => {
     const result = await deleteApplication(appliedDir, 'nonexistent');
     expect(result).toBe(false);
+  });
+
+  it('removes .toolhash sidecars with the folder', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    const metaPath = join(appliedDir, slug, 'meta.md');
+    const content = await readFile(metaPath, 'utf8');
+    await writeToolhash(metaPath, computeHash(content));
+
+    expect(existsSync(join(metaPath + '.toolhash'))).toBe(true);
+    await deleteApplication(appliedDir, slug);
+    expect(existsSync(join(metaPath + '.toolhash'))).toBe(false);
+  });
+
+  it('cleans .counters.json entry for the deleted slug', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    await writeCountersAsync(appliedDir, { [slug]: 2, 'other-slug': 1 });
+
+    await deleteApplication(appliedDir, slug);
+
+    const counters = await readCountersAsync(appliedDir);
+    expect(counters[slug]).toBeUndefined();
+    expect(counters['other-slug']).toBe(1);
+  });
+
+  it('preserves .gitkeep in applied/ after deletion', async () => {
+    const gitkeep = join(appliedDir, '.gitkeep');
+    await writeFile(gitkeep, '');
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+
+    await deleteApplication(appliedDir, slug);
+
+    expect(existsSync(gitkeep)).toBe(true);
   });
 });
 

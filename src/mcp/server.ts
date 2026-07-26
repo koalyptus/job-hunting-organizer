@@ -9,6 +9,13 @@ import { registerPrompts } from './prompts/index.js';
 
 const SERVER_NAME = 'jho-mcp';
 
+/**
+ * Write a fatal-level log entry directly to the MCP log file.
+ * Used as a last-resort fallback for uncaught exceptions and unhandled rejections.
+ *
+ * @param msg - The error message to log.
+ * @param err - The associated error object, if any.
+ */
 export function safeLogFatal(msg: string, err?: unknown): void {
   try {
     const entry =
@@ -26,6 +33,11 @@ export function safeLogFatal(msg: string, err?: unknown): void {
   }
 }
 
+/**
+ * Create and return a configured MCP server instance.
+ *
+ * @returns The new MCP server.
+ */
 export function createServer(): McpServer {
   return new McpServer({
     name: SERVER_NAME,
@@ -33,6 +45,11 @@ export function createServer(): McpServer {
   });
 }
 
+/**
+ * Start the MCP server with stdio transport and register all tools, resources, and prompts.
+ *
+ * @returns Resolves when the server is connected and listening.
+ */
 export async function startServer(): Promise<void> {
   process.on('uncaughtException', (err) => {
     safeLogFatal('uncaughtException', err);

@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { generateCoverLetter, readCoverLetter } from '../../core/applications/cover-letter.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `cover_letter` tool on the MCP server.
+ * Generate a tailored cover letter for an application.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerCoverLetter(server: McpServer): void {
   server.tool(
     'cover_letter',
@@ -30,6 +36,12 @@ export function registerCoverLetter(server: McpServer): void {
   );
 }
 
+/**
+ * Register the `read_cover_letter` tool on the MCP server.
+ * Read an existing saved cover letter for an application.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerReadCoverLetter(server: McpServer): void {
   server.tool(
     'read_cover_letter',

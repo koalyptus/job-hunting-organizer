@@ -95,9 +95,30 @@ npm run build        # tsup → dist/
 npm run typecheck    # tsc --noEmit
 npm run lint         # eslint
 npm run format:check # prettier
-npm test             # vitest
+npm test             # vitest (unit tests)
+npm run test:integration  # vitest (integration tests)
 npm run eval         # lightweight LLM eval suite (manual)
 ```
+
+## Integration tests
+
+**Location**: `integration-tests/` at project root
+
+**Run**: `npm run test:integration`
+
+**Structure**:
+
+- `integration-tests/cli/` — CLI tests using `runCommand()` with real core
+- `integration-tests/mcp/` — MCP tests using `fakeServer()` with real core
+- `integration-tests/helpers.ts` — shared `createTestCampaign()`, `setupTestEnv()`, `cleanupTestDir()`
+
+**Conventions**:
+
+- Mock only logger and LLM — never mock the layer under test
+- CLI tests: import commands from `src/cli/commands/`, use `runCommand()` from `src/cli/tests/helpers.ts`
+- MCP tools: use `fakeServer()` from `src/mcp/tests/tools/helpers.ts`
+- Real filesystem in temp dirs, clean up in `afterEach`
+- 5 second timeout per test
 
 ## CLI commands (planned)
 

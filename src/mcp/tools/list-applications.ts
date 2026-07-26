@@ -4,10 +4,16 @@ import { handleToolError } from '../error-handler.js';
 import { runListApplications } from '../../core/list/list.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `list_applications` tool on the MCP server.
+ * List applications with optional status, tags, role, employment type, and text filters.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerListApplications(server: McpServer): void {
   server.tool(
     'list_applications',
-    'List applications with optional status, tags, role, and employment type filters',
+    'List applications with optional status, tags, role, employment type, and text filters',
     ListApplicationsInput.shape,
     async (args) => {
       try {
@@ -17,6 +23,7 @@ export function registerListApplications(server: McpServer): void {
           targetRole: args.targetRole,
           employmentType: args.employmentType,
           tags: args.tags,
+          filter: args.filter,
         });
         mcpLogger.debug({ count: entries.length }, 'tool.list_applications.done');
         return {

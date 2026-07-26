@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { appendRetro } from '../../core/retro/retro.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `append_retro` tool on the MCP server.
+ * Append additional weak topics and notes to an existing retro.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerAppendRetro(server: McpServer): void {
   server.tool(
     'append_retro',

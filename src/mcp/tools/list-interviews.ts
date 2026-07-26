@@ -5,6 +5,12 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { listInterviews } from '../../core/interviews/interviews.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `list_interviews` tool on the MCP server.
+ * List all interviews for an application.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerListInterviews(server: McpServer): void {
   server.tool(
     'list_interviews',

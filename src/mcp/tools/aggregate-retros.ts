@@ -5,6 +5,12 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { aggregateRetros } from '../../core/retro/aggregate.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `aggregate_retros` tool on the MCP server.
+ * Aggregate weak topics across all application retro files for a campaign.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerAggregateRetros(server: McpServer): void {
   server.tool(
     'aggregate_retros',

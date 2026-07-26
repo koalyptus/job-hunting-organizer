@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { updateGlobalConfig, clearConfigCache } from '../../core/config/config.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `update_config` tool on the MCP server.
+ * Update global configuration settings.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerUpdateConfig(server: McpServer): void {
   server.tool(
     'update_config',

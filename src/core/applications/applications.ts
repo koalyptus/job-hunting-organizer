@@ -8,7 +8,14 @@ import { acquireLock } from '../locks.js';
 import { getRootLogger, moduleLogger } from '../logger/logger.js';
 import { computeHash, writeToolhash } from '../toolhash.js';
 import { ApplicationFrontmatterSchema } from './meta-schema.js';
-import { upsertIndexEntry, removeIndexEntry, readIndex, rebuildIndex } from './index-builder.js';
+import {
+  upsertIndexEntry,
+  removeIndexEntry,
+  readIndex,
+  writeIndex,
+  rebuildIndex,
+} from './index-builder.js';
+import { removeCounterEntry } from './counters.js';
 import { replaceRegion } from '../parser/markers.js';
 import { toIsoDateString, todayIso } from '../date.js';
 import type {
@@ -281,11 +288,21 @@ export async function listApplications(
     targetRole?: string;
     tags?: string[];
     employmentType?: EmploymentType;
+    filter?: string;
   },
 ): Promise<ApplicationEntry[]> {
   let entries = await readIndex(appliedDir);
   if (entries.length === 0 && existsSync(appliedDir)) {
     entries = await rebuildIndex(appliedDir);
+  } else if (entries.length > 0 && existsSync(appliedDir)) {
+    // Prune stale index entries whose folders no longer exist on disk.
+    // This handles the case where applications were deleted outside the tool
+    // (e.g. manual folder removal) and the index was never updated.
+    const pruned = entries.filter((e) => existsSync(join(appliedDir, e.slug)));
+    if (pruned.length !== entries.length) {
+      await writeIndex(appliedDir, pruned);
+      entries = pruned;
+    }
   }
 
   if (filters) {
@@ -301,13 +318,29 @@ export async function listApplications(
     if (filters.tags && filters.tags.length > 0) {
       entries = entries.filter((e) => filters.tags!.every((t) => e.tags.includes(t)));
     }
+    if (filters.filter) {
+      const term = filters.filter.toLowerCase();
+      entries = entries.filter(
+        (e) =>
+          e.title.toLowerCase().includes(term) ||
+          e.company.toLowerCase().includes(term) ||
+          e.location.toLowerCase().includes(term) ||
+          e.slug.toLowerCase().includes(term) ||
+          e.targetRole.toLowerCase().includes(term) ||
+          e.site.toLowerCase().includes(term) ||
+          e.tags.some((t) => t.toLowerCase().includes(term)),
+      );
+    }
   }
 
   return entries;
 }
 
 /**
- * Delete an application folder and remove it from the index.
+ * Delete an application folder and remove it from the index and collision
+ * counters. The folder (including `.toolhash` sidecars) is removed
+ * recursively; the `.index.json` entry is removed; and the slug's
+ * collision counter is cleaned from `.counters.json`.
  * @param appliedDir - The applied directory.
  * @param slug - The application slug to delete.
  * @returns `true` if the folder was deleted, `false` if it didn't exist.
@@ -319,6 +352,7 @@ export async function deleteApplication(appliedDir: string, slug: string): Promi
   }
   await rm(folder, { recursive: true, force: true });
   await removeIndexEntry(appliedDir, slug);
+  await removeCounterEntry(appliedDir, slug);
   return true;
 }
 

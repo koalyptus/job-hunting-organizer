@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot } from '../../core/paths.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `get_root` tool on the MCP server.
+ * Resolve the campaign root directory path.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerGetRoot(server: McpServer): void {
   server.tool(
     'get_root',

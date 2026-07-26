@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { showRetro } from '../../core/retro/index.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `read_retro` tool on the MCP server.
+ * Read an existing retro/learning plan for an application.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerReadRetro(server: McpServer): void {
   server.tool(
     'read_retro',

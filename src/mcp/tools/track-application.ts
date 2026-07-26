@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { runTrack } from '../../core/track/track.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `track_application` tool on the MCP server.
+ * Track a job application — create from URL or update by slug.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerTrackApplication(server: McpServer): void {
   server.tool(
     'track_application',

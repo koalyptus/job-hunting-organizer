@@ -35,7 +35,7 @@
   - [x] 6c — CLI commands (cover-letter + answer)
   - [x] 6d — Tests, docs & polish
   - [x] 6e — Steer: custom LLM instructions per command
-- [ ] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
+- [x] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
   - [x] 7a — Core: Interviews module
   - [x] 7b — Core: Retro module (LLM-backed learning plan)
   - [x] 7c — Core: Prep module (LLM-backed pre-interview plan)
@@ -50,16 +50,22 @@
   - [x] 7j — CLI: Natural-language command interface
   - [x] 7k — CLI: Interviewer column + env vars in help
   - [x] 7l — Retro enhancements (markup strip, status field, true append, MCP logger coverage)
+    [x] 7m — Remove email providers
+    [x] 7n — CLI: General-purpose text filter for list command
 - [ ] **Phase 8** — MCP server
   - [x] 8a — Server scaffold, campaign resolver, error handler
   - [x] 8b — Read-only tools (13 registered; 5 CLI read commands missing — see gap analysis)
   - [x] 8c — Write + CRUD tools
   - [x] 8d — LLM-backed tools
-  - [ ] 8e — Resources + prompts
-  - [ ] 8f — bin/jho-mcp + package config
+  - [x] 8e — Resources + prompts
+  - [x] 8f — bin/jho-mcp + package config
   - [x] 8f1 — MCP feature parity with CLI (tools, options, logging)
+  - [x] 8f2 — Metadata cleanup on remove + JSDoc coverage
   - [ ] 8g — Integration tests
   - [ ] 8h — Examples + docs + polish
+  - [ ] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
+- [ ] **Phase 9** — Calendar providers
+- [ ] **Phase 10** — Polish & public readiness
 
 ---
 
@@ -708,6 +714,23 @@ Four small fixes/enhancements to the retro surface, plus a coverage gap close:
 
 **Commit**: `feat(retro): strip marker in show, status field, true append, mcp logger coverage`
 
+#### 7n — CLI: General-purpose text filter for list command
+
+Add `--filter <term>` flag to `jho list` for case-insensitive text matching across application fields (title, company, location, tags, slug, role, site).
+
+**Scope**:
+
+- `src/core/list/list.ts` — add `filter?: string` to `ListApplicationsOptions`
+- `src/core/applications/applications.ts` — implement text matching in `listApplications()`
+- `src/cli/commands/list.ts` — add `--filter` option, update help text
+- `src/mcp/schemas.ts` — add `filter` field to `ListApplicationsInput`
+- `src/mcp/tools/list-applications.ts` — pass `filter` to core
+- Tests: core, applications, CLI
+
+**Deliverable**: `jho list --campaign default --filter "Acme"` shows only Acme Corp applications. Filter combines with existing structured filters (AND logic).
+
+**Commit**: `feat(list): add --filter flag for general-purpose text search`
+
 ---
 
 ## Phase 8 — MCP server
@@ -831,6 +854,40 @@ foundation, and fills gaps in the tool surface.
 
 **Commit**: `feat(mcp): feature parity tools, options, and logging`
 
+#### 8f2 — Metadata cleanup on remove + JSDoc coverage
+
+Ensures remove operations clean all associated metadata and adds JSDoc
+documentation to every undocumented MCP function.
+
+**Metadata cleanup**:
+
+- `src/core/applications/counters.ts` — add `removeCounterEntry(appliedDir, key)` helper
+- `src/core/applications/applications.ts` — wire counter cleanup into `deleteApplication`
+- `src/mcp/tools/remove-application.ts` — update tool description to mention metadata cleanup
+
+**Stale index pruning**:
+
+- `src/core/applications/applications.ts` — `listApplications` now filters index entries against disk existence; rewrites index atomically when stale entries are found
+
+**Sonic-boom crash fix**:
+
+- `src/core/logger/logger.ts` — silent logger uses `pino.destination({ sync: true })` so `autoEnd` handler is never registered
+- `src/mcp/logger.ts` — MCP logger destination uses `sync: true` for consistency
+
+**JSDoc coverage**:
+
+- `src/mcp/tools/*.ts` — add JSDoc to all 34 undocumented `register*` functions
+- `src/mcp/server.ts` — add JSDoc to `safeLogFatal`, `createServer`, `startServer`
+- `src/mcp/logger.ts` — add JSDoc to `ensureMcpLogDir`, `createMcpLogger`, `getMcpLogPath`
+
+**Tests**:
+
+- `src/core/tests/applications/counters.test.ts` — `removeCounterEntry` tests (happy path, no-op, preserves other entries, missing file, last entry)
+- `src/core/tests/applications/applications.test.ts` — metadata cleanup tests (toolhash removal, counter cleanup, gitkeep preservation, stale index pruning)
+- `src/core/tests/stats/stats.test.ts` — `writeIndex` helper creates folders matching entries to survive stale-index pruning
+
+**Commit**: `feat(mcp): metadata cleanup on remove, JSDoc coverage`
+
 #### 8g — Integration tests
 
 - In-memory MCP client tests using `InMemoryTransport`
@@ -838,7 +895,7 @@ foundation, and fills gaps in the tool surface.
 - Test error handling paths
 - Test resource reads and prompt generation
 
-**Commit**: `test(mcp): integration tests with in-memory transport`
+**Commit**: `test(mcp): introduce integration tests`
 
 #### 8h — Examples + docs + polish
 
@@ -850,6 +907,35 @@ foundation, and fills gaps in the tool surface.
 - Update `docs/ROADMAP.md` — check Phase 8
 
 **Commit**: `docs(mcp): client examples, README, and AGENTS.md update`
+
+#### 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
+
+Replace the monolithic `@modelcontextprotocol/sdk` (v1) with the split v2 packages
+(`@modelcontextprotocol/server` + `@modelcontextprotocol/client`).
+This enables `InMemoryTransport` for proper integration testing and adopts the 2026-07-28 protocol revision.
+
+**Trigger**: landed when `@modelcontextprotocol/server` + `@modelcontextprotocol/client` ship stable (expected July 28 2026).
+
+**Migration**:
+
+- Run codemod: `npx @modelcontextprotocol/codemod@beta v1-to-v2 .` — handles import path rewrites (61 sites across ~40 files), `package.json` dependency swap, `.tool()` → `.registerTool()`, `.prompt()` → `.registerPrompt()`, `.resource()` → `.registerResource()`
+- Fix remaining type errors from `tsc --noEmit` (manual: `StdioServerTransport` import path, `CallToolResult` type routing, server entry point adaptation)
+- Upgrade `zod` v3 → v4 (`^4.2.0` required by v2 SDK)
+- Rewrite test infrastructure: `fakeServer()` → `InMemoryTransport.createLinkedPair()` + `Client` for integration tests
+- Rewrite `src/mcp/server.ts` — `createServer` + `StdioServerTransport` wiring for v2
+
+**Scope summary**:
+
+| v1 (current)                                | v2 (target)                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------------- |
+| `@modelcontextprotocol/sdk`                 | `@modelcontextprotocol/server` + `@modelcontextprotocol/client`            |
+| `@modelcontextprotocol/sdk/server/mcp.js`   | `@modelcontextprotocol/server`                                             |
+| `@modelcontextprotocol/sdk/server/stdio.js` | `@modelcontextprotocol/server/stdio`                                       |
+| `@modelcontextprotocol/sdk/types.js`        | `@modelcontextprotocol/server`                                             |
+| `.tool(name, desc, shape, handler)`         | `.registerTool(name, { description, inputSchema }, handler)`               |
+| No `InMemoryTransport`                      | `InMemoryTransport.createLinkedPair()` from `@modelcontextprotocol/client` |
+
+**Commit**: `feat(mcp): upgrade to @modelcontextprotocol/server + client v2`
 
 ---
 

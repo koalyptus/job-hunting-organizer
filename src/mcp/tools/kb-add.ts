@@ -7,6 +7,12 @@ import { resolve } from 'node:path';
 import { loadCampaignConfig, updateCampaignConfig } from '../../core/config/config.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `kb_add` tool on the MCP server.
+ * Copy knowledge-base docs (PDF, DOCX, MD, TXT) into the campaign.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerKbAdd(server: McpServer): void {
   server.tool(
     'kb_add',

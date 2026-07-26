@@ -4,6 +4,12 @@ import { handleToolError } from '../error-handler.js';
 import { runListCampaigns } from '../../core/list/list.js';
 import { mcpLogger } from '../logger.js';
 
+/**
+ * Register the `list_campaigns` tool on the MCP server.
+ * List all campaigns under the data root.
+ *
+ * @param server - The MCP server instance.
+ */
 export function registerListCampaigns(server: McpServer): void {
   server.tool(
     'list_campaigns',
