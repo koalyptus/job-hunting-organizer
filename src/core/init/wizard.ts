@@ -24,7 +24,6 @@ import {
 import { validateCvPath } from '../cv.js';
 import { promptGithub } from './github.js';
 import { promptLlm, loadExistingConfig } from './llm.js';
-import { promptCalendar } from './calendar.js';
 import { createDirectories } from '../campaign/directories.js';
 import { ingestKnowledgeBase } from '../campaign/kb-ingest.js';
 import { handleProfile } from '../campaign/profile-builder.js';
@@ -183,10 +182,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
       }
     : undefined;
 
-  // --- Step 4: Calendar ---
-  const calendarProvider = await promptCalendar(opts.yes ?? false, existingConfig);
-
-  // --- Steps 5-8: Directory creation, config writes, profile (locked) ---
+  // --- Steps 4-7: Directory creation, config writes, profile (locked) ---
   // Ensure campaign root exists before locking (proper-lockfile requires the path).
   await ensureRoot(campaignRoot);
   await acquireLock(
@@ -211,7 +207,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
       // --- Step 6: Write configs early (so CV path is saved even if profile build fails) ---
       const profilePath = resolveProfilePath(campaignRoot);
 
-      // Deep-merge calendar and logging to preserve user-customised values on re-init.
+      // Deep-merge logging to preserve user-customised values on re-init.
       const currentConfig = loadGlobalConfig();
       updateGlobalConfig({
         version: 1,
@@ -226,10 +222,6 @@ export async function runInit(opts: InitOptions): Promise<void> {
           user: github.user ?? '',
           token: github.token ?? '',
           repos: [],
-        },
-        calendar: {
-          ...currentConfig.calendar,
-          defaultProvider: calendarProvider,
         },
         logging: {
           ...currentConfig.logging,
@@ -283,7 +275,6 @@ export async function runInit(opts: InitOptions): Promise<void> {
   ${cvPath ? `CV: ${cvPath}` : 'CV: (not set)'}
   ${github.user ? `GitHub: ${github.user}` : 'GitHub: (not set)'}
   LLM: ${hasLlm ? `${llm.baseUrl} (${llm.model})` : '(not configured)'}
-  Calendar: ${calendarProvider}
 
 Next steps:
   jho track <job-url>       # record a new application

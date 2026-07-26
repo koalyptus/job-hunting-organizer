@@ -44,7 +44,6 @@ describe('read_config tool', () => {
       global: {
         llm: { model: 'gpt-4', baseUrl: 'https://api.openai.com/v1', apiKey: 'secret-key' },
         github: { username: 'testuser', token: 'gh-token' },
-        calendar: { provider: 'none' },
         logging: { level: 'info', file: '/path/to/log' },
       },
       campaign: {

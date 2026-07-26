@@ -63,10 +63,6 @@ vi.mock('../config.js', () => ({
       dataRoot: '/tmp',
       llm: { baseUrl: 'https://config.com/v1', apiKey: 'sk-config', model: 'gpt-4' },
       github: { user: '', token: '', repos: [] },
-      calendar: {
-        defaultProvider: 'ics',
-        outlook: { tenantId: '', clientId: '', clientSecret: '' },
-      },
       logging: { level: 'info', file: '', redactPaths: [] },
     },
   })),

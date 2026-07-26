@@ -33,10 +33,6 @@ const testGlobalConfig = {
     timeoutMs: 300_000,
   },
   github: { user: '', token: '', repos: [] },
-  calendar: {
-    defaultProvider: 'ics' as const,
-    outlook: { tenantId: '', clientId: '', clientSecret: '' },
-  },
   logging: { level: 'info' as const, file: '', redactPaths: [] },
   fetch: { timeoutMs: 30_000 },
 };

@@ -16,7 +16,6 @@ const mockGlobalConfig = {
   dataRoot: '/tmp/test-data',
   llm: { baseUrl: '', apiKey: '', model: '', timeoutMs: 1_200_000 },
   github: { user: '', token: '', repos: [] },
-  calendar: { defaultProvider: 'ics', outlook: { tenantId: '', clientId: '', clientSecret: '' } },
   fetch: { timeoutMs: 30_000 },
   logging: { level: 'info', disableFileLogging: false, redactPaths: [] },
 };

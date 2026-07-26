@@ -87,13 +87,12 @@ describe('init command', () => {
   }
 
   it('creates campaign with skeleton profile when no CV or LLM provided', async () => {
-    // Mock prompts: LinkedIn (empty), CV (empty), GitHub (empty), LLM base (empty), calendar (ics)
+    // Mock prompts: LinkedIn (empty), CV (empty), GitHub (empty), LLM base (empty)
     vi.mocked(text)
       .mockResolvedValueOnce('') // LinkedIn URL
       .mockResolvedValueOnce('') // CV path
       .mockResolvedValueOnce('') // GitHub user
       .mockResolvedValueOnce(''); // LLM base URL
-    vi.mocked(select).mockResolvedValueOnce('ics'); // Calendar
     vi.mocked(confirm).mockResolvedValueOnce(false); // Re-init: no (first time)
     vi.mocked(password).mockResolvedValue('');
 
@@ -116,7 +115,6 @@ describe('init command', () => {
 
     // Global config written
     const globalConfig = JSON.parse(await readFile(join(testHome, '.jho', 'config.json'), 'utf8'));
-    expect(globalConfig.calendar.defaultProvider).toBe('ics');
 
     // Campaign config written
     const campaignConfig = JSON.parse(await readFile(join(campaignDir, 'config.json'), 'utf8'));
@@ -125,12 +123,6 @@ describe('init command', () => {
 
   it('creates named campaign', async () => {
     vi.mocked(text)
-      .mockResolvedValueOnce('') // LinkedIn
-      .mockResolvedValueOnce('') // CV
-      .mockResolvedValueOnce('') // GitHub
-      .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('none'); // Calendar
-    vi.mocked(confirm).mockResolvedValueOnce(false);
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('freelance');
@@ -154,7 +146,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // KB (skip)
       .mockResolvedValueOnce('testuser') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(confirm).mockResolvedValueOnce(false);
     vi.mocked(password).mockResolvedValue('');
 
@@ -165,22 +156,6 @@ describe('init command', () => {
       'utf8',
     );
     expect(profile).toContain('GitHub: testuser');
-  });
-
-  it('writes calendar none when selected', async () => {
-    vi.mocked(text)
-      .mockResolvedValueOnce('')
-      .mockResolvedValueOnce('')
-      .mockResolvedValueOnce('')
-      .mockResolvedValueOnce('');
-    vi.mocked(select).mockResolvedValueOnce('none');
-    vi.mocked(confirm).mockResolvedValueOnce(false);
-    vi.mocked(password).mockResolvedValue('');
-
-    await run();
-
-    const globalConfig = JSON.parse(await readFile(join(testHome, '.jho', 'config.json'), 'utf8'));
-    expect(globalConfig.calendar.defaultProvider).toBe('none');
   });
 
   it('prompts for confirmation on re-init', async () => {
@@ -194,7 +169,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('')
       .mockResolvedValueOnce('')
       .mockResolvedValueOnce('');
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -230,7 +204,6 @@ describe('init command', () => {
       .mockResolvedValueOnce(cvPath) // CV (user confirms existing)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -269,7 +242,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -297,7 +269,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('')
       .mockResolvedValueOnce('')
       .mockResolvedValueOnce('');
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('--profile', existingProfile);
@@ -327,7 +298,6 @@ describe('init command', () => {
 
     vi.mocked(confirm).mockResolvedValueOnce(false);
     vi.mocked(text).mockResolvedValueOnce('').mockResolvedValueOnce('').mockResolvedValueOnce(''); // LinkedIn, GitHub, LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -366,7 +336,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce('https://llm.example.com/v1') // LLM base URL
       .mockResolvedValueOnce('model-name'); // LLM model
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('test-key');
 
     // CLI catches InitError and writes to stderr with exit code 1
@@ -389,7 +358,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -409,7 +377,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     await run();
@@ -427,7 +394,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('--linkedin', 'https://linkedin.com/in/flaguser');
@@ -448,7 +414,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -468,7 +433,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     await run();
@@ -485,7 +449,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     await run('--linkedin', '  https://linkedin.com/in/flaguser  ');
@@ -504,7 +467,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     await run();
@@ -525,7 +487,6 @@ describe('init command', () => {
       .mockResolvedValueOnce(`  ${cvPath}  `) // CV with whitespace
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     await run();
@@ -545,7 +506,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('--yes');
@@ -575,7 +535,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -609,7 +568,6 @@ describe('init command', () => {
       .mockResolvedValueOnce(cvPath) // CV (accept existing)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -626,7 +584,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('/nonexistent/cv.pdf') // CV (invalid)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('--yes');
@@ -650,7 +607,6 @@ describe('init command', () => {
       .mockResolvedValueOnce(validCv) // CV retry (valid)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -670,7 +626,6 @@ describe('init command', () => {
       .mockResolvedValueOnce('') // CV retry (empty = skip)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run();
@@ -704,7 +659,6 @@ describe('init command', () => {
     vi.mocked(text)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('--yes');
@@ -725,7 +679,6 @@ describe('init command', () => {
     vi.mocked(text)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('--yes', '--cv', '/nonexistent/cv.pdf');
@@ -756,7 +709,6 @@ describe('init command', () => {
     vi.mocked(text)
       .mockResolvedValueOnce('') // GitHub
       .mockResolvedValueOnce(''); // LLM
-    vi.mocked(select).mockResolvedValueOnce('ics');
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('--yes');

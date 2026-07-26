@@ -98,7 +98,6 @@ describe('config', () => {
     // Campaign must NOT carry global fields.
     expect('llm' in campaign).toBe(false);
     expect('github' in campaign).toBe(false);
-    expect('calendar' in campaign).toBe(false);
     expect('logging' in campaign).toBe(false);
   });
 
@@ -125,7 +124,6 @@ describe('config', () => {
     await mkdir(configHome, { recursive: true });
     await writeFile(
       resolve(configHome, DEFAULT_CONFIG_FILENAME),
-      JSON.stringify({ version: 99, llm: {}, github: {}, calendar: {}, logging: {} }),
       'utf8',
     );
 

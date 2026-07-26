@@ -10,9 +10,6 @@ export const DEFAULT_LLM_API_KEY = 'no-key';
 /** Default LLM model. */
 export const DEFAULT_LLM_MODEL = 'llama3.1';
 
-/** Default calendar provider. */
-export const DEFAULT_CALENDAR_PROVIDER = 'ics';
-
 /** Default log level for new campaigns. */
 export const DEFAULT_LOG_LEVEL = 'info';
 

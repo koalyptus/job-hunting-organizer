@@ -27,10 +27,6 @@ describe('config command', () => {
         dataRoot: join(testHome, 'data'),
         llm: { baseUrl: 'http://localhost:11434/v1', apiKey: 'secret-key', model: 'llama3' },
         github: { user: 'testuser', token: 'ghp_secret', repos: [] },
-        calendar: {
-          defaultProvider: 'ics',
-          outlook: { tenantId: '', clientId: '', clientSecret: '' },
-        },
         logging: { level: 'info', file: '', redactPaths: [] },
       }),
     );

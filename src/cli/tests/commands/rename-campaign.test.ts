@@ -28,10 +28,6 @@ describe('rename-campaign command', () => {
         dataRoot: join(testHome, 'data'),
         llm: { baseUrl: '', apiKey: '', model: '' },
         github: { user: '', token: '', repos: [] },
-        calendar: {
-          defaultProvider: 'ics',
-          outlook: { tenantId: '', clientId: '', clientSecret: '' },
-        },
         logging: { level: 'info', file: '', redactPaths: [] },
       }),
     );
