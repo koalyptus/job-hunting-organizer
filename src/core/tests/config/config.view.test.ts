@@ -41,7 +41,7 @@ describe('redactSecrets', () => {
 
   it('does not mutate the input', () => {
     redactSecrets(SAMPLE_GLOBAL);
-    expect(SAMPLE_GLOBAL.llm.apiKey).toBe('«redacted:sk-…»');
+    expect(SAMPLE_GLOBAL.llm.apiKey).toBe('sk-secret-abc');
     expect(SAMPLE_GLOBAL.github.token).toBe('ghp-secret-xyz');
   });
 

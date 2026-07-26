@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { text, select, confirm, password, isCancel } from '@clack/prompts';
+import { text, confirm, password, isCancel } from '@clack/prompts';
 import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
@@ -113,16 +113,13 @@ describe('init command', () => {
     expect(profile).toContain('## Target roles');
     expect(profile).toContain('<!-- jho:target-roles');
 
-    // Global config written
-    const globalConfig = JSON.parse(await readFile(join(testHome, '.jho', 'config.json'), 'utf8'));
-
     // Campaign config written
     const campaignConfig = JSON.parse(await readFile(join(campaignDir, 'config.json'), 'utf8'));
     expect(campaignConfig.profile.path).toContain('profile.md');
   });
 
   it('creates named campaign', async () => {
-    vi.mocked(text)
+    vi.mocked(text);
     vi.mocked(password).mockResolvedValue('');
 
     const { exitCode } = await run('freelance');

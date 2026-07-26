@@ -136,8 +136,8 @@ export const GlobalConfigSchema = z.object({
           '*.password',
           '*.secret',
           'config.llm.apiKey',
-                    'config.github.token',
-                  ]),
+          'config.github.token',
+        ]),
     })
     .default({
       level: 'info',
@@ -149,8 +149,8 @@ export const GlobalConfigSchema = z.object({
         '*.password',
         '*.secret',
         'config.llm.apiKey',
-                  'config.github.token',
-              ],
+        'config.github.token',
+      ],
     }),
 });
 
