@@ -51,6 +51,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.config.integration.ts",
     "eval": "vitest run --config evals/vitest.config.ts",
     "eval:update": "vitest run --config evals/vitest.config.ts -u"
   },
