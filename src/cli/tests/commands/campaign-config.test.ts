@@ -28,10 +28,6 @@ describe('campaign config command', () => {
         dataRoot: join(testHome, 'data'),
         llm: { baseUrl: '', apiKey: 'secret-key', model: '' },
         github: { user: '', token: 'ghp_secret', repos: [] },
-        calendar: {
-          defaultProvider: 'ics',
-          outlook: { tenantId: '', clientId: '', clientSecret: '' },
-        },
         logging: { level: 'info', file: '', redactPaths: [] },
       }),
     );

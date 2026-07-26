@@ -98,7 +98,6 @@ describe('config', () => {
     // Campaign must NOT carry global fields.
     expect('llm' in campaign).toBe(false);
     expect('github' in campaign).toBe(false);
-    expect('calendar' in campaign).toBe(false);
     expect('logging' in campaign).toBe(false);
   });
 
@@ -118,14 +117,14 @@ describe('config', () => {
   });
 
   it('rejects a global config file with a wrong schema version', async () => {
-    // Write a config file directly to disk with version 99 — older
-    // (or future) schema. The loader must surface a clear error
+    // Write a config file directly to disk with an outdated
+    // schema version. The loader must surface a clear error
     // rather than silently defaulting.
     const configHome = resolve(testHome, '.job-hunting-organizer');
     await mkdir(configHome, { recursive: true });
     await writeFile(
       resolve(configHome, DEFAULT_CONFIG_FILENAME),
-      JSON.stringify({ version: 99, llm: {}, github: {}, calendar: {}, logging: {} }),
+      JSON.stringify({ version: 0 }),
       'utf8',
     );
 

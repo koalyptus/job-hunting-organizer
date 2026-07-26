@@ -16,10 +16,6 @@ const SAMPLE_GLOBAL: GlobalConfig = {
     timeoutMs: 300_000,
   },
   github: { user: 'me', token: 'ghp-secret-xyz', repos: ['me/repo'] },
-  calendar: {
-    defaultProvider: 'ics',
-    outlook: { tenantId: 'tenant', clientId: 'cid', clientSecret: 'cs-secret-123' },
-  },
   logging: { level: 'info', file: '/tmp/jho.log', redactPaths: [] },
   fetch: { timeoutMs: 30_000 },
 };
@@ -37,16 +33,10 @@ describe('redactSecrets', () => {
     expect(redacted.github.token).toContain('GITHUB_TOKEN');
   });
 
-  it('replaces the Outlook client secret', () => {
-    const redacted = redactSecrets(SAMPLE_GLOBAL);
-    expect(redacted.calendar.outlook.clientSecret).toContain('***');
-  });
-
   it('preserves non-secret fields', () => {
     const redacted = redactSecrets(SAMPLE_GLOBAL);
     expect(redacted.llm.model).toBe('gpt-x');
     expect(redacted.github.user).toBe('me');
-    expect(redacted.calendar.outlook.tenantId).toBe('tenant');
   });
 
   it('does not mutate the input', () => {
@@ -68,8 +58,8 @@ describe('redactSecrets', () => {
   });
 
   it('handles config with missing nested secret paths', () => {
-    const config = { version: 1, dataRoot: '/tmp', calendar: { outlook: null } };
+    const config = { version: 1, dataRoot: '/tmp' };
     const result = redactSecrets(config);
-    expect(result.calendar.outlook).toBeNull();
+    expect(result).toEqual(config);
   });
 });

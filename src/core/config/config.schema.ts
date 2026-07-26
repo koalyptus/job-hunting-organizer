@@ -45,8 +45,7 @@ function versionMismatchMessage(expected: number): string {
  * Defaults are chosen for the common Ollama setup (local, no auth)
  * because that is the lowest-friction starting point. The fields here
  * are the ones that are genuinely *global* (shared across every
- * campaign a user runs): the LLM endpoint, GitHub identity, calendar
- * provider, logging, and the location of the data root itself.
+ * campaign a user runs): the LLM endpoint, GitHub identity, logging,
  *
  * Per-campaign fields (profile, CV, applied, knowledge base) belong
  * in {@link CampaignConfigSchema} — they vary by campaign and live
@@ -118,22 +117,6 @@ export const GlobalConfigSchema = z.object({
       timeoutMs: z.number().int().min(5_000).max(120_000).default(30_000),
     })
     .default({ timeoutMs: 30_000 }),
-  /** Calendar integration. ICS is the zero-config default. */
-  calendar: z
-    .object({
-      defaultProvider: z.enum(['ics', 'outlook', 'none']).default('ics'),
-      outlook: z
-        .object({
-          tenantId: z.string().default(''),
-          clientId: z.string().default(''),
-          clientSecret: z.string().default(''),
-        })
-        .default({ tenantId: '', clientId: '', clientSecret: '' }),
-    })
-    .default({
-      defaultProvider: 'ics',
-      outlook: { tenantId: '', clientId: '', clientSecret: '' },
-    }),
   /**
    * Logging knobs. `redactPaths` mirrors the secrets the logger must
    * mask before writing to disk; the user can extend the list to
@@ -154,7 +137,6 @@ export const GlobalConfigSchema = z.object({
           '*.secret',
           'config.llm.apiKey',
           'config.github.token',
-          'config.calendar.outlook.clientSecret',
         ]),
     })
     .default({
@@ -168,7 +150,6 @@ export const GlobalConfigSchema = z.object({
         '*.secret',
         'config.llm.apiKey',
         'config.github.token',
-        'config.calendar.outlook.clientSecret',
       ],
     }),
 });

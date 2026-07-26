@@ -2,9 +2,6 @@ import type { paths } from '@octokit/openapi-types';
 import type { Logger } from 'pino';
 import type { ApplicationStatus, EmploymentType } from './applications/types.js';
 
-/** Supported calendar providers. */
-export type CalendarProvider = 'ics' | 'outlook' | 'none';
-
 /**
  * Options for {@link atomicWrite}. All fields are optional; defaults are
  * sensible (UTF-8, default file mode, no auto-mkdir).
@@ -211,7 +208,7 @@ export interface ChatCompleteResult {
 /**
  * Global configuration (per-user, stored at the config home). Holds the
  * settings that are *shared across every campaign* the user runs: the
- * LLM endpoint, GitHub identity, calendar provider, logging defaults,
+ * LLM endpoint, GitHub identity, logging defaults,
  * and the location of the data root itself.
  *
  * Per-campaign paths (profile, CV, applied/, knowledge base/) live in
@@ -245,20 +242,6 @@ export interface GlobalConfig {
     token: string;
     /** Repos to mine for projects. Empty means "all public repos". */
     repos: string[];
-  };
-  /** Calendar integration (used by `jho interview schedule`). */
-  calendar: {
-    /** Provider key: `ics` (default) or `outlook`. */
-    defaultProvider: CalendarProvider;
-    /** Microsoft Graph settings (only used when `defaultProvider === 'outlook'`). */
-    outlook: {
-      /** Azure AD tenant id. */
-      tenantId: string;
-      /** App registration client id. */
-      clientId: string;
-      /** App registration client secret. Prefer the `MS_GRAPH_CLIENT_SECRET` env var. */
-      clientSecret: string;
-    };
   };
   /** Logging defaults. */
   logging: {

@@ -63,10 +63,6 @@ describe('doctor command — interactive campaign picker', () => {
         dataRoot: join(testHome, 'data'),
         llm: { baseUrl: 'http://localhost:11434/v1', apiKey: 'test-key', model: 'test-model' },
         github: { user: 'testuser', token: '', repos: [] },
-        calendar: {
-          defaultProvider: 'ics',
-          outlook: { tenantId: '', clientId: '', clientSecret: '' },
-        },
         logging: { level: 'silent', file: '', redactPaths: [] },
       }),
     );

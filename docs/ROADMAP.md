@@ -1,6 +1,6 @@
 # Roadmap
 
-10 phases. Each phase ends with the user committing manually.
+8 phases. Each phase ends with the user committing manually.
 
 ## Status
 
@@ -50,6 +50,8 @@
   - [x] 7j — CLI: Natural-language command interface
   - [x] 7k — CLI: Interviewer column + env vars in help
   - [x] 7l — Retro enhancements (markup strip, status field, true append, MCP logger coverage)
+        [x] 7m — Remove email providers
+        [x] 7n — CLI: General-purpose text filter for list command
 - [ ] **Phase 8** — MCP server
   - [x] 8a — Server scaffold, campaign resolver, error handler
   - [x] 8b — Read-only tools (13 registered; 5 CLI read commands missing — see gap analysis)
@@ -62,8 +64,7 @@
   - [ ] 8g — Integration tests
   - [ ] 8h — Examples + docs + polish
   - [ ] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
-- [ ] **Phase 9** — Calendar providers
-- [ ] **Phase 10** — Polish & public readiness
+- [ ] **Phase 9** — Polish & public readiness
 
 ---
 
@@ -712,6 +713,25 @@ Four small fixes/enhancements to the retro surface, plus a coverage gap close:
 
 **Commit**: `feat(retro): strip marker in show, status field, true append, mcp logger coverage`
 
+---
+
+#### 7m — Remove Phase 9 (Calendar providers) and email/calendar integration
+
+Phase 9 was never implemented and is being removed from the roadmap. All calendar/email provider references are stripped from the codebase:
+
+- `CalendarProvider` type removed from `src/core/types.ts`
+- `calendar` config section removed from `GlobalConfig` and Zod schema
+- Calendar prompt removed from `jho init` wizard
+- `src/core/init/calendar.ts` deleted
+- Outlook redaction paths removed from Zod schema's secret list
+- All test fixtures updated
+
+**Deliverable**: Calendar providers completely removed; Phase 9 (Polish & public readiness) is now the final unchecked phase.
+
+**Commit**: `chore: remove Phase 9 calendar providers and email/calendar integration`
+
+---
+
 #### 7n — CLI: General-purpose text filter for list command
 
 Add `--filter <term>` flag to `jho list` for case-insensitive text matching across application fields (title, company, location, tags, slug, role, site).
@@ -952,34 +972,18 @@ This enables `InMemoryTransport` for proper integration testing and adopts the 2
 - `AGENTS.md` — drop "(planned)" from the `## MCP tools` and `## Resources` headings; reconcile the tool/resource lists with the real Zod schemas; bump "Current phase".
 - `docs/ROADMAP.md` — check the Phase 8 box (`- [x]`).
 - `examples/mcp-clients/{claude-desktop,cursor,continue}.json`, `glama.json` `maintainers`, `package.json` `mcp` field (already in scope above).
-- `docs/help/mcp.md` + `jho help mcp` wiring are **Phase 10**, not required to close Phase 8.
+- `docs/help/mcp.md` + `jho help mcp` wiring are **Phase 11**, not required to close Phase 9.
 
-**Commit**: `feat(mcp): full server with tools, resources, prompts, examples`
-
----
-
-## Phase 9 — Calendar providers
-
-**Scope**:
-
-- `core/calendar.ts` — `CalendarProvider` interface, registry
-- `IcsProvider`
-- `OutlookGraphProvider` with MSAL device-code flow
-- `jho interview add --provider outlook`
-- Tests
-
-**Deliverable**: ICS default, Outlook opt-in.
-
-**Commit**: `feat(calendar): ICS and Microsoft Graph providers`
+**Commit**: `docs: README, help topics, examples, glama-ready`
 
 ---
 
-## Phase 10 — Polish & public readiness
+## Phase 9 — Polish & public readiness
 
 **Scope**:
 
 - README final pass (all sections)
-- `docs/help/{file-ownership,interviews,calendar,slug-format,profile,application-lifecycle,troubleshooting,mcp}.md`
+- `docs/help/{file-ownership,interviews,slug-format,profile,application-lifecycle,troubleshooting,mcp}.md`
 - `jho help <topic>` wired
 - Snapshot tests for help output
 - `docs/examples/`

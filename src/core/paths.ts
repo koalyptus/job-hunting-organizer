@@ -22,7 +22,7 @@ export const DEFAULT_DATA_ROOT_DIRNAME = 'job-hunting-organizer-data';
 /**
  * Default name of the global config home folder under the user's home
  * directory. This holds the global `config.json` (LLM creds, GitHub
- * token, calendar provider, logging defaults) and the `proper-lockfile`
+ * token, logging defaults) and the `proper-lockfile`
  * `.locks/` sidecars. Used when `$JHO_CONFIG_HOME` is not set.
  *
  * The leading dot keeps it hidden from `ls` on Linux/macOS; on Windows
@@ -85,7 +85,7 @@ export function resolveDataRoot(): string {
 /**
  * Resolve the absolute path of the **global config home**. This is the
  * folder that holds the global `config.json` (LLM creds, GitHub token,
- * calendar provider, logging defaults) and `proper-lockfile` sidecars.
+ * logging defaults) and `proper-lockfile` sidecars.
  * It is *separate* from the campaign data root (see
  * {@link resolveDataRoot}).
  *

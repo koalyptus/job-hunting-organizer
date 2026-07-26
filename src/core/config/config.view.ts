@@ -16,7 +16,6 @@
 export const SECRET_PATHS: ReadonlyArray<{ path: readonly string[]; envVar: string }> = [
   { path: ['llm', 'apiKey'], envVar: 'LLM_API_KEY' },
   { path: ['github', 'token'], envVar: 'GITHUB_TOKEN' },
-  { path: ['calendar', 'outlook', 'clientSecret'], envVar: 'MS_GRAPH_CLIENT_SECRET' },
 ];
 
 /** The string substituted for secret values when `reveal` is `false`. */
