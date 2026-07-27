@@ -78,7 +78,6 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │   ├── PLAN.md         # full design plan
 │   ├── ROADMAP.md      # phased build plan
 │   └── help/           # conceptual guides for `jho help <topic>`
-├── examples/           # MCP client configs (claude-desktop, cursor, continue)
 ├── .github/workflows/  # CI (lint, typecheck, test, build)
 ├── glama.json          # glama.ai MCP registry metadata
 ├── tsconfig.json       # TypeScript configuration
@@ -120,7 +119,7 @@ npm run eval         # lightweight LLM eval suite (manual)
 - Real filesystem in temp dirs, clean up in `afterEach`
 - 5 second timeout per test
 
-## CLI commands (planned)
+## CLI commands
 
 ```
 jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--kb <path>] [--yes]
@@ -188,23 +187,19 @@ jho mcp                 # start MCP server
 
 **Natural language**: any command can be invoked in plain English. If `process.argv.slice(2)[0]` contains a space and is not a known command and does not start with `-`, `jho` treats the input as a natural-language prompt. `parseNaturalLanguage` (LLM, json mode, temp 0.1) maps it to a `ParsedCommand`; `dispatchNaturalLanguage` rebuilds a synthetic argv and re-parses it through the existing Commander `program` (`from: 'user'`), so 100% of command logic is reused — nothing is reimplemented. Confidence gates: ≥0.8 auto-run; 0.5–0.8 confirm via `@clack/prompts` (skip with `--yes`); <0.5 error with a rephrase hint. Explicit global flags (`--campaign`, `--yes`, etc.) always override LLM-parsed globals. Requires a configured LLM (same as other LLM-backed commands). See `prompts/nl-command.md` and `src/core/parser/prompt-parser.ts`.
 
-## MCP tools (implemented)
+## MCP tools (36 registered)
 
-### Read-only tools (13)
+### Read-only tools (18)
 
-`list_applications`, `show_application`, `list_interviews`, `read_profile`, `get_stats`, `get_root`, `get_campaign`, `list_campaigns`, `ownership`, `doctor`, `repair`, `read_cover_letter`, `aggregate_retros`, `extract_jd`
+`list_applications`, `show_application`, `list_interviews`, `read_profile`, `get_stats`, `get_root`, `get_campaign`, `list_campaigns`, `ownership`, `doctor`, `repair`, `read_cover_letter`, `aggregate_retros`, `extract_jd`, `read_config`, `read_logs`, `read_retro`, `read_prep`, `read_qa`
 
-### Write + CRUD tools (13)
+### Write + CRUD tools (18)
 
-`init`, `track_application`, `add_interview`, `mark_interview`, `update_profile`, `update_config`, `post_mortem`, `append_retro`, `cover_letter`, `answer_question`, `prepare`
+`init`, `track_application`, `add_interview`, `mark_interview`, `update_profile`, `update_config`, `post_mortem`, `append_retro`, `cover_letter`, `answer_question`, `prepare`, `remove_application`, `rename_application`, `remove_campaign`, `rename_campaign`, `read_campaign_config`, `kb_add`, `kb_update`
 
-### Missing read tools (5 — see gap analysis in `.lavish/mcp-read-gap-analysis.html`)
+## Resources (5 registered)
 
-`read_config` (reads global config, CLI: `jho config show`), `read_logs` (reads log file, CLI: `jho logs`), `read_retro` (reads retro, CLI: `jho retro show`), `read_prep` (reads prep plan, CLI: `jho prepare show`), `read_qa` (reads Q&A, CLI: `jho answer show`)
-
-## Resources (planned)
-
-`profile://current`, `applied://list`, `applied://<slug>`, `applied://<slug>/interviews`, `applied://<slug>/retro`, `applied://<slug>/prepare`.
+`applications://list`, `application://current`, `profile://current`, `config://campaign`, `stats://current`
 
 ## Prompts (versioned LLM templates)
 
@@ -312,7 +307,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 8 — MCP server. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 8a (server scaffold, campaign resolver, error handler), 8b (read-only tools — 13 registered; 5 CLI read commands missing, see `.lavish/mcp-read-gap-analysis.html`), 8c (write + CRUD tools), 8d (LLM-backed tools), 8e (resources + prompts), 8f (bin/jho-mcp + package config), 8g (integration tests), 8h (examples + docs + polish).
+Phase 8 — MCP server. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 8a (server scaffold, campaign resolver, error handler), 8b (read-only tools), 8c (write + CRUD tools), 8d (LLM-backed tools), 8e (resources + prompts), 8f (bin/jho-mcp + package config), 8f1 (MCP feature parity with CLI), 8f2 (metadata cleanup + JSDoc), 8g (integration tests), 8h (docs + polish).
 
 ## Cross-platform conventions
 

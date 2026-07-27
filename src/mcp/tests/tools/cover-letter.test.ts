@@ -24,6 +24,7 @@ vi.mock('../../schemas.js', () => {
       campaign: CampaignParam,
       slug: SlugParam,
       steer: z.string().optional().describe('Custom LLM instructions'),
+      noSave: z.boolean().optional(),
     }),
     ReadCoverLetterInput: z.object({
       campaign: CampaignParam,
@@ -100,6 +101,31 @@ describe('cover_letter tool', () => {
     });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.content).toContain('Default steer');
+  });
+
+  it('passes noSave flag to core function', async () => {
+    vi.mocked(generateCoverLetter).mockResolvedValue({
+      content: '# Cover Letter\nNo save.',
+      wordCount: 5,
+      model: 'gpt-4',
+      durationMs: 1000,
+    });
+
+    const { server, getCallback } = fakeServer();
+    registerCoverLetter(server);
+    const cb = getCallback()!;
+
+    const result = await cb(
+      { campaign: 'default', slug: 'test-app', noSave: true },
+      { signal: AbortSignal.timeout(3000) },
+    );
+    expect(generateCoverLetter).toHaveBeenCalledWith({
+      slug: 'test-app',
+      campaign: 'default',
+      noSave: true,
+    });
+    const parsed = JSON.parse(getTextContent(result));
+    expect(parsed.content).toContain('No save');
   });
 
   it('returns error when core function fails', async () => {

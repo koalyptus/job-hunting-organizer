@@ -52,7 +52,7 @@
   - [x] 7l — Retro enhancements (markup strip, status field, true append, MCP logger coverage)
         [x] 7m — Remove email providers
         [x] 7n — CLI: General-purpose text filter for list command
-- [ ] **Phase 8** — MCP server
+- [x] **Phase 8** — MCP server
   - [x] 8a — Server scaffold, campaign resolver, error handler
   - [x] 8b — Read-only tools (13 registered; 5 CLI read commands missing — see gap analysis)
   - [x] 8c — Write + CRUD tools
@@ -61,8 +61,8 @@
   - [x] 8f — bin/jho-mcp + package config
   - [x] 8f1 — MCP feature parity with CLI (tools, options, logging)
   - [x] 8f2 — Metadata cleanup on remove + JSDoc coverage
-  - [ ] 8g — Integration tests
-  - [ ] 8h — Examples + docs + polish
+  - [x] 8g — Integration tests
+  - [x] 8h — Docs + polish
   - [ ] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
 - [ ] **Phase 9** — Polish & public readiness
 
@@ -915,14 +915,12 @@ documentation to every undocumented MCP function.
 
 **Commit**: `test(mcp): introduce integration tests`
 
-#### 8h — Examples + docs + polish
+#### 8h — Docs + polish
 
-- `examples/mcp-clients/claude-desktop.json`
-- `examples/mcp-clients/cursor.json`
-- `examples/mcp-clients/continue.json`
-- Update `README.md` — "For MCP Clients" setup section
-- Update `AGENTS.md` — reconcile tool/resource lists
-- Update `docs/ROADMAP.md` — check Phase 8
+- Update `README.md` — MCP Client Setup section with 6 client configs
+- Update `AGENTS.md` — reconcile tool/resource lists, remove "(planned)"
+- Update `glama.json` — maintainers to real GitHub user
+- Add missing test coverage for branch coverage gaps
 
 **Commit**: `docs(mcp): client examples, README, and AGENTS.md update`
 
