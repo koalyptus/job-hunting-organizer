@@ -173,19 +173,91 @@ Global flags work too: `jho --yes "list apps"`. Lower-confidence parses are echo
 
 ## As an MCP server
 
-This package ships an MCP server for AI assistants. Add to your MCP client config:
+This package ships an MCP server via the `jho-mcp` binary.
+Pick the config that matches your client:
+
+**Claude Desktop** (`claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "jho": {
-      "command": "jho-mcp"
+      "command": "jho-mcp",
+      "args": [],
+      "env": {}
     }
   }
 }
 ```
 
-The server is under active development (Phase 8). Tools are being added incrementally: `init`, `extract_jd`, `cover_letter`, `read_cover_letter`, `answer_question`, `track_application`, `list_applications`, `show_application`, `add_interview`, `list_interviews`, `mark_interview`, `read_profile`, `update_profile`, `get_root`, `get_campaign`, `list_campaigns`, `update_config`, `ownership`, `doctor`, `repair`, `get_stats`, `post_mortem`, `append_retro`, `aggregate_retros`, `prepare`, `remove_application`, `rename_application`, `remove_campaign`, `rename_campaign`, `read_campaign_config`, `kb_add`, `kb_update`.
+**Cursor** (`.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "jho": {
+      "command": "jho-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}
+```
+
+**Continue** (`.continue/mcpServers/jho.json`):
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "jho",
+      "command": "jho-mcp",
+      "args": []
+    }
+  ]
+}
+```
+
+**Codex** (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.jho]
+command = "jho-mcp"
+args = []
+```
+
+**GitHub Copilot** (`.vscode/mcp.json`):
+
+```json
+{
+  "servers": {
+    "jho": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["path/to/job-hunting-organizer/bin/jho-mcp"],
+      "env": {}
+    }
+  }
+}
+```
+
+**Opencode** (`opencode.json`):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "jho": {
+      "type": "local",
+      "command": ["jho-mcp"],
+      "enabled": true
+    }
+  }
+}
+```
+
+> **Note:** MCP client configs are not standardized — each client uses its own schema and key names.
+> To set a custom data location, add `"JHO_DATA": "/path/to/data"` to the `env` block (Claude Desktop, Cursor, Copilot) or `environment` block (Opencode).
 
 ## Documentation
 

@@ -184,6 +184,36 @@ describe('list command', () => {
       expect(stdout).toContain('Status: applied');
     });
 
+    it('shows oldest applications first in text output (newest at bottom)', async () => {
+      const {
+        stderr: _stderr,
+        exitCode,
+        stdout,
+      } = await runCommand(listCommand, ['list', '--campaign', 'default'], parentSetup);
+      expect(exitCode).toBe(0);
+      // Mock returns: Acme (Jun-01), Beta (Jun-02), sparse (Jun-06)
+      // Text output reverses so oldest appears first
+      const acmeIdx = stdout.indexOf('2026-Jun-01-SE-Acme-123');
+      const betaIdx = stdout.indexOf('2026-Jun-02-SE-Beta-456');
+      const sparseIdx = stdout.indexOf('2026-Jun-06-sparse-entry');
+      expect(acmeIdx).toBeGreaterThan(betaIdx);
+      expect(betaIdx).toBeGreaterThan(sparseIdx);
+    });
+
+    it('keeps newest-first order in JSON output', async () => {
+      const {
+        stderr: _stderr,
+        exitCode,
+        stdout,
+      } = await runCommand(listCommand, ['list', '--campaign', 'default', '--json'], parentSetup);
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout.trim());
+      // Mock returns: Acme (Jun-01), Beta (Jun-02), sparse (Jun-06)
+      // JSON output preserves original order (newest first)
+      expect(parsed[0]!.company).toBe('Acme Corp');
+      expect(parsed[1]!.company).toBe('Beta Inc');
+    });
+
     it('filters by status', async () => {
       vi.mocked(listCoreModule.runListApplications).mockResolvedValue({
         entries: [

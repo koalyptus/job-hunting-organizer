@@ -456,6 +456,28 @@ describe('listApplications', () => {
     expect(afterPrune).toHaveLength(2);
   });
 
+  it('picks up folders missing from the index', async () => {
+    const slug1 = await createApplication({ appliedDir, title: 'Eng1', company: 'A' });
+    const slug2 = await createApplication({ appliedDir, title: 'Eng2', company: 'B' });
+
+    // Overwrite index with only slug1 — slug2 is now missing from the index
+    const entry1 = (await readIndex(appliedDir)).find((e) => e.slug === slug1)!;
+    await writeFile(join(appliedDir, '.index.json'), JSON.stringify([entry1], null, 2));
+
+    const before = await readIndex(appliedDir);
+    expect(before).toHaveLength(1);
+
+    // listApplications should detect the missing folder and rebuild
+    const entries = await listApplications(appliedDir);
+    expect(entries).toHaveLength(2);
+    expect(entries.map((e) => e.slug)).toContain(slug1);
+    expect(entries.map((e) => e.slug)).toContain(slug2);
+
+    // Index file should be rewritten with both entries
+    const after = await readIndex(appliedDir);
+    expect(after).toHaveLength(2);
+  });
+
   it('filters by text (case-insensitive)', async () => {
     await createApplication({ appliedDir, title: 'Software Engineer', company: 'Acme Corp' });
     await createApplication({ appliedDir, title: 'Backend Developer', company: 'Beta Inc' });

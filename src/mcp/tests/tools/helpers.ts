@@ -34,3 +34,15 @@ export function getTextContent(result: CallToolResult): string {
   }
   return item.text;
 }
+
+/**
+ * Extract the text content from a tool result without throwing on non-text types.
+ * Returns the text if present, or undefined for non-text content types.
+ */
+export function maybeGetTextContent(result: CallToolResult): string | undefined {
+  const item = result.content[0];
+  if (!item || item.type !== 'text') {
+    return undefined;
+  }
+  return item.text;
+}

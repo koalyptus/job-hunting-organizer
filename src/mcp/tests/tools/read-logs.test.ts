@@ -167,4 +167,54 @@ describe('read_logs tool', () => {
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('EACCES: permission denied');
   });
+
+  it('falls back to info level for unknown level name', async () => {
+    const testLogContent =
+      '\n{"level": 30, "msg": "info log"}\n{"level": 20, "msg": "debug log"}\n';
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockReturnValue(testLogContent);
+
+    const { server, getCallback } = fakeServer();
+    registerReadLogs(server);
+    const cb = getCallback()!;
+
+    const result = await cb({ level: 'unknown' as never }, { signal: AbortSignal.timeout(3000) });
+    const data = getTextContent(result);
+    expect(data).toContain('info log');
+    expect(data).not.toContain('debug log');
+  });
+
+  it('returns MCP-only logs without the "both logs" note', async () => {
+    const testLogContent = '\n{"level": 30, "msg": "mcp log"}\n';
+    vi.mocked(existsSync).mockImplementation((p) => String(p).includes('jho-mcp.log'));
+    vi.mocked(readFileSync).mockReturnValue(testLogContent);
+
+    const { server, getCallback } = fakeServer();
+    registerReadLogs(server);
+    const cb = getCallback()!;
+
+    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const data = getTextContent(result);
+    expect(data).not.toContain('includes both CLI and MCP logs');
+    expect(data).toContain('mcp log');
+  });
+
+  it('includes MCP note when both logs exist', async () => {
+    const cliLog = '\n{"level": 30, "msg": "cli log"}\n';
+    const mcpLog = '\n{"level": 30, "msg": "mcp log"}\n';
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockImplementation((p) => {
+      return String(p).includes('jho-mcp.log') ? mcpLog : cliLog;
+    });
+
+    const { server, getCallback } = fakeServer();
+    registerReadLogs(server);
+    const cb = getCallback()!;
+
+    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const data = getTextContent(result);
+    expect(data).toContain('includes both CLI and MCP logs');
+    expect(data).toContain('cli log');
+    expect(data).toContain('mcp log');
+  });
 });

@@ -87,6 +87,10 @@ export const listCommand = new Command('list')
           return;
         }
 
+        // Reverse so the most recent applications appear at the bottom
+        // near the cursor, saving the user from scrolling up.
+        entries.reverse();
+
         for (let i = 0; i < entries.length; i++) {
           if (i > 0) {
             userOutput('');
