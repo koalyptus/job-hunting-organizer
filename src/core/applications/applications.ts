@@ -1,7 +1,7 @@
-import { mkdir, rm, readFile } from 'node:fs/promises';
+import { mkdir, rm, readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { uniqueSlug } from '../parser/slug.js';
+import { uniqueSlug, SLUG_PATTERN } from '../parser/slug.js';
 import { writeFrontmatter, readFrontmatter, mergeFrontmatter } from '../parser/frontmatter.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
@@ -302,6 +302,15 @@ export async function listApplications(
     if (pruned.length !== entries.length) {
       await writeIndex(appliedDir, pruned);
       entries = pruned;
+    }
+
+    // Detect folders on disk that are missing from the index (e.g. created
+    // outside the tool or after a rename). Rebuild when found so they appear
+    // in listing results.
+    const dirs = await readdir(appliedDir, { withFileTypes: true });
+    const slugFolders = dirs.filter((d) => d.isDirectory() && SLUG_PATTERN.test(d.name));
+    if (slugFolders.length !== entries.length) {
+      entries = await rebuildIndex(appliedDir);
     }
   }
 
