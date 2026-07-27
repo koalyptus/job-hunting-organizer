@@ -78,7 +78,7 @@ export function registerReadLogs(server: McpServer): void {
           };
         }
 
-        const mcpNote = mcpLogExists ? `(includes both CLI and MCP logs)` : '';
+        const mcpNote = cliLogExists && mcpLogExists ? '(includes both CLI and MCP logs)' : '';
         const result = mcpNote ? `${mcpNote}\n${lines.join('\n')}` : lines.join('\n');
 
         mcpLogger.debug(

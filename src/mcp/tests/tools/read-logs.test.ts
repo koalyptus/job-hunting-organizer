@@ -184,7 +184,7 @@ describe('read_logs tool', () => {
     expect(data).not.toContain('debug log');
   });
 
-  it('includes MCP note when only MCP log exists', async () => {
+  it('returns MCP-only logs without the "both logs" note', async () => {
     const testLogContent = '\n{"level": 30, "msg": "mcp log"}\n';
     vi.mocked(existsSync).mockImplementation((p) => String(p).includes('jho-mcp.log'));
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
@@ -195,7 +195,7 @@ describe('read_logs tool', () => {
 
     const result = await cb({}, { signal: AbortSignal.timeout(3000) });
     const data = getTextContent(result);
-    expect(data).toContain('includes both CLI and MCP logs');
+    expect(data).not.toContain('includes both CLI and MCP logs');
     expect(data).toContain('mcp log');
   });
 

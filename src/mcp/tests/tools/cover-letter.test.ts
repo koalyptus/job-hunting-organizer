@@ -97,7 +97,6 @@ describe('cover_letter tool', () => {
     expect(generateCoverLetter).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
-      steer: undefined,
     });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.content).toContain('Default steer');

@@ -187,15 +187,15 @@ jho mcp                 # start MCP server
 
 **Natural language**: any command can be invoked in plain English. If `process.argv.slice(2)[0]` contains a space and is not a known command and does not start with `-`, `jho` treats the input as a natural-language prompt. `parseNaturalLanguage` (LLM, json mode, temp 0.1) maps it to a `ParsedCommand`; `dispatchNaturalLanguage` rebuilds a synthetic argv and re-parses it through the existing Commander `program` (`from: 'user'`), so 100% of command logic is reused — nothing is reimplemented. Confidence gates: ≥0.8 auto-run; 0.5–0.8 confirm via `@clack/prompts` (skip with `--yes`); <0.5 error with a rephrase hint. Explicit global flags (`--campaign`, `--yes`, etc.) always override LLM-parsed globals. Requires a configured LLM (same as other LLM-backed commands). See `prompts/nl-command.md` and `src/core/parser/prompt-parser.ts`.
 
-## MCP tools (36 registered)
+## MCP tools (37 registered)
 
-### Read-only tools (18)
+### Read-only tools (20)
 
-`list_applications`, `show_application`, `list_interviews`, `read_profile`, `get_stats`, `get_root`, `get_campaign`, `list_campaigns`, `ownership`, `doctor`, `repair`, `read_cover_letter`, `aggregate_retros`, `extract_jd`, `read_config`, `read_logs`, `read_retro`, `read_prep`, `read_qa`
+`list_applications`, `show_application`, `list_interviews`, `read_profile`, `get_stats`, `get_root`, `get_campaign`, `list_campaigns`, `ownership`, `doctor`, `repair`, `read_cover_letter`, `aggregate_retros`, `extract_jd`, `read_config`, `read_logs`, `read_retro`, `read_prep`, `read_qa`, `read_campaign_config`
 
-### Write + CRUD tools (18)
+### Write + CRUD tools (17)
 
-`init`, `track_application`, `add_interview`, `mark_interview`, `update_profile`, `update_config`, `post_mortem`, `append_retro`, `cover_letter`, `answer_question`, `prepare`, `remove_application`, `rename_application`, `remove_campaign`, `rename_campaign`, `read_campaign_config`, `kb_add`, `kb_update`
+`init`, `track_application`, `add_interview`, `mark_interview`, `update_profile`, `update_config`, `post_mortem`, `append_retro`, `cover_letter`, `answer_question`, `prepare`, `remove_application`, `rename_application`, `remove_campaign`, `rename_campaign`, `kb_add`, `kb_update`
 
 ## Resources (5 registered)
 
