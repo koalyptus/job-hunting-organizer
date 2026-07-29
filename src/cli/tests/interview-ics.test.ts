@@ -157,7 +157,7 @@ describe('generateIcsFile', () => {
 
     await generateIcsFile(appFolder, 1, '2026-07-15 10:00', 'technical', 60);
 
-    const callArgs = vi.mocked(ics.createEvent).mock.calls[0][0];
+    const callArgs = vi.mocked(ics.createEvent).mock.calls[0]![0];
     expect(callArgs).toHaveProperty('end');
     expect(callArgs).not.toHaveProperty('duration');
   });
