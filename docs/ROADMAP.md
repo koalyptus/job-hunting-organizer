@@ -64,6 +64,7 @@
   - [x] 8g — Integration tests
   - [x] 8h — Docs + polish
   - [ ] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
+  - [x] 8l — ICS Outlook.com compatibility
 - [ ] **Phase 9** — Polish & public readiness
 
 ---
@@ -952,6 +953,22 @@ This enables `InMemoryTransport` for proper integration testing and adopts the 2
 | No `InMemoryTransport`                      | `InMemoryTransport.createLinkedPair()` from `@modelcontextprotocol/client` |
 
 **Commit**: `feat(mcp): upgrade to @modelcontextprotocol/server + client v2`
+
+#### 8l — ICS Outlook.com compatibility
+
+Fixes the `ics` package output so generated `.ics` files pass Outlook.com import validation. All changes are in how `createEvent()` is called — no dependency patches.
+
+**Changes**:
+
+- Remove `METHOD:PUBLISH` (triggers Outlook's subscription parser, not event import)
+- Use explicit `DTEND` instead of `DURATION` (Outlook prefers it)
+- Use floating time (`startOutputType: 'local'`) so DTSTART has no `Z` suffix
+- Use domain-style UID (`interview-{n}-{slug}@jho`) instead of bare nanoid
+- Use proper `PRODID:-//jho//interview//EN` format
+
+**Files**: `src/cli/interview-ics.ts`, `src/cli/tests/interview-ics.test.ts`
+
+**Commit**: `fix(calendar): ICS Outlook.com compatibility`
 
 ---
 

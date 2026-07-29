@@ -31,14 +31,33 @@ export async function generateIcsFile(
   const start = parseDatetime(when);
   const eventTitle = title || `Interview #${index} (${type})`;
 
+  const whenSlug = when.replace(/[:\s]/g, '-');
+  const typeSlug = type.replace(/\s+/g, '-');
+  const uid = `interview-${index}-${whenSlug}-${typeSlug}@jho`;
+
+  // Compute end = start + duration in floating local time
+  const startDate = new Date(start[0], start[1] - 1, start[2], start[3], start[4]);
+  startDate.setMinutes(startDate.getMinutes() + duration);
+  const end: [number, number, number, number, number] = [
+    startDate.getFullYear(),
+    startDate.getMonth() + 1,
+    startDate.getDate(),
+    startDate.getHours(),
+    startDate.getMinutes(),
+  ];
+
   const { error, value } = createEvent({
     start,
-    duration: { minutes: duration },
+    end,
     title: eventTitle,
     description: `Interview type: ${type}`,
     location: location || undefined,
     status: 'CONFIRMED',
     busyStatus: 'BUSY',
+    uid,
+    productId: '-//jho//interview//EN',
+    method: undefined,
+    startOutputType: 'local',
   });
 
   if (error) {
@@ -50,8 +69,6 @@ export async function generateIcsFile(
   }
 
   // Create filename: interview-{index}-{datetime}-{type}.ics (index guarantees uniqueness)
-  const whenSlug = when.replace(/[:\s]/g, '-');
-  const typeSlug = type.replace(/\s+/g, '-');
   const filename = `interview-${index}-${whenSlug}-${typeSlug}.ics`;
   const filePath = join(appFolder, filename);
 
