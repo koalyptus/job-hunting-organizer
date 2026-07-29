@@ -96,6 +96,72 @@ describe('generateIcsFile', () => {
     );
   });
 
+  it('generates domain-style UID', async () => {
+    const appFolder = join(testDir, 'app');
+    await mkdir(appFolder, { recursive: true });
+
+    await generateIcsFile(appFolder, 1, '2026-07-15 10:00', 'technical', 60);
+
+    expect(vi.mocked(ics.createEvent)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        uid: 'interview-1-2026-07-15-10-00-technical@jho',
+      }),
+    );
+  });
+
+  it('sets custom productId and omits METHOD', async () => {
+    const appFolder = join(testDir, 'app');
+    await mkdir(appFolder, { recursive: true });
+
+    await generateIcsFile(appFolder, 2, '2026-07-20 09:00', 'behavioural', 30);
+
+    expect(vi.mocked(ics.createEvent)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productId: '-//jho//interview//EN',
+        method: undefined,
+        startOutputType: 'local',
+      }),
+    );
+  });
+
+  it('computes end from start + duration', async () => {
+    const appFolder = join(testDir, 'app');
+    await mkdir(appFolder, { recursive: true });
+
+    await generateIcsFile(appFolder, 1, '2026-07-15 10:00', 'technical', 90);
+
+    expect(vi.mocked(ics.createEvent)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        end: [2026, 7, 15, 11, 30],
+        start: [2026, 7, 15, 10, 0],
+      }),
+    );
+  });
+
+  it('computes end correctly across hour boundaries', async () => {
+    const appFolder = join(testDir, 'app');
+    await mkdir(appFolder, { recursive: true });
+
+    await generateIcsFile(appFolder, 1, '2026-07-15 23:30', 'technical', 45);
+
+    expect(vi.mocked(ics.createEvent)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        end: [2026, 7, 16, 0, 15],
+      }),
+    );
+  });
+
+  it('passes end instead of duration', async () => {
+    const appFolder = join(testDir, 'app');
+    await mkdir(appFolder, { recursive: true });
+
+    await generateIcsFile(appFolder, 1, '2026-07-15 10:00', 'technical', 60);
+
+    const callArgs = vi.mocked(ics.createEvent).mock.calls[0][0];
+    expect(callArgs).toHaveProperty('end');
+    expect(callArgs).not.toHaveProperty('duration');
+  });
+
   it('slugs type with spaces', async () => {
     const appFolder = join(testDir, 'app');
     await mkdir(appFolder, { recursive: true });

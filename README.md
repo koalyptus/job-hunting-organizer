@@ -256,6 +256,17 @@ args = []
 }
 ```
 
+> **Local model tip:** If you use a local LLM (Ollama, LM Studio, OpenCode), add `"timeout": 30000` to the MCP server config. Local models can be slow on first load, and the default 5-second timeout may fire before the server responds to `initialize` or `tools/list`.
+>
+> ```json
+> {
+>   "type": "local",
+>   "command": ["jho-mcp"],
+>   "enabled": true,
+>   "timeout": 30000
+> }
+> ```
+
 > **Note:** MCP client configs are not standardized — each client uses its own schema and key names.
 > To set a custom data location, add `"JHO_DATA": "/path/to/data"` to the `env` block (Claude Desktop, Cursor, Copilot) or `environment` block (Opencode).
 
