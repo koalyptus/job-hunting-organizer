@@ -1,27 +1,18 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { PromptMessage } from '@modelcontextprotocol/server';
 
-type PromptContent = { type: 'text'; text: string };
-type PromptMessage = { role: string; content: PromptContent };
-type PromptHandler = (args: {
-  campaign: string;
-  [key: string]: string;
-}) => Promise<{ messages: PromptMessage[] }>;
+export { createTestServer } from '../helpers.js';
 
 /**
- * Create a fake MCP server that captures the registered prompt handler.
- * Use in unit tests to test prompt handler logic without the full MCP protocol.
- * Returns `server` cast to `McpServer` so it can be passed to register functions.
+ * Extracts the text from a prompt message, throwing if the message carries
+ * non-text content (image/audio). Prompt tests assert on the text body of
+ * assistant messages.
+ *
+ * @param message - the prompt message to read
+ * @returns the text content of the message
  */
-export function fakeServer(): { server: McpServer; getHandler: () => PromptHandler | null } {
-  let handler: PromptHandler | null = null;
-  return {
-    server: {
-      registerPrompt: (_name: string, _config: unknown, callback: PromptHandler) => {
-        handler = callback;
-      },
-    } as unknown as McpServer,
-    getHandler: () => handler,
-  };
+export function promptText(message: PromptMessage): string {
+  if (message.content.type !== 'text') {
+    throw new Error('expected text prompt content');
+  }
+  return message.content.text;
 }
-
-export type { PromptContent, PromptMessage };

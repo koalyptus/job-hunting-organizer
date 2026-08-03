@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerRemoveApplication } from '../../tools/remove-application.js';
 import { deleteApplication } from '../../../core/applications/applications.js';
@@ -51,14 +51,12 @@ describe('remove_application tool', () => {
   it('removes an application successfully', async () => {
     vi.mocked(deleteApplication).mockResolvedValue(true);
 
-    const { server, getCallback } = fakeServer();
-    registerRemoveApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'remove_application',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.slug).toBe('test-app');
     expect(parsed.removed).toBe(true);
@@ -76,14 +74,12 @@ describe('remove_application tool', () => {
   it('returns error when application not found', async () => {
     vi.mocked(deleteApplication).mockResolvedValue(false);
 
-    const { server, getCallback } = fakeServer();
-    registerRemoveApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'non-existent' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'remove_application',
+      arguments: { campaign: 'default', slug: 'non-existent' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('not found');
   });
@@ -91,14 +87,12 @@ describe('remove_application tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(deleteApplication).mockRejectedValue(new Error('delete failed'));
 
-    const { server, getCallback } = fakeServer();
-    registerRemoveApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'remove_application',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('delete failed');
   });

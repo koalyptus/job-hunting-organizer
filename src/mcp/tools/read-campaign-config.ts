@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ReadCampaignConfigInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { loadCampaignConfig } from '../../core/config/config.js';
@@ -11,10 +11,9 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerReadCampaignConfig(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'read_campaign_config',
-    'Read campaign configuration (redacted)',
-    ReadCampaignConfigInput.shape,
+    { description: 'Read campaign configuration (redacted)', inputSchema: ReadCampaignConfigInput },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.read_campaign_config.start');

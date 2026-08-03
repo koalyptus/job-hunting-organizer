@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ReadPrepInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { readPrep } from '../../core/prepare/index.js';
@@ -11,10 +11,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerReadPrep(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'read_prep',
-    'Read an existing pre-interview prep plan for an application',
-    ReadPrepInput.shape,
+    {
+      description: 'Read an existing pre-interview prep plan for an application',
+      inputSchema: ReadPrepInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.read_prep.start');

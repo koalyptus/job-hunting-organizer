@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { registerRemoveCampaign } from '../../tools/remove-campaign.js';
 import { removeCampaign } from '../../../core/campaign/remove-campaign.js';
 import { mcpLogger } from '../../logger.js';
@@ -52,11 +52,12 @@ describe('remove_campaign tool', () => {
   });
 
   it('removes a campaign successfully', async () => {
-    const { server, getCallback } = fakeServer();
-    registerRemoveCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveCampaign);
 
-    const result = await cb({ campaign: 'test-campaign' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'remove_campaign',
+      arguments: { campaign: 'test-campaign' },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.campaign).toBe('test-campaign');
     expect(parsed.removed).toBe(true);
@@ -72,27 +73,23 @@ describe('remove_campaign tool', () => {
   });
 
   it('passes confirm=true explicitly', async () => {
-    const { server, getCallback } = fakeServer();
-    registerRemoveCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveCampaign);
 
-    const result = await cb(
-      { campaign: 'test-campaign', confirm: true },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'remove_campaign',
+      arguments: { campaign: 'test-campaign', confirm: true },
+    });
     expect(JSON.parse(getTextContent(result)).removed).toBe(true);
     expect(vi.mocked(removeCampaign)).toHaveBeenCalledWith('test-campaign', { skipConfirm: true });
   });
 
   it('passes confirm=false explicitly', async () => {
-    const { server, getCallback } = fakeServer();
-    registerRemoveCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveCampaign);
 
-    const result = await cb(
-      { campaign: 'test-campaign', confirm: false },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'remove_campaign',
+      arguments: { campaign: 'test-campaign', confirm: false },
+    });
     expect(JSON.parse(getTextContent(result)).removed).toBe(true);
     expect(vi.mocked(removeCampaign)).toHaveBeenCalledWith('test-campaign', { skipConfirm: false });
   });
@@ -100,11 +97,12 @@ describe('remove_campaign tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(removeCampaign).mockRejectedValue(new Error('campaign not found'));
 
-    const { server, getCallback } = fakeServer();
-    registerRemoveCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveCampaign);
 
-    const result = await cb({ campaign: 'nonexistent' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'remove_campaign',
+      arguments: { campaign: 'nonexistent' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('campaign not found');
   });

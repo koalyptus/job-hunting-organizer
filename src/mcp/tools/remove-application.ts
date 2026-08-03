@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { RemoveApplicationInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import {
@@ -16,10 +16,13 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerRemoveApplication(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'remove_application',
-    'Permanently remove an application folder — cleans metadata, index, and sidecars',
-    RemoveApplicationInput.shape,
+    {
+      description:
+        'Permanently remove an application folder — cleans metadata, index, and sidecars',
+      inputSchema: RemoveApplicationInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug(

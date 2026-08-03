@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -42,14 +42,12 @@ describe('read_qa tool', () => {
       '# Q&A\n\n## 2026-01-15 "Tell me about yourself"\n\n- Source: application form\n- Answer: I am a dedicated software engineer with 5 years of experience...';
     vi.mocked(readQa).mockResolvedValue(testQaContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadQa(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadQa);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'read_qa',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     const data = getTextContent(result);
     expect(data).toContain('Q&A');
     expect(data).toContain('Tell me about yourself');
@@ -62,14 +60,12 @@ describe('read_qa tool', () => {
       );
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadQa(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadQa);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'missing-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'read_qa',
+      arguments: { campaign: 'default', slug: 'missing-app' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('No Q&A entries found');
   });

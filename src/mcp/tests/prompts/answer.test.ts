@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer } from './helpers.js';
+import { createTestServer, promptText } from './helpers.js';
 import { answerQuestion } from '../../../core/applications/application-qa.js';
 import { registerAnswerPrompt } from '../../prompts/answer.js';
 
@@ -22,58 +22,44 @@ describe('answer prompt', () => {
   });
 
   it('returns answer message', async () => {
-    const { server, getHandler } = fakeServer();
-    registerAnswerPrompt(server);
-    const handler = getHandler()!;
-
-    const result = await handler({
-      campaign: 'default',
-      slug: 'test-app',
-      question: 'test question',
+    const { client } = await createTestServer(registerAnswerPrompt);
+    const result = await client.getPrompt({
+      name: 'answer',
+      arguments: { campaign: 'default', slug: 'test-app', question: 'test question' },
     });
-    expect(result.messages).toBeDefined();
     expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
     expect(message.role).toBe('assistant');
     expect(message.content.type).toBe('text');
-    const data = JSON.parse(message.content.text);
+    const data = JSON.parse(promptText(message));
     expect(data.answer).toBe('test answer');
   });
 
   it('returns error when core function fails', async () => {
     vi.mocked(answerQuestion).mockRejectedValue(new Error('test error'));
 
-    const { server, getHandler } = fakeServer();
-    registerAnswerPrompt(server);
-    const handler = getHandler()!;
-
-    const result = await handler({
-      campaign: 'default',
-      slug: 'test-app',
-      question: 'test question',
+    const { client } = await createTestServer(registerAnswerPrompt);
+    const result = await client.getPrompt({
+      name: 'answer',
+      arguments: { campaign: 'default', slug: 'test-app', question: 'test question' },
     });
-    expect(result.messages).toBeDefined();
     expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
-    expect(message.content.text).toContain('Error answering question');
-    expect(message.content.text).toContain('test error');
+    expect(promptText(message)).toContain('Error answering question');
+    expect(promptText(message)).toContain('test error');
   });
 
   it('handles non-Error exception', async () => {
     vi.mocked(answerQuestion).mockRejectedValue('string error');
 
-    const { server, getHandler } = fakeServer();
-    registerAnswerPrompt(server);
-    const handler = getHandler()!;
-
-    const result = await handler({
-      campaign: 'default',
-      slug: 'test-app',
-      question: 'test question',
+    const { client } = await createTestServer(registerAnswerPrompt);
+    const result = await client.getPrompt({
+      name: 'answer',
+      arguments: { campaign: 'default', slug: 'test-app', question: 'test question' },
     });
-    expect(result.messages).toBeDefined();
+    expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
-    expect(message.content.text).toContain('Error answering question');
-    expect(message.content.text).toContain('string error');
+    expect(promptText(message)).toContain('Error answering question');
+    expect(promptText(message)).toContain('string error');
   });
 });

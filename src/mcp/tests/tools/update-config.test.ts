@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerUpdateConfig } from '../../tools/update-config.js';
 
@@ -17,7 +17,7 @@ vi.mock('../../error-handler.js', () => ({
 
 vi.mock('../../schemas.js', () => ({
   UpdateConfigInput: z.object({
-    patch: z.record(z.unknown()),
+    patch: z.record(z.string(), z.unknown()),
   }),
 }));
 
@@ -38,14 +38,12 @@ describe('update_config tool', () => {
   });
 
   it('updates config and clears cache', async () => {
-    const { server, getCallback } = fakeServer();
-    registerUpdateConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerUpdateConfig);
 
-    const result = await cb(
-      { patch: { llmModel: 'gpt-4' } },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'update_config',
+      arguments: { patch: { llmModel: 'gpt-4' } },
+    });
     expect(vi.mocked(updateGlobalConfig)).toHaveBeenCalledWith({ llmModel: 'gpt-4' });
     expect(vi.mocked(clearConfigCache)).toHaveBeenCalledOnce();
     const parsed = JSON.parse(getTextContent(result));
@@ -57,14 +55,12 @@ describe('update_config tool', () => {
       throw new Error('invalid config');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerUpdateConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerUpdateConfig);
 
-    const result = await cb(
-      { patch: { llmModel: 'gpt-4' } },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'update_config',
+      arguments: { patch: { llmModel: 'gpt-4' } },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('invalid config');
   });

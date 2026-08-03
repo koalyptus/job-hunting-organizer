@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ShowApplicationInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
@@ -12,10 +12,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerShowApplication(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'show_application',
-    'Show a single application: metadata (meta.md) and job description (jd.md)',
-    ShowApplicationInput.shape,
+    {
+      description: 'Show a single application: metadata (meta.md) and job description (jd.md)',
+      inputSchema: ShowApplicationInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug(

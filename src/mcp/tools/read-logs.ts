@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ReadLogsInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveConfigHome } from '../../core/paths.js';
@@ -14,10 +14,12 @@ import { resolve } from 'node:path';
  * @param server - The MCP server instance.
  */
 export function registerReadLogs(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'read_logs',
-    'Read the log file with optional filtering (tail, level, JSON format)',
-    ReadLogsInput.shape,
+    {
+      description: 'Read the log file with optional filtering (tail, level, JSON format)',
+      inputSchema: ReadLogsInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ tail: args.tail, level: args.level }, 'tool.read_logs.start');

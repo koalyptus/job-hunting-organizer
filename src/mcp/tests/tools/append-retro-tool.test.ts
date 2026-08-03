@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { appendRetro } from '../../../core/retro/retro.js';
 import { registerAppendRetro } from '../../tools/append-retro-tool.js';
@@ -60,20 +60,18 @@ describe('append_retro tool', () => {
       index: 2,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerAppendRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAppendRetro);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'append_retro',
+      arguments: {
         campaign: 'default',
         slug: 'test-app',
         weakTopics: ['behavioral'],
         notes: 'Need more practice',
         noCarryOver: true,
       },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    });
     expect(appendRetro).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -97,14 +95,12 @@ describe('append_retro tool', () => {
       index: 3,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerAppendRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAppendRetro);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'append_retro',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(appendRetro).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -121,14 +117,12 @@ describe('append_retro tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(appendRetro).mockRejectedValue(new Error('at least one new weak topic is required'));
 
-    const { server, getCallback } = fakeServer();
-    registerAppendRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAppendRetro);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', weakTopics: [] },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'append_retro',
+      arguments: { campaign: 'default', slug: 'test-app', weakTopics: [] },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('at least one new weak topic is required');
   });

@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { DoctorInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
@@ -12,10 +12,13 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerDoctor(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'doctor',
-    'Diagnose campaign or application issues (missing files, invalid frontmatter, toolhash mismatches)',
-    DoctorInput.shape,
+    {
+      description:
+        'Diagnose campaign or application issues (missing files, invalid frontmatter, toolhash mismatches)',
+      inputSchema: DoctorInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.doctor.start');

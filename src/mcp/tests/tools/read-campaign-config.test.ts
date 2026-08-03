@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { registerReadCampaignConfig } from '../../tools/read-campaign-config.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -37,11 +37,12 @@ describe('read_campaign_config tool', () => {
   });
 
   it('returns campaign config', async () => {
-    const { server, getCallback } = fakeServer();
-    registerReadCampaignConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadCampaignConfig);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'read_campaign_config',
+      arguments: { campaign: 'default' },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.someKey).toBe('value');
   });
@@ -51,11 +52,12 @@ describe('read_campaign_config tool', () => {
       throw new Error('config error');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadCampaignConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadCampaignConfig);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'read_campaign_config',
+      arguments: { campaign: 'default' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('config error');
   });
@@ -67,11 +69,12 @@ describe('read_campaign_config tool', () => {
       clientSecret: 'secret-secret',
     } as unknown as ReturnType<typeof loadCampaignConfig>);
 
-    const { server, getCallback } = fakeServer();
-    registerReadCampaignConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadCampaignConfig);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'read_campaign_config',
+      arguments: { campaign: 'default' },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.apiKey).toBe('[REDACTED]');
     expect(parsed.token).toBe('[REDACTED]');

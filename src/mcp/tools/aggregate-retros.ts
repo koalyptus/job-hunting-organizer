@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { AggregateRetrosInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
@@ -12,10 +12,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerAggregateRetros(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'aggregate_retros',
-    'Aggregate weak topics across all application retro files for a campaign',
-    AggregateRetrosInput.shape,
+    {
+      description: 'Aggregate weak topics across all application retro files for a campaign',
+      inputSchema: AggregateRetrosInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.aggregate_retros.start');

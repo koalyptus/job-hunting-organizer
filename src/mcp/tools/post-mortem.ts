@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { PostMortemInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { startRetro } from '../../core/retro/retro.js';
@@ -11,10 +11,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerPostMortem(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'post_mortem',
-    'Generate a post-mortem learning plan for an application',
-    PostMortemInput.shape,
+    {
+      description: 'Generate a post-mortem learning plan for an application',
+      inputSchema: PostMortemInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.post_mortem.start');

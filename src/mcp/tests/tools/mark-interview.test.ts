@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { INTERVIEW_STATUSES } from '../../../core/interviews/types.js';
 import { markInterviewStatus, appendInterviewNotes } from '../../../core/interviews/interviews.js';
@@ -53,14 +53,12 @@ describe('mark_interview tool', () => {
   it('marks an interview status with 0-based to 1-based index conversion', async () => {
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
 
-    const { server, getCallback } = fakeServer();
-    registerMarkInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerMarkInterview);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', index: 0, status: 'completed' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'mark_interview',
+      arguments: { campaign: 'default', slug: 'test-app', index: 0, status: 'completed' },
+    });
     expect(markInterviewStatus).toHaveBeenCalledWith('/campaigns/default/applied', 'test-app', {
       sectionNumber: 1,
       status: 'completed',
@@ -73,20 +71,18 @@ describe('mark_interview tool', () => {
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockResolvedValue(true);
 
-    const { server, getCallback } = fakeServer();
-    registerMarkInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerMarkInterview);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'mark_interview',
+      arguments: {
         campaign: 'default',
         slug: 'test-app',
         index: 1,
         status: 'completed',
         notes: 'Great technical discussion',
       },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    });
     expect(markInterviewStatus).toHaveBeenCalledWith('/campaigns/default/applied', 'test-app', {
       sectionNumber: 2,
       status: 'completed',
@@ -103,14 +99,12 @@ describe('mark_interview tool', () => {
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockResolvedValue(true);
 
-    const { server, getCallback } = fakeServer();
-    registerMarkInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerMarkInterview);
 
-    await cb(
-      { campaign: 'default', slug: 'test-app', index: 0, status: 'pending' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    await client.callTool({
+      name: 'mark_interview',
+      arguments: { campaign: 'default', slug: 'test-app', index: 0, status: 'pending' },
+    });
     expect(appendInterviewNotes).not.toHaveBeenCalled();
   });
 
@@ -118,20 +112,18 @@ describe('mark_interview tool', () => {
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockRejectedValue(new Error('interviews.md not found'));
 
-    const { server, getCallback } = fakeServer();
-    registerMarkInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerMarkInterview);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'mark_interview',
+      arguments: {
         campaign: 'default',
         slug: 'test-app',
         index: 0,
         status: 'completed',
         notes: 'Some notes',
       },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('interviews.md not found');
   });
@@ -139,14 +131,12 @@ describe('mark_interview tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(markInterviewStatus).mockRejectedValue(new Error('interview not found'));
 
-    const { server, getCallback } = fakeServer();
-    registerMarkInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerMarkInterview);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', index: 2, status: 'completed' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'mark_interview',
+      arguments: { campaign: 'default', slug: 'test-app', index: 2, status: 'completed' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('interview not found');
   });

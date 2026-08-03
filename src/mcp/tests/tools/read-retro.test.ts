@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -42,14 +42,12 @@ describe('read_retro tool', () => {
       '# Retro\n\n## Week 1\n- Fixed SQL performance issues\n- Learned about connection pooling';
     vi.mocked(showRetro).mockResolvedValue(testRetroContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadRetro);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'read_retro',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     const data = getTextContent(result);
     expect(data).toContain('Retro');
     expect(data).toContain('SQL performance issues');
@@ -60,14 +58,12 @@ describe('read_retro tool', () => {
       throw new Error('retro not found: missing-app');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadRetro);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'missing-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'read_retro',
+      arguments: { campaign: 'default', slug: 'missing-app' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('retro not found');
   });

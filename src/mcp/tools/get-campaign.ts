@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { GetCampaignInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { loadCampaignConfig } from '../../core/config/config.js';
@@ -12,10 +12,9 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerGetCampaign(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'get_campaign',
-    'Get campaign configuration (secrets redacted)',
-    GetCampaignInput.shape,
+    { description: 'Get campaign configuration (secrets redacted)', inputSchema: GetCampaignInput },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.get_campaign.start');

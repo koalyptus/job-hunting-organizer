@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { loadCampaignConfig } from '../../../core/config/config.js';
 import { registerGetCampaign } from '../../tools/get-campaign.js';
@@ -44,11 +44,12 @@ describe('get_campaign tool', () => {
       applied: '/data/campaigns/default/applied',
     } as never);
 
-    const { server, getCallback } = fakeServer();
-    registerGetCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetCampaign);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'get_campaign',
+      arguments: { campaign: 'default' },
+    });
     const data = JSON.parse(getTextContent(result));
     expect(data.version).toBe(1);
   });
@@ -58,11 +59,12 @@ describe('get_campaign tool', () => {
       throw new Error('test error');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerGetCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetCampaign);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'get_campaign',
+      arguments: { campaign: 'default' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('test error');
   });

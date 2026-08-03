@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer } from './helpers.js';
+import { createTestServer, resourceText } from './helpers.js';
 import { loadGlobalConfig } from '../../../core/config/config.js';
 import { redactSecrets } from '../../../core/config/config.view.js';
 import { registerConfig } from '../../resources/config.js';
@@ -30,16 +30,12 @@ describe('config resource', () => {
   });
 
   it('returns global config with redacted secrets', async () => {
-    const { server, getHandler } = fakeServer();
-    registerConfig(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://config'), {});
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerConfig);
+    const result = await client.readResource({ uri: 'jho://config' });
     expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
     expect(content.mimeType).toBe('application/json');
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.llm.apiKey).toBe('***');
     expect(redactSecrets).toHaveBeenCalledOnce();
     expect(redactSecrets).toHaveBeenCalledWith({
@@ -52,15 +48,11 @@ describe('config resource', () => {
       throw new Error('test error');
     });
 
-    const { server, getHandler } = fakeServer();
-    registerConfig(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://config'), {});
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerConfig);
+    const result = await client.readResource({ uri: 'jho://config' });
     expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.error).toBe('test error');
   });
 
@@ -69,14 +61,11 @@ describe('config resource', () => {
       throw 'string error';
     });
 
-    const { server, getHandler } = fakeServer();
-    registerConfig(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://config'), {});
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerConfig);
+    const result = await client.readResource({ uri: 'jho://config' });
+    expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.error).toBe('string error');
   });
 });

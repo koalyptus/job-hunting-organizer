@@ -1,18 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { fakeServer, getTextContent, maybeGetTextContent } from './helpers.js';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { createTestServer, getTextContent, maybeGetTextContent } from './helpers.js';
+import type { CallToolResult } from '@modelcontextprotocol/server';
 
-describe('fakeServer', () => {
-  it('returns null callback initially', () => {
-    const { getCallback } = fakeServer();
-    expect(getCallback()).toBeNull();
-  });
-
-  it('captures the registered tool callback', () => {
-    const { server, getCallback } = fakeServer();
-    const handler = async () => ({ content: [{ type: 'text' as const, text: 'ok' }] });
-    server.tool('test', 'desc', {}, handler);
-    expect(getCallback()).toBe(handler);
+describe('createTestServer', () => {
+  it('connects a real client to the server', async () => {
+    const { client, server } = await createTestServer();
+    expect(server).toBeDefined();
+    await client.close();
   });
 });
 

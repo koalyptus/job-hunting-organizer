@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ExtractJdInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { getConfig } from '../../core/config/config.js';
@@ -13,10 +13,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerExtractJd(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'extract_jd',
-    'Extract structured job description from a URL or raw text',
-    ExtractJdInput.shape,
+    {
+      description: 'Extract structured job description from a URL or raw text',
+      inputSchema: ExtractJdInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug(

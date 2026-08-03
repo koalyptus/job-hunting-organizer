@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { readShowData, readShowFile, ShowError } from '../../../core/applications/show.js';
@@ -67,14 +67,12 @@ describe('show_application tool', () => {
     });
     vi.mocked(readShowFile).mockResolvedValue('# Job Description\n\nWe are hiring...');
 
-    const { server, getCallback } = fakeServer();
-    registerShowApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerShowApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'show_application',
+      arguments: { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
+    });
     const data = JSON.parse(getTextContent(result));
     expect(data.frontmatter.slug).toBe('2026-Jan-01-eng-acme');
     expect(data.jdContent).toBe('# Job Description\n\nWe are hiring...');
@@ -90,14 +88,12 @@ describe('show_application tool', () => {
     });
     vi.mocked(readShowFile).mockRejectedValue(new ShowError('File not found: jd.md'));
 
-    const { server, getCallback } = fakeServer();
-    registerShowApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerShowApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'show_application',
+      arguments: { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
+    });
     const data = JSON.parse(getTextContent(result));
     expect(data.frontmatter.slug).toBe('2026-Jan-01-eng-acme');
     expect(data.jdContent).toBe('');
@@ -108,14 +104,12 @@ describe('show_application tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(readShowData).mockRejectedValue(new Error('test error'));
 
-    const { server, getCallback } = fakeServer();
-    registerShowApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerShowApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'show_application',
+      arguments: { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('test error');
   });
@@ -130,14 +124,12 @@ describe('show_application tool', () => {
     });
     vi.mocked(readShowFile).mockRejectedValue(new Error('disk failure'));
 
-    const { server, getCallback } = fakeServer();
-    registerShowApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerShowApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'show_application',
+      arguments: { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('disk failure');
   });

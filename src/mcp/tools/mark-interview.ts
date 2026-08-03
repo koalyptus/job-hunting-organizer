@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { MarkInterviewInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { markInterviewStatus, appendInterviewNotes } from '../../core/interviews/interviews.js';
@@ -12,10 +12,9 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerMarkInterview(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'mark_interview',
-    'Change the status of an existing interview',
-    MarkInterviewInput.shape,
+    { description: 'Change the status of an existing interview', inputSchema: MarkInterviewInput },
     async (args) => {
       try {
         mcpLogger.debug(

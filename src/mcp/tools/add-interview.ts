@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { AddInterviewInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { addInterview } from '../../core/interviews/interviews.js';
@@ -12,10 +12,9 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerAddInterview(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'add_interview',
-    'Add a new interview entry for an application',
-    AddInterviewInput.shape,
+    { description: 'Add a new interview entry for an application', inputSchema: AddInterviewInput },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.add_interview.start');

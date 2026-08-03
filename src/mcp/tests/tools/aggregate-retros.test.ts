@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { aggregateRetros } from '../../../core/retro/aggregate.js';
 import { registerAggregateRetros } from '../../tools/aggregate-retros.js';
@@ -54,14 +54,12 @@ describe('aggregate_retros tool', () => {
       { label: 'Behavioral — STAR format', count: 2, apps: ['app1', 'app4'] },
     ]);
 
-    const { server, getCallback } = fakeServer();
-    registerAggregateRetros(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAggregateRetros);
 
-    const result = await cb(
-      { campaign: 'default', targetRole: 'backend-engineer', includeAbandoned: false },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'aggregate_retros',
+      arguments: { campaign: 'default', targetRole: 'backend-engineer', includeAbandoned: false },
+    });
     expect(aggregateRetros).toHaveBeenCalledWith('/data/campaigns/default/applied', {
       role: 'backend-engineer',
       includeAbandoned: false,
@@ -77,11 +75,12 @@ describe('aggregate_retros tool', () => {
       { label: 'System design — consistency models', count: 1, apps: ['app1'] },
     ]);
 
-    const { server, getCallback } = fakeServer();
-    registerAggregateRetros(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAggregateRetros);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'aggregate_retros',
+      arguments: { campaign: 'default' },
+    });
     expect(aggregateRetros).toHaveBeenCalledWith('/data/campaigns/default/applied', {
       role: undefined,
       includeAbandoned: undefined,
@@ -93,11 +92,12 @@ describe('aggregate_retros tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(aggregateRetros).mockRejectedValue(new Error('Failed to list applications'));
 
-    const { server, getCallback } = fakeServer();
-    registerAggregateRetros(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAggregateRetros);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'aggregate_retros',
+      arguments: { campaign: 'default' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('Failed to list applications');
   });

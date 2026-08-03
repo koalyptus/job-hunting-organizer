@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ReadProfileInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot } from '../../core/paths.js';
@@ -12,10 +12,9 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerReadProfile(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'read_profile',
-    'Read the candidate profile for a campaign',
-    ReadProfileInput.shape,
+    { description: 'Read the candidate profile for a campaign', inputSchema: ReadProfileInput },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.read_profile.start');

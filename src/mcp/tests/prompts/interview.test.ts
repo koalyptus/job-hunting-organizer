@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer } from './helpers.js';
+import { createTestServer, promptText } from './helpers.js';
 import { generatePrep } from '../../../core/prepare/prepare.js';
 import { registerInterviewPrompt } from '../../prompts/interview.js';
 
@@ -22,46 +22,44 @@ describe('interview prompt', () => {
   });
 
   it('returns interview prep message', async () => {
-    const { server, getHandler } = fakeServer();
-    registerInterviewPrompt(server);
-    const handler = getHandler()!;
-
-    const result = await handler({ campaign: 'default', slug: 'test-app' });
-    expect(result.messages).toBeDefined();
+    const { client } = await createTestServer(registerInterviewPrompt);
+    const result = await client.getPrompt({
+      name: 'interview',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
     expect(message.role).toBe('assistant');
     expect(message.content.type).toBe('text');
-    const data = JSON.parse(message.content.text);
+    const data = JSON.parse(promptText(message));
     expect(data.prep).toBe('test prep content');
   });
 
   it('returns error when core function fails', async () => {
     vi.mocked(generatePrep).mockRejectedValue(new Error('test error'));
 
-    const { server, getHandler } = fakeServer();
-    registerInterviewPrompt(server);
-    const handler = getHandler()!;
-
-    const result = await handler({ campaign: 'default', slug: 'test-app' });
-    expect(result.messages).toBeDefined();
+    const { client } = await createTestServer(registerInterviewPrompt);
+    const result = await client.getPrompt({
+      name: 'interview',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
-    expect(message.content.text).toContain('Error generating interview prep');
-    expect(message.content.text).toContain('test error');
+    expect(promptText(message)).toContain('Error generating interview prep');
+    expect(promptText(message)).toContain('test error');
   });
 
   it('handles non-Error exception', async () => {
     vi.mocked(generatePrep).mockRejectedValue('string error');
 
-    const { server, getHandler } = fakeServer();
-    registerInterviewPrompt(server);
-    const handler = getHandler()!;
-
-    const result = await handler({ campaign: 'default', slug: 'test-app' });
-    expect(result.messages).toBeDefined();
+    const { client } = await createTestServer(registerInterviewPrompt);
+    const result = await client.getPrompt({
+      name: 'interview',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
+    expect(result.messages).toHaveLength(1);
     const message = result.messages[0]!;
-    expect(message.content.text).toContain('Error generating interview prep');
-    expect(message.content.text).toContain('string error');
+    expect(promptText(message)).toContain('Error generating interview prep');
+    expect(promptText(message)).toContain('string error');
   });
 });

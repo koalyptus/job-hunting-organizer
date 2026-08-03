@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { RepairInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
@@ -12,10 +12,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerRepair(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'repair',
-    'Repair application toolhash sidecars, rebuild index and counters',
-    RepairInput.shape,
+    {
+      description: 'Repair application toolhash sidecars, rebuild index and counters',
+      inputSchema: RepairInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.repair.start');

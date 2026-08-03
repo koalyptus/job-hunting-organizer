@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { RenameCampaignInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { renameCampaign } from '../../core/campaign/rename-campaign.js';
@@ -11,10 +11,9 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerRenameCampaign(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'rename_campaign',
-    'Rename a campaign folder',
-    RenameCampaignInput.shape,
+    { description: 'Rename a campaign folder', inputSchema: RenameCampaignInput },
     async (args) => {
       try {
         mcpLogger.debug({ from: args.from, to: args.to }, 'tool.rename_campaign.start');

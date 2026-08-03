@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ListApplicationsInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { runListApplications } from '../../core/list/list.js';
@@ -11,10 +11,13 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerListApplications(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'list_applications',
-    'List applications with optional status, tags, role, employment type, and text filters',
-    ListApplicationsInput.shape,
+    {
+      description:
+        'List applications with optional status, tags, role, employment type, and text filters',
+      inputSchema: ListApplicationsInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.list_applications.start');

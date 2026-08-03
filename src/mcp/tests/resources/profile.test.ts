@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer } from './helpers.js';
+import {
+  createTestServer,
+  createTestServerAndCapture,
+  invokeResourceRead,
+  resourceText,
+} from './helpers.js';
 import { readProfile } from '../../../core/campaign/profile-read.js';
 import { registerProfile } from '../../resources/profile.js';
 
@@ -27,82 +32,66 @@ describe('profile resource', () => {
   });
 
   it('returns profile content', async () => {
-    const { server, getHandler } = fakeServer();
-    registerProfile(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://profile/default'), { campaign: 'default' });
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerProfile);
+    const result = await client.readResource({ uri: 'jho://profile/default' });
     expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
     expect(content.mimeType).toBe('application/json');
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.content).toBe('test profile content');
   });
 
   it('returns error when core function fails', async () => {
     vi.mocked(readProfile).mockRejectedValue(new Error('test error'));
 
-    const { server, getHandler } = fakeServer();
-    registerProfile(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://profile/default'), { campaign: 'default' });
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerProfile);
+    const result = await client.readResource({ uri: 'jho://profile/default' });
     expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.error).toBe('test error');
-  });
-
-  it('returns error when campaign parameter is missing', async () => {
-    const { server, getHandler } = fakeServer();
-    registerProfile(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://profile/default'), {
-      campaign: undefined as unknown as string,
-    });
-    expect(result.contents).toBeDefined();
-    const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
-    expect(data.error).toContain('campaign parameter is required');
   });
 
   it('handles non-Error exception', async () => {
     vi.mocked(readProfile).mockRejectedValue('string error');
 
-    const { server, getHandler } = fakeServer();
-    registerProfile(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://profile/default'), { campaign: 'default' });
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerProfile);
+    const result = await client.readResource({ uri: 'jho://profile/default' });
+    expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.error).toBe('string error');
   });
 
-  it('handles array campaign parameter', async () => {
-    const { server, getHandler } = fakeServer();
-    registerProfile(server);
-    const handler = getHandler()!;
+  it('returns error when campaign parameter is missing', async () => {
+    const { readCallbacks } = await createTestServerAndCapture(registerProfile);
+    const handler = readCallbacks[0]!;
 
-    const result = await handler(new URL('jho://profile/default'), {
+    const result = await invokeResourceRead(handler, 'jho://profile/default', {
+      campaign: undefined as unknown as string,
+    });
+    expect(result.contents).toBeDefined();
+    const content = result.contents[0]!;
+    const data = JSON.parse(resourceText(content));
+    expect(data.error).toContain('campaign parameter is required');
+  });
+
+  it('handles array campaign parameter', async () => {
+    const { readCallbacks } = await createTestServerAndCapture(registerProfile);
+    const handler = readCallbacks[0]!;
+
+    const result = await invokeResourceRead(handler, 'jho://profile/default', {
       campaign: ['default'] as unknown as string,
     });
     expect(result.contents).toBeDefined();
     const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.content).toBe('test profile content');
   });
 
   it('list handler returns empty resources', async () => {
-    const { server, getListHandler } = fakeServer();
-    registerProfile(server);
-    const listHandler = getListHandler()!;
-
-    const result = await listHandler();
+    const { client } = await createTestServer(registerProfile);
+    const result = await client.listResources();
     expect(result.resources).toEqual([]);
   });
 });

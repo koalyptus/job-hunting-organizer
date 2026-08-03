@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { INTERVIEW_TYPES } from '../../../core/interviews/types.js';
 import { addInterview } from '../../../core/interviews/interviews.js';
@@ -55,20 +55,18 @@ describe('add_interview tool', () => {
   it('adds an interview and returns the index', async () => {
     vi.mocked(addInterview).mockResolvedValue({ index: 3 });
 
-    const { server, getCallback } = fakeServer();
-    registerAddInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAddInterview);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'add_interview',
+      arguments: {
         campaign: 'default',
         slug: 'test-app',
         when: '2026-07-21 14:00',
         type: 'technical',
         interviewers: ['Alice', 'Bob'],
       },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    });
     expect(addInterview).toHaveBeenCalledWith(
       '/campaigns/default/applied',
       'test-app',
@@ -85,14 +83,12 @@ describe('add_interview tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(addInterview).mockRejectedValue(new Error('application not found'));
 
-    const { server, getCallback } = fakeServer();
-    registerAddInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAddInterview);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'missing', when: '2026-07-21 14:00' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'add_interview',
+      arguments: { campaign: 'default', slug: 'missing', when: '2026-07-21 14:00' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('application not found');
   });

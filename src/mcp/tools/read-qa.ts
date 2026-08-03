@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ReadQaInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { readQa } from '../../core/applications/application-qa.js';
@@ -11,10 +11,9 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerReadQa(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'read_qa',
-    'Read existing Q&A entries for an application',
-    ReadQaInput.shape,
+    { description: 'Read existing Q&A entries for an application', inputSchema: ReadQaInput },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.read_qa.start');

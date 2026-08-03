@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
 import { runTrack } from '../../../core/track/track.js';
@@ -53,14 +53,12 @@ describe('track_application tool', () => {
   it('creates an application from URL', async () => {
     vi.mocked(runTrack).mockResolvedValue({ slug: 'new-app', changed: true });
 
-    const { server, getCallback } = fakeServer();
-    registerTrackApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerTrackApplication);
 
-    const result = await cb(
-      { campaign: 'default', url: 'https://example.com/job', yes: true },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'track_application',
+      arguments: { campaign: 'default', url: 'https://example.com/job', yes: true },
+    });
     expect(result.content).toBeDefined();
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.slug).toBe('new-app');
@@ -70,14 +68,12 @@ describe('track_application tool', () => {
   it('updates an existing application by slug', async () => {
     vi.mocked(runTrack).mockResolvedValue({ slug: 'existing-app', changed: true });
 
-    const { server, getCallback } = fakeServer();
-    registerTrackApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerTrackApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'existing-app', status: 'applied', yes: true },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'track_application',
+      arguments: { campaign: 'default', slug: 'existing-app', status: 'applied', yes: true },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.slug).toBe('existing-app');
     expect(parsed.changed).toBe(true);
@@ -86,14 +82,12 @@ describe('track_application tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(runTrack).mockRejectedValue(new Error('failed to track'));
 
-    const { server, getCallback } = fakeServer();
-    registerTrackApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerTrackApplication);
 
-    const result = await cb(
-      { campaign: 'default', url: 'https://example.com/job', yes: true },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'track_application',
+      arguments: { campaign: 'default', url: 'https://example.com/job', yes: true },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('failed to track');
   });

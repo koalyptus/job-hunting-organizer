@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { KbAddInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { ingestKnowledgeBase } from '../../core/campaign/kb-ingest.js';
@@ -14,10 +14,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerKbAdd(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'kb_add',
-    'Copy knowledge-base docs (PDF, DOCX, MD, TXT) into the campaign',
-    KbAddInput.shape,
+    {
+      description: 'Copy knowledge-base docs (PDF, DOCX, MD, TXT) into the campaign',
+      inputSchema: KbAddInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, paths: args.paths }, 'tool.kb_add.start');

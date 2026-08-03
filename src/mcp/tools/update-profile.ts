@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { UpdateProfileInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { writeProfile } from '../../core/campaign/profile-writer.js';
@@ -11,10 +11,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerUpdateProfile(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'update_profile',
-    'Overwrite the campaign profile.md with new markdown content',
-    UpdateProfileInput.shape,
+    {
+      description: 'Overwrite the campaign profile.md with new markdown content',
+      inputSchema: UpdateProfileInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.update_profile.start');

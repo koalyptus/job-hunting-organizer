@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { generatePrep, appendTopic } from '../../../core/prepare/prepare.js';
 import { registerPrepare } from '../../tools/prepare-tool.js';
@@ -57,14 +57,17 @@ describe('prepare tool', () => {
       durationMs: 6000,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerPrepare(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPrepare);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', days: 14, steer: 'Focus on system design' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'prepare',
+      arguments: {
+        campaign: 'default',
+        slug: 'test-app',
+        days: 14,
+        steer: 'Focus on system design',
+      },
+    });
     expect(generatePrep).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -84,14 +87,12 @@ describe('prepare tool', () => {
       durationMs: 3000,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerPrepare(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPrepare);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'prepare',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(generatePrep).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -105,27 +106,23 @@ describe('prepare tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(generatePrep).mockRejectedValue(new Error('Failed to read JD'));
 
-    const { server, getCallback } = fakeServer();
-    registerPrepare(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPrepare);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'prepare',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('Failed to read JD');
   });
 
   it('adds topics when topics option is provided', async () => {
-    const { server, getCallback } = fakeServer();
-    registerPrepare(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPrepare);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', topics: ['React hooks', 'TypeScript'] },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'prepare',
+      arguments: { campaign: 'default', slug: 'test-app', topics: ['React hooks', 'TypeScript'] },
+    });
     expect(appendTopic).toHaveBeenCalledTimes(2);
     expect(appendTopic).toHaveBeenCalledWith('default', 'test-app', 'React hooks');
     expect(appendTopic).toHaveBeenCalledWith('default', 'test-app', 'TypeScript');

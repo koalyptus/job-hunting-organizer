@@ -63,7 +63,7 @@
   - [x] 8f2 — Metadata cleanup on remove + JSDoc coverage
   - [x] 8g — Integration tests
   - [x] 8h — Docs + polish
-  - [ ] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
+  - [x] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
   - [x] 8l — ICS Outlook.com compatibility
 - [ ] **Phase 9** — Polish & public readiness
 

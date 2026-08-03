@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
@@ -69,11 +69,9 @@ describe('get_stats tool', () => {
       thisMonth: { applied: 2, rejected: 0, offer: 0, withdrawn: 0 },
     });
 
-    const { server, getCallback } = fakeServer();
-    registerGetStats(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetStats);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'get_stats', arguments: { campaign: 'default' } });
     const data = JSON.parse(getTextContent(result));
     expect(data.total).toBe(5);
   });
@@ -85,11 +83,9 @@ describe('get_stats tool', () => {
       throw new Error('test error');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerGetStats(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetStats);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'get_stats', arguments: { campaign: 'default' } });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('test error');
   });

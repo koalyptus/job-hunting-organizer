@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { runListCampaigns } from '../../../core/list/list.js';
 import { registerListCampaigns } from '../../tools/list-campaigns.js';
@@ -39,11 +39,9 @@ describe('list_campaigns tool', () => {
       campaigns: [{ name: 'default', applicationCount: 0 }],
     });
 
-    const { server, getCallback } = fakeServer();
-    registerListCampaigns(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListCampaigns);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'list_campaigns', arguments: {} });
     const data = JSON.parse(getTextContent(result));
     expect(data.campaigns).toHaveLength(1);
     expect(data.campaigns[0].name).toBe('default');
@@ -54,11 +52,9 @@ describe('list_campaigns tool', () => {
       throw new Error('test error');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerListCampaigns(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListCampaigns);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'list_campaigns', arguments: {} });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('test error');
   });

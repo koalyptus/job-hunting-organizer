@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { InitInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { runInit } from '../../core/init/wizard.js';
@@ -11,10 +11,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerInit(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'init',
-    'Initialize a new campaign with optional CV, GitHub, and LinkedIn',
-    InitInput.shape,
+    {
+      description: 'Initialize a new campaign with optional CV, GitHub, and LinkedIn',
+      inputSchema: InitInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.init.start');

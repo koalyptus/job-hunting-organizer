@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { KbUpdateInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { syncKnowledgeBase } from '../../core/campaign/kb-ingest.js';
@@ -13,10 +13,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerKbUpdate(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'kb_update',
-    'Re-sync the knowledge base from sources recorded at init',
-    KbUpdateInput.shape,
+    {
+      description: 'Re-sync the knowledge base from sources recorded at init',
+      inputSchema: KbUpdateInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.kb_update.start');

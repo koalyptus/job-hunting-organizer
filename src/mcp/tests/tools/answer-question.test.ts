@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { answerQuestion } from '../../../core/applications/application-qa.js';
 import { registerAnswerQuestion } from '../../tools/answer-question.js';
@@ -57,19 +57,17 @@ describe('answer_question tool', () => {
       durationMs: 4000,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerAnswerQuestion(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAnswerQuestion);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'answer_question',
+      arguments: {
         campaign: 'default',
         slug: 'test-app',
         question: 'How much React experience does the candidate have?',
         steer: 'Be concise',
       },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    });
     expect(answerQuestion).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -89,18 +87,16 @@ describe('answer_question tool', () => {
       durationMs: 2000,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerAnswerQuestion(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAnswerQuestion);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'answer_question',
+      arguments: {
         campaign: 'default',
         slug: 'test-app',
         question: 'How much Node.js experience?',
       },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    });
     expect(answerQuestion).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -114,18 +110,16 @@ describe('answer_question tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(answerQuestion).mockRejectedValue(new Error('LLM refused to answer the question'));
 
-    const { server, getCallback } = fakeServer();
-    registerAnswerQuestion(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAnswerQuestion);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'answer_question',
+      arguments: {
         campaign: 'default',
         slug: 'test-app',
         question: 'What is your greatest weakness?',
       },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('LLM refused to answer the question');
   });

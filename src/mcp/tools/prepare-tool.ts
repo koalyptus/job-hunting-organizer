@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { PrepareInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { generatePrep, appendTopic } from '../../core/prepare/prepare.js';
@@ -11,10 +11,13 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerPrepare(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'prepare',
-    'Generate or add topics to a pre-interview prep plan. Provide topics to append to an existing plan (steer/days ignored in this mode).',
-    PrepareInput.shape,
+    {
+      description:
+        'Generate or add topics to a pre-interview prep plan. Provide topics to append to an existing plan (steer/days ignored in this mode).',
+      inputSchema: PrepareInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.prepare.start');

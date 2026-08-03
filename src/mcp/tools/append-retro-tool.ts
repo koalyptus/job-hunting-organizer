@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { AppendRetroInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { appendRetro } from '../../core/retro/retro.js';
@@ -11,10 +11,12 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerAppendRetro(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'append_retro',
-    'Append additional weak topics and notes to an existing retro',
-    AppendRetroInput.shape,
+    {
+      description: 'Append additional weak topics and notes to an existing retro',
+      inputSchema: AppendRetroInput,
+    },
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.append_retro.start');

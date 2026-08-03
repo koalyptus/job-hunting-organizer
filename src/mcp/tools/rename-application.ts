@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/server';
 import { RenameApplicationInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { renameApplication } from '../../core/applications/rename.js';
@@ -12,10 +12,9 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerRenameApplication(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'rename_application',
-    'Rename an application folder',
-    RenameApplicationInput.shape,
+    { description: 'Rename an application folder', inputSchema: RenameApplicationInput },
     async (args) => {
       try {
         mcpLogger.debug(
