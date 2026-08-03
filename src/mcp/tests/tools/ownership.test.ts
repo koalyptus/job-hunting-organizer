@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { renderOwnership } from '../../../core/campaign/ownership.js';
 import { registerOwnership } from '../../tools/ownership-tool.js';
@@ -39,11 +39,9 @@ describe('ownership tool', () => {
       '| File | Tool writes |\n| --- | --- |\n| meta.md | yes |',
     );
 
-    const { server, getCallback } = fakeServer();
-    registerOwnership(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerOwnership);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'ownership', arguments: {} });
     expect(getTextContent(result)).toContain('meta.md');
     expect(renderOwnership).toHaveBeenCalledWith({ markdown: true });
   });
@@ -53,11 +51,9 @@ describe('ownership tool', () => {
       throw new Error('test error');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerOwnership(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerOwnership);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'ownership', arguments: {} });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('test error');
   });

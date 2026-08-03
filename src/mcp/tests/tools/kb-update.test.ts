@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { registerKbUpdate } from '../../tools/kb-update.js';
 import { syncKnowledgeBase } from '../../../core/campaign/kb-ingest.js';
 import { loadCampaignConfig } from '../../../core/config/config.js';
@@ -47,11 +47,9 @@ describe('kb_update tool', () => {
   });
 
   it('syncs KB successfully', async () => {
-    const { server, getCallback } = fakeServer();
-    registerKbUpdate(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerKbUpdate);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'kb_update', arguments: { campaign: 'default' } });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.count).toBe(2);
   });
@@ -59,11 +57,9 @@ describe('kb_update tool', () => {
   it('returns error when sync fails', async () => {
     vi.mocked(syncKnowledgeBase).mockRejectedValue(new Error('sync failed'));
 
-    const { server, getCallback } = fakeServer();
-    registerKbUpdate(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerKbUpdate);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'kb_update', arguments: { campaign: 'default' } });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('sync failed');
   });
@@ -72,11 +68,9 @@ describe('kb_update tool', () => {
     vi.mocked(syncKnowledgeBase).mockResolvedValue(['doc1.md', 'doc2.md']);
     vi.mocked(loadCampaignConfig).mockReturnValue({ knowledgeBase: {} } as never);
 
-    const { server, getCallback } = fakeServer();
-    registerKbUpdate(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerKbUpdate);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'kb_update', arguments: { campaign: 'default' } });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.count).toBe(2);
   });

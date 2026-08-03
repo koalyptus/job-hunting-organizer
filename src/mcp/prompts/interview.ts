@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from 'zod';
 import { generatePrep } from '../../core/prepare/prepare.js';
 import { mcpLogger } from '../logger.js';
@@ -8,10 +8,10 @@ export function registerInterviewPrompt(server: McpServer): void {
     'interview',
     {
       description: 'Generate a pre-interview prep plan for an application',
-      argsSchema: {
-        campaign: z.string().describe('Campaign name'),
-        slug: z.string().describe('Application slug'),
-      },
+      argsSchema: z.object({
+              campaign: z.string().describe('Campaign name'),
+              slug: z.string().describe('Application slug'),
+            }),
     },
     async ({ campaign, slug }) => {
       try {

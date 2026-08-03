@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from "@modelcontextprotocol/server";
 import { AnswerQuestionInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { answerQuestion } from '../../core/applications/application-qa.js';
@@ -11,28 +11,23 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerAnswerQuestion(server: McpServer): void {
-  server.tool(
-    'answer_question',
-    'Answer a question for an application and append it to qa.md',
-    AnswerQuestionInput.shape,
-    async (args) => {
-      try {
-        mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.answer_question.start');
-        const result = await answerQuestion({
-          slug: args.slug,
-          campaign: args.campaign,
-          question: args.question,
-          steer: args.steer,
-          noSave: args.noSave,
-          imagePath: args.imagePath,
-        });
-        mcpLogger.debug({ slug: args.slug }, 'tool.answer_question.done');
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      } catch (err) {
-        return handleToolError(err);
-      }
-    },
-  );
+  server.registerTool('answer_question', { description: 'Answer a question for an application and append it to qa.md', inputSchema: AnswerQuestionInput }, async (args) => {
+              try {
+                mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.answer_question.start');
+                const result = await answerQuestion({
+                  slug: args.slug,
+                  campaign: args.campaign,
+                  question: args.question,
+                  steer: args.steer,
+                  noSave: args.noSave,
+                  imagePath: args.imagePath,
+                });
+                mcpLogger.debug({ slug: args.slug }, 'tool.answer_question.done');
+                return {
+                  content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+                };
+              } catch (err) {
+                return handleToolError(err);
+              }
+            });
 }

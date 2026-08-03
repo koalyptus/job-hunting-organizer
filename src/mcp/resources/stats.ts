@@ -1,5 +1,5 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ResourceTemplate } from "@modelcontextprotocol/server";
+import type { McpServer } from "@modelcontextprotocol/server";
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { computeStats } from '../../core/stats/stats.js';
 import { mcpLogger } from '../logger.js';

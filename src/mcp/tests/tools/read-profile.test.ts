@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot } from '../../../core/paths.js';
 import { readProfile } from '../../../core/campaign/profile-read.js';
@@ -45,11 +45,12 @@ describe('read_profile tool', () => {
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(readProfile).mockResolvedValue('# Candidate Profile\n\nExperienced engineer...');
 
-    const { server, getCallback } = fakeServer();
-    registerReadProfile(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadProfile);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'read_profile',
+      arguments: { campaign: 'default' },
+    });
     const data = JSON.parse(getTextContent(result));
     expect(data.content).toContain('Candidate Profile');
   });
@@ -60,11 +61,12 @@ describe('read_profile tool', () => {
       throw new Error('test error');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadProfile(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadProfile);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'read_profile',
+      arguments: { campaign: 'default' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('test error');
   });

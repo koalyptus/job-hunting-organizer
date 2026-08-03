@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/server';
 import { handleToolError } from '../error-handler.js';
 import { ApplicationNotFoundError } from '../../core/applications/applications.js';
 import { InterviewNotFoundError } from '../../core/interviews/interviews.js';

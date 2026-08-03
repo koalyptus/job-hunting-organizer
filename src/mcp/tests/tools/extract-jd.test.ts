@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { extractJdFromUrl, extractJdFromText } from '../../../core/jobs/extract.js';
 import { registerExtractJd } from '../../tools/extract-jd.js';
 
@@ -77,14 +77,12 @@ describe('extract_jd tool', () => {
       description: 'Job description text',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerExtractJd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerExtractJd);
 
-    const result = await cb(
-      { campaign: 'default', url: 'https://example.com/job/123' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'extract_jd',
+      arguments: { campaign: 'default', url: 'https://example.com/job/123' },
+    });
     expect(extractJdFromUrl).toHaveBeenCalledWith('https://example.com/job/123', {
       baseUrl: 'http://localhost:11434',
       apiKey: 'key',
@@ -103,14 +101,12 @@ describe('extract_jd tool', () => {
       description: 'Raw text description',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerExtractJd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerExtractJd);
 
-    const result = await cb(
-      { campaign: 'default', text: 'We are looking for a Junior Developer...' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'extract_jd',
+      arguments: { campaign: 'default', text: 'We are looking for a Junior Developer...' },
+    });
     expect(extractJdFromText).toHaveBeenCalledWith('We are looking for a Junior Developer...', {
       baseUrl: 'http://localhost:11434',
       apiKey: 'key',
@@ -122,11 +118,12 @@ describe('extract_jd tool', () => {
   });
 
   it('returns error when neither url nor text is provided', async () => {
-    const { server, getCallback } = fakeServer();
-    registerExtractJd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerExtractJd);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'extract_jd',
+      arguments: { campaign: 'default' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('Either url or text must be provided');
   });
@@ -134,14 +131,12 @@ describe('extract_jd tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(extractJdFromUrl).mockRejectedValue(new Error('Failed to fetch URL'));
 
-    const { server, getCallback } = fakeServer();
-    registerExtractJd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerExtractJd);
 
-    const result = await cb(
-      { campaign: 'default', url: 'https://example.com/job/123' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'extract_jd',
+      arguments: { campaign: 'default', url: 'https://example.com/job/123' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('Failed to fetch URL');
   });

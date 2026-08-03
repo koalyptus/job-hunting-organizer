@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer } from './helpers.js';
+import {
+  createTestServer,
+  createTestServerAndCapture,
+  invokeResourceRead,
+  resourceText,
+} from './helpers.js';
 import { runListApplications } from '../../../core/list/list.js';
 import { registerApplications } from '../../resources/applications.js';
 
@@ -27,16 +32,12 @@ describe('applications resource', () => {
       entries: [{ slug: 'test-app', status: 'applied' }] as never[],
     });
 
-    const { server, getHandler } = fakeServer();
-    registerApplications(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://applications/default'), { campaign: 'default' });
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerApplications);
+    const result = await client.readResource({ uri: 'jho://applications/default' });
     expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
     expect(content.mimeType).toBe('application/json');
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.entries).toHaveLength(1);
   });
 
@@ -45,30 +46,12 @@ describe('applications resource', () => {
       throw new Error('test error');
     });
 
-    const { server, getHandler } = fakeServer();
-    registerApplications(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://applications/default'), { campaign: 'default' });
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerApplications);
+    const result = await client.readResource({ uri: 'jho://applications/default' });
     expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.error).toBe('test error');
-  });
-
-  it('returns error when campaign parameter is missing', async () => {
-    const { server, getHandler } = fakeServer();
-    registerApplications(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://applications/default'), {
-      campaign: undefined as unknown as string,
-    });
-    expect(result.contents).toBeDefined();
-    const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
-    expect(data.error).toContain('campaign parameter is required');
   });
 
   it('handles non-Error exception', async () => {
@@ -76,37 +59,43 @@ describe('applications resource', () => {
       throw 'string error';
     });
 
-    const { server, getHandler } = fakeServer();
-    registerApplications(server);
-    const handler = getHandler()!;
-
-    const result = await handler(new URL('jho://applications/default'), { campaign: 'default' });
-    expect(result.contents).toBeDefined();
+    const { client } = await createTestServer(registerApplications);
+    const result = await client.readResource({ uri: 'jho://applications/default' });
+    expect(result.contents).toHaveLength(1);
     const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
+    const data = JSON.parse(resourceText(content));
     expect(data.error).toBe('string error');
   });
 
-  it('handles array campaign parameter', async () => {
-    const { server, getHandler } = fakeServer();
-    registerApplications(server);
-    const handler = getHandler()!;
+  it('returns error when campaign parameter is missing', async () => {
+    const { readCallbacks } = await createTestServerAndCapture(registerApplications);
+    const handler = readCallbacks[0]!;
 
-    const result = await handler(new URL('jho://applications/default'), {
+    const result = await invokeResourceRead(handler, 'jho://applications/default', {
+      campaign: undefined as unknown as string,
+    });
+    expect(result.contents).toBeDefined();
+    const content = result.contents[0]!;
+    const data = JSON.parse(resourceText(content));
+    expect(data.error).toContain('campaign parameter is required');
+  });
+
+  it('handles array campaign parameter', async () => {
+    const { readCallbacks } = await createTestServerAndCapture(registerApplications);
+    const handler = readCallbacks[0]!;
+
+    const result = await invokeResourceRead(handler, 'jho://applications/default', {
       campaign: ['default'] as unknown as string,
     });
     expect(result.contents).toBeDefined();
     const content = result.contents[0]!;
-    const data = JSON.parse(content.text);
-    expect(data.entries).toBeDefined();
+    const data = JSON.parse(resourceText(content));
+    expect(data.entries).toEqual([]);
   });
 
   it('list handler returns empty resources', async () => {
-    const { server, getListHandler } = fakeServer();
-    registerApplications(server);
-    const listHandler = getListHandler()!;
-
-    const result = await listHandler();
+    const { client } = await createTestServer(registerApplications);
+    const result = await client.listResources();
     expect(result.resources).toEqual([]);
   });
 });

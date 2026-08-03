@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from "@modelcontextprotocol/server";
 import { registerListApplications } from './tools/list-applications.js';
 import { registerShowApplication } from './tools/show-application.js';
 import { registerListInterviews } from './tools/list-interviews.js';

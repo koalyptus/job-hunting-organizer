@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { registerRenameCampaign } from '../../tools/rename-campaign.js';
 import { renameCampaign } from '../../../core/campaign/rename-campaign.js';
 
@@ -43,14 +43,12 @@ describe('rename_campaign tool', () => {
   });
 
   it('renames a campaign successfully', async () => {
-    const { server, getCallback } = fakeServer();
-    registerRenameCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRenameCampaign);
 
-    const result = await cb(
-      { from: 'old-name', to: 'new-name' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'rename_campaign',
+      arguments: { from: 'old-name', to: 'new-name' },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.from).toBe('old-name');
     expect(parsed.to).toBe('new-name');
@@ -60,14 +58,12 @@ describe('rename_campaign tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(renameCampaign).mockRejectedValue(new Error('rename failed'));
 
-    const { server, getCallback } = fakeServer();
-    registerRenameCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRenameCampaign);
 
-    const result = await cb(
-      { from: 'old-name', to: 'new-name' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'rename_campaign',
+      arguments: { from: 'old-name', to: 'new-name' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('rename failed');
   });

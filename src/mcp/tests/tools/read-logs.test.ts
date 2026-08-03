@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -17,7 +17,7 @@ vi.mock('../../error-handler.js', () => ({
 vi.mock('../../schemas.js', () => ({
   ReadLogsInput: z.object({
     tail: z.number().int().positive().optional(),
-    level: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).optional(),
+    level: z.string().optional(),
     json: z.boolean().optional(),
   }),
 }));
@@ -51,11 +51,9 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: {} });
     const data = getTextContent(result);
     expect(data).toContain('test log');
     expect(data).toContain('warning log');
@@ -64,11 +62,9 @@ describe('read_logs tool', () => {
   it('returns error when log file does not exist', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: {} });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('No log file');
   });
@@ -79,11 +75,9 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({ level: 'error' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: { level: 'error' } });
     const data = getTextContent(result);
     expect(data).toContain('error');
     expect(data).not.toContain('info');
@@ -95,11 +89,9 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({ tail: 2 }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: { tail: 2 } });
     const data = getTextContent(result);
     expect(data).toContain('log3');
     expect(data).toContain('log4');
@@ -111,11 +103,9 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({ level: 'info' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: { level: 'info' } });
     const data = getTextContent(result);
     expect(data).toContain('valid');
     expect(data).not.toContain('not valid json');
@@ -128,11 +118,9 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({ level: 'warn' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: { level: 'warn' } });
     const data = getTextContent(result);
     expect(data).toBe('');
     expect(result.isError).toBeUndefined();
@@ -143,11 +131,9 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({ json: true }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: { json: true } });
     const data = getTextContent(result);
     expect(data).toContain('"msg": "hello"');
     expect(data).toContain('"msg": "world"');
@@ -159,11 +145,9 @@ describe('read_logs tool', () => {
       throw new Error('EACCES: permission denied');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: {} });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('EACCES: permission denied');
   });
@@ -174,11 +158,12 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({ level: 'unknown' as never }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'read_logs',
+      arguments: { level: 'unknown' as never },
+    });
     const data = getTextContent(result);
     expect(data).toContain('info log');
     expect(data).not.toContain('debug log');
@@ -189,11 +174,9 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockImplementation((p) => String(p).includes('jho-mcp.log'));
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: {} });
     const data = getTextContent(result);
     expect(data).not.toContain('includes both CLI and MCP logs');
     expect(data).toContain('mcp log');
@@ -207,11 +190,9 @@ describe('read_logs tool', () => {
       return String(p).includes('jho-mcp.log') ? mcpLog : cliLog;
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: {} });
     const data = getTextContent(result);
     expect(data).toContain('includes both CLI and MCP logs');
     expect(data).toContain('cli log');

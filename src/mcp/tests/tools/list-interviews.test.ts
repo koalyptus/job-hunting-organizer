@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { listInterviews } from '../../../core/interviews/interviews.js';
@@ -51,14 +51,12 @@ describe('list_interviews tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(listInterviews).mockResolvedValue([]);
 
-    const { server, getCallback } = fakeServer();
-    registerListInterviews(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListInterviews);
 
-    const result = await cb(
-      { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'list_interviews',
+      arguments: { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
+    });
     const data = JSON.parse(getTextContent(result));
     expect(data.interviews).toEqual([]);
   });
@@ -70,14 +68,12 @@ describe('list_interviews tool', () => {
       throw new Error('test error');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerListInterviews(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListInterviews);
 
-    const result = await cb(
-      { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'list_interviews',
+      arguments: { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('test error');
   });

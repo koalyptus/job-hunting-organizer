@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerRenameApplication } from '../../tools/rename-application.js';
 import { renameApplication } from '../../../core/applications/rename.js';
@@ -62,14 +62,12 @@ describe('rename_application tool', () => {
   it('renames an application successfully', async () => {
     vi.mocked(renameApplication).mockResolvedValue(undefined);
 
-    const { server, getCallback } = fakeServer();
-    registerRenameApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRenameApplication);
 
-    const result = await cb(
-      { campaign: 'default', from: 'old-app', to: 'new-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'rename_application',
+      arguments: { campaign: 'default', from: 'old-app', to: 'new-app' },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.from).toBe('old-app');
     expect(parsed.to).toBe('new-app');
@@ -79,14 +77,12 @@ describe('rename_application tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(renameApplication).mockRejectedValue(new Error('rename failed'));
 
-    const { server, getCallback } = fakeServer();
-    registerRenameApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRenameApplication);
 
-    const result = await cb(
-      { campaign: 'default', from: 'old-app', to: 'new-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'rename_application',
+      arguments: { campaign: 'default', from: 'old-app', to: 'new-app' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('rename failed');
   });

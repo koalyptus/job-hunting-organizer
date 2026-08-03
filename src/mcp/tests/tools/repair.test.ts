@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { repairApp, repairAll } from '../../../core/repair/repair.js';
@@ -48,11 +48,9 @@ describe('repair tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(repairAll).mockResolvedValue({ actions: [], isIndexRebuilt: true });
 
-    const { server, getCallback } = fakeServer();
-    registerRepair(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRepair);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'repair', arguments: { campaign: 'default' } });
     const data = JSON.parse(getTextContent(result));
     expect(data.isIndexRebuilt).toBe(true);
     expect(repairAll).toHaveBeenCalled();
@@ -63,14 +61,12 @@ describe('repair tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(repairApp).mockResolvedValue({ actions: [], isIndexRebuilt: false });
 
-    const { server, getCallback } = fakeServer();
-    registerRepair(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRepair);
 
-    await cb(
-      { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    await client.callTool({
+      name: 'repair',
+      arguments: { campaign: 'default', slug: '2026-Jan-01-eng-acme' },
+    });
     expect(repairApp).toHaveBeenCalledWith(
       '/data/campaigns/default/applied',
       '2026-Jan-01-eng-acme',
@@ -84,11 +80,9 @@ describe('repair tool', () => {
       throw new Error('test error');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerRepair(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRepair);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'repair', arguments: { campaign: 'default' } });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('test error');
   });

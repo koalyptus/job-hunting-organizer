@@ -133,7 +133,7 @@ export const UpdateProfileInput = z.object({
 
 /** Zod schema for `update_config` tool input. */
 export const UpdateConfigInput = z.object({
-  patch: z.record(z.unknown()).describe('Partial config patch to merge'),
+  patch: z.record(z.string(), z.unknown()).describe('Partial config patch to merge'),
 });
 
 /** Zod schema for `init` tool input. */

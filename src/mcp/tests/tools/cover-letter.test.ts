@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { generateCoverLetter, readCoverLetter } from '../../../core/applications/cover-letter.js';
 import { registerCoverLetter, registerReadCoverLetter } from '../../tools/cover-letter.js';
@@ -60,14 +60,12 @@ describe('cover_letter tool', () => {
       durationMs: 5000,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerCoverLetter(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerCoverLetter);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', steer: 'Be concise' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'cover_letter',
+      arguments: { campaign: 'default', slug: 'test-app', steer: 'Be concise' },
+    });
     expect(generateCoverLetter).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -86,14 +84,12 @@ describe('cover_letter tool', () => {
       durationMs: 3000,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerCoverLetter(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerCoverLetter);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'cover_letter',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(generateCoverLetter).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -110,14 +106,12 @@ describe('cover_letter tool', () => {
       durationMs: 1000,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerCoverLetter(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerCoverLetter);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', noSave: true },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'cover_letter',
+      arguments: { campaign: 'default', slug: 'test-app', noSave: true },
+    });
     expect(generateCoverLetter).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -130,14 +124,12 @@ describe('cover_letter tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(generateCoverLetter).mockRejectedValue(new Error('Failed to read JD'));
 
-    const { server, getCallback } = fakeServer();
-    registerCoverLetter(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerCoverLetter);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'cover_letter',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('Failed to read JD');
   });
@@ -151,14 +143,12 @@ describe('read_cover_letter tool', () => {
   it('reads an existing cover letter', async () => {
     vi.mocked(readCoverLetter).mockResolvedValue('# Cover Letter\nDear Hiring Manager...');
 
-    const { server, getCallback } = fakeServer();
-    registerReadCoverLetter(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadCoverLetter);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'read_cover_letter',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(readCoverLetter).toHaveBeenCalledWith('default', 'test-app');
     expect(getTextContent(result)).toBe('# Cover Letter\nDear Hiring Manager...');
   });
@@ -168,14 +158,12 @@ describe('read_cover_letter tool', () => {
       new Error('No cover letter found for "missing-app"'),
     );
 
-    const { server, getCallback } = fakeServer();
-    registerReadCoverLetter(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadCoverLetter);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'missing-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'read_cover_letter',
+      arguments: { campaign: 'default', slug: 'missing-app' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('No cover letter found');
   });

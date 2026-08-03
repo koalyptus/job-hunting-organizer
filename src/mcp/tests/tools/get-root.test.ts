@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { resolveCampaignRoot } from '../../../core/paths.js';
 import { registerGetRoot } from '../../tools/get-root.js';
 
@@ -34,11 +34,9 @@ describe('get_root tool', () => {
   it('calls resolveCampaignRoot and returns JSON', async () => {
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
 
-    const { server, getCallback } = fakeServer();
-    registerGetRoot(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetRoot);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'get_root', arguments: { campaign: 'default' } });
     const data = JSON.parse(getTextContent(result));
     expect(data.root).toBe('/data/campaigns/default');
     expect(resolveCampaignRoot).toHaveBeenCalledWith('default');
@@ -49,11 +47,12 @@ describe('get_root tool', () => {
       throw new Error('campaign not found: nonexistent');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerGetRoot(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetRoot);
 
-    const result = await cb({ campaign: 'nonexistent' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'get_root',
+      arguments: { campaign: 'nonexistent' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('campaign not found');
   });

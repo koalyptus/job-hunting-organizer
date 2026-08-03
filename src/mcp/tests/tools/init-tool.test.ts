@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { runInit } from '../../../core/init/wizard.js';
 import { registerInit } from '../../tools/init-tool.js';
@@ -41,11 +41,9 @@ describe('init tool', () => {
   it('initializes a campaign with default name and returns ok', async () => {
     vi.mocked(runInit).mockResolvedValue(undefined);
 
-    const { server, getCallback } = fakeServer();
-    registerInit(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerInit);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'init', arguments: { campaign: 'default' } });
     expect(runInit).toHaveBeenCalledWith({
       name: 'default',
       cv: undefined,
@@ -60,19 +58,17 @@ describe('init tool', () => {
   it('initializes with custom CV, GitHub, and LinkedIn', async () => {
     vi.mocked(runInit).mockResolvedValue(undefined);
 
-    const { server, getCallback } = fakeServer();
-    registerInit(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerInit);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'init',
+      arguments: {
         campaign: 'freelance',
         cvPath: '/path/to/cv.pdf',
         githubUser: 'maxgu',
         linkedinUrl: 'https://linkedin.com/in/maxgu',
       },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    });
     expect(runInit).toHaveBeenCalledWith({
       name: 'freelance',
       cv: '/path/to/cv.pdf',
@@ -87,11 +83,12 @@ describe('init tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(runInit).mockRejectedValue(new Error('invalid campaign name'));
 
-    const { server, getCallback } = fakeServer();
-    registerInit(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerInit);
 
-    const result = await cb({ campaign: 'invalid name!' }, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({
+      name: 'init',
+      arguments: { campaign: 'invalid name!' },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('invalid campaign name');
   });

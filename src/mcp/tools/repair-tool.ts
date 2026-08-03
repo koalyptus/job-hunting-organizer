@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from "@modelcontextprotocol/server";
 import { RepairInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
@@ -12,26 +12,21 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerRepair(server: McpServer): void {
-  server.tool(
-    'repair',
-    'Repair application toolhash sidecars, rebuild index and counters',
-    RepairInput.shape,
-    async (args) => {
-      try {
-        mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.repair.start');
-        const campaignRoot = resolveCampaignRoot(args.campaign);
+  server.registerTool('repair', { description: 'Repair application toolhash sidecars, rebuild index and counters', inputSchema: RepairInput }, async (args) => {
+              try {
+                mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.repair.start');
+                const campaignRoot = resolveCampaignRoot(args.campaign);
 
-        const repairResult = args.slug
-          ? await repairApp(resolveAppliedDir(campaignRoot), args.slug)
-          : await repairAll(campaignRoot);
+                const repairResult = args.slug
+                  ? await repairApp(resolveAppliedDir(campaignRoot), args.slug)
+                  : await repairAll(campaignRoot);
 
-        mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.repair.done');
-        return {
-          content: [{ type: 'text', text: JSON.stringify(repairResult, null, 2) }],
-        };
-      } catch (err) {
-        return handleToolError(err);
-      }
-    },
-  );
+                mcpLogger.debug({ campaign: args.campaign, slug: args.slug }, 'tool.repair.done');
+                return {
+                  content: [{ type: 'text', text: JSON.stringify(repairResult, null, 2) }],
+                };
+              } catch (err) {
+                return handleToolError(err);
+              }
+            });
 }

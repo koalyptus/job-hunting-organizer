@@ -86,7 +86,7 @@ integration-tests/
 **Adding a new test**:
 
 1. CLI: Add to `integration-tests/cli/`, use `runCommand()` from `src/cli/tests/helpers.ts`
-2. MCP: Add to `integration-tests/mcp/`, use `fakeServer()` from `src/mcp/tests/tools/helpers.ts`
+2. MCP: Add to `integration-tests/mcp/`, use `createTestServer()` from `src/mcp/tests/tools/helpers.ts`
 3. Mock only logger and LLM — never mock the layer under test
 
 ### Cross-platform notes

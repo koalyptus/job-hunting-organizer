@@ -1,4 +1,4 @@
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from "@modelcontextprotocol/server";
 import { mcpLogger } from './logger.js';
 import { ApplicationNotFoundError } from '../core/applications/applications.js';
 import { InterviewNotFoundError } from '../core/interviews/interviews.js';

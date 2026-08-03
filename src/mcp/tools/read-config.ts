@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from "@modelcontextprotocol/server";
 import { ReadConfigInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { loadGlobalConfig } from '../../core/config/config.js';
@@ -12,21 +12,16 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerReadConfig(server: McpServer): void {
-  server.tool(
-    'read_config',
-    'Read global configuration (secrets redacted)',
-    ReadConfigInput.shape,
-    async () => {
-      try {
-        mcpLogger.debug('tool.read_config.start');
-        const config = redactSecrets(loadGlobalConfig());
-        mcpLogger.debug('tool.read_config.done');
-        return {
-          content: [{ type: 'text', text: JSON.stringify(config, null, 2) }],
-        };
-      } catch (err) {
-        return handleToolError(err);
-      }
-    },
-  );
+  server.registerTool('read_config', { description: 'Read global configuration (secrets redacted)', inputSchema: ReadConfigInput }, async () => {
+              try {
+                mcpLogger.debug('tool.read_config.start');
+                const config = redactSecrets(loadGlobalConfig());
+                mcpLogger.debug('tool.read_config.done');
+                return {
+                  content: [{ type: 'text', text: JSON.stringify(config, null, 2) }],
+                };
+              } catch (err) {
+                return handleToolError(err);
+              }
+            });
 }

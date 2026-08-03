@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from "@modelcontextprotocol/server";
 import { ExtractJdInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { getConfig } from '../../core/config/config.js';
@@ -13,33 +13,28 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerExtractJd(server: McpServer): void {
-  server.tool(
-    'extract_jd',
-    'Extract structured job description from a URL or raw text',
-    ExtractJdInput.shape,
-    async (args) => {
-      try {
-        mcpLogger.debug(
-          { campaign: args.campaign, url: args.url, text: args.text },
-          'tool.extract_jd.start',
-        );
-        const { global } = getConfig(args.campaign);
-        const llmConfig = defaultLlmConfig(global);
+  server.registerTool('extract_jd', { description: 'Extract structured job description from a URL or raw text', inputSchema: ExtractJdInput }, async (args) => {
+              try {
+                mcpLogger.debug(
+                  { campaign: args.campaign, url: args.url, text: args.text },
+                  'tool.extract_jd.start',
+                );
+                const { global } = getConfig(args.campaign);
+                const llmConfig = defaultLlmConfig(global);
 
-        const { url, text } = args;
-        if (!url && !text) {
-          throw new Error('Either url or text must be provided');
-        }
-        const result = url
-          ? await extractJdFromUrl(url, llmConfig)
-          : await extractJdFromText(text!, llmConfig);
-        mcpLogger.debug({ campaign: args.campaign }, 'tool.extract_jd.done');
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      } catch (err) {
-        return handleToolError(err);
-      }
-    },
-  );
+                const { url, text } = args;
+                if (!url && !text) {
+                  throw new Error('Either url or text must be provided');
+                }
+                const result = url
+                  ? await extractJdFromUrl(url, llmConfig)
+                  : await extractJdFromText(text!, llmConfig);
+                mcpLogger.debug({ campaign: args.campaign }, 'tool.extract_jd.done');
+                return {
+                  content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+                };
+              } catch (err) {
+                return handleToolError(err);
+              }
+            });
 }

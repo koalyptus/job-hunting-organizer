@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { registerKbAdd } from '../../tools/kb-add.js';
 import { ingestKnowledgeBase } from '../../../core/campaign/kb-ingest.js';
 import { loadCampaignConfig } from '../../../core/config/config.js';
@@ -54,14 +54,12 @@ describe('kb_add tool', () => {
   });
 
   it('copies KB docs successfully', async () => {
-    const { server, getCallback } = fakeServer();
-    registerKbAdd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerKbAdd);
 
-    const result = await cb(
-      { campaign: 'default', paths: ['/path/to/docs'] },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'kb_add',
+      arguments: { campaign: 'default', paths: ['/path/to/docs'] },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.copied).toBe(2);
     expect(parsed.paths).toEqual(['doc1.md', 'doc2.md']);
@@ -70,14 +68,12 @@ describe('kb_add tool', () => {
   it('returns error when ingest fails', async () => {
     vi.mocked(ingestKnowledgeBase).mockRejectedValue(new KbError('ingest failed'));
 
-    const { server, getCallback } = fakeServer();
-    registerKbAdd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerKbAdd);
 
-    const result = await cb(
-      { campaign: 'default', paths: ['/bad/path'] },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'kb_add',
+      arguments: { campaign: 'default', paths: ['/bad/path'] },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('ingest failed');
   });
@@ -86,14 +82,12 @@ describe('kb_add tool', () => {
     vi.mocked(ingestKnowledgeBase).mockResolvedValue(['doc1.md', 'doc2.md']);
     vi.mocked(loadCampaignConfig).mockReturnValue({ knowledgeBase: {} } as never);
 
-    const { server, getCallback } = fakeServer();
-    registerKbAdd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerKbAdd);
 
-    const result = await cb(
-      { campaign: 'default', paths: ['/path/to/docs'] },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'kb_add',
+      arguments: { campaign: 'default', paths: ['/path/to/docs'] },
+    });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.copied).toBe(2);
   });

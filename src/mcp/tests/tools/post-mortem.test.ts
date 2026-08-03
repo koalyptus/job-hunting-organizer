@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { startRetro } from '../../../core/retro/retro.js';
 import { registerPostMortem } from '../../tools/post-mortem.js';
@@ -59,14 +59,16 @@ describe('post_mortem tool', () => {
       index: 1,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPostMortem);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', weakTopics: ['algorithms', 'system-design'] },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'post_mortem',
+      arguments: {
+        campaign: 'default',
+        slug: 'test-app',
+        weakTopics: ['algorithms', 'system-design'],
+      },
+    });
     expect(startRetro).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -89,14 +91,12 @@ describe('post_mortem tool', () => {
       index: 1,
     });
 
-    const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPostMortem);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app' },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'post_mortem',
+      arguments: { campaign: 'default', slug: 'test-app' },
+    });
     expect(startRetro).toHaveBeenCalledWith({
       slug: 'test-app',
       campaign: 'default',
@@ -112,14 +112,12 @@ describe('post_mortem tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(startRetro).mockRejectedValue(new Error('at least one weak topic is required'));
 
-    const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPostMortem);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'test-app', weakTopics: [] },
-      { signal: AbortSignal.timeout(3000) },
-    );
+    const result = await client.callTool({
+      name: 'post_mortem',
+      arguments: { campaign: 'default', slug: 'test-app', weakTopics: [] },
+    });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('at least one weak topic is required');
   });

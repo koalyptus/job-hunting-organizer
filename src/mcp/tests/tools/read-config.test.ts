@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fakeServer, getTextContent } from './helpers.js';
+import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -60,11 +60,9 @@ describe('read_config tool', () => {
       global: { ...testConfig.global, llm: { ...testConfig.global.llm, apiKey: '[REDACTED]' } },
     } as never);
 
-    const { server, getCallback } = fakeServer();
-    registerReadConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadConfig);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_config', arguments: {} });
     const data = JSON.parse(getTextContent(result));
 
     expect(data.global.llm.apiKey).toBe('[REDACTED]');
@@ -78,11 +76,9 @@ describe('read_config tool', () => {
       throw new Error('Cannot read config file: "config.json" not found');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadConfig);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_config', arguments: {} });
 
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('Cannot read config file');
@@ -107,11 +103,9 @@ describe('read_config tool', () => {
       campaign: { targetRole: 'test' },
     } as never);
 
-    const { server, getCallback } = fakeServer();
-    registerReadConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadConfig);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_config', arguments: {} });
     const data = JSON.parse(getTextContent(result));
 
     expect(data.global.apiKey).toBe('[REDACTED]');
@@ -123,11 +117,9 @@ describe('read_config tool', () => {
     vi.mocked(loadGlobalConfig).mockReturnValue({} as never);
     vi.mocked(redactSecrets).mockReturnValue({} as never);
 
-    const { server, getCallback } = fakeServer();
-    registerReadConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadConfig);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_config', arguments: {} });
     const data = JSON.parse(getTextContent(result));
 
     expect(Object.keys(data).length).toBe(0);
@@ -139,11 +131,9 @@ describe('read_config tool', () => {
       throw new Error('Unexpected token }\\n at position 42 in JSON string');
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadConfig);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(3000) });
+    const result = await client.callTool({ name: 'read_config', arguments: {} });
     expect(result.isError).toBe(true);
     expect(getTextContent(result)).toContain('Unexpected token');
   });

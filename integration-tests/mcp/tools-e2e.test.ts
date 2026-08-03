@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { fakeServer, getTextContent } from '../../src/mcp/tests/tools/helpers.js';
+import { createTestServer, getTextContent } from '../../src/mcp/tests/tools/helpers.js';
 import { registerTrackApplication } from '../../src/mcp/tools/track-application.js';
 import { registerListApplications } from '../../src/mcp/tools/list-applications.js';
 import { registerShowApplication } from '../../src/mcp/tools/show-application.js';
@@ -209,14 +209,12 @@ describe('MCP tool handlers: track_application (real core)', () => {
       company: 'ExistingCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerTrackApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerTrackApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug, status: 'interview', salary: '$100k', yes: true },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'track_application',
+      arguments: { campaign: 'default', slug, status: 'interview', salary: '$100k' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.slug).toBe(slug);
@@ -246,11 +244,12 @@ describe('MCP tool handlers: list_applications (real core)', () => {
     await createApplication({ appliedDir: env.appliedDir, title: 'App A', company: 'Co A' });
     await createApplication({ appliedDir: env.appliedDir, title: 'App B', company: 'Co B' });
 
-    const { server, getCallback } = fakeServer();
-    registerListApplications(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListApplications);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'list_applications',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.entries).toHaveLength(2);
@@ -264,14 +263,12 @@ describe('MCP tool handlers: list_applications (real core)', () => {
     });
     await updateApplication(env.appliedDir, slug, { status: 'interview' });
 
-    const { server, getCallback } = fakeServer();
-    registerListApplications(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListApplications);
 
-    const result = await cb(
-      { campaign: 'default', status: 'interview' },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'list_applications',
+      arguments: { campaign: 'default', status: 'interview' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.entries).toHaveLength(1);
@@ -301,11 +298,12 @@ describe('MCP tool handlers: show_application (real core)', () => {
       location: 'Remote',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerShowApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerShowApplication);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'show_application',
+      arguments: { campaign: 'default', slug },
+    });
 
     const text = getTextContent(result);
     expect(text).toContain('Show Me');
@@ -314,14 +312,12 @@ describe('MCP tool handlers: show_application (real core)', () => {
   });
 
   it('returns error for nonexistent application', async () => {
-    const { server, getCallback } = fakeServer();
-    registerShowApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerShowApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug: 'nonexistent' },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'show_application',
+      arguments: { campaign: 'default', slug: 'nonexistent' },
+    });
 
     expect(result.isError).toBe(true);
   });
@@ -348,12 +344,11 @@ describe('MCP tool handlers: interview management (real core)', () => {
       company: 'InterviewCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerAddInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAddInterview);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'add_interview',
+      arguments: {
         campaign: 'default',
         slug,
         when: '2026-08-01 10:00',
@@ -363,8 +358,7 @@ describe('MCP tool handlers: interview management (real core)', () => {
         interviewers: ['Alice', 'Bob'],
         location: 'Zoom',
       },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.index).toBe(1);
@@ -377,24 +371,24 @@ describe('MCP tool handlers: interview management (real core)', () => {
       company: 'ListCo',
     });
 
-    const addServer = fakeServer();
-    registerAddInterview(addServer.server);
-    await addServer.getCallback()!(
-      {
+    const add = await createTestServer(registerAddInterview);
+    await add.client.callTool({
+      name: 'add_interview',
+      arguments: {
         campaign: 'default',
         slug,
         when: '2026-08-01 10:00',
         title: 'Screen',
         type: 'hr',
       },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    });
 
-    const { server, getCallback } = fakeServer();
-    registerListInterviews(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListInterviews);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'list_interviews',
+      arguments: { campaign: 'default', slug },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.interviews).toHaveLength(1);
@@ -408,33 +402,30 @@ describe('MCP tool handlers: interview management (real core)', () => {
       company: 'MarkCo',
     });
 
-    const addServer = fakeServer();
-    registerAddInterview(addServer.server);
-    await addServer.getCallback()!(
-      {
+    const add = await createTestServer(registerAddInterview);
+    await add.client.callTool({
+      name: 'add_interview',
+      arguments: {
         campaign: 'default',
         slug,
         when: '2026-08-01 10:00',
         title: 'Final Round',
         type: 'final',
       },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    });
 
-    const { server, getCallback } = fakeServer();
-    registerMarkInterview(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerMarkInterview);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'mark_interview',
+      arguments: {
         campaign: 'default',
         slug,
         index: 0,
         status: 'completed',
         notes: 'Went well',
       },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.success).toBe(true);
@@ -447,11 +438,12 @@ describe('MCP tool handlers: interview management (real core)', () => {
       company: 'NoCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerListInterviews(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListInterviews);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'list_interviews',
+      arguments: { campaign: 'default', slug },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.interviews).toHaveLength(0);
@@ -473,11 +465,12 @@ describe('MCP tool handlers: campaign and config tools (real core)', () => {
   });
 
   it('get_root returns data root', async () => {
-    const { server, getCallback } = fakeServer();
-    registerGetRoot(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetRoot);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'get_root',
+      arguments: { campaign: 'default' },
+    });
 
     const text = getTextContent(result);
     const parsed = JSON.parse(text);
@@ -485,11 +478,12 @@ describe('MCP tool handlers: campaign and config tools (real core)', () => {
   });
 
   it('get_campaign returns campaign info', async () => {
-    const { server, getCallback } = fakeServer();
-    registerGetCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetCampaign);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'get_campaign',
+      arguments: { campaign: 'default' },
+    });
 
     const text = getTextContent(result);
     const parsed = JSON.parse(text);
@@ -497,11 +491,9 @@ describe('MCP tool handlers: campaign and config tools (real core)', () => {
   });
 
   it('list_campaigns returns campaigns', async () => {
-    const { server, getCallback } = fakeServer();
-    registerListCampaigns(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerListCampaigns);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({ name: 'list_campaigns', arguments: {} });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.campaigns).toBeDefined();
@@ -509,11 +501,9 @@ describe('MCP tool handlers: campaign and config tools (real core)', () => {
   });
 
   it('read_config returns config', async () => {
-    const { server, getCallback } = fakeServer();
-    registerReadConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadConfig);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({ name: 'read_config', arguments: {} });
 
     const text = getTextContent(result);
     expect(text).toContain('dataRoot');
@@ -526,11 +516,12 @@ describe('MCP tool handlers: campaign and config tools (real core)', () => {
       company: 'DiagCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerDoctor(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerDoctor);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'doctor',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.issues).toBeDefined();
@@ -545,11 +536,12 @@ describe('MCP tool handlers: campaign and config tools (real core)', () => {
       company: 'DiagSingleCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerDoctor(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerDoctor);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'doctor',
+      arguments: { campaign: 'default', slug },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.issues).toBeDefined();
@@ -581,14 +573,12 @@ describe('MCP tool handlers: remove and rename application (real core)', () => {
     let apps = await listApplications(env.appliedDir);
     expect(apps).toHaveLength(1);
 
-    const { server, getCallback } = fakeServer();
-    registerRemoveApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveApplication);
 
-    const result = await cb(
-      { campaign: 'default', slug, confirm: true },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'remove_application',
+      arguments: { campaign: 'default', slug, confirm: true },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.removed).toBe(true);
@@ -605,14 +595,12 @@ describe('MCP tool handlers: remove and rename application (real core)', () => {
     });
 
     const newSlug = '2026-Jul-20-RN-RenameCo';
-    const { server, getCallback } = fakeServer();
-    registerRenameApplication(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRenameApplication);
 
-    const result = await cb(
-      { campaign: 'default', from: slug, to: newSlug },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'rename_application',
+      arguments: { campaign: 'default', from: slug, to: newSlug },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.renamed).toBe(true);
@@ -650,11 +638,12 @@ describe('MCP tool handlers: aggregate_retros (real core)', () => {
     await createRetroFile(env.appliedDir, slug1);
     await createRetroFile(env.appliedDir, slug2);
 
-    const { server, getCallback } = fakeServer();
-    registerAggregateRetros(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAggregateRetros);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'aggregate_retros',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(Array.isArray(parsed)).toBe(true);
@@ -667,11 +656,12 @@ describe('MCP tool handlers: aggregate_retros (real core)', () => {
   it('returns empty array when no retros exist', async () => {
     await createApplication({ appliedDir: env.appliedDir, title: 'App', company: 'Co' });
 
-    const { server, getCallback } = fakeServer();
-    registerAggregateRetros(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAggregateRetros);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'aggregate_retros',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed).toHaveLength(0);
@@ -701,14 +691,12 @@ describe('MCP tool handlers: answer_question (LLM-backed)', () => {
     });
     mockLlmResponse(mockChatComplete, 'I am a passionate developer with strong TypeScript skills.');
 
-    const { server, getCallback } = fakeServer();
-    registerAnswerQuestion(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAnswerQuestion);
 
-    const result = await cb(
-      { campaign: 'default', slug, question: 'Tell me about yourself', noSave: false },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'answer_question',
+      arguments: { campaign: 'default', slug, question: 'Tell me about yourself', noSave: false },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.answer).toContain('passionate developer');
@@ -723,14 +711,12 @@ describe('MCP tool handlers: answer_question (LLM-backed)', () => {
     });
     mockLlmResponse(mockChatComplete, 'Short answer.');
 
-    const { server, getCallback } = fakeServer();
-    registerAnswerQuestion(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAnswerQuestion);
 
-    const result = await cb(
-      { campaign: 'default', slug, question: 'Why this role?', noSave: true },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'answer_question',
+      arguments: { campaign: 'default', slug, question: 'Why this role?', noSave: true },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.answer).toBe('Short answer.');
@@ -761,19 +747,17 @@ describe('MCP tool handlers: append_retro (LLM-backed)', () => {
     await createRetroFile(env.appliedDir, slug);
     mockLlmResponse(mockChatComplete, 'Updated learning plan: focus on system design patterns.');
 
-    const { server, getCallback } = fakeServer();
-    registerAppendRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAppendRetro);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'append_retro',
+      arguments: {
         campaign: 'default',
         slug,
         weakTopics: ['SQL queries', 'System design'],
         notes: 'Second attempt',
       },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.index).toBe(2);
@@ -787,14 +771,12 @@ describe('MCP tool handlers: append_retro (LLM-backed)', () => {
       company: 'NoRetroCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerAppendRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerAppendRetro);
 
-    const result = await cb(
-      { campaign: 'default', slug, weakTopics: ['System design'] },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'append_retro',
+      arguments: { campaign: 'default', slug, weakTopics: ['System design'] },
+    });
 
     expect(result.isError).toBe(true);
   });
@@ -827,27 +809,23 @@ describe('MCP tool handlers: cover_letter (LLM-backed)', () => {
       'Dear Hiring Manager,\n\nI am excited to apply for this role.\n\nBest regards',
     );
 
-    const { server: genServer, getCallback: genCb } = fakeServer();
-    registerCoverLetter(genServer);
-    const gen = genCb()!;
+    const { client: genClient } = await createTestServer(registerCoverLetter);
 
-    const genResult = await gen(
-      { campaign: 'default', slug, noSave: false },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const genResult = await genClient.callTool({
+      name: 'cover_letter',
+      arguments: { campaign: 'default', slug, noSave: false },
+    });
 
     const genParsed = JSON.parse(getTextContent(genResult));
     expect(genParsed.content).toContain('Dear Hiring Manager');
     expect(genParsed.wordCount).toBeGreaterThan(0);
 
-    const { server: readServer, getCallback: readCb } = fakeServer();
-    registerReadCoverLetter(readServer);
-    const read = readCb()!;
+    const { client: readClient } = await createTestServer(registerReadCoverLetter);
 
-    const readResult = await read(
-      { campaign: 'default', slug },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const readResult = await readClient.callTool({
+      name: 'read_cover_letter',
+      arguments: { campaign: 'default', slug },
+    });
 
     const readText = getTextContent(readResult);
     expect(readText).toContain('Dear Hiring Manager');
@@ -880,14 +858,12 @@ describe('MCP tool handlers: extract_jd (LLM-backed)', () => {
       employmentType: 'permanent',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerExtractJd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerExtractJd);
 
-    const result = await cb(
-      { campaign: 'default', text: 'We are looking for a Software Engineer...' },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'extract_jd',
+      arguments: { campaign: 'default', text: 'We are looking for a Software Engineer...' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.title).toBe('Software Engineer');
@@ -922,11 +898,12 @@ describe('MCP tool handlers: get_stats (real core)', () => {
     });
     await updateApplication(env.appliedDir, slug1, { status: 'interview' });
 
-    const { server, getCallback } = fakeServer();
-    registerGetStats(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetStats);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'get_stats',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.total).toBe(2);
@@ -934,11 +911,12 @@ describe('MCP tool handlers: get_stats (real core)', () => {
   });
 
   it('returns zero stats for empty campaign', async () => {
-    const { server, getCallback } = fakeServer();
-    registerGetStats(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerGetStats);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'get_stats',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.total).toBe(0);
@@ -960,11 +938,12 @@ describe('MCP tool handlers: init (real core)', () => {
   });
 
   it('init tool returns a result for a new campaign', async () => {
-    const { server, getCallback } = fakeServer();
-    registerInit(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerInit);
 
-    const result = await cb({ campaign: 'new-campaign' }, { signal: AbortSignal.timeout(10000) });
+    const result = await client.callTool({
+      name: 'init',
+      arguments: { campaign: 'new-campaign' },
+    });
 
     const text = getTextContent(result);
     expect(text).toBeDefined();
@@ -990,25 +969,24 @@ describe('MCP tool handlers: kb_add and kb_update (real core)', () => {
     await mkdir(tmpDir, { recursive: true });
     await writeFile(join(tmpDir, 'notes.md'), '# Interview Notes\n\nPractice STAR method.');
 
-    const { server, getCallback } = fakeServer();
-    registerKbAdd(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerKbAdd);
 
-    const result = await cb(
-      { campaign: 'default', paths: [tmpDir] },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'kb_add',
+      arguments: { campaign: 'default', paths: [tmpDir] },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.copied).toBeGreaterThanOrEqual(1);
   });
 
   it('kb_update syncs knowledge base', async () => {
-    const { server, getCallback } = fakeServer();
-    registerKbUpdate(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerKbUpdate);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'kb_update',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.count).toBeGreaterThanOrEqual(0);
@@ -1030,11 +1008,9 @@ describe('MCP tool handlers: ownership (real core)', () => {
   });
 
   it('returns ownership table as markdown', async () => {
-    const { server, getCallback } = fakeServer();
-    registerOwnership(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerOwnership);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({ name: 'ownership', arguments: {} });
 
     const text = getTextContent(result);
     expect(text).toContain('File ownership');
@@ -1069,19 +1045,17 @@ describe('MCP tool handlers: post_mortem (LLM-backed)', () => {
       'Learning plan: review system design patterns and practice behavioural questions.',
     );
 
-    const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPostMortem);
 
-    const result = await cb(
-      {
+    const result = await client.callTool({
+      name: 'post_mortem',
+      arguments: {
         campaign: 'default',
         slug,
         weakTopics: ['System design', 'Behavioural'],
         notes: 'Struggled with both',
       },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.content).toContain('Learning plan');
@@ -1095,14 +1069,12 @@ describe('MCP tool handlers: post_mortem (LLM-backed)', () => {
       company: 'NoTopicsCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerPostMortem(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPostMortem);
 
-    const result = await cb(
-      { campaign: 'default', slug, weakTopics: [] },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'post_mortem',
+      arguments: { campaign: 'default', slug, weakTopics: [] },
+    });
 
     expect(result.isError).toBe(true);
   });
@@ -1145,26 +1117,22 @@ describe('MCP tool handlers: prepare (LLM-backed)', () => {
       notes: 'Focus on strengths',
     });
 
-    const { server: genServer, getCallback: genCb } = fakeServer();
-    registerPrepare(genServer);
-    const gen = genCb()!;
+    const { client: genClient } = await createTestServer(registerPrepare);
 
-    const genResult = await gen(
-      { campaign: 'default', slug, days: 7 },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const genResult = await genClient.callTool({
+      name: 'prepare',
+      arguments: { campaign: 'default', slug, days: 7 },
+    });
 
     const genParsed = JSON.parse(getTextContent(genResult));
     expect(genParsed.wordCount).toBeGreaterThan(0);
 
-    const { server: readServer, getCallback: readCb } = fakeServer();
-    registerReadPrep(readServer);
-    const read = readCb()!;
+    const { client: readClient } = await createTestServer(registerReadPrep);
 
-    const readResult = await read(
-      { campaign: 'default', slug },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const readResult = await readClient.callTool({
+      name: 'read_prep',
+      arguments: { campaign: 'default', slug },
+    });
 
     const readText = getTextContent(readResult);
     expect(readText).toContain('Prep plan');
@@ -1178,14 +1146,12 @@ describe('MCP tool handlers: prepare (LLM-backed)', () => {
     });
     await createPrepFile(env.appliedDir, slug);
 
-    const { server, getCallback } = fakeServer();
-    registerPrepare(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerPrepare);
 
-    const result = await cb(
-      { campaign: 'default', slug, topics: ['React hooks', 'GraphQL'] },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'prepare',
+      arguments: { campaign: 'default', slug, topics: ['React hooks', 'GraphQL'] },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.topicsAdded).toEqual(['React hooks', 'GraphQL']);
@@ -1207,11 +1173,12 @@ describe('MCP tool handlers: read_campaign_config (real core)', () => {
   });
 
   it('returns redacted campaign config', async () => {
-    const { server, getCallback } = fakeServer();
-    registerReadCampaignConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadCampaignConfig);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_campaign_config',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.version).toBe(1);
@@ -1233,11 +1200,9 @@ describe('MCP tool handlers: read_logs (real core)', () => {
   });
 
   it('returns error when no log files exist', async () => {
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: {} });
 
     expect(result.isError).toBe(true);
   });
@@ -1247,11 +1212,9 @@ describe('MCP tool handlers: read_logs (real core)', () => {
       JSON.stringify({ level: 30, msg: 'test log entry', time: Date.now() }) + '\n';
     await writeFile(join(env.configHome, 'jho.log'), logContent);
 
-    const { server, getCallback } = fakeServer();
-    registerReadLogs(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadLogs);
 
-    const result = await cb({}, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({ name: 'read_logs', arguments: {} });
 
     const text = getTextContent(result);
     expect(text).toContain('test log entry');
@@ -1280,11 +1243,12 @@ describe('MCP tool handlers: read_prep (real core)', () => {
     });
     await createPrepFile(env.appliedDir, slug);
 
-    const { server, getCallback } = fakeServer();
-    registerReadPrep(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadPrep);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_prep',
+      arguments: { campaign: 'default', slug },
+    });
 
     const text = getTextContent(result);
     expect(text).toContain('Prep plan');
@@ -1297,11 +1261,12 @@ describe('MCP tool handlers: read_prep (real core)', () => {
       company: 'NoPrepCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadPrep(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadPrep);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_prep',
+      arguments: { campaign: 'default', slug },
+    });
 
     expect(result.isError).toBe(true);
   });
@@ -1324,11 +1289,12 @@ describe('MCP tool handlers: read_profile (real core)', () => {
   it('reads existing profile', async () => {
     await createProfile(env.dataRoot);
 
-    const { server, getCallback } = fakeServer();
-    registerReadProfile(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadProfile);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_profile',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.content).toContain('Profile');
@@ -1336,11 +1302,12 @@ describe('MCP tool handlers: read_profile (real core)', () => {
   });
 
   it('returns error when no profile exists', async () => {
-    const { server, getCallback } = fakeServer();
-    registerReadProfile(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadProfile);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_profile',
+      arguments: { campaign: 'default' },
+    });
 
     expect(result.isError).toBe(true);
   });
@@ -1368,11 +1335,12 @@ describe('MCP tool handlers: read_qa (real core)', () => {
     });
     await createQaFile(env.appliedDir, slug);
 
-    const { server, getCallback } = fakeServer();
-    registerReadQa(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadQa);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_qa',
+      arguments: { campaign: 'default', slug },
+    });
 
     const text = getTextContent(result);
     expect(text).toContain('Q&A');
@@ -1386,11 +1354,12 @@ describe('MCP tool handlers: read_qa (real core)', () => {
       company: 'NoQACo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadQa(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadQa);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_qa',
+      arguments: { campaign: 'default', slug },
+    });
 
     expect(result.isError).toBe(true);
   });
@@ -1418,11 +1387,12 @@ describe('MCP tool handlers: read_retro (real core)', () => {
     });
     await createRetroFile(env.appliedDir, slug);
 
-    const { server, getCallback } = fakeServer();
-    registerReadRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadRetro);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_retro',
+      arguments: { campaign: 'default', slug },
+    });
 
     const text = getTextContent(result);
     expect(text).toContain('Retro');
@@ -1436,11 +1406,12 @@ describe('MCP tool handlers: read_retro (real core)', () => {
       company: 'NoRetroCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerReadRetro(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerReadRetro);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'read_retro',
+      arguments: { campaign: 'default', slug },
+    });
 
     expect(result.isError).toBe(true);
   });
@@ -1461,14 +1432,12 @@ describe('MCP tool handlers: remove_campaign (real core)', () => {
   });
 
   it('removes a campaign', async () => {
-    const { server, getCallback } = fakeServer();
-    registerRemoveCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRemoveCampaign);
 
-    const result = await cb(
-      { campaign: 'default', confirm: true },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'remove_campaign',
+      arguments: { campaign: 'default', confirm: true },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.removed).toBe(true);
@@ -1491,14 +1460,12 @@ describe('MCP tool handlers: rename_campaign (real core)', () => {
   });
 
   it('renames a campaign', async () => {
-    const { server, getCallback } = fakeServer();
-    registerRenameCampaign(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRenameCampaign);
 
-    const result = await cb(
-      { from: 'default', to: 'renamed' },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'rename_campaign',
+      arguments: { from: 'default', to: 'renamed' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.renamed).toBe(true);
@@ -1528,11 +1495,12 @@ describe('MCP tool handlers: repair (real core)', () => {
       company: 'RepairCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerRepair(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRepair);
 
-    const result = await cb({ campaign: 'default', slug }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'repair',
+      arguments: { campaign: 'default', slug },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.actions).toBeDefined();
@@ -1545,11 +1513,12 @@ describe('MCP tool handlers: repair (real core)', () => {
       company: 'CampRepairCo',
     });
 
-    const { server, getCallback } = fakeServer();
-    registerRepair(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerRepair);
 
-    const result = await cb({ campaign: 'default' }, { signal: AbortSignal.timeout(5000) });
+    const result = await client.callTool({
+      name: 'repair',
+      arguments: { campaign: 'default' },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.actions).toBeDefined();
@@ -1571,14 +1540,12 @@ describe('MCP tool handlers: update_config (real core)', () => {
   });
 
   it('updates global config', async () => {
-    const { server, getCallback } = fakeServer();
-    registerUpdateConfig(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerUpdateConfig);
 
-    const result = await cb(
-      { patch: { llm: { model: 'gpt-4o' } } },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'update_config',
+      arguments: { patch: { llm: { model: 'gpt-4o' } } },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.status).toBe('ok');
@@ -1600,15 +1567,13 @@ describe('MCP tool handlers: update_profile (real core)', () => {
   });
 
   it('writes profile content', async () => {
-    const { server, getCallback } = fakeServer();
-    registerUpdateProfile(server);
-    const cb = getCallback()!;
+    const { client } = await createTestServer(registerUpdateProfile);
 
     const profileContent = '# Updated Profile\n\n## Target roles\n\n### Full Stack Dev [P1]';
-    const result = await cb(
-      { campaign: 'default', content: profileContent },
-      { signal: AbortSignal.timeout(5000) },
-    );
+    const result = await client.callTool({
+      name: 'update_profile',
+      arguments: { campaign: 'default', content: profileContent },
+    });
 
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.success).toBe(true);
