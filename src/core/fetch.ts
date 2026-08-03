@@ -174,9 +174,10 @@ async function nodeHttpFetch(
       port: url.port ? Number(url.port) : isHttps ? 443 : 80,
       path: url.pathname + url.search,
       method: init?.method ?? 'GET',
-      headers: init?.headers instanceof Headers
-        ? Object.fromEntries(init.headers.entries())
-        : (init?.headers as Record<string, string> | undefined),
+      headers:
+        init?.headers instanceof Headers
+          ? Object.fromEntries(init.headers.entries())
+          : (init?.headers as Record<string, string> | undefined),
     };
 
     const req = mod.request(options, (res) => {

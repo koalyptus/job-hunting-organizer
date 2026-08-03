@@ -345,7 +345,7 @@ describe('createLlmFetch', () => {
     const fetch = createLlmFetch(5000);
     const headers = new Headers({
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer test-key',
+      Authorization: 'Bearer test-key',
       'X-Custom-Header': 'custom-value',
     });
     const response = await fetch(`http://127.0.0.1:${port}/`, {
