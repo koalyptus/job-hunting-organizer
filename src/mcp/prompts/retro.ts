@@ -1,4 +1,4 @@
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { startRetro } from '../../core/retro/retro.js';
 import { mcpLogger } from '../logger.js';
@@ -9,9 +9,9 @@ export function registerRetroPrompt(server: McpServer): void {
     {
       description: 'Generate a post-mortem learning plan for an application',
       argsSchema: z.object({
-              campaign: z.string().describe('Campaign name'),
-              slug: z.string().describe('Application slug'),
-            }),
+        campaign: z.string().describe('Campaign name'),
+        slug: z.string().describe('Application slug'),
+      }),
     },
     async ({ campaign, slug }) => {
       try {

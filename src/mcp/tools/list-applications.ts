@@ -1,4 +1,4 @@
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
 import { ListApplicationsInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { runListApplications } from '../../core/list/list.js';
@@ -11,22 +11,30 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerListApplications(server: McpServer): void {
-  server.registerTool('list_applications', { description: 'List applications with optional status, tags, role, employment type, and text filters', inputSchema: ListApplicationsInput }, async (args) => {
-              try {
-                mcpLogger.debug({ campaign: args.campaign }, 'tool.list_applications.start');
-                const { entries } = await runListApplications(args.campaign, {
-                  status: args.status,
-                  targetRole: args.targetRole,
-                  employmentType: args.employmentType,
-                  tags: args.tags,
-                  filter: args.filter,
-                });
-                mcpLogger.debug({ count: entries.length }, 'tool.list_applications.done');
-                return {
-                  content: [{ type: 'text', text: JSON.stringify({ entries }, null, 2) }],
-                };
-              } catch (err) {
-                return handleToolError(err);
-              }
-            });
+  server.registerTool(
+    'list_applications',
+    {
+      description:
+        'List applications with optional status, tags, role, employment type, and text filters',
+      inputSchema: ListApplicationsInput,
+    },
+    async (args) => {
+      try {
+        mcpLogger.debug({ campaign: args.campaign }, 'tool.list_applications.start');
+        const { entries } = await runListApplications(args.campaign, {
+          status: args.status,
+          targetRole: args.targetRole,
+          employmentType: args.employmentType,
+          tags: args.tags,
+          filter: args.filter,
+        });
+        mcpLogger.debug({ count: entries.length }, 'tool.list_applications.done');
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ entries }, null, 2) }],
+        };
+      } catch (err) {
+        return handleToolError(err);
+      }
+    },
+  );
 }

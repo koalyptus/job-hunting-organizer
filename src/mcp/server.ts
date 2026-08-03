@@ -1,5 +1,5 @@
-import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
-import { McpServer } from "@modelcontextprotocol/server";
+import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
+import { McpServer } from '@modelcontextprotocol/server';
 import { appendFileSync } from 'node:fs';
 import { getPackageVersion } from '../core/package.js';
 import { mcpLogger, getMcpLogPath } from './logger.js';

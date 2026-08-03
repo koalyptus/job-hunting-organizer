@@ -1,4 +1,4 @@
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
 import { RemoveApplicationInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import {
@@ -16,25 +16,33 @@ import { mcpLogger } from '../logger.js';
  * @param server - The MCP server instance.
  */
 export function registerRemoveApplication(server: McpServer): void {
-  server.registerTool('remove_application', { description: 'Permanently remove an application folder — cleans metadata, index, and sidecars', inputSchema: RemoveApplicationInput }, async (args) => {
-              try {
-                mcpLogger.debug(
-                  { campaign: args.campaign, slug: args.slug },
-                  'tool.remove_application.start',
-                );
-                const appliedDir = resolveAppliedDir(resolveCampaignRoot(args.campaign));
-                const deleted = await deleteApplication(appliedDir, args.slug);
-                if (!deleted) {
-                  throw new ApplicationNotFoundError(args.slug);
-                }
-                mcpLogger.debug({ slug: args.slug }, 'tool.remove_application.done');
-                return {
-                  content: [
-                    { type: 'text', text: JSON.stringify({ slug: args.slug, removed: true }, null, 2) },
-                  ],
-                };
-              } catch (err) {
-                return handleToolError(err);
-              }
-            });
+  server.registerTool(
+    'remove_application',
+    {
+      description:
+        'Permanently remove an application folder — cleans metadata, index, and sidecars',
+      inputSchema: RemoveApplicationInput,
+    },
+    async (args) => {
+      try {
+        mcpLogger.debug(
+          { campaign: args.campaign, slug: args.slug },
+          'tool.remove_application.start',
+        );
+        const appliedDir = resolveAppliedDir(resolveCampaignRoot(args.campaign));
+        const deleted = await deleteApplication(appliedDir, args.slug);
+        if (!deleted) {
+          throw new ApplicationNotFoundError(args.slug);
+        }
+        mcpLogger.debug({ slug: args.slug }, 'tool.remove_application.done');
+        return {
+          content: [
+            { type: 'text', text: JSON.stringify({ slug: args.slug, removed: true }, null, 2) },
+          ],
+        };
+      } catch (err) {
+        return handleToolError(err);
+      }
+    },
+  );
 }

@@ -16,26 +16,26 @@ A local-first CLI + MCP server that helps run a job-hunting campaign: profile fr
 
 ## 2. Tech & runtime
 
-|                 |                                                                 |
-| --------------- | --------------------------------------------------------------- |
-| Runtime         | Node ≥ 20, ESM, TypeScript strict                               |
-| Package layout  | Single package, not monorepo (this project)                     |
-| CLI             | `commander`                                                     |
-| CLI prompts     | `@clack/prompts`                                                |
-| TUI spinners    | `ora` (TTY only)                                                |
-| Logger          | `pino` + `pino-pretty` + `pino-roll`                            |
-| Module tracing  | `debug` (`jho:*` namespace)                                     |
-| Schema          | `zod`                                                           |
-| MD frontmatter  | `gray-matter`                                                   |
-| PDF             | `pdf-parse`                                                     |
-| DOCX            | `mammoth`                                                       |
-| ICS             | `ics` (or hand-rolled)                                          |
-| Microsoft Graph | `@azure/msal-node` + `@microsoft/microsoft-graph-client` (lazy) |
+|                 |                                                                      |
+| --------------- | -------------------------------------------------------------------- |
+| Runtime         | Node ≥ 20, ESM, TypeScript strict                                    |
+| Package layout  | Single package, not monorepo (this project)                          |
+| CLI             | `commander`                                                          |
+| CLI prompts     | `@clack/prompts`                                                     |
+| TUI spinners    | `ora` (TTY only)                                                     |
+| Logger          | `pino` + `pino-pretty` + `pino-roll`                                 |
+| Module tracing  | `debug` (`jho:*` namespace)                                          |
+| Schema          | `zod`                                                                |
+| MD frontmatter  | `gray-matter`                                                        |
+| PDF             | `pdf-parse`                                                          |
+| DOCX            | `mammoth`                                                            |
+| ICS             | `ics` (or hand-rolled)                                               |
+| Microsoft Graph | `@azure/msal-node` + `@microsoft/microsoft-graph-client` (lazy)      |
 | MCP             | `@modelcontextprotocol/server` + `@modelcontextprotocol/client` (v2) |
-| Lint/format     | eslint + prettier                                               |
-| Tests           | vitest (unit, snapshot, integration with msw)                   |
-| Build           | `tsup`                                                          |
-| Help rendering  | `marked` + `marked-terminal`                                    |
+| Lint/format     | eslint + prettier                                                    |
+| Tests           | vitest (unit, snapshot, integration with msw)                        |
+| Build           | `tsup`                                                               |
+| Help rendering  | `marked` + `marked-terminal`                                         |
 
 ---
 
