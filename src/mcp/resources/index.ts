@@ -1,4 +1,4 @@
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
 import { registerApplication } from './application.js';
 import { registerApplications } from './applications.js';
 import { registerConfig } from './config.js';

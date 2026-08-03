@@ -1,4 +1,4 @@
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { answerQuestion } from '../../core/applications/application-qa.js';
 import { mcpLogger } from '../logger.js';
@@ -9,10 +9,10 @@ export function registerAnswerPrompt(server: McpServer): void {
     {
       description: 'Answer a question for an application',
       argsSchema: z.object({
-              campaign: z.string().describe('Campaign name'),
-              slug: z.string().describe('Application slug'),
-              question: z.string().describe('Question to answer'),
-            }),
+        campaign: z.string().describe('Campaign name'),
+        slug: z.string().describe('Application slug'),
+        question: z.string().describe('Question to answer'),
+      }),
     },
     async ({ campaign, slug, question }) => {
       try {

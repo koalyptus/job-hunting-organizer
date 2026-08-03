@@ -1,4 +1,4 @@
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { getConfig } from '../../core/config/config.js';
 import { defaultLlmConfig } from '../../core/llm.js';
@@ -11,10 +11,10 @@ export function registerExtractJdPrompt(server: McpServer): void {
     {
       description: 'Extract structured job description from a URL or raw text',
       argsSchema: z.object({
-              campaign: z.string().describe('Campaign name'),
-              url: z.string().optional().describe('URL to extract JD from'),
-              text: z.string().optional().describe('Raw text to extract JD from'),
-            }),
+        campaign: z.string().describe('Campaign name'),
+        url: z.string().optional().describe('URL to extract JD from'),
+        text: z.string().optional().describe('Raw text to extract JD from'),
+      }),
     },
     async ({ campaign, url, text }) => {
       try {

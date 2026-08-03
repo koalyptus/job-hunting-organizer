@@ -1,4 +1,4 @@
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { generateCoverLetter } from '../../core/applications/cover-letter.js';
 import { mcpLogger } from '../logger.js';
@@ -9,9 +9,9 @@ export function registerCoverLetterPrompt(server: McpServer): void {
     {
       description: 'Generate a tailored cover letter for an application',
       argsSchema: z.object({
-              campaign: z.string().describe('Campaign name'),
-              slug: z.string().describe('Application slug'),
-            }),
+        campaign: z.string().describe('Campaign name'),
+        slug: z.string().describe('Application slug'),
+      }),
     },
     async ({ campaign, slug }) => {
       try {

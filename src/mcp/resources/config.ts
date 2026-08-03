@@ -1,4 +1,4 @@
-import type { McpServer } from "@modelcontextprotocol/server";
+import type { McpServer } from '@modelcontextprotocol/server';
 import { loadGlobalConfig } from '../../core/config/config.js';
 import { redactSecrets } from '../../core/config/config.view.js';
 import { mcpLogger } from '../logger.js';
