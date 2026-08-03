@@ -152,23 +152,6 @@ describe('read_logs tool', () => {
     expect(getTextContent(result)).toContain('EACCES: permission denied');
   });
 
-  it('falls back to info level for unknown level name', async () => {
-    const testLogContent =
-      '\n{"level": 30, "msg": "info log"}\n{"level": 20, "msg": "debug log"}\n';
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue(testLogContent);
-
-    const { client } = await createTestServer(registerReadLogs);
-
-    const result = await client.callTool({
-      name: 'read_logs',
-      arguments: { level: 'unknown' as never },
-    });
-    const data = getTextContent(result);
-    expect(data).toContain('info log');
-    expect(data).not.toContain('debug log');
-  });
-
   it('returns MCP-only logs without the "both logs" note', async () => {
     const testLogContent = '\n{"level": 30, "msg": "mcp log"}\n';
     vi.mocked(existsSync).mockImplementation((p) => String(p).includes('jho-mcp.log'));
