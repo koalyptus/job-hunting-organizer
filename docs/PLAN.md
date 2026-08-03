@@ -31,7 +31,7 @@ A local-first CLI + MCP server that helps run a job-hunting campaign: profile fr
 | DOCX            | `mammoth`                                                       |
 | ICS             | `ics` (or hand-rolled)                                          |
 | Microsoft Graph | `@azure/msal-node` + `@microsoft/microsoft-graph-client` (lazy) |
-| MCP             | `@modelcontextprotocol/sdk` (stdio transport)                   |
+| MCP             | `@modelcontextprotocol/server` + `@modelcontextprotocol/client` (v2) |
 | Lint/format     | eslint + prettier                                               |
 | Tests           | vitest (unit, snapshot, integration with msw)                   |
 | Build           | `tsup`                                                          |

@@ -63,7 +63,7 @@
   - [x] 8f2 — Metadata cleanup on remove + JSDoc coverage
   - [x] 8g — Integration tests
   - [x] 8h — Docs + polish
-  - [ ] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
+  - [x] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
   - [x] 8l — ICS Outlook.com compatibility
 - [ ] **Phase 9** — Polish & public readiness
 
@@ -925,13 +925,11 @@ documentation to every undocumented MCP function.
 
 **Commit**: `docs(mcp): client examples, README, and AGENTS.md update`
 
-#### 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
+#### 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2 (delivered)
 
 Replace the monolithic `@modelcontextprotocol/sdk` (v1) with the split v2 packages
 (`@modelcontextprotocol/server` + `@modelcontextprotocol/client`).
 This enables `InMemoryTransport` for proper integration testing and adopts the 2026-07-28 protocol revision.
-
-**Trigger**: landed when `@modelcontextprotocol/server` + `@modelcontextprotocol/client` ship stable (expected July 28 2026).
 
 **Migration**:
 
