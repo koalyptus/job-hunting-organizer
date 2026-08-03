@@ -334,4 +334,28 @@ describe('createLlmFetch', () => {
     controller.abort('user cancellation');
     await expect(reqPromise).rejects.toThrow();
   });
+
+  it('converts Headers objects to plain objects for http.request', async () => {
+    let receivedHeaders: Record<string, string | string[]> = {};
+    handler = (req, res) => {
+      receivedHeaders = req.headers as Record<string, string | string[]>;
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('ok');
+    };
+    const fetch = createLlmFetch(5000);
+    const headers = new Headers({
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer test-key',
+      'X-Custom-Header': 'custom-value',
+    });
+    const response = await fetch(`http://127.0.0.1:${port}/`, {
+      method: 'POST',
+      headers,
+      body: '{"test": true}',
+    });
+    expect(response.status).toBe(200);
+    expect(receivedHeaders['content-type']).toBe('application/json');
+    expect(receivedHeaders['authorization']).toBe('Bearer test-key');
+    expect(receivedHeaders['x-custom-header']).toBe('custom-value');
+  });
 });
