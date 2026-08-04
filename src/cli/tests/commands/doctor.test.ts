@@ -8,6 +8,13 @@ import { doctorCommand } from '../../commands/doctor.js';
 import * as doctorCore from '../../../core/doctor/index.js';
 import { DoctorError } from '../../../core/doctor/index.js';
 import type { DoctorIssue } from '../../../core/doctor/types.js';
+import {
+  BACKEND_NAME_OLLAMA,
+  BACKEND_NAME_LMSTUDIO,
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_MODEL,
+  DEFAULT_LMSTUDIO_BASE_URL,
+} from '../../../core/init/constants.js';
 
 vi.mock('detect-local-agents', () => ({
   detectAgents: vi.fn(),
@@ -46,7 +53,7 @@ describe('doctor command', () => {
       JSON.stringify({
         version: 1,
         dataRoot: join(testHome, 'data'),
-        llm: { baseUrl: 'http://localhost:11434/v1', apiKey: 'test-key', model: 'test-model' },
+        llm: { baseUrl: DEFAULT_LLM_BASE_URL, apiKey: 'test-key', model: 'test-model' },
         github: { user: 'testuser', token: '', repos: [] },
         logging: { level: 'silent', file: '', redactPaths: [] },
       }),
@@ -264,7 +271,7 @@ describe('doctor command', () => {
       const { detectAgents } = await import('detect-local-agents');
       vi.mocked(detectAgents).mockResolvedValue([
         {
-          name: 'ollama',
+          name: BACKEND_NAME_OLLAMA,
           binary: 'ollama',
           version: '0.1.23',
           isConfigured: true,
@@ -275,16 +282,16 @@ describe('doctor command', () => {
       const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('ollama');
-      expect(stdout).toContain('http://localhost:11434/v1');
-      expect(stdout).toContain('llama3.1');
+      expect(stdout).toContain(BACKEND_NAME_OLLAMA);
+      expect(stdout).toContain(DEFAULT_LLM_BASE_URL);
+      expect(stdout).toContain(DEFAULT_LLM_MODEL);
     });
 
     it('detects LM Studio and shows suggested config', async () => {
       const { detectAgents } = await import('detect-local-agents');
       vi.mocked(detectAgents).mockResolvedValue([
         {
-          name: 'lmstudio',
+          name: BACKEND_NAME_LMSTUDIO,
           binary: 'lms',
           version: '0.3.0',
           isConfigured: true,
@@ -295,8 +302,8 @@ describe('doctor command', () => {
       const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('lmstudio');
-      expect(stdout).toContain('http://localhost:1234/v1');
+      expect(stdout).toContain(BACKEND_NAME_LMSTUDIO);
+      expect(stdout).toContain(DEFAULT_LMSTUDIO_BASE_URL);
     });
 
     it('shows install hint when no backends detected', async () => {
@@ -314,7 +321,7 @@ describe('doctor command', () => {
       const { detectAgents } = await import('detect-local-agents');
       vi.mocked(detectAgents).mockResolvedValue([
         {
-          name: 'ollama',
+          name: BACKEND_NAME_OLLAMA,
           binary: 'ollama',
           version: '0.1.23',
           isConfigured: true,
@@ -326,7 +333,7 @@ describe('doctor command', () => {
 
       expect(exitCode).toBe(0);
       // Should NOT show lmstudio at all since it wasn't detected
-      expect(stdout).not.toContain('lmstudio');
+      expect(stdout).not.toContain(BACKEND_NAME_LMSTUDIO);
     });
 
     it('exits with error when detection fails', async () => {

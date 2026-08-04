@@ -20,6 +20,10 @@ import {
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_MODEL,
   JHO_LINKEDIN_URL,
+  BACKEND_NAME_OLLAMA,
+  BACKEND_NAME_LMSTUDIO,
+  DEFAULT_LMSTUDIO_BASE_URL,
+  LMSTUDIO_DEFAULT_MODEL,
 } from './constants.js';
 import { validateCvPath } from '../cv.js';
 import { promptGithub } from './github.js';
@@ -176,13 +180,17 @@ export async function runInit(opts: InitOptions): Promise<void> {
   if (!opts.yes) {
     try {
       const agents = await detectAgents();
-      const ollama = agents.find((a) => a.name === 'ollama' && a.isConfigured);
-      const lmstudio = agents.find((a) => a.name === 'lmstudio' && a.isConfigured);
+      const ollama = agents.find(
+        (a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured,
+      );
+      const lmstudio = agents.find(
+        (a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured,
+      );
 
       if (ollama) {
         detectedLlmSuggestion = {
-          baseUrl: 'http://localhost:11434/v1',
-          model: 'llama3.1',
+          baseUrl: DEFAULT_LLM_BASE_URL,
+          model: DEFAULT_LLM_MODEL,
           detectionReason: 'Ollama detected and configured',
         };
         clackLog.info(
@@ -190,8 +198,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
         );
       } else if (lmstudio) {
         detectedLlmSuggestion = {
-          baseUrl: 'http://localhost:1234/v1',
-          model: 'auto',
+          baseUrl: DEFAULT_LMSTUDIO_BASE_URL,
+          model: LMSTUDIO_DEFAULT_MODEL,
           detectionReason: 'LM Studio detected and configured',
         };
         clackLog.info(

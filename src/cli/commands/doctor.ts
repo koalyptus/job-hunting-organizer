@@ -10,6 +10,28 @@ import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 import { detectAgents } from 'detect-local-agents';
 import { log as clackLog } from '@clack/prompts';
+import {
+  BACKEND_NAME_OLLAMA,
+  BACKEND_NAME_LMSTUDIO,
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_MODEL,
+  DEFAULT_LMSTUDIO_BASE_URL,
+  LMSTUDIO_DEFAULT_MODEL,
+} from '../../core/init/constants.js';
+
+/**
+ * Get the default base URL for a detected backend.
+ */
+function getBackendBaseUrl(name: string): string {
+  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
+}
+
+/**
+ * Get the default model for a detected backend.
+ */
+function getBackendModel(name: string): string {
+  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_MODEL : LMSTUDIO_DEFAULT_MODEL;
+}
 
 /**
  * `jho doctor --detect-agents` — detect local OpenAI-compatible backends and display results.
@@ -21,7 +43,8 @@ async function detectAndDisplayAgents(): Promise<void> {
   try {
     const agents = await detectAgents();
     const backends = agents.filter(
-      (a) => (a.name === 'ollama' || a.name === 'lmstudio') && a.isConfigured,
+      (a) =>
+        (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) && a.isConfigured,
     );
 
     if (backends.length === 0) {
@@ -33,19 +56,16 @@ async function detectAndDisplayAgents(): Promise<void> {
 
     clackLog.info('\nLocal OpenAI-compatible backends:');
     for (const b of backends) {
-      const port = b.name === 'ollama' ? 11434 : 1234;
       clackLog.success(`  ✅ ${b.name} — ${b.binary} ${b.version ?? ''}`);
-      clackLog.info(`     baseUrl: http://localhost:${port}/v1`);
+      clackLog.info(`     baseUrl: ${getBackendBaseUrl(b.name)}`);
     }
 
     // Suggest the first detected backend
     const suggestedBackend = backends[0]!;
-    const port = suggestedBackend.name === 'ollama' ? 11434 : 1234;
-    const model = suggestedBackend.name === 'ollama' ? 'llama3.1' : 'auto';
 
     clackLog.info('\nSuggested LLM config for jho:');
-    clackLog.info(`  baseUrl: http://localhost:${port}/v1`);
-    clackLog.info(`  model: ${model}`);
+    clackLog.info(`  baseUrl: ${getBackendBaseUrl(suggestedBackend.name)}`);
+    clackLog.info(`  model: ${getBackendModel(suggestedBackend.name)}`);
   } catch (err) {
     clackLog.error('Agent detection failed');
     process.exit(1);
