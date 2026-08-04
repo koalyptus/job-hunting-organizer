@@ -33,7 +33,7 @@ import { ingestKnowledgeBase } from '../campaign/kb-ingest.js';
 import { handleProfile } from '../campaign/profile-builder.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
-import { detectAgents, type DetectedAgent } from 'detect-local-agents';
+import { detectAgents } from 'detect-local-agents';
 
 /**
  * Run the init wizard. Called from the CLI command.
@@ -180,12 +180,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
   if (!opts.yes) {
     try {
       const agents = await detectAgents();
-      const ollama = agents.find(
-        (a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured,
-      );
-      const lmstudio = agents.find(
-        (a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured,
-      );
+      const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured);
+      const lmstudio = agents.find((a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured);
 
       if (ollama) {
         detectedLlmSuggestion = {

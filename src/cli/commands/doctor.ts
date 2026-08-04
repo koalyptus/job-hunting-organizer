@@ -43,8 +43,7 @@ async function detectAndDisplayAgents(): Promise<void> {
   try {
     const agents = await detectAgents();
     const backends = agents.filter(
-      (a) =>
-        (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) && a.isConfigured,
+      (a) => (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) && a.isConfigured,
     );
 
     if (backends.length === 0) {
@@ -66,7 +65,7 @@ async function detectAndDisplayAgents(): Promise<void> {
     clackLog.info('\nSuggested LLM config for jho:');
     clackLog.info(`  baseUrl: ${getBackendBaseUrl(suggestedBackend.name)}`);
     clackLog.info(`  model: ${getBackendModel(suggestedBackend.name)}`);
-  } catch (err) {
+  } catch {
     clackLog.error('Agent detection failed');
     process.exit(1);
   }
