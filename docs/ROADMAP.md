@@ -65,6 +65,7 @@
   - [x] 8h — Docs + polish
   - [x] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
   - [x] 8l — ICS Outlook.com compatibility
+  - [ ] 8m — detect-local-agents integration in init wizard
 - [ ] **Phase 9** — Polish & public readiness
 
 ---
@@ -969,6 +970,32 @@ Fixes the `ics` package output so generated `.ics` files pass Outlook.com import
 **Files**: `src/cli/interview-ics.ts`, `src/cli/tests/interview-ics.test.ts`
 
 **Commit**: `fix(calendar): ICS Outlook.com compatibility`
+
+---
+
+#### 8m — detect-local-agents integration in init wizard
+
+Enhance `jho init` to auto-detect local OpenAI-compatible backends (Ollama, LM Studio) and pre-fill LLM config intelligently.
+
+**Scope**:
+
+- Add `detect-local-agents` as production dependency (`^0.1.0`)
+- In `src/core/init/wizard.ts` — after GitHub prompt (step 4), before LLM config prompt (step 5):
+  - Call `detectAgents()` from `detect-local-agents`
+  - Filter for `ollama` and `lmstudio` with `isConfigured === true`
+  - If Ollama found → pre-fill `baseUrl: http://localhost:11434/v1`, `model: llama3.1`
+  - If LM Studio found → pre-fill `baseUrl: http://localhost:1234/v1`, `model: auto`
+  - If neither → show suggestion: "Install Ollama (free, private) or enter API key manually"
+  - Show reasoning to user: "We detected Ollama → using local model (free, private)"
+- Update `src/core/init/llm.ts` `promptLlm()` to accept pre-filled defaults from detection
+- Add `jho doctor --detect-agents` command:
+  - Shows only Ollama/LM Studio status (the usable local backends)
+  - Prints recommended LLM config for jho
+- Update README with LiteLLM proxy note for Anthropic/Claude users
+
+**Deliverable**: `jho init` auto-detects Ollama/LM Studio and pre-fills config. `jho doctor --detect-agents` diagnoses backend availability.
+
+**Commit**: `feat(init): detect-local-agents integration for smart LLM config defaults`
 
 ---
 
