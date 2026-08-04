@@ -37,9 +37,7 @@ async function detectAndDisplayAgents(): Promise<void> {
 
   try {
     const agents = await withTimeout(detectAgents(), DETECT_AGENTS_TIMEOUT_MS);
-    const backends = agents.filter(
-      (a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured,
-    );
+    const backends = agents.filter((a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured);
 
     if (backends.length === 0) {
       userOutput('No local OpenAI-compatible backend detected.');
