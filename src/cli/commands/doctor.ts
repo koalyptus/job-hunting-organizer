@@ -59,7 +59,7 @@ async function detectAndDisplayAgents(): Promise<void> {
     userOutput('Suggested LLM config for jho:');
     userOutput(`  baseUrl: ${DEFAULT_LLM_BASE_URL}`);
     userOutput(`  model: ${DEFAULT_LLM_MODEL}`);
-  } catch (err) {
+  } catch {
     userError('Agent detection failed');
     process.exit(1);
   }
