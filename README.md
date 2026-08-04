@@ -270,6 +270,26 @@ args = []
 > **Note:** MCP client configs are not standardized — each client uses its own schema and key names.
 > To set a custom data location, add `"JHO_DATA": "/path/to/data"` to the `env` block (Claude Desktop, Cursor, Copilot) or `environment` block (Opencode).
 
+## LLM configuration
+
+`jho` uses the OpenAI API format for all LLM calls. Any OpenAI-compatible endpoint works:
+
+- **Ollama** — `http://localhost:11434/v1` (free, private, on-device)
+- **LM Studio** — `http://localhost:1234/v1` (free, private, on-device)
+- **OpenAI** — `https://api.openai.com/v1` (cloud)
+- **Any OpenAI-compatible proxy** (LiteLLM, OpenRouter, etc.)
+
+> **Anthropic / Claude users:** Anthropic native API uses a different format (`/v1/messages` instead of `/v1/chat/completions`). To use Claude with `jho`, run LiteLLM as a local proxy:
+>
+> ```sh
+> pip install litellm
+> litellm --model anthropic/claude-3-5-sonnet-20241022 --api_base http://localhost:4000
+> ```
+>
+> Then configure `jho` with baseUrl `http://localhost:4000/v1` and an empty API key.
+
+During `jho init`, the tool automatically detects locally-installed Ollama and LM Studio instances (via the [detect-local-agents](https://www.npmjs.com/package/detect-local-agents) package) and pre-fills the recommended LLM config. Run `jho doctor --detect-agents` at any time to see what's detected.
+
 ## Documentation
 
 - [`docs/PLAN.md`](docs/PLAN.md) — the full design plan

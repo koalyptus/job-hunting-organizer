@@ -29,6 +29,7 @@ import { ingestKnowledgeBase } from '../campaign/kb-ingest.js';
 import { handleProfile } from '../campaign/profile-builder.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
+import { detectAgents, type DetectedAgent } from 'detect-local-agents';
 
 /**
  * Run the init wizard. Called from the CLI command.
@@ -168,8 +169,47 @@ export async function runInit(opts: InitOptions): Promise<void> {
   // --- Step 2: GitHub ---
   const github = await promptGithub(opts.github, opts.yes ?? false, existingConfig);
 
+  // --- Step 2b: Detect local OpenAI-compatible backends ---
+  let detectedLlmSuggestion:
+    | { baseUrl: string; model: string; detectionReason: string }
+    | undefined;
+  if (!opts.yes) {
+    try {
+      const agents = await detectAgents();
+      const ollama = agents.find((a) => a.name === 'ollama' && a.isConfigured);
+      const lmstudio = agents.find((a) => a.name === 'lmstudio' && a.isConfigured);
+
+      if (ollama) {
+        detectedLlmSuggestion = {
+          baseUrl: 'http://localhost:11434/v1',
+          model: 'llama3.1',
+          detectionReason: 'Ollama detected and configured',
+        };
+        clackLog.info(
+          `Detected Ollama → using local model (free, private): ${ollama.binary} ${ollama.version ?? ''}`,
+        );
+      } else if (lmstudio) {
+        detectedLlmSuggestion = {
+          baseUrl: 'http://localhost:1234/v1',
+          model: 'auto',
+          detectionReason: 'LM Studio detected and configured',
+        };
+        clackLog.info(
+          `Detected LM Studio → using local model (free, private): ${lmstudio.binary} ${lmstudio.version ?? ''}`,
+        );
+      } else {
+        clackLog.warn(
+          'No local OpenAI-compatible backend detected (Ollama or LM Studio). Install Ollama (free, private) or enter API key manually.',
+        );
+      }
+    } catch (err) {
+      log.debug({ err }, 'detect-local-agents.failed');
+      clackLog.warn('Agent detection failed, continuing with manual LLM config');
+    }
+  }
+
   // --- Step 3: LLM config ---
-  const llm = await promptLlm(opts.yes ?? false, existingConfig);
+  const llm = await promptLlm(opts.yes ?? false, existingConfig, detectedLlmSuggestion);
 
   const hasLlm = llm.baseUrl && llm.model;
   // apiKey is optional for local LLMs; fall back to default ('no-key') when empty

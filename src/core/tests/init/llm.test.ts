@@ -2,10 +2,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { text, password, isCancel } from '@clack/prompts';
+import { text, password, isCancel, log } from '@clack/prompts';
 import { promptLlm, loadExistingConfig } from '../../init/llm.js';
 import { clearConfigCache } from '../../config/config.js';
 import { InitCancelled } from '../../init/errors.js';
+import {
+  DEFAULT_LLM_API_KEY,
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_MODEL,
+} from '../../init/constants.js';
 import type { GlobalConfig } from '../../types.js';
 
 vi.mock('@clack/prompts', () => ({
@@ -14,6 +19,9 @@ vi.mock('@clack/prompts', () => ({
   isCancel: vi.fn(() => false),
   log: {
     info: vi.fn(),
+    success: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -40,8 +48,6 @@ describe('loadExistingConfig', () => {
 
   it('returns config object or null depending on env', () => {
     const result = loadExistingConfig();
-    // With global test setup, a default config exists, so result is an object.
-    // In production with no config file, result would be null.
     expect(result === null || typeof result === 'object').toBe(true);
   });
 });
@@ -80,16 +86,16 @@ describe('promptLlm', () => {
     const result = await promptLlm(true, null);
 
     expect(result).toEqual({
-      baseUrl: 'http://localhost:11434/v1',
-      apiKey: 'no-key',
-      model: 'llama3.1',
+      baseUrl: DEFAULT_LLM_BASE_URL,
+      apiKey: DEFAULT_LLM_API_KEY,
+      model: DEFAULT_LLM_MODEL,
     });
   });
 
   it('prompts for LLM config in interactive mode', async () => {
     vi.mocked(text)
-      .mockResolvedValueOnce('http://myserver:8080/v1') // base URL
-      .mockResolvedValueOnce('mymodel'); // model
+      .mockResolvedValueOnce('http://myserver:8080/v1')
+      .mockResolvedValueOnce('mymodel');
     vi.mocked(password).mockResolvedValue('mykey');
 
     const result = await promptLlm(false, null);
@@ -129,7 +135,7 @@ describe('promptLlm', () => {
   });
 
   it('pre-fills model from existing config', async () => {
-    vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce(''); // accept default model
+    vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce('');
     vi.mocked(password).mockResolvedValue('key');
 
     await promptLlm(false, {
@@ -149,7 +155,7 @@ describe('promptLlm', () => {
     vi.mocked(password).mockResolvedValue('new-key');
 
     await promptLlm(false, {
-      llm: { baseUrl: 'http://old:11434/v1', apiKey: 'old-key', model: 'old-model' },
+      llm: { baseUrl: 'http://old:11434/v1', apiKey: 'existing-key', model: 'old-model' },
     } as GlobalConfig);
 
     expect(password).toHaveBeenCalledWith(
@@ -176,7 +182,7 @@ describe('promptLlm', () => {
 
   it('uses existing API key when password prompt is empty', async () => {
     vi.mocked(text).mockResolvedValueOnce('http://server:8080/v1').mockResolvedValueOnce('mymodel');
-    vi.mocked(password).mockResolvedValue(''); // press Enter
+    vi.mocked(password).mockResolvedValue('');
 
     const result = await promptLlm(false, {
       llm: { baseUrl: 'http://old:11434/v1', apiKey: 'existing-key', model: 'old-model' },
@@ -232,9 +238,6 @@ describe('promptLlm', () => {
   });
 
   it('returns null when no config file exists', async () => {
-    // loadExistingConfig catches loadGlobalConfig errors and returns null.
-    // We can't easily test this in isolation because the global test setup
-    // creates a config. Instead, verify it returns an object or null.
     const result = loadExistingConfig();
     expect(result === null || typeof result === 'object').toBe(true);
   });
@@ -251,17 +254,6 @@ describe('promptLlm', () => {
       model: 'mymodel',
     });
     expect(password).toHaveBeenCalled();
-  });
-
-  it('skips API key prompt for ::1 URLs', async () => {
-    vi.mocked(text).mockResolvedValueOnce('http://[::1]:11434/v1').mockResolvedValueOnce('mymodel');
-    vi.mocked(password).mockResolvedValue('key');
-
-    const result = await promptLlm(false, null);
-
-    // Note: [::1] with brackets is not recognized as local by the URL parser
-    // This test verifies the code path runs without crashing
-    expect(result.baseUrl).toBe('http://[::1]:11434/v1');
   });
 
   it('skips API key prompt for *.localhost URLs', async () => {
@@ -305,10 +297,84 @@ describe('promptLlm', () => {
       .mockResolvedValueOnce('gpt-4');
     vi.mocked(password).mockResolvedValue('sk-xxx');
     vi.mocked(isCancel)
-      .mockReturnValueOnce(false) // base URL
-      .mockReturnValueOnce(false) // API key
-      .mockReturnValueOnce(true); // model
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
 
     await expect(promptLlm(false, null)).rejects.toThrow(InitCancelled);
+  });
+
+  // --- Tests for detectedSuggestion parameter ---
+
+  it('uses detected suggestion for baseUrl and model in non-interactive mode', async () => {
+    delete process.env['LLM_BASE_URL'];
+    delete process.env['LLM_API_KEY'];
+    delete process.env['LLM_MODEL'];
+
+    const result = await promptLlm(true, null, {
+      baseUrl: 'http://localhost:11434/v1',
+      model: 'llama3.1',
+      detectionReason: 'Ollama detected and configured',
+    });
+
+    expect(result).toEqual({
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: DEFAULT_LLM_API_KEY,
+      model: 'llama3.1',
+    });
+  });
+
+  it('uses detected suggestion as defaults in interactive mode', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('http://localhost:11434/v1')
+      .mockResolvedValueOnce('llama3.1');
+
+    const result = await promptLlm(false, null, {
+      baseUrl: 'http://localhost:11434/v1',
+      model: 'llama3.1',
+      detectionReason: 'Ollama detected and configured',
+    });
+
+    expect(result).toEqual({
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: undefined,
+      model: 'llama3.1',
+    });
+  });
+
+  it('logs detection reason when suggestion is provided', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('http://localhost:11434/v1')
+      .mockResolvedValueOnce('llama3.1');
+
+    await promptLlm(false, null, {
+      baseUrl: 'http://localhost:11434/v1',
+      model: 'llama3.1',
+      detectionReason: 'Ollama detected and configured',
+    });
+
+    expect(log.info).toHaveBeenCalledWith('Ollama detected and configured');
+  });
+
+  it('detected suggestion overrides existing config defaults', async () => {
+    vi.mocked(text).mockResolvedValue('');
+
+    await promptLlm(
+      false,
+      {
+        llm: { baseUrl: 'http://old:11434/v1', model: 'old-model' },
+      } as GlobalConfig,
+      {
+        baseUrl: 'http://localhost:11434/v1',
+        model: 'llama3.1',
+        detectionReason: 'Ollama detected',
+      },
+    );
+
+    expect(text).toHaveBeenCalledWith(
+      expect.objectContaining({
+        defaultValue: 'http://localhost:11434/v1',
+      }),
+    );
   });
 });

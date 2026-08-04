@@ -9,6 +9,10 @@ import * as doctorCore from '../../../core/doctor/index.js';
 import { DoctorError } from '../../../core/doctor/index.js';
 import type { DoctorIssue } from '../../../core/doctor/types.js';
 
+vi.mock('detect-local-agents', () => ({
+  detectAgents: vi.fn(),
+}));
+
 vi.mock('../../../core/doctor/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof doctorCore>();
   return {
@@ -252,6 +256,86 @@ describe('doctor command', () => {
       const helpOutput = doctorCommand.helpInformation();
       expect(helpOutput).not.toContain('--all');
       expect(helpOutput).toContain('Diagnose');
+    });
+  });
+
+  describe('--detect-agents', () => {
+    it('detects Ollama and shows suggested config without campaign selection', async () => {
+      const { detectAgents } = await import('detect-local-agents');
+      vi.mocked(detectAgents).mockResolvedValue([
+        {
+          name: 'ollama',
+          binary: 'ollama',
+          version: '0.1.23',
+          isConfigured: true,
+          isACPAgent: false,
+        },
+      ] as never);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('ollama');
+      expect(stdout).toContain('http://localhost:11434/v1');
+      expect(stdout).toContain('llama3.1');
+    });
+
+    it('detects LM Studio and shows suggested config', async () => {
+      const { detectAgents } = await import('detect-local-agents');
+      vi.mocked(detectAgents).mockResolvedValue([
+        {
+          name: 'lmstudio',
+          binary: 'lms',
+          version: '0.3.0',
+          isConfigured: true,
+          isACPAgent: false,
+        },
+      ] as never);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('lmstudio');
+      expect(stdout).toContain('http://localhost:1234/v1');
+    });
+
+    it('shows install hint when no backends detected', async () => {
+      const { detectAgents } = await import('detect-local-agents');
+      vi.mocked(detectAgents).mockResolvedValue([] as never);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('No local OpenAI-compatible backend detected');
+      expect(stdout).toContain('ollama.com/install.sh');
+    });
+
+    it('does not show cross for undetected backends', async () => {
+      const { detectAgents } = await import('detect-local-agents');
+      vi.mocked(detectAgents).mockResolvedValue([
+        {
+          name: 'ollama',
+          binary: 'ollama',
+          version: '0.1.23',
+          isConfigured: true,
+          isACPAgent: false,
+        },
+      ] as never);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
+
+      expect(exitCode).toBe(0);
+      // Should NOT show lmstudio at all since it wasn't detected
+      expect(stdout).not.toContain('lmstudio');
+    });
+
+    it('exits with error when detection fails', async () => {
+      const { detectAgents } = await import('detect-local-agents');
+      vi.mocked(detectAgents).mockRejectedValue(new Error('Detection error'));
+
+      const { exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
+
+      expect(exitCode).toBe(1);
     });
   });
 });
