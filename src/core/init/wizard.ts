@@ -21,9 +21,7 @@ import {
   DEFAULT_LLM_MODEL,
   JHO_LINKEDIN_URL,
   BACKEND_NAME_OLLAMA,
-  BACKEND_NAME_LMSTUDIO,
-  DEFAULT_LMSTUDIO_BASE_URL,
-  LMSTUDIO_DEFAULT_MODEL,
+  DETECT_AGENTS_TIMEOUT_MS,
 } from './constants.js';
 import { validateCvPath } from '../cv.js';
 import { promptGithub } from './github.js';
@@ -34,6 +32,18 @@ import { handleProfile } from '../campaign/profile-builder.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
 import { detectAgents } from 'detect-local-agents';
+
+/**
+ * Run a promise with a timeout. Rejects with error if timeout exceeded.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Detection timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
 
 /**
  * Run the init wizard. Called from the CLI command.
@@ -174,36 +184,28 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const github = await promptGithub(opts.github, opts.yes ?? false, existingConfig);
 
   // --- Step 2b: Detect local OpenAI-compatible backends ---
+  // Only Ollama is supported by detect-local-agents. Uses binary presence (not
+  // isConfigured) so that an installed-but-never-run Ollama still gets suggested.
   let detectedLlmSuggestion:
     | { baseUrl: string; model: string; detectionReason: string }
     | undefined;
   if (!opts.yes) {
     try {
-      const agents = await detectAgents();
-      const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured);
-      const lmstudio = agents.find((a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured);
+      const agents = await withTimeout(detectAgents(), DETECT_AGENTS_TIMEOUT_MS);
+      const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.binary);
 
       if (ollama) {
         detectedLlmSuggestion = {
           baseUrl: DEFAULT_LLM_BASE_URL,
           model: DEFAULT_LLM_MODEL,
-          detectionReason: 'Ollama detected and configured',
+          detectionReason: 'Ollama detected',
         };
         clackLog.info(
           `Detected Ollama → using local model (free, private): ${ollama.binary} ${ollama.version ?? ''}`,
         );
-      } else if (lmstudio) {
-        detectedLlmSuggestion = {
-          baseUrl: DEFAULT_LMSTUDIO_BASE_URL,
-          model: LMSTUDIO_DEFAULT_MODEL,
-          detectionReason: 'LM Studio detected and configured',
-        };
-        clackLog.info(
-          `Detected LM Studio → using local model (free, private): ${lmstudio.binary} ${lmstudio.version ?? ''}`,
-        );
       } else {
         clackLog.warn(
-          'No local OpenAI-compatible backend detected (Ollama or LM Studio). Install Ollama (free, private) or enter API key manually.',
+          'No local OpenAI-compatible backend detected. Install Ollama (free, private) or enter API key manually.',
         );
       }
     } catch (err) {

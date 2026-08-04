@@ -9,28 +9,23 @@ import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 import { detectAgents } from 'detect-local-agents';
-import { log as clackLog } from '@clack/prompts';
 import {
   BACKEND_NAME_OLLAMA,
-  BACKEND_NAME_LMSTUDIO,
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
-  DEFAULT_LMSTUDIO_BASE_URL,
-  LMSTUDIO_DEFAULT_MODEL,
+  DETECT_AGENTS_TIMEOUT_MS,
 } from '../../core/init/constants.js';
 
 /**
- * Get the default base URL for a detected backend.
+ * Run a promise with a timeout. Rejects with error if timeout exceeded.
  */
-function getBackendBaseUrl(name: string): string {
-  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
-}
-
-/**
- * Get the default model for a detected backend.
- */
-function getBackendModel(name: string): string {
-  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_MODEL : LMSTUDIO_DEFAULT_MODEL;
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Detection timed out after ${ms}ms`)), ms),
+    ),
+  ]);
 }
 
 /**
@@ -38,35 +33,34 @@ function getBackendModel(name: string): string {
  * This is a global operation, not campaign-specific.
  */
 async function detectAndDisplayAgents(): Promise<void> {
-  clackLog.info('Detecting local OpenAI-compatible backends...');
+  userOutput('Detecting local OpenAI-compatible backends...');
 
   try {
-    const agents = await detectAgents();
+    const agents = await withTimeout(detectAgents(), DETECT_AGENTS_TIMEOUT_MS);
     const backends = agents.filter(
-      (a) => (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) && a.isConfigured,
+      (a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured,
     );
 
     if (backends.length === 0) {
-      clackLog.warn('\nNo local OpenAI-compatible backend detected.');
-      clackLog.info('Install Ollama (free, private): curl -fsSL ollama.com/install.sh');
-      clackLog.info('Or enter your OpenAI API key manually during `jho init`.');
+      userOutput('No local OpenAI-compatible backend detected.');
+      userOutput('Install Ollama (free, private): curl -fsSL ollama.com/install.sh');
+      userOutput('Or enter your OpenAI API key manually during `jho init`.');
       return;
     }
 
-    clackLog.info('\nLocal OpenAI-compatible backends:');
+    userOutput('Local OpenAI-compatible backends:');
     for (const b of backends) {
-      clackLog.success(`  ✅ ${b.name} — ${b.binary} ${b.version ?? ''}`);
-      clackLog.info(`     baseUrl: ${getBackendBaseUrl(b.name)}`);
+      userOutput(`  ✅ ${b.name} — ${b.binary} ${b.version ?? ''}`);
+      userOutput(`     baseUrl: ${DEFAULT_LLM_BASE_URL}`);
     }
 
     // Suggest the first detected backend
-    const suggestedBackend = backends[0]!;
-
-    clackLog.info('\nSuggested LLM config for jho:');
-    clackLog.info(`  baseUrl: ${getBackendBaseUrl(suggestedBackend.name)}`);
-    clackLog.info(`  model: ${getBackendModel(suggestedBackend.name)}`);
-  } catch {
-    clackLog.error('Agent detection failed');
+    userOutput('');
+    userOutput('Suggested LLM config for jho:');
+    userOutput(`  baseUrl: ${DEFAULT_LLM_BASE_URL}`);
+    userOutput(`  model: ${DEFAULT_LLM_MODEL}`);
+  } catch (err) {
+    userError('Agent detection failed');
     process.exit(1);
   }
 }

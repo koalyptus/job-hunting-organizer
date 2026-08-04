@@ -146,5 +146,5 @@ export async function promptLlm(
   }
 
   const llmModel = modelInput || undefined;
-  return { baseUrl: llmBaseUrl, apiKey: llmApiKey || undefined, model: llmModel };
+  return { baseUrl: llmBaseUrl, apiKey: llmApiKey, model: llmModel };
 }

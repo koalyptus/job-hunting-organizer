@@ -65,7 +65,7 @@
   - [x] 8h — Docs + polish
   - [x] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
   - [x] 8l — ICS Outlook.com compatibility
-  - [ ] 8m — detect-local-agents integration in init wizard
+  - [x] 8m — detect-local-agents integration in init wizard
 - [ ] **Phase 9** — Polish & public readiness
 
 ---
