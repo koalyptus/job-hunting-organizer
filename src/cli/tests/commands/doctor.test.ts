@@ -10,8 +10,10 @@ import { DoctorError } from '../../../core/doctor/index.js';
 import type { DoctorIssue } from '../../../core/doctor/types.js';
 import {
   BACKEND_NAME_OLLAMA,
+  BACKEND_NAME_LMSTUDIO,
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
+  DEFAULT_LMSTUDIO_BASE_URL,
 } from '../../../core/init/constants.js';
 
 vi.mock('detect-local-agents', () => ({
@@ -283,6 +285,25 @@ describe('doctor command', () => {
       expect(stdout).toContain(BACKEND_NAME_OLLAMA);
       expect(stdout).toContain(DEFAULT_LLM_BASE_URL);
       expect(stdout).toContain(DEFAULT_LLM_MODEL);
+    });
+
+    it('detects LM Studio and shows suggested config', async () => {
+      const { detectAgents } = await import('detect-local-agents');
+      vi.mocked(detectAgents).mockResolvedValue([
+        {
+          name: BACKEND_NAME_LMSTUDIO,
+          binary: 'lms',
+          version: '0.3.0',
+          isConfigured: true,
+          isACPAgent: false,
+        },
+      ] as never);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain(BACKEND_NAME_LMSTUDIO);
+      expect(stdout).toContain(DEFAULT_LMSTUDIO_BASE_URL);
     });
 
     it('shows install hint when no backends detected', async () => {

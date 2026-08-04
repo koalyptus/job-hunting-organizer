@@ -11,8 +11,11 @@ import { resolveCampaign } from '../campaign.js';
 import { detectAgents } from 'detect-local-agents';
 import {
   BACKEND_NAME_OLLAMA,
+  BACKEND_NAME_LMSTUDIO,
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
+  DEFAULT_LMSTUDIO_BASE_URL,
+  LMSTUDIO_DEFAULT_MODEL,
   DETECT_AGENTS_TIMEOUT_MS,
 } from '../../core/init/constants.js';
 
@@ -29,6 +32,20 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
+ * Get the default base URL for a detected backend.
+ */
+function getBackendBaseUrl(name: string): string {
+  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
+}
+
+/**
+ * Get the default model for a detected backend.
+ */
+function getBackendModel(name: string): string {
+  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_MODEL : LMSTUDIO_DEFAULT_MODEL;
+}
+
+/**
  * `jho doctor --detect-agents` — detect local OpenAI-compatible backends and display results.
  * This is a global operation, not campaign-specific.
  */
@@ -37,7 +54,11 @@ async function detectAndDisplayAgents(): Promise<void> {
 
   try {
     const agents = await withTimeout(detectAgents(), DETECT_AGENTS_TIMEOUT_MS);
-    const backends = agents.filter((a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured);
+    const backends = agents.filter(
+      (a) =>
+        (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) &&
+        a.isConfigured,
+    );
 
     if (backends.length === 0) {
       userOutput('No local OpenAI-compatible backend detected.');
@@ -49,14 +70,15 @@ async function detectAndDisplayAgents(): Promise<void> {
     userOutput('Local OpenAI-compatible backends:');
     for (const b of backends) {
       userOutput(`  ✅ ${b.name} — ${b.binary} ${b.version ?? ''}`);
-      userOutput(`     baseUrl: ${DEFAULT_LLM_BASE_URL}`);
+      userOutput(`     baseUrl: ${getBackendBaseUrl(b.name)}`);
     }
 
     // Suggest the first detected backend
+    const suggestedBackend = backends[0]!;
     userOutput('');
     userOutput('Suggested LLM config for jho:');
-    userOutput(`  baseUrl: ${DEFAULT_LLM_BASE_URL}`);
-    userOutput(`  model: ${DEFAULT_LLM_MODEL}`);
+    userOutput(`  baseUrl: ${getBackendBaseUrl(suggestedBackend.name)}`);
+    userOutput(`  model: ${getBackendModel(suggestedBackend.name)}`);
   } catch {
     userError('Agent detection failed');
     process.exit(1);

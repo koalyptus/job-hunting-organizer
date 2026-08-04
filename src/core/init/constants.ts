@@ -21,5 +21,17 @@ export const JHO_LINKEDIN_URL = 'JHO_LINKEDIN_URL';
 /** Agent name for Ollama (used by detect-local-agents). */
 export const BACKEND_NAME_OLLAMA = 'ollama';
 
+/** Agent name for LM Studio (used by detect-local-agents). */
+export const BACKEND_NAME_LMSTUDIO = 'lmstudio';
+
+/** Default port for LM Studio local server. */
+export const LMSTUDIO_DEFAULT_PORT = 1234;
+
+/** Default LM Studio base URL. */
+export const DEFAULT_LMSTUDIO_BASE_URL = `http://localhost:${LMSTUDIO_DEFAULT_PORT}/v1`;
+
+/** Default LM Studio model (auto-selects). */
+export const LMSTUDIO_DEFAULT_MODEL = 'auto';
+
 /** Timeout in ms for detectAgents() call to avoid blocking the wizard. */
 export const DETECT_AGENTS_TIMEOUT_MS = 3000;
