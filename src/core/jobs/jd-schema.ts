@@ -72,4 +72,5 @@ export const ExtractedJdSchema = z.object({
   benefits: stringArray,
   employmentType: nullableString,
   seniorityLevel: nullableString,
+  site: nullableString,
 });

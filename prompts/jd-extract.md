@@ -1,8 +1,11 @@
 ---
-version: 6
+version: 7
 recommendedModel: gpt-4o-mini
 recommendedTemperature: 0.1
 changelog: |
+  v7 — add optional `site` field for fallback when URL hostname is not
+       authoritative (e.g. paste/stdin mode or company ATS not in the
+       hostname map)
   v6 — constrain employmentType to enum: permanent, temp, contract, casual, part-time
   v5 — add specific cleanup instructions for boilerplate that slips through
        HTML stripping (accessibility skip links, sign-in prompts, salary widgets,
@@ -46,6 +49,9 @@ Return **only** a JSON object with these fields:
 - `benefits` (array of strings, optional): Listed perks/benefits extracted from description.
 - `employmentType` (string, optional): Must be one of: "permanent", "temp", "contract", "casual", "part-time". Map common variants: "full-time" → "permanent", "freelance" → "contract", "internship" → "temp".
 - `seniorityLevel` (string, optional): e.g. "junior", "mid", "senior", "staff", "lead".
+- `site` (string, optional): The job board or source site if mentioned in the
+  text (e.g. "LinkedIn", "Seek", "Indeed", "Wellfound"). Use the canonical
+  human-readable name. Omit if not stated.
 
 ## Rules
 

@@ -27,6 +27,8 @@ export interface ExtractedJd {
   employmentType?: string;
   /** Seniority level (e.g. `'senior'`, `'staff'`). */
   seniorityLevel?: string;
+  /** Job board or source site (e.g. `'LinkedIn'`, `'Seek'`). */
+  site?: string;
   /**
    * Raw text passed to the LLM for extraction. Populated by both
    * {@link extractJdFromText} (paste/stdin) and {@link extractJdFromUrl}

@@ -17,6 +17,56 @@ const MAX_RETRIES = 2;
 const JD_EXTRACT_TEMPERATURE = 0.1;
 
 /**
+ * Map a URL hostname to a human-readable job board name.
+ * Returns `undefined` for unknown or non-job-board domains.
+ */
+export function extractSiteFromUrl(url: string): string | undefined {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    const knownSites: Record<string, string> = {
+      'linkedin.com': 'LinkedIn',
+      'www.linkedin.com': 'LinkedIn',
+      'seek.com.au': 'Seek',
+      'www.seek.com.au': 'Seek',
+      'jobs.seek.com.au': 'Seek',
+      'indeed.com': 'Indeed',
+      'www.indeed.com': 'Indeed',
+      'au.indeed.com': 'Indeed',
+      'jobs.github.com': 'GitHub Jobs',
+      'www.jobs.github.com': 'GitHub Jobs',
+      'wellfound.com': 'Wellfound',
+      'www.wellfound.com': 'Wellfound',
+      'angel.co': 'AngelList',
+      'www.angel.co': 'AngelList',
+      'dice.com': 'Dice',
+      'www.dice.com': 'Dice',
+      'monster.com': 'Monster',
+      'www.monster.com': 'Monster',
+      'careers.stackoverflow.com': 'Stack Overflow',
+      'stackoverflow.com': 'Stack Overflow',
+      'www.stackoverflow.com': 'Stack Overflow',
+      'glassdoor.com': 'Glassdoor',
+      'www.glassdoor.com': 'Glassdoor',
+      'ziprecruiter.com': 'ZipRecruiter',
+      'www.ziprecruiter.com': 'ZipRecruiter',
+      'hired.com': 'Hired',
+      'www.hired.com': 'Hired',
+      'remote.co': 'Remote.co',
+      'www.remote.co': 'Remote.co',
+      'weworkremotely.com': 'We Work Remotely',
+      'www.weworkremotely.com': 'We Work Remotely',
+      'remoteok.com': 'Remote OK',
+      'www.remoteok.com': 'Remote OK',
+      'flexjobs.com': 'FlexJobs',
+      'www.flexjobs.com': 'FlexJobs',
+    };
+    return knownSites[hostname];
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Strip HTML tags and decode entities using `html-to-text`. Skips
  * boilerplate elements (scripts, styles, nav, footer, header, etc.)
  * that bloat the text without adding JD content. Returns clean plain
@@ -131,5 +181,15 @@ export async function extractJdFromUrl(
     throw new Error(msg);
   }
   const plainText = stripHtml(fetchResult.body);
-  return await extractJdFromText(plainText, llmConfig, log);
+  const jd = await extractJdFromText(plainText, llmConfig, log);
+  // Prefer LLM-extracted site; fall back to hostname-based extraction so
+  // stats can show LinkedIn/Seek/Indeed/etc. even when the text doesn't
+  // mention the board.
+  if (!jd.site) {
+    const site = extractSiteFromUrl(url);
+    if (site) {
+      return { ...jd, site };
+    }
+  }
+  return jd;
 }
