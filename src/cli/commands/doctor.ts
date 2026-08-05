@@ -12,25 +12,9 @@ import { detectAgents } from 'detect-local-agents';
 import {
   BACKEND_NAME_OLLAMA,
   BACKEND_NAME_LMSTUDIO,
-  DEFAULT_LLM_BASE_URL,
-  DEFAULT_LLM_MODEL,
-  DEFAULT_LMSTUDIO_BASE_URL,
-  LMSTUDIO_DEFAULT_MODEL,
+  getBackendBaseUrl,
+  getBackendModel,
 } from '../../core/init/constants.js';
-
-/**
- * Get the default base URL for a detected backend.
- */
-function getBackendBaseUrl(name: string): string {
-  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
-}
-
-/**
- * Get the default model for a detected backend.
- */
-function getBackendModel(name: string): string {
-  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_MODEL : LMSTUDIO_DEFAULT_MODEL;
-}
 
 /**
  * `jho doctor --detect-agents` — detect local OpenAI-compatible backends and display results.
@@ -42,7 +26,9 @@ async function detectAndDisplayAgents(): Promise<void> {
   try {
     const agents = await detectAgents();
     const backends = agents.filter(
-      (a) => (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) && a.isConfigured,
+      (a) =>
+        (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) &&
+        a.isConfigured,
     );
 
     if (backends.length === 0) {
@@ -54,7 +40,7 @@ async function detectAndDisplayAgents(): Promise<void> {
 
     userOutput('Local OpenAI-compatible backends:');
     for (const b of backends) {
-      userOutput(`  ✅ ${b.name} — ${b.binary} ${b.version ?? ''}`);
+      userOutput(`  ✔ ${b.name} — ${b.binary} ${b.version ?? ''}`);
       userOutput(`     baseUrl: ${getBackendBaseUrl(b.name)}`);
     }
 

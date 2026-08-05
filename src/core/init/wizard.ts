@@ -27,7 +27,7 @@ import {
 } from './constants.js';
 import { validateCvPath } from '../cv.js';
 import { promptGithub } from './github.js';
-import { promptLlm, loadExistingConfig } from './llm.js';
+import { promptLlm, loadExistingConfig, type DetectedLlmSuggestion } from './llm.js';
 import { createDirectories } from '../campaign/directories.js';
 import { ingestKnowledgeBase } from '../campaign/kb-ingest.js';
 import { handleProfile } from '../campaign/profile-builder.js';
@@ -174,22 +174,20 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const github = await promptGithub(opts.github, opts.yes ?? false, existingConfig);
 
   // --- Step 2b: Detect local OpenAI-compatible backends ---
-  // Supports Ollama and LM Studio. Uses isConfigured to check if the backend
+  // Supports Ollama and LM Studio. Uses binary presence to check if the backend
   // is actually configured (not just installed).
-  let detectedLlmSuggestion:
-    | { baseUrl: string; model: string; detectionReason: string }
+  let detectedLlmSuggestion: DetectedLlmSuggestion | undefined
     | undefined;
   if (!opts.yes) {
     try {
       const agents = await detectAgents();
-      const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured);
-      const lmstudio = agents.find((a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured);
+      const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.binary);
+      const lmstudio = agents.find((a) => a.name === BACKEND_NAME_LMSTUDIO && a.binary);
 
       if (ollama) {
         detectedLlmSuggestion = {
           baseUrl: DEFAULT_LLM_BASE_URL,
           model: DEFAULT_LLM_MODEL,
-          detectionReason: 'Ollama detected',
         };
         clackLog.info(
           `Detected Ollama → suggested baseUrl: ${DEFAULT_LLM_BASE_URL}, model: ${DEFAULT_LLM_MODEL} (${ollama.binary} ${ollama.version ?? ''})`,
@@ -198,14 +196,13 @@ export async function runInit(opts: InitOptions): Promise<void> {
         detectedLlmSuggestion = {
           baseUrl: DEFAULT_LMSTUDIO_BASE_URL,
           model: LMSTUDIO_DEFAULT_MODEL,
-          detectionReason: 'LM Studio detected',
         };
         clackLog.info(
           `Detected LM Studio → suggested baseUrl: ${DEFAULT_LMSTUDIO_BASE_URL}, model: ${LMSTUDIO_DEFAULT_MODEL} (${lmstudio.binary} ${lmstudio.version ?? ''})`,
         );
       } else {
         clackLog.warn(
-          'No local OpenAI-compatible backend detected (Ollama or LM Studio). Install Ollama (free, private) or enter API key manually.',
+          'No local OpenAI-compatible backend detected. Install Ollama (free, private) or enter API key manually.',
         );
       }
     } catch (err) {

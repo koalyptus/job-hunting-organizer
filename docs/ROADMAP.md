@@ -979,7 +979,7 @@ Enhance `jho init` to auto-detect local OpenAI-compatible backends (Ollama, LM S
 
 **Scope**:
 
-- Add `detect-local-agents` as production dependency (`^0.1.0`)
+- Add `detect-local-agents` as production dependency (`^0.2.0`)
 - In `src/core/init/wizard.ts` — after GitHub prompt (step 4), before LLM config prompt (step 5):
   - Call `detectAgents()` from `detect-local-agents`
   - Filter for `ollama` and `lmstudio` with `isConfigured === true`

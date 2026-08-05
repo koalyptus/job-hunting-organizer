@@ -11,10 +11,9 @@ interface LlmResult {
 }
 
 /** Optional suggestion from agent detection. */
-interface DetectedLlmSuggestion {
+export interface DetectedLlmSuggestion {
   baseUrl: string;
   model: string;
-  detectionReason: string;
 }
 
 /**
@@ -81,7 +80,6 @@ export async function promptLlm(
     };
   }
 
-  // Show detection reasoning if available
   const baseInput = await text({
     message: `LLM base URL? (optional, press Enter to skip)`,
     initialValue: existingConfig?.llm?.baseUrl || undefined,

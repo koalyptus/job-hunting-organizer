@@ -32,3 +32,17 @@ export const DEFAULT_LMSTUDIO_BASE_URL = `http://localhost:${LMSTUDIO_DEFAULT_PO
 
 /** Default LM Studio model (auto-selects). */
 export const LMSTUDIO_DEFAULT_MODEL = 'auto';
+
+/**
+ * Get the default base URL for a detected backend.
+ */
+export function getBackendBaseUrl(name: string): string {
+  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
+}
+
+/**
+ * Get the default model for a detected backend.
+ */
+export function getBackendModel(name: string): string {
+  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_MODEL : LMSTUDIO_DEFAULT_MODEL;
+}

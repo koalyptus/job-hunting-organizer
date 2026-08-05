@@ -314,7 +314,6 @@ describe('promptLlm', () => {
     const result = await promptLlm(true, null, {
       baseUrl: 'http://localhost:11434/v1',
       model: 'llama3.1',
-      detectionReason: 'Ollama detected and configured',
     });
 
     expect(result).toEqual({
@@ -332,7 +331,6 @@ describe('promptLlm', () => {
     const result = await promptLlm(false, null, {
       baseUrl: 'http://localhost:11434/v1',
       model: 'llama3.1',
-      detectionReason: 'Ollama detected and configured',
     });
 
     expect(result).toEqual({
@@ -353,7 +351,6 @@ describe('promptLlm', () => {
       {
         baseUrl: 'http://localhost:11434/v1',
         model: 'llama3.1',
-        detectionReason: 'Ollama detected',
       },
     );
 
