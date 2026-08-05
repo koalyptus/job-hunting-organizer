@@ -96,10 +96,12 @@ Diagnose the campaign or a single application (slug inferred from cwd if
 omitted)
 
 Arguments:
-  slug        application slug (inferred from cwd if omitted)
+  slug             application slug (inferred from cwd if omitted)
 
 Options:
-  -h, --help  display help for command
+  --detect-agents  detect local OpenAI-compatible backends and show recommended
+                   LLM config (global, not campaign-specific)
+  -h, --help       display help for command
 "
 `;
 

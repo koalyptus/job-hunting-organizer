@@ -8,6 +8,10 @@ import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
 import * as profileModule from '../../../core/campaign/profile-build.js';
 
+vi.mock('detect-local-agents', () => ({
+  detectAgents: vi.fn(() => Promise.resolve([])),
+}));
+
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),
   select: vi.fn(),

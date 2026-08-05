@@ -8,6 +8,51 @@ import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
+import { detectAgents } from 'detect-local-agents';
+import {
+  BACKEND_NAME_OLLAMA,
+  BACKEND_NAME_LMSTUDIO,
+  getBackendBaseUrl,
+  getBackendModel,
+} from '../../core/init/constants.js';
+
+/**
+ * `jho doctor --detect-agents` — detect local OpenAI-compatible backends and display results.
+ * This is a global operation, not campaign-specific.
+ */
+async function detectAndDisplayAgents(): Promise<void> {
+  userOutput('Detecting local OpenAI-compatible backends...');
+
+  try {
+    const agents = await detectAgents();
+    const backends = agents.filter(
+      (a) => (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) && a.isConfigured,
+    );
+
+    if (backends.length === 0) {
+      userOutput('No local OpenAI-compatible backend detected.');
+      userOutput('Install Ollama (free, private): curl -fsSL ollama.com/install.sh');
+      userOutput('Or enter your OpenAI API key manually during `jho init`.');
+      return;
+    }
+
+    userOutput('Local OpenAI-compatible backends:');
+    for (const b of backends) {
+      userOutput(`  ✔ ${b.name} — ${b.binary} ${b.version ?? ''}`);
+      userOutput(`     baseUrl: ${getBackendBaseUrl(b.name)}`);
+    }
+
+    // Suggest the first detected backend
+    const suggestedBackend = backends[0]!;
+    userOutput('');
+    userOutput('Suggested LLM config for jho:');
+    userOutput(`  baseUrl: ${getBackendBaseUrl(suggestedBackend.name)}`);
+    userOutput(`  model: ${getBackendModel(suggestedBackend.name)}`);
+  } catch {
+    userError('Agent detection failed');
+    process.exit(1);
+  }
+}
 
 /**
  * Severity icon for doctor issues.
@@ -51,7 +96,19 @@ function formatIssues(label: string, issues: DoctorIssue[]): string {
 export const doctorCommand = new Command('doctor')
   .description('Diagnose the campaign or a single application (slug inferred from cwd if omitted)')
   .argument('[slug]', 'application slug (inferred from cwd if omitted)')
+  .option(
+    '--detect-agents',
+    'detect local OpenAI-compatible backends and show recommended LLM config (global, not campaign-specific)',
+  )
   .action(async function (slug: string | undefined) {
+    const opts = this.opts() as { detectAgents?: boolean };
+
+    // --detect-agents is a global command, bypass campaign selection
+    if (opts.detectAgents) {
+      await detectAndDisplayAgents();
+      return;
+    }
+
     const globals = this.parent?.opts() as GlobalOpts | undefined;
     const campaign = await resolveCampaign(globals);
     const log = getRootLogger().child({ cmd: 'doctor', campaign });
@@ -104,8 +161,9 @@ The slug is optional. When omitted, it is inferred from the current directory
 or omit it to diagnose the entire campaign.
 
 Examples:
-  $ jho doctor                                                # diagnose the campaign
-  $ jho doctor 2026-Jan-15-frontend-acme-12345                # diagnose one application
+  $ jho doctor                                        # diagnose the campaign
+  $ jho doctor 2026-Jan-15-frontend-acme-12345         # diagnose one application
   $ cd applied/2026-Jan-15-frontend-acme-12345 && jho doctor  # infer from cwd
+  $ jho doctor --detect-agents                         # detect local LLM backends
 `,
 );

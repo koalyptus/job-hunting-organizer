@@ -10,6 +10,12 @@ interface LlmResult {
   model: string | undefined;
 }
 
+/** Optional suggestion from agent detection. */
+export interface DetectedLlmSuggestion {
+  baseUrl: string;
+  model: string;
+}
+
 /**
  * Load existing global config for pre-filling prompts.
  * Returns `null` if no config exists.
@@ -49,6 +55,7 @@ function isLocalUrl(url: string): boolean {
 export async function promptLlm(
   nonInteractive: boolean,
   existingConfig: ReturnType<typeof loadGlobalConfig> | null,
+  detectedSuggestion?: DetectedLlmSuggestion,
 ): Promise<LlmResult> {
   const defaultBaseUrl = getConfigValue(
     existingConfig?.llm?.baseUrl,
@@ -62,19 +69,22 @@ export async function promptLlm(
   );
   const defaultModel = getConfigValue(existingConfig?.llm?.model, 'LLM_MODEL', DEFAULT_LLM_MODEL);
 
+  // Use detected suggestion as defaults if available
+  const suggestedBaseUrl = detectedSuggestion?.baseUrl ?? defaultBaseUrl;
+  const suggestedModel = detectedSuggestion?.model ?? defaultModel;
   if (nonInteractive) {
     return {
-      baseUrl: defaultBaseUrl,
+      baseUrl: suggestedBaseUrl,
       apiKey: defaultApiKey,
-      model: defaultModel,
+      model: suggestedModel,
     };
   }
 
   const baseInput = await text({
     message: `LLM base URL? (optional, press Enter to skip)`,
     initialValue: existingConfig?.llm?.baseUrl || undefined,
-    placeholder: defaultBaseUrl,
-    defaultValue: defaultBaseUrl,
+    placeholder: suggestedBaseUrl,
+    defaultValue: suggestedBaseUrl,
   });
 
   if (isCancel(baseInput)) {
@@ -92,8 +102,8 @@ export async function promptLlm(
     const modelInput = await text({
       message: 'LLM model?',
       initialValue: existingConfig?.llm?.model || undefined,
-      placeholder: defaultModel,
-      defaultValue: defaultModel,
+      placeholder: suggestedModel,
+      defaultValue: suggestedModel,
     });
 
     if (isCancel(modelInput)) {
@@ -118,8 +128,8 @@ export async function promptLlm(
   const modelInput = await text({
     message: 'LLM model?',
     initialValue: existingConfig?.llm?.model || undefined,
-    placeholder: defaultModel,
-    defaultValue: defaultModel,
+    placeholder: suggestedModel,
+    defaultValue: suggestedModel,
   });
 
   if (isCancel(modelInput)) {
@@ -127,6 +137,5 @@ export async function promptLlm(
   }
 
   const llmModel = modelInput || undefined;
-
   return { baseUrl: llmBaseUrl, apiKey: llmApiKey, model: llmModel };
 }
