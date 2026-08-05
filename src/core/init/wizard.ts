@@ -176,8 +176,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   // --- Step 2b: Detect local OpenAI-compatible backends ---
   // Supports Ollama and LM Studio. Uses binary presence to check if the backend
   // is actually configured (not just installed).
-  let detectedLlmSuggestion: DetectedLlmSuggestion | undefined
-    | undefined;
+  let detectedLlmSuggestion: DetectedLlmSuggestion | undefined | undefined;
   if (!opts.yes) {
     try {
       const agents = await detectAgents();
