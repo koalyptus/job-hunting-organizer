@@ -47,6 +47,7 @@ describe('computeStats', () => {
     expect(stats.since).toBeUndefined();
     expect(stats.funnel).toEqual({ applied: 0, interview: 0, offer: 0, accepted: 0 });
     expect(stats.thisMonth).toEqual({ applied: 0, rejected: 0, offer: 0, withdrawn: 0 });
+    expect(stats.interviewEntryCount).toBe(0);
   });
 
   it('counts by status', async () => {
@@ -565,5 +566,120 @@ describe('computeStats', () => {
     await expect(computeStats(appliedDir, { since: 'not-a-date' })).rejects.toThrow(
       'invalid --since value',
     );
+  });
+
+  it('counts interview entries regardless of application status', async () => {
+    await writeIndex([
+      {
+        slug: '2026-Jun-01-SE-Acme',
+        status: 'rejected',
+        appliedOn: '2026-06-01',
+        site: '',
+        targetRole: '',
+        tags: [],
+      },
+      {
+        slug: '2026-Jun-02-SE-Beta',
+        status: 'applied',
+        appliedOn: '2026-06-02',
+        site: '',
+        targetRole: '',
+        tags: [],
+      },
+    ]);
+    // One entry on the rejected app, two entries on the applied app.
+    await writeFile(
+      join(appliedDir, '2026-Jun-01-SE-Acme', 'interviews.md'),
+      ['## 2026-06-05 10:00 — Technical', '', '- Type: technical', ''].join('\n'),
+    );
+    await writeFile(
+      join(appliedDir, '2026-Jun-02-SE-Beta', 'interviews.md'),
+      [
+        '## 2026-06-10 10:00 — HR screen',
+        '',
+        '- Type: hr',
+        '',
+        '## 2026-06-17 14:00 — Technical',
+        '',
+        '- Type: technical',
+        '',
+      ].join('\n'),
+    );
+
+    const stats = await computeStats(appliedDir);
+    expect(stats.interviewEntryCount).toBe(3);
+    // The funnel still reflects stored statuses only.
+    expect(stats.funnel.interview).toBe(0);
+    expect(stats.funnel.applied).toBe(1);
+  });
+
+  it('reports zero interview entries when no interviews.md exists', async () => {
+    await writeIndex([
+      {
+        slug: '2026-Jun-01-SE-Acme',
+        status: 'applied',
+        appliedOn: '2026-06-01',
+        site: '',
+        targetRole: '',
+        tags: [],
+      },
+    ]);
+
+    const stats = await computeStats(appliedDir);
+    expect(stats.interviewEntryCount).toBe(0);
+  });
+
+  it('counts interviews only for entries passing the filters', async () => {
+    await writeIndex([
+      {
+        slug: '2026-Jun-01-SE-Acme',
+        status: 'rejected',
+        appliedOn: '2026-06-01',
+        site: '',
+        targetRole: 'backend',
+        tags: [],
+      },
+      {
+        slug: '2026-Jul-01-SE-Beta',
+        status: 'applied',
+        appliedOn: '2026-07-01',
+        site: '',
+        targetRole: 'frontend',
+        tags: [],
+      },
+    ]);
+    await writeFile(
+      join(appliedDir, '2026-Jun-01-SE-Acme', 'interviews.md'),
+      ['## 2026-06-05 10:00 — Technical', '', '- Type: technical', ''].join('\n'),
+    );
+    await writeFile(
+      join(appliedDir, '2026-Jul-01-SE-Beta', 'interviews.md'),
+      ['## 2026-07-02 10:00 — HR screen', '', '- Type: hr', ''].join('\n'),
+    );
+
+    // Filtered to frontend only: the rejected backend app's interview
+    // should not be counted.
+    const stats = await computeStats(appliedDir, { targetRole: 'frontend' });
+    expect(stats.total).toBe(1);
+    expect(stats.interviewEntryCount).toBe(1);
+  });
+
+  it('tolerates an unreadable interviews.md without failing stats', async () => {
+    await writeIndex([
+      {
+        slug: '2026-Jun-01-SE-Acme',
+        status: 'applied',
+        appliedOn: '2026-06-01',
+        site: '',
+        targetRole: '',
+        tags: [],
+      },
+    ]);
+    // interviews.md exists but is a directory — read fails, must be skipped.
+    await mkdir(join(appliedDir, '2026-Jun-01-SE-Acme', 'interviews.md'), { recursive: true });
+
+    const stats = await computeStats(appliedDir);
+    expect(stats.total).toBe(1);
+    expect(stats.interviewEntryCount).toBe(0);
   });
 });

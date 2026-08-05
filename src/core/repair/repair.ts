@@ -3,6 +3,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { computeHash, writeToolhash, TOOL_MANAGED_FILES } from '../toolhash.js';
 import { rebuildIndex } from '../applications/index-builder.js';
+import { updateApplication } from '../applications/applications.js';
+import { APPLICATION_STATUS } from '../applications/types.js';
+import { listInterviews } from '../interviews/interviews.js';
 import { readCounters, writeCountersAsync } from '../applications/counters.js';
 import { acquireLock } from '../locks.js';
 import { moduleLogger } from '../logger/logger.js';
@@ -23,7 +26,9 @@ export class RepairError extends Error {
 
 /**
  * Repair a single application: update toolhash sidecars to match
- * current file contents. Locks the application folder for the duration.
+ * current file contents, and promote `applied` applications that have
+ * ≥ 1 interview log to `interview` (status consistency backfill).
+ * Locks the application folder for the duration.
  *
  * @param appliedDir - Absolute path to the campaign's `applied/` directory.
  * @param slug - The application slug to repair.
@@ -44,7 +49,7 @@ export async function repairApp(
 
   const updateToolhash = options.updateToolhash ?? true;
 
-  return acquireLock(appFolder, async () => {
+  const result = await acquireLock(appFolder, async () => {
     const actions: RepairAction[] = [];
 
     if (updateToolhash) {
@@ -71,9 +76,45 @@ export async function repairApp(
       }
     }
 
-    log.info({ slug, actionCount: actions.length }, 'repair.app.completed');
+    log.info({ slug, actionCount: actions.length }, 'repair.app.lock.completed');
     return { actions, isIndexRebuilt: false };
   });
+
+  const actions = [...result.actions];
+
+  // Status consistency backfill: applications with ≥ 1 interviews.md entry
+  // still marked `applied` are promoted to `interview` (PLAN.md §status
+  // semantics). Runs after the app-folder lock so proper-lockfile is never
+  // nested. The promotion is conditional (`onlyIfStatus: 'applied'`) and the
+  // guard runs inside updateApplication's own lock, so the read-decide-write
+  // is atomic: stronger statuses never regress, even under a concurrent
+  // status change. This heals data written before addInterview started
+  // auto-advancing the status.
+  if (options.syncInterviewStatus ?? true) {
+    try {
+      const interviews = await listInterviews(appliedDir, slug);
+      if (interviews.length > 0) {
+        const promoted = await updateApplication(
+          appliedDir,
+          slug,
+          { status: APPLICATION_STATUS.INTERVIEW },
+          { onlyIfStatus: APPLICATION_STATUS.APPLIED },
+        );
+        if (promoted) {
+          actions.push({
+            action: 'status_promoted',
+            message: 'Promoted status to interview (interviews.md has entries).',
+            slug,
+          });
+        }
+      }
+    } catch (err) {
+      log.debug({ slug, err }, 'repair.status_promote.skip');
+    }
+  }
+
+  log.info({ slug, actionCount: actions.length }, 'repair.app.completed');
+  return { actions, isIndexRebuilt: result.isIndexRebuilt };
 }
 
 /**

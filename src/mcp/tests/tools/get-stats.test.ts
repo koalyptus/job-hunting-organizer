@@ -67,6 +67,7 @@ describe('get_stats tool', () => {
       byEmploymentType: {},
       funnel: { applied: 3, interview: 1, offer: 1, accepted: 0 },
       thisMonth: { applied: 2, rejected: 0, offer: 0, withdrawn: 0 },
+      interviewEntryCount: 4,
     });
 
     const { client } = await createTestServer(registerGetStats);
@@ -74,6 +75,7 @@ describe('get_stats tool', () => {
     const result = await client.callTool({ name: 'get_stats', arguments: { campaign: 'default' } });
     const data = JSON.parse(getTextContent(result));
     expect(data.total).toBe(5);
+    expect(data.interviewEntryCount).toBe(4);
   });
 
   it('returns error when core function fails', async () => {

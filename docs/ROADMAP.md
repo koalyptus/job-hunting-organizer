@@ -66,6 +66,7 @@
   - [x] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
   - [x] 8l — ICS Outlook.com compatibility
   - [x] 8m — detect-local-agents integration in init wizard
+  - [ ] 8n — Interview status funnel consistency (stats showed 0 interviews)
 - [ ] **Phase 9** — Polish & public readiness
 
 ---
@@ -996,6 +997,27 @@ Enhance `jho init` to auto-detect local OpenAI-compatible backends (Ollama, LM S
 **Deliverable**: `jho init` auto-detects Ollama/LM Studio and pre-fills config. `jho doctor --detect-agents` diagnoses backend availability.
 
 **Commit**: `feat(init): detect-local-agents integration for smart LLM config defaults`
+
+---
+
+#### 8n — Interview status funnel consistency (stats showed 0 interviews)
+
+`jho stats` reported `interview 0` for campaigns with logged interviews (observed on `javascript-developer`: 2 hr interviews on record, funnel showed 0). Root cause: the stats funnel counts the application `status:` field in `meta.md`, but interviews are tracked in a per-application `interviews.md` and `addInterview` never advanced the application status — so no application ever reached `status: interview`. Same defect hit the per-campaign stats and `get_stats` MCP tool.
+
+**Scope**:
+
+- `addInterview` auto-advances `applied → interview` after appending the interview log; stronger statuses never regress, and a failed status sync logs a warn while the interview log still wins — `src/core/interviews/interviews.ts`
+- `repairApp`/`repairAll` backfill: `applied` applications with ≥ 1 `interviews.md` entry are promoted to `interview` (new `status_promoted` action; opt-out via `syncInterviewStatus: false`) — `src/core/repair/repair.ts`, `src/core/repair/types.ts`
+- Docs: `docs/PLAN.md` status-semantics note — interview is applied automatically, `jho repair` backfills pre-existing applications
+- Tests: 8 new (3 interviews incl. status advance / no-regress / sync-failure resilience; 5 repair incl. promotion, no-interview, no-regress, opt-out, `repairAll` integration). Suite 2052 → 2060 passing; coverage up — `core/repair` branches 84 → 87.87%, statements 96.36 → 96.94%; `core/interviews` branches 98.48 → 98.56%; overall 97.95 → 97.96% stmts / 93.75 → 93.78% branches
+
+**Deliverable**: `jho stats` funnel reflects real interview activity; existing campaigns healed by one `jho repair` run.
+
+**Status**: Implemented, verified in the installed build, and applied to real data (2026-08-05). `test8` healed: interview 1 → 3 (2 promotions). `javascript-developer` correctly shows interview 0: both apps with interviews (Shift, Earlytrade) are `status: rejected`, and promotion applies only to `applied` — rejected apps stay out of the pipeline funnel by design.
+
+**Follow-up decided** (captain, 2026-08-05, option (a)): the detailed snapshot (`jho stats --campaign <name>`) reports `interview entries: N` — the total interview entries across all applications, regardless of status — so interviews on `rejected` apps (e.g. the 2 hr interviews on `javascript-developer`) stay visible next to the funnel. Per the captain's scoping refinement, it is **not** shown in the global summary (`jho stats` without `--campaign`, text or JSON). Implements `src/core/types.ts` (`CampaignStats.interviewEntryCount`), `src/core/stats/stats.ts` (counts entries via `listInterviews`), `src/core/stats/format.ts` (full renderer only), `src/cli/commands/stats.ts` (global JSON strips the field).
+
+**Commit**: `fix(interviews): auto-advance status to interview on interview log + repair backfill`
 
 ---
 

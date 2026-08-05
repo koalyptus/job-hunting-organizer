@@ -1,6 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { readApplication, ApplicationNotFoundError } from '../applications/applications.js';
+import {
+  readApplication,
+  updateApplication,
+  ApplicationNotFoundError,
+} from '../applications/applications.js';
+import { APPLICATION_STATUS } from '../applications/types.js';
 import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { moduleLogger } from '../logger/logger.js';
@@ -305,6 +310,10 @@ function splitNoteText(text: string): string[] {
  * Append a new interview entry to `interviews.md`. Reads the application's
  * `meta.md` for the header title/company.
  *
+ * Side effect: when the application's status is `applied`, it is advanced to
+ * `interview` (per PLAN.md §status semantics) unless the sync fails, in which
+ * case the interview log still wins and a warn is logged.
+ *
  * @param appliedDir - Absolute path to the campaign's `applied/` directory.
  * @param slug - Application slug.
  * @param input - Interview details.
@@ -349,7 +358,7 @@ export async function addInterview(
 
   const section = buildSection(input);
 
-  return acquireLock(appFolder, async () => {
+  const result = await acquireLock(appFolder, async () => {
     const interviewsPath = join(appFolder, 'interviews.md');
     const exists = await pathExists(interviewsPath);
     let newContent: string;
@@ -375,6 +384,31 @@ export async function addInterview(
     (externalLog ?? log).info({ slug, interviewIndex: index }, 'interview.added');
     return { index };
   });
+
+  // Keep meta.md status consistent: per PLAN.md §status semantics, an
+  // application with ≥ 1 interview log is `interview`. The promotion is
+  // conditional (`onlyIfStatus: 'applied'`) and the guard runs inside
+  // updateApplication's own lock, so the read-decide-write is atomic: a
+  // concurrent change to a stronger status (rejected, offer, accepted,
+  // withdrawn, abandoned, ghosted) can never be regressed. Runs after the
+  // lock block so proper-lockfile is never nested (see src/core/locks.ts).
+  try {
+    const advanced = await updateApplication(
+      appliedDir,
+      slug,
+      { status: APPLICATION_STATUS.INTERVIEW },
+      { onlyIfStatus: APPLICATION_STATUS.APPLIED },
+    );
+    if (advanced) {
+      (externalLog ?? log).info({ slug }, 'interview.status_advanced');
+    }
+  } catch (err) {
+    // The interview log is the primary artifact; a failed status sync must
+    // not lose it. Log and continue.
+    (externalLog ?? log).warn({ slug, err }, 'interview.status_sync_failed');
+  }
+
+  return result;
 }
 
 /**

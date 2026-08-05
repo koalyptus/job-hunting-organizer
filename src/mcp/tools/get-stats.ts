@@ -16,7 +16,7 @@ export function registerGetStats(server: McpServer): void {
     'get_stats',
     {
       description:
-        'Compute campaign statistics: counts by status, role, site, employment type, funnel, and this-month delta',
+        'Compute campaign statistics: counts by status, role, site, employment type, funnel, interview entries, and this-month delta',
       inputSchema: GetStatsInput,
     },
     async (args) => {

@@ -23,6 +23,7 @@ import type {
   ApplicationStatus,
   CreateApplicationInput,
   UpdateApplicationInput,
+  UpdateApplicationOptions,
   ApplicationFrontmatter,
   EmploymentType,
 } from './types.js';
@@ -200,13 +201,16 @@ export async function createApplication(input: CreateApplicationInput): Promise<
  * @param appliedDir - The applied directory.
  * @param slug - The application slug to update.
  * @param patch - Fields to merge into the frontmatter.
- * @returns `true` on success.
+ * @param options - Update options, including the optional `onlyIfStatus` guard.
+ * @returns `true` when the patch was applied; `false` when skipped because the
+ *   current status did not match `options.onlyIfStatus`.
  * @throws If the application folder or `meta.md` doesn't exist.
  */
 export async function updateApplication(
   appliedDir: string,
   slug: string,
   patch: UpdateApplicationInput,
+  options: UpdateApplicationOptions = {},
 ): Promise<boolean> {
   const log = appLog;
   const folder = join(appliedDir, slug);
@@ -218,8 +222,17 @@ export async function updateApplication(
 
   log.info({ slug, patch: Object.keys(patch) }, 'application.update.start');
 
+  let updated = false;
   await acquireLock(folder, async () => {
     const { frontmatter, body } = await readFrontmatter(metaPath);
+
+    if (options.onlyIfStatus !== undefined && frontmatter.status !== options.onlyIfStatus) {
+      log.info(
+        { slug, expected: options.onlyIfStatus, actual: frontmatter.status },
+        'application.update.skipped',
+      );
+      return;
+    }
 
     const existingTags = Array.isArray(frontmatter['tags'])
       ? (frontmatter['tags'] as string[])
@@ -245,9 +258,10 @@ export async function updateApplication(
         'meta.md validation failed, index not updated',
       );
     }
+    updated = true;
   });
   log.info({ slug }, 'application.update.completed');
-  return true;
+  return updated;
 }
 
 /**

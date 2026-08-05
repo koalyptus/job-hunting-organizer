@@ -19,6 +19,7 @@ const baseStats: CampaignStats = {
   byEmploymentType: { permanent: 3, contract: 2 },
   funnel: { applied: 2, interview: 1, offer: 1, accepted: 0 },
   thisMonth: { applied: 1, rejected: 0, offer: 1, withdrawn: 0 },
+  interviewEntryCount: 3,
   since: '2026-06-01',
 };
 
@@ -87,6 +88,20 @@ describe('renderFullStats', () => {
     expect(out).toContain('accepted (0, 0%)');
   });
 
+  it('renders interview entries', () => {
+    const out = renderFullStats('default', baseStats);
+    expect(out).toContain('Interview entries: 3');
+  });
+
+  it('renders interview entries as zero when none exist', () => {
+    const stats: CampaignStats = {
+      ...baseStats,
+      interviewEntryCount: 0,
+    };
+    const out = renderFullStats('default', stats);
+    expect(out).toContain('Interview entries: 0');
+  });
+
   it('renders this-month block when there are deltas', () => {
     const out = renderFullStats('default', baseStats);
     expect(out).toContain('This month');
@@ -151,6 +166,14 @@ describe('renderCompactStats', () => {
     expect(out).toContain('interview 1');
     expect(out).toContain('offer 1');
     expect(out).toContain('accepted 0');
+  });
+
+  it('never shows interview entries in the compact summary, even when nonzero', () => {
+    // The global summary (compact renderer) intentionally stays sparse:
+    // `interview entries` is only shown in the detailed per-campaign snapshot.
+    const out = renderCompactStats('freelance', baseStats);
+    // Case-insensitive so a leak with different casing still fails.
+    expect(out).not.toMatch(/interview entries/i);
   });
 
   it('does not bold count when total is 0', () => {

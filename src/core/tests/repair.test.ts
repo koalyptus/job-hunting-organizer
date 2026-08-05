@@ -33,13 +33,14 @@ function writeMetaMd(
   slug: string,
   title = 'Software Engineer',
   company = 'Foo Inc',
+  status = 'applied',
 ) {
   return writeFile(
     join(appDir, 'meta.md'),
     [
       '---',
       `slug: ${slug}`,
-      'status: applied',
+      `status: ${status}`,
       'appliedOn: 2026-06-03',
       `title: ${title}`,
       `company: ${company}`,
@@ -51,6 +52,20 @@ function writeMetaMd(
       '---',
       '',
       'User notes.',
+    ].join('\n'),
+  );
+}
+
+function writeInterviewsMd(appDir: string): Promise<void> {
+  return writeFile(
+    join(appDir, 'interviews.md'),
+    [
+      '# Interviews — Software Engineer @ Foo Inc',
+      '',
+      '## 2026-06-10 10:00 — Technical',
+      '',
+      '- Type: technical',
+      '',
     ].join('\n'),
   );
 }
@@ -141,6 +156,61 @@ describe('repairApp', () => {
     for (const action of result.actions) {
       expect(action.slug).toBe(slug);
     }
+  });
+
+  it('promotes applied application with interviews to interview status', async () => {
+    const slug = '2026-Jun-03-SE-Promo';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+    await writeInterviewsMd(appDir);
+
+    const result = await repairApp(appliedDir, slug);
+    expect(result.actions.some((a) => a.action === 'status_promoted')).toBe(true);
+
+    const meta = await readFile(join(appDir, 'meta.md'), 'utf8');
+    expect(meta).toContain('status: interview');
+  });
+
+  it('does not promote when there are no interviews', async () => {
+    const slug = '2026-Jun-03-SE-NoPromo';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+
+    const result = await repairApp(appliedDir, slug);
+    expect(result.actions.some((a) => a.action === 'status_promoted')).toBe(false);
+
+    const meta = await readFile(join(appDir, 'meta.md'), 'utf8');
+    expect(meta).toContain('status: applied');
+  });
+
+  it('does not regress stronger statuses when interviews exist', async () => {
+    const slug = '2026-Jun-03-SE-Rejected';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug, 'Software Engineer', 'Foo Inc', 'rejected');
+    await writeInterviewsMd(appDir);
+
+    const result = await repairApp(appliedDir, slug);
+    expect(result.actions.some((a) => a.action === 'status_promoted')).toBe(false);
+
+    const meta = await readFile(join(appDir, 'meta.md'), 'utf8');
+    expect(meta).toContain('status: rejected');
+  });
+
+  it('respects syncInterviewStatus: false', async () => {
+    const slug = '2026-Jun-03-SE-OptOut';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+    await writeInterviewsMd(appDir);
+
+    const result = await repairApp(appliedDir, slug, { syncInterviewStatus: false });
+    expect(result.actions.some((a) => a.action === 'status_promoted')).toBe(false);
+
+    const meta = await readFile(join(appDir, 'meta.md'), 'utf8');
+    expect(meta).toContain('status: applied');
   });
 });
 
@@ -242,5 +312,20 @@ describe('repairAll', () => {
     expect(result.isIndexRebuilt).toBe(true);
     // Should still have index_rebuilt and toolhash actions for the good app
     expect(result.actions.some((a) => a.action === 'index_rebuilt')).toBe(true);
+  });
+
+  it('promotes applied applications with interviews via repairAll', async () => {
+    const appliedDir = join(campaignRoot, 'applied');
+    const slug = '2026-Jun-03-SE-Promo';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+    await writeInterviewsMd(appDir);
+
+    const result = await repairAll(campaignRoot);
+    expect(result.actions.some((a) => a.action === 'status_promoted')).toBe(true);
+
+    const meta = await readFile(join(appDir, 'meta.md'), 'utf8');
+    expect(meta).toContain('status: interview');
   });
 });

@@ -75,6 +75,10 @@ export function renderFullStats(
   const funnelInner = `applied (${funnel.applied})${arrow}interview (${funnel.interview}, ${interviewPct}%)${arrow}offer (${funnel.offer}, ${offerPct}%)${arrow}accepted (${funnel.accepted}, ${acceptedPct}%)`;
   lines.push(style.dim(`  ${funnelInner}`));
 
+  // Interview entries (counts entries regardless of application status)
+  lines.push('');
+  lines.push(`${style.bold('Interview entries:')} ${stats.interviewEntryCount}`);
+
   // This month
   const thisMonthBlock = renderThisMonth(stats, colorize);
   if (thisMonthBlock) {
@@ -87,6 +91,10 @@ export function renderFullStats(
 
 /**
  * Render a compact one-line summary for a campaign.
+ *
+ * Used for the all-campaigns summary (`jho stats` without `--campaign`),
+ * so it stays intentionally sparse: `interview entries` is only shown in
+ * the detailed per-campaign snapshot.
  *
  * @param campaignName - The campaign name.
  * @param stats - The computed stats.

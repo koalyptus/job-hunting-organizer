@@ -192,6 +192,36 @@ describe('updateApplication', () => {
     expect(frontmatter.status).toBe('interview');
   });
 
+  it('applies the patch when onlyIfStatus matches the current status', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    const updated = await updateApplication(
+      appliedDir,
+      slug,
+      { status: 'interview' },
+      { onlyIfStatus: 'applied' },
+    );
+    expect(updated).toBe(true);
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.status).toBe('interview');
+  });
+
+  it('skips the patch when onlyIfStatus does not match the current status', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    await updateApplication(appliedDir, slug, { status: 'offer' });
+
+    const updated = await updateApplication(
+      appliedDir,
+      slug,
+      { status: 'interview' },
+      { onlyIfStatus: 'applied' },
+    );
+    expect(updated).toBe(false);
+
+    // The stronger status must survive untouched (no regression).
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.status).toBe('offer');
+  });
+
   it('updates salary', async () => {
     const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
     await updateApplication(appliedDir, slug, { salary: '120k AUD' });

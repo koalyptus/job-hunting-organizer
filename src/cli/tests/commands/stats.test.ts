@@ -46,6 +46,7 @@ const emptyStats: CampaignStats = {
   byEmploymentType: {},
   funnel: { applied: 0, interview: 0, offer: 0, accepted: 0 },
   thisMonth: { applied: 0, rejected: 0, offer: 0, withdrawn: 0 },
+  interviewEntryCount: 0,
 };
 
 const sampleStats: CampaignStats = {
@@ -65,6 +66,7 @@ const sampleStats: CampaignStats = {
   byEmploymentType: { permanent: 3, contract: 2 },
   funnel: { applied: 2, interview: 1, offer: 1, accepted: 0 },
   thisMonth: { applied: 1, rejected: 0, offer: 1, withdrawn: 0 },
+  interviewEntryCount: 3,
   since: '2026-06-01',
 };
 
@@ -85,6 +87,7 @@ const singleAppStats: CampaignStats = {
   byEmploymentType: { permanent: 1 },
   funnel: { applied: 1, interview: 0, offer: 0, accepted: 0 },
   thisMonth: { applied: 0, rejected: 0, offer: 0, withdrawn: 0 },
+  interviewEntryCount: 1,
 };
 
 const allStatusesStats: CampaignStats = {
@@ -104,6 +107,7 @@ const allStatusesStats: CampaignStats = {
   byEmploymentType: { permanent: 4, contract: 2, 'part-time': 2 },
   funnel: { applied: 1, interview: 1, offer: 0, accepted: 1 },
   thisMonth: { applied: 0, rejected: 1, offer: 0, withdrawn: 1 },
+  interviewEntryCount: 2,
 };
 
 const noSinceStats: CampaignStats = {
@@ -123,6 +127,7 @@ const noSinceStats: CampaignStats = {
   byEmploymentType: {},
   funnel: { applied: 3, interview: 0, offer: 0, accepted: 0 },
   thisMonth: { applied: 0, rejected: 0, offer: 0, withdrawn: 0 },
+  interviewEntryCount: 0,
 };
 
 describe('stats command', () => {
@@ -166,6 +171,7 @@ describe('stats command', () => {
       const parsed = JSON.parse(stdout.trim());
       expect(parsed.total).toBe(5);
       expect(parsed.funnel.applied).toBe(2);
+      expect(parsed.interviewEntryCount).toBe(3);
       expect(parsed.since).toBe('2026-06-01');
     });
 
@@ -184,6 +190,7 @@ describe('stats command', () => {
       expect(stdout).toContain('By target role:');
       expect(stdout).toContain('By site:');
       expect(stdout).toContain('Funnel');
+      expect(stdout).toContain('Interview entries: 3');
       expect(stdout).toContain('applied');
       expect(stdout).toContain('interview');
       expect(stdout).toContain('offer');
@@ -461,6 +468,10 @@ describe('stats command', () => {
       expect(stdout).toContain('2 applications');
       expect(stdout).toContain('applied');
       expect(stdout).toContain('interview');
+      // Global summary intentionally omits interview entries — it only
+      // appears in the detailed per-campaign snapshot. Case-insensitive so a
+      // leak with different casing (e.g. "Interview Entries") still fails.
+      expect(stdout).not.toMatch(/interview entries/i);
     });
 
     it('outputs JSON array with --json', async () => {
@@ -480,6 +491,12 @@ describe('stats command', () => {
       expect(parsed[0]!.stats.total).toBe(5);
       expect(parsed[1]!.name).toBe('freelance');
       expect(parsed[1]!.stats.total).toBe(2);
+      // Global JSON array also omits interviewEntryCount (per-campaign only).
+      // The stringify check is airtight: it catches a leak at any nesting
+      // level (top-level array objects or per-campaign stats).
+      expect(parsed[0]!.stats.interviewEntryCount).toBeUndefined();
+      expect(parsed[1]!.stats.interviewEntryCount).toBeUndefined();
+      expect(JSON.stringify(parsed)).not.toContain('interviewEntryCount');
     });
 
     it('shows "No campaigns found." when empty', async () => {
