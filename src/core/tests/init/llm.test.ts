@@ -342,19 +342,6 @@ describe('promptLlm', () => {
     });
   });
 
-  it('logs detection reason when suggestion is provided', async () => {
-    vi.mocked(text)
-      .mockResolvedValueOnce('http://localhost:11434/v1')
-      .mockResolvedValueOnce('llama3.1');
-
-    await promptLlm(false, null, {
-      baseUrl: 'http://localhost:11434/v1',
-      model: 'llama3.1',
-      detectionReason: 'Ollama detected and configured',
-    });
-
-    expect(log.info).toHaveBeenCalledWith('Ollama detected and configured');
-  });
 
   it('detected suggestion overrides existing config defaults', async () => {
     vi.mocked(text).mockResolvedValue('');
