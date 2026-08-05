@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { text, password, isCancel, log } from '@clack/prompts';
+import { text, password, isCancel } from '@clack/prompts';
 import { promptLlm, loadExistingConfig } from '../../init/llm.js';
 import { clearConfigCache } from '../../config/config.js';
 import { InitCancelled } from '../../init/errors.js';
@@ -341,7 +341,6 @@ describe('promptLlm', () => {
       model: 'llama3.1',
     });
   });
-
 
   it('detected suggestion overrides existing config defaults', async () => {
     vi.mocked(text).mockResolvedValue('');
