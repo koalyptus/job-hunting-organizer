@@ -182,12 +182,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
   if (!opts.yes) {
     try {
       const agents = await detectAgents();
-      const ollama = agents.find(
-        (a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured,
-      );
-      const lmstudio = agents.find(
-        (a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured,
-      );
+      const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured);
+      const lmstudio = agents.find((a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured);
 
       if (ollama) {
         detectedLlmSuggestion = {
@@ -196,7 +192,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
           detectionReason: 'Ollama detected',
         };
         clackLog.info(
-          `Detected Ollama → using local model (free, private): ${ollama.binary} ${ollama.version ?? ''}`,
+          `Detected Ollama → suggested baseUrl: ${DEFAULT_LLM_BASE_URL}, model: ${DEFAULT_LLM_MODEL} (${ollama.binary} ${ollama.version ?? ''})`,
         );
       } else if (lmstudio) {
         detectedLlmSuggestion = {
@@ -205,7 +201,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
           detectionReason: 'LM Studio detected',
         };
         clackLog.info(
-          `Detected LM Studio → using local model (free, private): ${lmstudio.binary} ${lmstudio.version ?? ''}`,
+          `Detected LM Studio → suggested baseUrl: ${DEFAULT_LMSTUDIO_BASE_URL}, model: ${LMSTUDIO_DEFAULT_MODEL} (${lmstudio.binary} ${lmstudio.version ?? ''})`,
         );
       } else {
         clackLog.warn(

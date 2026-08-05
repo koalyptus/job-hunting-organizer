@@ -73,8 +73,6 @@ export async function promptLlm(
   // Use detected suggestion as defaults if available
   const suggestedBaseUrl = detectedSuggestion?.baseUrl ?? defaultBaseUrl;
   const suggestedModel = detectedSuggestion?.model ?? defaultModel;
-  const suggestedDetectionReason = detectedSuggestion?.detectionReason;
-
   if (nonInteractive) {
     return {
       baseUrl: suggestedBaseUrl,
@@ -84,11 +82,6 @@ export async function promptLlm(
   }
 
   // Show detection reasoning if available
-  if (suggestedDetectionReason) {
-    const { log: clackLog } = await import('@clack/prompts');
-    clackLog.info(suggestedDetectionReason);
-  }
-
   const baseInput = await text({
     message: `LLM base URL? (optional, press Enter to skip)`,
     initialValue: existingConfig?.llm?.baseUrl || undefined,
