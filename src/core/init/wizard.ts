@@ -195,12 +195,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
   if (!opts.yes) {
     try {
       const agents = await withTimeout(detectAgents(), DETECT_AGENTS_TIMEOUT_MS);
-      const ollama = agents.find(
-        (a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured,
-      );
-      const lmstudio = agents.find(
-        (a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured,
-      );
+      const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured);
+      const lmstudio = agents.find((a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured);
 
       if (ollama) {
         detectedLlmSuggestion = {
