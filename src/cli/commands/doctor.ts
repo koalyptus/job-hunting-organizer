@@ -16,20 +16,7 @@ import {
   DEFAULT_LLM_MODEL,
   DEFAULT_LMSTUDIO_BASE_URL,
   LMSTUDIO_DEFAULT_MODEL,
-  DETECT_AGENTS_TIMEOUT_MS,
 } from '../../core/init/constants.js';
-
-/**
- * Run a promise with a timeout. Rejects with error if timeout exceeded.
- */
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Detection timed out after ${ms}ms`)), ms),
-    ),
-  ]);
-}
 
 /**
  * Get the default base URL for a detected backend.
@@ -53,9 +40,11 @@ async function detectAndDisplayAgents(): Promise<void> {
   userOutput('Detecting local OpenAI-compatible backends...');
 
   try {
-    const agents = await withTimeout(detectAgents(), DETECT_AGENTS_TIMEOUT_MS);
+    const agents = await detectAgents();
     const backends = agents.filter(
-      (a) => (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) && a.isConfigured,
+      (a) =>
+        (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) &&
+        a.isConfigured,
     );
 
     if (backends.length === 0) {

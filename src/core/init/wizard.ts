@@ -24,7 +24,6 @@ import {
   BACKEND_NAME_LMSTUDIO,
   DEFAULT_LMSTUDIO_BASE_URL,
   LMSTUDIO_DEFAULT_MODEL,
-  DETECT_AGENTS_TIMEOUT_MS,
 } from './constants.js';
 import { validateCvPath } from '../cv.js';
 import { promptGithub } from './github.js';
@@ -35,18 +34,6 @@ import { handleProfile } from '../campaign/profile-builder.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
 import { detectAgents } from 'detect-local-agents';
-
-/**
- * Run a promise with a timeout. Rejects with error if timeout exceeded.
- */
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Detection timed out after ${ms}ms`)), ms),
-    ),
-  ]);
-}
 
 /**
  * Run the init wizard. Called from the CLI command.
@@ -194,9 +181,13 @@ export async function runInit(opts: InitOptions): Promise<void> {
     | undefined;
   if (!opts.yes) {
     try {
-      const agents = await withTimeout(detectAgents(), DETECT_AGENTS_TIMEOUT_MS);
-      const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured);
-      const lmstudio = agents.find((a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured);
+      const agents = await detectAgents();
+      const ollama = agents.find(
+        (a) => a.name === BACKEND_NAME_OLLAMA && a.isConfigured,
+      );
+      const lmstudio = agents.find(
+        (a) => a.name === BACKEND_NAME_LMSTUDIO && a.isConfigured,
+      );
 
       if (ollama) {
         detectedLlmSuggestion = {

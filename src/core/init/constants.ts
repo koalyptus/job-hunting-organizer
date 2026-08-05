@@ -32,6 +32,3 @@ export const DEFAULT_LMSTUDIO_BASE_URL = `http://localhost:${LMSTUDIO_DEFAULT_PO
 
 /** Default LM Studio model (auto-selects). */
 export const LMSTUDIO_DEFAULT_MODEL = 'auto';
-
-/** Timeout in ms for detectAgents() call to avoid blocking the wizard. */
-export const DETECT_AGENTS_TIMEOUT_MS = 3000;
