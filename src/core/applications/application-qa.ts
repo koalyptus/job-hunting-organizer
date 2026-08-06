@@ -11,7 +11,8 @@ import { join, basename } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
-import { loadPromptTemplate } from '../prompts.js';
+import { loadPromptTemplateWithVoice } from '../prompts.js';
+import { humanize } from '../humanize.js';
 import { readProfile } from '../campaign/profile-read.js';
 import { readApplication } from './applications.js';
 import { loadKbContextForCampaign } from '../campaign/kb-context.js';
@@ -90,8 +91,11 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
     throw new AnswerError(`Failed to read profile: ${msg}`);
   }
 
-  // Load prompt
-  const { body: systemPrompt, temperature } = await loadPromptTemplate(PROMPT_NAME);
+  // Load prompt (with shared humanize voice block)
+  const { body: systemPrompt, temperature } = await loadPromptTemplateWithVoice(
+    PROMPT_NAME,
+    'humanize-voice',
+  );
 
   // Build message parts with steer
   const messageParts = [
@@ -194,8 +198,12 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
 
   const answer = result.content.trim();
 
+  // Mechanical humanize pass (em-dash chains, stretched whitespace, smart
+  // quotes). Runs before the refusal check so refusals are left intact.
+  const cleaned = humanize(answer);
+
   // Check for refusal
-  if (isRefusal(answer)) {
+  if (isRefusal(cleaned)) {
     throw new AnswerError('LLM refused to answer the question');
   }
 
@@ -213,7 +221,7 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
       `- Source: ${source}`,
       ...(steer ? [`- Steer: ${steer}`] : []),
       `- Answer:`,
-      `  > ${answer.split('\n').join('\n  > ')}`,
+      `  > ${cleaned.split('\n').join('\n  > ')}`,
       '',
     ].join('\n');
 
@@ -237,13 +245,13 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
   }
 
   log?.info(
-    { slug, model: result.model, wordCount: countWords(answer), durationMs: result.durationMs },
+    { slug, model: result.model, wordCount: countWords(cleaned), durationMs: result.durationMs },
     'qa.answered',
   );
 
   return {
-    answer,
-    wordCount: countWords(answer),
+    answer: cleaned,
+    wordCount: countWords(cleaned),
     model: result.model,
     durationMs: result.durationMs,
   };

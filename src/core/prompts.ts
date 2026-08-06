@@ -29,3 +29,28 @@ export async function loadPromptTemplate(
   );
   return { body, temperature };
 }
+
+/**
+ * Load a base prompt template and append a shared voice block from
+ * `prompts/<voiceName>.md`. The voice block is a single source of truth
+ * for expressive guidance; the base prompt owns command-specific rules.
+ *
+ * @param baseName - Base prompt file name without `.md` (e.g. `'cover-letter'`).
+ * @param voiceName - Voice prompt file name without `.md` (e.g. `'humanize-voice'`).
+ * @returns Concatenated body and the base prompt's temperature.
+ */
+export async function loadPromptTemplateWithVoice(
+  baseName: string,
+  voiceName: string,
+  fallbackTemperature: number = DEFAULT_PROMPT_TEMPERATURE,
+): Promise<{ body: string; temperature: number }> {
+  const base = await loadPromptTemplate(baseName, fallbackTemperature);
+  const root = getPackageRoot();
+  const voicePath = join(root, 'prompts', `${voiceName}.md`);
+  const voiceRaw = await readFile(voicePath, 'utf8');
+  const { body: voiceBody } = parseFrontmatter(voiceRaw);
+  return {
+    body: `${base.body}\n\n${voiceBody.trim()}`,
+    temperature: base.temperature,
+  };
+}

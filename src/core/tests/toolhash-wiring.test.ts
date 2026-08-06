@@ -78,6 +78,10 @@ vi.mock('../prompts.js', () => ({
     body: 'Test prompt template',
     temperature: 0.6,
   })),
+  loadPromptTemplateWithVoice: vi.fn(async () => ({
+    body: 'Test prompt template',
+    temperature: 0.6,
+  })),
 }));
 
 vi.mock('../campaign/profile-read.js', () => ({
