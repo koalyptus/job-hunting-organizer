@@ -8,6 +8,7 @@ import {
   AnswerError,
   QaReadError,
 } from '../../applications/application-qa.js';
+import { EM_DASH } from '../../humanize.js';
 
 const mockChatComplete = vi.fn();
 
@@ -177,10 +178,9 @@ describe('answerQuestion', () => {
   it('applies the mechanical humanize pass to the LLM output', async () => {
     await setupApp('2026-Jun-01-SE-Test-Corp');
 
-    // 3+ em-dashes → the post-processor converts them to commas.
-    const EM_DASH = String.fromCodePoint(0x2014);
+    // A run of 3+ em-dashes → the post-processor rewrites it to commas.
     mockChatComplete.mockResolvedValueOnce({
-      content: `I have strong TypeScript skills${EM_DASH}and I built React apps${EM_DASH}for the modern web${EM_DASH}at scale.`,
+      content: `I have strong TypeScript skills${EM_DASH.repeat(3)}and I built React apps${EM_DASH.repeat(3)}for the modern web${EM_DASH.repeat(3)}at scale.`,
       model: 'gpt-4o',
       finishReason: 'stop',
       usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },

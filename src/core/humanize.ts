@@ -27,9 +27,17 @@ const MULTI_NEWLINE = /\n{3,}/g;
 const TRAILING_WHITESPACE = /[ \t]+$/gm;
 
 /** Collapse adjacent commas left by the em-dash→comma rewrite. */
-const MULTI_COMMA = /,{2,}/g;
+const COMMA_RUN = /,(\s*,)+/g;
 
-const EM_DASH = String.fromCodePoint(0x2014);
+/**
+ * Em dash (U+2014), the char this module rewrites in runs of 3+.
+ * Built via code point (not a literal) because vitest's transform drops raw
+ * em-dash characters from string literals; tests import this constant too.
+ */
+export const EM_DASH = String.fromCodePoint(0x2014);
+
+/** Run of 3+ consecutive em-dashes (the "chain" tell), with surrounding spaces. */
+const EM_DASH_RUN = new RegExp(`[ \\t]*(?:${EM_DASH}){3,}[ \\t]*`, 'g');
 
 /**
  * Normalize mechanical AI tells in LLM prose.
@@ -45,17 +53,33 @@ export function humanize(text: string): string {
 
   let result = text;
 
-  // Em-dash chains: 3+ em-dashes → commas (with spacing fix-up).
-  const emDashCount = countOccurrences(result, EM_DASH);
-  if (emDashCount >= 3) {
-    result = result.replaceAll(EM_DASH, ',');
-    result = result.replace(MULTI_COMMA, ',');
-    // Comma directly before a period or paren: drop it.
-    result = result.replace(/,\s*([().])/g, '$1');
-    // No space before a comma; exactly one space after.
-    result = result.replace(/\s+,/g, ',');
-    result = result.replace(/,(?=\S)/g, ', ');
-  }
+  // Em-dash chains: a run of 3+ consecutive em-dashes → one comma. Spacing is
+  // decided per-run so real commas (e.g. thousands separators) are never touched.
+  result = result.replace(EM_DASH_RUN, (run, offset, whole) => {
+    const next = whole[offset + run.length] ?? '';
+    if (next === '') {
+      return ''; // dangling chain at EOF: drop it
+    }
+    if (next === '(') {
+      return ' '; // opener: single space, no comma
+    }
+    if (
+      next === '.' ||
+      next === ')' ||
+      next === ']' ||
+      next === '}' ||
+      next === '!' ||
+      next === '?' ||
+      next === '\n' ||
+      next === '\r'
+    ) {
+      return ''; // closer or end of line: drop
+    }
+    return ', '; // between words: comma + single space
+  });
+  // Collapse comma runs left adjacent to the rewrite (', ,' / ',,') — scoped to
+  // this pass, so it never touches real text commas.
+  result = result.replace(COMMA_RUN, ', ');
 
   // Stretched whitespace.
   result = result.replace(MULTI_SPACE, ' ');
@@ -68,25 +92,4 @@ export function humanize(text: string): string {
   result = result.replace(UNICODE_QUOTES, '"');
 
   return result;
-}
-
-/**
- * Count non-overlapping occurrences of a substring.
- *
- * @param haystack - Text to search.
- * @param needle - Substring to count. An empty needle returns 0 (and would
- *   otherwise loop forever via `indexOf`).
- * @returns Number of non-overlapping occurrences.
- */
-export function countOccurrences(haystack: string, needle: string): number {
-  if (!needle) {
-    return 0;
-  }
-  let count = 0;
-  let idx = haystack.indexOf(needle);
-  while (idx !== -1) {
-    count += 1;
-    idx = haystack.indexOf(needle, idx + needle.length);
-  }
-  return count;
 }

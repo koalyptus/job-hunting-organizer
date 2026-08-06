@@ -8,6 +8,7 @@ import {
   CoverLetterError,
   CoverLetterReadError,
 } from '../../applications/cover-letter.js';
+import { EM_DASH } from '../../humanize.js';
 import * as fsModule from '../../fs.js';
 
 const mockChatComplete = vi.fn();
@@ -197,10 +198,9 @@ describe('generateCoverLetter', () => {
   it('applies the mechanical humanize pass to the LLM output', async () => {
     await setupApp('2026-Jun-01-SE-Test-Corp');
 
-    // 3+ em-dashes → the post-processor converts them to commas.
-    const EM_DASH = String.fromCodePoint(0x2014);
+    // A run of 3+ em-dashes → the post-processor rewrites it to commas.
     mockChatComplete.mockResolvedValueOnce({
-      content: `I am excited to apply${EM_DASH}and I leverage Go${EM_DASH}for the modern web${EM_DASH}at Test Corp.`,
+      content: `I am excited to apply${EM_DASH.repeat(3)}and I leverage Go${EM_DASH.repeat(3)}for the modern web${EM_DASH.repeat(3)}at Test Corp.`,
       model: 'gpt-4o',
       finishReason: 'stop',
       usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
