@@ -28,6 +28,10 @@ vi.mock('../../src/core/prompts.js', () => ({
     body: 'You are a job-hunting coach.',
     temperature: 0.6,
   })),
+  loadPromptTemplateWithVoice: vi.fn(async () => ({
+    body: 'You are a job-hunting coach.',
+    temperature: 0.6,
+  })),
 }));
 
 vi.mock('../../src/core/logger/logger.js', async (importOriginal) => {
