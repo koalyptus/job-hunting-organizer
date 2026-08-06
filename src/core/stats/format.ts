@@ -64,17 +64,6 @@ export function renderFullStats(
     lines.push(`${style.cyan(label.padEnd(14))} ${String(count).padStart(3)}   ${percentLabel}`);
   }
 
-  // Funnel
-  const { funnel } = stats;
-  const interviewPct = stats.total > 0 ? Math.round((funnel.interview / stats.total) * 100) : 0;
-  const offerPct = stats.total > 0 ? Math.round((funnel.offer / stats.total) * 100) : 0;
-  const acceptedPct = stats.total > 0 ? Math.round((funnel.accepted / stats.total) * 100) : 0;
-  lines.push('');
-  lines.push(style.bold('Funnel (lifetime):'));
-  const arrow = style.dim(' → ');
-  const funnelInner = `applied (${funnel.applied})${arrow}interview (${funnel.interview}, ${interviewPct}%)${arrow}offer (${funnel.offer}, ${offerPct}%)${arrow}accepted (${funnel.accepted}, ${acceptedPct}%)`;
-  lines.push(style.dim(`  ${funnelInner}`));
-
   // Interview entries (counts entries regardless of application status)
   lines.push('');
   lines.push(`${style.bold('Interview entries:')} ${stats.interviewEntryCount}`);
@@ -85,6 +74,17 @@ export function renderFullStats(
     lines.push('');
     lines.push(thisMonthBlock);
   }
+
+  // Funnel — concluding summary
+  const { funnel } = stats;
+  const interviewPct = stats.total > 0 ? Math.round((funnel.interview / stats.total) * 100) : 0;
+  const offerPct = stats.total > 0 ? Math.round((funnel.offer / stats.total) * 100) : 0;
+  const acceptedPct = stats.total > 0 ? Math.round((funnel.accepted / stats.total) * 100) : 0;
+  lines.push('');
+  lines.push(style.bold('Funnel (lifetime):'));
+  const arrow = style.dim(' → ');
+  const funnelInner = `applied (${funnel.applied})${arrow}interview (${funnel.interview}, ${interviewPct}%)${arrow}offer (${funnel.offer}, ${offerPct}%)${arrow}accepted (${funnel.accepted}, ${acceptedPct}%)`;
+  lines.push(style.dim(`  ${funnelInner}`));
 
   return lines.join('\n');
 }
