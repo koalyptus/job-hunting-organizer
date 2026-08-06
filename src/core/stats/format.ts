@@ -64,7 +64,18 @@ export function renderFullStats(
     lines.push(`${style.cyan(label.padEnd(14))} ${String(count).padStart(3)}   ${percentLabel}`);
   }
 
-  // Funnel
+  // Interview entries (counts entries regardless of application status)
+  lines.push('');
+  lines.push(`${style.bold('Interview entries:')} ${stats.interviewEntryCount}`);
+
+  // This month
+  const thisMonthBlock = renderThisMonth(stats, colorize);
+  if (thisMonthBlock) {
+    lines.push('');
+    lines.push(thisMonthBlock);
+  }
+
+  // Funnel — concluding summary
   const { funnel } = stats;
   const interviewPct = stats.total > 0 ? Math.round((funnel.interview / stats.total) * 100) : 0;
   const offerPct = stats.total > 0 ? Math.round((funnel.offer / stats.total) * 100) : 0;
@@ -75,18 +86,15 @@ export function renderFullStats(
   const funnelInner = `applied (${funnel.applied})${arrow}interview (${funnel.interview}, ${interviewPct}%)${arrow}offer (${funnel.offer}, ${offerPct}%)${arrow}accepted (${funnel.accepted}, ${acceptedPct}%)`;
   lines.push(style.dim(`  ${funnelInner}`));
 
-  // This month
-  const thisMonthBlock = renderThisMonth(stats, colorize);
-  if (thisMonthBlock) {
-    lines.push('');
-    lines.push(thisMonthBlock);
-  }
-
   return lines.join('\n');
 }
 
 /**
  * Render a compact one-line summary for a campaign.
+ *
+ * Used for the all-campaigns summary (`jho stats` without `--campaign`),
+ * so it stays intentionally sparse: `interview entries` is only shown in
+ * the detailed per-campaign snapshot.
  *
  * @param campaignName - The campaign name.
  * @param stats - The computed stats.

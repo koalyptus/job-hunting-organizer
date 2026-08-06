@@ -469,6 +469,13 @@ export interface CampaignStats {
   };
   /** Counts grouped by employment type. Key `''` represents unspecified. */
   readonly byEmploymentType: Record<string, number>;
+  /**
+   * Total interview entries logged across all applications in the result
+   * set, regardless of application status. Interviews recorded on
+   * `rejected` (or other non-pipeline) applications still count here,
+   * so activity the funnel no longer shows is not lost.
+   */
+  readonly interviewEntryCount: number;
   /** Earliest `appliedOn` date in the result set (ISO). Undefined when total is 0. */
   readonly since?: string;
 }
@@ -483,6 +490,13 @@ export interface StatsOptions {
   readonly employmentType?: EmploymentType;
   /** Filter by date: ISO date string or relative duration (`7d`, `30d`, `90d`). */
   readonly since?: string;
+  /**
+   * Compute `interviewEntryCount` by reading each application's
+   * `interviews.md`. Default `true` (detail/MCP callers want it). Pass
+   * `false` for the summary path, which discards the count, to skip the
+   * N per-application reads.
+   */
+  readonly includeInterviewEntries?: boolean;
 }
 
 /** GitHub user profile returned by `GET /users/{username}`. */

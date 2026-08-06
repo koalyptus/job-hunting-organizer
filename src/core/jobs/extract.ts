@@ -17,6 +17,26 @@ const MAX_RETRIES = 2;
 const JD_EXTRACT_TEMPERATURE = 0.1;
 
 /**
+ * Extract the job site from a URL by returning its hostname
+ * (e.g. `https://au.indeed.com/viewjob?x=1` → `au.indeed.com`).
+ *
+ * We intentionally use the hostname as-is rather than maintaining an
+ * arbitrary mapping of known boards — this keeps `By site` correct for
+ * any site, including regional and ATS hosts (`uk.indeed.com`, Workday,
+ * SuccessFactors, etc.). Leading `www.` is stripped so `www.linkedin.com`
+ * and `linkedin.com` aggregate into the same bucket. Returns
+ * `undefined` for unparseable URLs.
+ */
+export function extractSiteFromUrl(url: string): string | undefined {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname.startsWith('www.') ? hostname.slice('www.'.length) : hostname;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Strip HTML tags and decode entities using `html-to-text`. Skips
  * boilerplate elements (scripts, styles, nav, footer, header, etc.)
  * that bloat the text without adding JD content. Returns clean plain
@@ -131,5 +151,15 @@ export async function extractJdFromUrl(
     throw new Error(msg);
   }
   const plainText = stripHtml(fetchResult.body);
-  return await extractJdFromText(plainText, llmConfig, log);
+  const jd = await extractJdFromText(plainText, llmConfig, log);
+  // Prefer LLM-extracted site; fall back to hostname-based extraction so
+  // stats can show LinkedIn/Seek/Indeed/etc. even when the text doesn't
+  // mention the board.
+  if (!jd.site) {
+    const site = extractSiteFromUrl(url);
+    if (site) {
+      return { ...jd, site };
+    }
+  }
+  return jd;
 }

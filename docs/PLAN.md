@@ -162,6 +162,10 @@ Body: user-owned (untouched by tool).
 
 `withdrawn` and `abandoned` are deliberately separate: the first is a _professional_ closing action, the second is a _self-reflection_ state. `abandoned` apps are the input to the "where do I drop the ball?" question — useful for spotting patterns like "I abandon 30% of apps after the take-home." `jho retro aggregate` keeps `abandoned` apps out of weak-topic aggregation by default (`--include-abandoned` to include).
 
+`interview` is applied automatically: logging an interview (CLI `jho interview add`, MCP `add-interview`) advances an `applied` application to `interview`; stronger statuses never regress. `jho repair` backfills the same promotion for applications whose interviews were logged before this behavior existed.
+
+In the detailed snapshot (`jho stats --campaign <name>`), `interview entries: N` reports the total number of interview entries across all applications in the campaign, **regardless of application status**. The funnel (`interview (N)`) counts only applications whose current status is `interview`; `interview entries` keeps interview activity on `rejected` (or otherwise non-pipeline) applications visible, so work done on applications that later ended is not lost from the snapshot. It is deliberately **not** shown in the all-campaigns summary (`jho stats` without `--campaign`) to keep that listing compact.
+
 ### `interviews.md` schema (one H2 per interview)
 
 ```markdown

@@ -379,6 +379,7 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
     link: url,
     description: jd.description,
     employmentType: appEmploymentType,
+    site: jd.site,
   });
 
   // Append note if provided
@@ -483,6 +484,7 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
     link: url,
     description: jd.description,
     employmentType: appEmploymentType,
+    site: jd.site,
   });
 
   // Append note if provided

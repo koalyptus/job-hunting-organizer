@@ -339,7 +339,8 @@ Options:
 exports[`command --help output > stats has consistent help output 1`] = `
 "Usage: stats [options]
 
-Show a campaign snapshot: counts by status, role, site, funnel
+Show a campaign snapshot: counts by status, role, site, funnel, interview
+entries
 
 Options:
   --role <role>             filter stats by target role

@@ -26,4 +26,11 @@ export interface RepairResult {
 export interface RepairOptions {
   /** When `true`, update toolhash sidecars to match current file contents. */
   readonly updateToolhash?: boolean;
+  /**
+   * When `true` (default), promote applications whose status is `applied`
+   * to `interview` when `interviews.md` has ≥ 1 entry — the meta.md status
+   * consistency backfill for interviews logged before the auto-advance was
+   * added. Never regresses stronger statuses.
+   */
+  readonly syncInterviewStatus?: boolean;
 }

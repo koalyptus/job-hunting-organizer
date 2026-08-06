@@ -23,7 +23,7 @@ import { cliColorize } from '../colors.js';
  * `jho stats` — campaign snapshot.
  */
 export const statsCommand = new Command('stats')
-  .description('Show a campaign snapshot: counts by status, role, site, funnel')
+  .description('Show a campaign snapshot: counts by status, role, site, funnel, interview entries')
   .option('--role <role>', 'filter stats by target role')
   .option(
     '--employment-type <type>',
@@ -64,6 +64,9 @@ export const statsCommand = new Command('stats')
           targetRole: opts.role as string | undefined,
           since: opts.since as string | undefined,
           employmentType: opts.employmentType as EmploymentType | undefined,
+          // The summary path discards `interviewEntryCount`, so skip the
+          // per-application interviews.md reads.
+          includeInterviewEntries: false,
         };
 
         const results: { name: string; stats: CampaignStats }[] = [];
@@ -75,7 +78,13 @@ export const statsCommand = new Command('stats')
         }
 
         if (opts.json) {
-          userOutput(JSON.stringify(results, null, 2));
+          // The global summary intentionally omits `interviewEntryCount`: it is
+          // only meaningful in the detailed per-campaign snapshot.
+          const globalResults = results.map(({ name, stats }) => {
+            const { interviewEntryCount: _interviewEntryCount, ...rest } = stats;
+            return { name, stats: rest };
+          });
+          userOutput(JSON.stringify(globalResults, null, 2));
           return;
         }
 

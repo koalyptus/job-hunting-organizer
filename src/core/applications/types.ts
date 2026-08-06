@@ -18,6 +18,21 @@ export const APPLICATION_STATUSES = [
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
 /**
+ * Named status constants derived from {@link APPLICATION_STATUSES}. Prefer
+ * these over bare string literals at call sites.
+ */
+export const APPLICATION_STATUS = {
+  APPLIED: 'applied',
+  INTERVIEW: 'interview',
+  OFFER: 'offer',
+  REJECTED: 'rejected',
+  WITHDRAWN: 'withdrawn',
+  ABANDONED: 'abandoned',
+  GHOSTED: 'ghosted',
+  ACCEPTED: 'accepted',
+} as const satisfies Readonly<Record<string, ApplicationStatus>>;
+
+/**
  * Valid employment types. Empty string means unspecified.
  */
 export const EMPLOYMENT_TYPES = [
@@ -146,6 +161,21 @@ export interface UpdateApplicationInput {
   link?: string;
   /** New employment type. */
   employmentType?: EmploymentType;
+}
+
+/**
+ * Options for {@link updateApplication}.
+ */
+export interface UpdateApplicationOptions {
+  /**
+   * When set, the patch is applied only if the application's current status
+   * matches. The guard runs inside the folder lock, so the read-decide-write
+   * is atomic: a status changed concurrently (by another process) between a
+   * caller's check and this update can never be overwritten. When the current
+   * status does not match, the update is skipped and {@link updateApplication}
+   * returns `false`.
+   */
+  onlyIfStatus?: ApplicationStatus;
 }
 
 /**

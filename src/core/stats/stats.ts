@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { listApplications, readApplication } from '../applications/applications.js';
 import { APPLICATION_STATUSES } from '../applications/types.js';
 import type { ApplicationStatus } from '../applications/types.js';
+import { listInterviews } from '../interviews/interviews.js';
 import type { CampaignStats, StatsOptions } from '../types.js';
 import { parseSince, toIsoDateString } from '../date.js';
 import { InvalidSinceError } from './errors.js';
@@ -145,6 +146,26 @@ export async function computeStats(
     }
   }
 
+  // Interview entries: total interview entries across all applications in the
+  // result set, regardless of status. The funnel only counts applications
+  // whose current status is `interview`, so interviews recorded on apps that
+  // later moved to `rejected` (or another non-pipeline status) would
+  // otherwise vanish from stats. This keeps that activity visible.
+  // Skipped when `includeInterviewEntries` is false (the summary path
+  // discards the count and shouldn't pay the N per-app reads).
+  const includeInterviewEntries = opts?.includeInterviewEntries ?? true;
+  let interviewEntryCount = 0;
+  if (includeInterviewEntries) {
+    for (const e of entries) {
+      try {
+        const interviews = await listInterviews(appliedDir, e.slug);
+        interviewEntryCount += interviews.length;
+      } catch {
+        log.debug({ slug: e.slug }, 'could not read interviews.md for stats');
+      }
+    }
+  }
+
   return {
     total: entries.length,
     byStatus,
@@ -153,6 +174,7 @@ export async function computeStats(
     byEmploymentType,
     funnel,
     thisMonth,
+    interviewEntryCount,
     since: earliestAppliedOn,
   };
 }
@@ -174,6 +196,7 @@ function emptyStats(since?: string): CampaignStats {
     byEmploymentType: {},
     funnel: { applied: 0, interview: 0, offer: 0, accepted: 0 },
     thisMonth: { applied: 0, rejected: 0, offer: 0, withdrawn: 0 },
+    interviewEntryCount: 0,
     since: since ? since : undefined,
   };
 }

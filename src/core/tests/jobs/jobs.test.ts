@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
 import type { Logger } from 'pino';
 import * as llmModule from '../../llm.js';
 import { stripHtml, extractJdFromText, extractJdFromUrl } from '../../jobs/extract.js';
@@ -434,6 +434,32 @@ describe('extractJdFromUrl', () => {
     expect(result.location).toBe('Remote');
   });
 
+  it('extracts site from LinkedIn URL when LLM omits it', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockResolvedValueOnce(mockFetchResponse('<h1>Software Engineer</h1><p>At Test Corp</p>'));
+    mockLlmResponse({ location: 'Remote' }); // no site in LLM response
+
+    const result = await extractJdFromUrl(
+      'https://www.linkedin.com/jobs/view/12345',
+      testLlmConfig,
+    );
+
+    expect(result.site).toBe('linkedin.com');
+  });
+
+  it('prefers LLM-extracted site over URL fallback', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockResolvedValueOnce(mockFetchResponse('<h1>Software Engineer</h1><p>At Test Corp</p>'));
+    mockLlmResponse({ location: 'Remote', site: 'CustomBoard' });
+
+    const result = await extractJdFromUrl(
+      'https://www.linkedin.com/jobs/view/12345',
+      testLlmConfig,
+    );
+
+    expect(result.site).toBe('CustomBoard');
+  });
+
   it('throws on fetch failure', async () => {
     const fetch = vi.mocked(globalThis.fetch);
     fetch.mockRejectedValue(new TypeError('fetch failed'));
@@ -495,5 +521,57 @@ describe('extractJdFromUrl', () => {
       expect.objectContaining({ title: 'Software Engineer' }),
       'extract.complete',
     );
+  });
+});
+
+describe('extractSiteFromUrl', () => {
+  let extractSiteFromUrl: (url: string) => string | undefined;
+
+  beforeAll(async () => {
+    const mod = await import('../../jobs/extract.js');
+    extractSiteFromUrl = mod.extractSiteFromUrl;
+  });
+
+  it('returns the hostname for a bare domain', () => {
+    expect(extractSiteFromUrl('https://linkedin.com/jobs/view/12345')).toBe('linkedin.com');
+  });
+
+  it('strips leading www. from the hostname', () => {
+    expect(extractSiteFromUrl('https://www.linkedin.com/jobs/view/12345')).toBe('linkedin.com');
+    expect(extractSiteFromUrl('https://www.seek.com.au/job/12345')).toBe('seek.com.au');
+    expect(extractSiteFromUrl('https://www.indeed.com/viewjob?jk=123')).toBe('indeed.com');
+    expect(extractSiteFromUrl('https://www.glassdoor.com/job-listing/123')).toBe('glassdoor.com');
+  });
+
+  it('keeps subdomains other than www.', () => {
+    expect(extractSiteFromUrl('https://au.indeed.com/viewjob?jk=123')).toBe('au.indeed.com');
+    expect(extractSiteFromUrl('https://jobs.seek.com.au/job/12345')).toBe('jobs.seek.com.au');
+    expect(extractSiteFromUrl('https://jobs.github.com/positions/123')).toBe('jobs.github.com');
+    expect(extractSiteFromUrl('https://careers.stackoverflow.com/jobs/123')).toBe(
+      'careers.stackoverflow.com',
+    );
+  });
+
+  it('lowercases the hostname', () => {
+    expect(extractSiteFromUrl('https://WWW.LinkedIn.com/jobs/view/12345')).toBe('linkedin.com');
+    expect(extractSiteFromUrl('https://SEEK.com.au/job/12345')).toBe('seek.com.au');
+  });
+
+  it('works for any site, known or not', () => {
+    expect(extractSiteFromUrl('https://wellfound.com/jobs/123')).toBe('wellfound.com');
+    expect(extractSiteFromUrl('https://angel.co/jobs/123')).toBe('angel.co');
+    expect(extractSiteFromUrl('https://stackoverflow.com/jobs/123')).toBe('stackoverflow.com');
+    expect(extractSiteFromUrl('https://remote.co/remote-jobs/123')).toBe('remote.co');
+    expect(extractSiteFromUrl('https://weworkremotely.com/remote-jobs/123')).toBe(
+      'weworkremotely.com',
+    );
+    expect(extractSiteFromUrl('https://example.com/job/123')).toBe('example.com');
+    expect(extractSiteFromUrl('https://mycompany.ats.com/job/123')).toBe('mycompany.ats.com');
+  });
+
+  it('returns undefined for invalid URLs', () => {
+    expect(extractSiteFromUrl('not-a-url')).toBeUndefined();
+    expect(extractSiteFromUrl('')).toBeUndefined();
+    expect(extractSiteFromUrl('https://')).toBeUndefined();
   });
 });

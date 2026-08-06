@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { atomicWrite } from '../fs.js';
-import { readApplication } from '../applications/applications.js';
+import { readApplication, updateApplication } from '../applications/applications.js';
 import {
   addInterview,
   listInterviews,
@@ -48,7 +48,7 @@ vi.mock('../fs.js', async () => {
   };
 });
 
-// Wrap readApplication so we can inject errors for the catch-all test.
+// Wrap readApplication and updateApplication so per-test mock values work.
 vi.mock('../applications/applications.js', async () => {
   // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   const actual = await vi.importActual<typeof import('../applications/applications.js')>(
@@ -57,6 +57,7 @@ vi.mock('../applications/applications.js', async () => {
   return {
     ...actual,
     readApplication: vi.fn(actual.readApplication),
+    updateApplication: vi.fn(actual.updateApplication),
   };
 });
 
@@ -65,13 +66,14 @@ function writeMetaMd(
   slug: string,
   title = 'Software Engineer',
   company = 'Foo Inc',
+  status = 'applied',
 ) {
   return writeFile(
     join(appDir, 'meta.md'),
     [
       '---',
       `slug: ${slug}`,
-      'status: applied',
+      `status: ${status}`,
       'appliedOn: 2026-06-03',
       `title: ${title}`,
       `company: ${company}`,
@@ -373,6 +375,56 @@ describe('addInterview', () => {
     expect(entries[0]!.type).toBe('other');
     expect(entries[0]!.duration).toBe(60);
     expect(entries[0]!.status).toBe('scheduled');
+  });
+
+  it('advances application status from applied to interview', async () => {
+    await addInterview(appliedDir, slug, {
+      when: '2026-06-10 10:00',
+      type: 'technical',
+    });
+
+    const { frontmatter } = await readApplication(appliedDir, slug);
+    expect(frontmatter.status).toBe('interview');
+
+    // The .index.json entry stays in sync with the frontmatter.
+    const index = JSON.parse(await readFile(join(appliedDir, '.index.json'), 'utf8')) as Array<{
+      slug: string;
+      status: string;
+    }>;
+    expect(index.find((e) => e.slug === slug)?.status).toBe('interview');
+  });
+
+  it('does not regress stronger statuses when adding an interview', async () => {
+    const strongerStatuses = [
+      'rejected',
+      'offer',
+      'accepted',
+      'withdrawn',
+      'abandoned',
+      'ghosted',
+      'interview',
+    ];
+    for (const status of strongerStatuses) {
+      await writeMetaMd(join(appliedDir, slug), slug, 'Software Engineer', 'Foo Inc', status);
+      await addInterview(appliedDir, slug, { when: '2026-06-17 14:00', type: 'hr' });
+
+      const { frontmatter } = await readApplication(appliedDir, slug);
+      expect(frontmatter.status).toBe(status);
+    }
+  });
+
+  it('still returns the interview index when the status sync fails', async () => {
+    vi.mocked(updateApplication).mockRejectedValueOnce(new Error('sync boom'));
+
+    const result = await addInterview(appliedDir, slug, {
+      when: '2026-06-10 10:00',
+      type: 'technical',
+    });
+    expect(result.index).toBe(1);
+
+    // The interview log is the primary artifact and must survive the sync failure.
+    const content = await readFile(join(appliedDir, slug, 'interviews.md'), 'utf8');
+    expect(content).toContain('## 2026-06-10 10:00 — Technical');
   });
 
   it('throws InterviewNotFoundError for missing slug', async () => {
