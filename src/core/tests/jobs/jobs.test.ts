@@ -444,7 +444,7 @@ describe('extractJdFromUrl', () => {
       testLlmConfig,
     );
 
-    expect(result.site).toBe('LinkedIn');
+    expect(result.site).toBe('linkedin.com');
   });
 
   it('prefers LLM-extracted site over URL fallback', async () => {
@@ -532,61 +532,46 @@ describe('extractSiteFromUrl', () => {
     extractSiteFromUrl = mod.extractSiteFromUrl;
   });
 
-  it('extracts LinkedIn from linkedin.com', () => {
-    expect(extractSiteFromUrl('https://www.linkedin.com/jobs/view/12345')).toBe('LinkedIn');
-    expect(extractSiteFromUrl('https://linkedin.com/jobs/view/12345')).toBe('LinkedIn');
+  it('returns the hostname for a bare domain', () => {
+    expect(extractSiteFromUrl('https://linkedin.com/jobs/view/12345')).toBe('linkedin.com');
   });
 
-  it('extracts Seek from seek.com.au', () => {
-    expect(extractSiteFromUrl('https://www.seek.com.au/job/12345')).toBe('Seek');
-    expect(extractSiteFromUrl('https://seek.com.au/job/12345')).toBe('Seek');
-    expect(extractSiteFromUrl('https://jobs.seek.com.au/job/12345')).toBe('Seek');
+  it('strips leading www. from the hostname', () => {
+    expect(extractSiteFromUrl('https://www.linkedin.com/jobs/view/12345')).toBe('linkedin.com');
+    expect(extractSiteFromUrl('https://www.seek.com.au/job/12345')).toBe('seek.com.au');
+    expect(extractSiteFromUrl('https://www.indeed.com/viewjob?jk=123')).toBe('indeed.com');
+    expect(extractSiteFromUrl('https://www.glassdoor.com/job-listing/123')).toBe('glassdoor.com');
   });
 
-  it('extracts Indeed from indeed.com', () => {
-    expect(extractSiteFromUrl('https://www.indeed.com/viewjob?jk=123')).toBe('Indeed');
-    expect(extractSiteFromUrl('https://indeed.com/viewjob?jk=123')).toBe('Indeed');
-    expect(extractSiteFromUrl('https://au.indeed.com/viewjob?jk=123')).toBe('Indeed');
-  });
-
-  it('extracts GitHub Jobs', () => {
-    expect(extractSiteFromUrl('https://jobs.github.com/positions/123')).toBe('GitHub Jobs');
-  });
-
-  it('extracts Wellfound', () => {
-    expect(extractSiteFromUrl('https://wellfound.com/jobs/123')).toBe('Wellfound');
-  });
-
-  it('extracts AngelList', () => {
-    expect(extractSiteFromUrl('https://angel.co/jobs/123')).toBe('AngelList');
-  });
-
-  it('extracts Glassdoor', () => {
-    expect(extractSiteFromUrl('https://www.glassdoor.com/job-listing/123')).toBe('Glassdoor');
-  });
-
-  it('extracts Stack Overflow', () => {
-    expect(extractSiteFromUrl('https://stackoverflow.com/jobs/123')).toBe('Stack Overflow');
-    expect(extractSiteFromUrl('https://careers.stackoverflow.com/jobs/123')).toBe('Stack Overflow');
-  });
-
-  it('extracts Remote.co', () => {
-    expect(extractSiteFromUrl('https://remote.co/remote-jobs/123')).toBe('Remote.co');
-  });
-
-  it('extracts We Work Remotely', () => {
-    expect(extractSiteFromUrl('https://weworkremotely.com/remote-jobs/123')).toBe(
-      'We Work Remotely',
+  it('keeps subdomains other than www.', () => {
+    expect(extractSiteFromUrl('https://au.indeed.com/viewjob?jk=123')).toBe('au.indeed.com');
+    expect(extractSiteFromUrl('https://jobs.seek.com.au/job/12345')).toBe('jobs.seek.com.au');
+    expect(extractSiteFromUrl('https://jobs.github.com/positions/123')).toBe('jobs.github.com');
+    expect(extractSiteFromUrl('https://careers.stackoverflow.com/jobs/123')).toBe(
+      'careers.stackoverflow.com',
     );
   });
 
-  it('returns undefined for unknown domains', () => {
-    expect(extractSiteFromUrl('https://example.com/job/123')).toBeUndefined();
-    expect(extractSiteFromUrl('https://mycompany.ats.com/job/123')).toBeUndefined();
+  it('lowercases the hostname', () => {
+    expect(extractSiteFromUrl('https://WWW.LinkedIn.com/jobs/view/12345')).toBe('linkedin.com');
+    expect(extractSiteFromUrl('https://SEEK.com.au/job/12345')).toBe('seek.com.au');
+  });
+
+  it('works for any site, known or not', () => {
+    expect(extractSiteFromUrl('https://wellfound.com/jobs/123')).toBe('wellfound.com');
+    expect(extractSiteFromUrl('https://angel.co/jobs/123')).toBe('angel.co');
+    expect(extractSiteFromUrl('https://stackoverflow.com/jobs/123')).toBe('stackoverflow.com');
+    expect(extractSiteFromUrl('https://remote.co/remote-jobs/123')).toBe('remote.co');
+    expect(extractSiteFromUrl('https://weworkremotely.com/remote-jobs/123')).toBe(
+      'weworkremotely.com',
+    );
+    expect(extractSiteFromUrl('https://example.com/job/123')).toBe('example.com');
+    expect(extractSiteFromUrl('https://mycompany.ats.com/job/123')).toBe('mycompany.ats.com');
   });
 
   it('returns undefined for invalid URLs', () => {
     expect(extractSiteFromUrl('not-a-url')).toBeUndefined();
     expect(extractSiteFromUrl('')).toBeUndefined();
+    expect(extractSiteFromUrl('https://')).toBeUndefined();
   });
 });

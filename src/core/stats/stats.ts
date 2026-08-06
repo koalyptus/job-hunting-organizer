@@ -151,13 +151,18 @@ export async function computeStats(
   // whose current status is `interview`, so interviews recorded on apps that
   // later moved to `rejected` (or another non-pipeline status) would
   // otherwise vanish from stats. This keeps that activity visible.
+  // Skipped when `includeInterviewEntries` is false (the summary path
+  // discards the count and shouldn't pay the N per-app reads).
+  const includeInterviewEntries = opts?.includeInterviewEntries ?? true;
   let interviewEntryCount = 0;
-  for (const e of entries) {
-    try {
-      const interviews = await listInterviews(appliedDir, e.slug);
-      interviewEntryCount += interviews.length;
-    } catch {
-      log.debug({ slug: e.slug }, 'could not read interviews.md for stats');
+  if (includeInterviewEntries) {
+    for (const e of entries) {
+      try {
+        const interviews = await listInterviews(appliedDir, e.slug);
+        interviewEntryCount += interviews.length;
+      } catch {
+        log.debug({ slug: e.slug }, 'could not read interviews.md for stats');
+      }
     }
   }
 

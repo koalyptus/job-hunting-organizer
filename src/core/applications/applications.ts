@@ -260,7 +260,11 @@ export async function updateApplication(
     }
     updated = true;
   });
-  log.info({ slug }, 'application.update.completed');
+  if (updated) {
+    log.info({ slug }, 'application.update.completed');
+  } else {
+    log.info({ slug }, 'application.update.skipped_no_patch');
+  }
   return updated;
 }
 

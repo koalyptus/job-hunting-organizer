@@ -17,50 +17,20 @@ const MAX_RETRIES = 2;
 const JD_EXTRACT_TEMPERATURE = 0.1;
 
 /**
- * Map a URL hostname to a human-readable job board name.
- * Returns `undefined` for unknown or non-job-board domains.
+ * Extract the job site from a URL by returning its hostname
+ * (e.g. `https://au.indeed.com/viewjob?x=1` → `au.indeed.com`).
+ *
+ * We intentionally use the hostname as-is rather than maintaining an
+ * arbitrary mapping of known boards — this keeps `By site` correct for
+ * any site, including regional and ATS hosts (`uk.indeed.com`, Workday,
+ * SuccessFactors, etc.). Leading `www.` is stripped so `www.linkedin.com`
+ * and `linkedin.com` aggregate into the same bucket. Returns
+ * `undefined` for unparseable URLs.
  */
 export function extractSiteFromUrl(url: string): string | undefined {
   try {
     const hostname = new URL(url).hostname.toLowerCase();
-    const knownSites: Record<string, string> = {
-      'linkedin.com': 'LinkedIn',
-      'www.linkedin.com': 'LinkedIn',
-      'seek.com.au': 'Seek',
-      'www.seek.com.au': 'Seek',
-      'jobs.seek.com.au': 'Seek',
-      'indeed.com': 'Indeed',
-      'www.indeed.com': 'Indeed',
-      'au.indeed.com': 'Indeed',
-      'jobs.github.com': 'GitHub Jobs',
-      'www.jobs.github.com': 'GitHub Jobs',
-      'wellfound.com': 'Wellfound',
-      'www.wellfound.com': 'Wellfound',
-      'angel.co': 'AngelList',
-      'www.angel.co': 'AngelList',
-      'dice.com': 'Dice',
-      'www.dice.com': 'Dice',
-      'monster.com': 'Monster',
-      'www.monster.com': 'Monster',
-      'careers.stackoverflow.com': 'Stack Overflow',
-      'stackoverflow.com': 'Stack Overflow',
-      'www.stackoverflow.com': 'Stack Overflow',
-      'glassdoor.com': 'Glassdoor',
-      'www.glassdoor.com': 'Glassdoor',
-      'ziprecruiter.com': 'ZipRecruiter',
-      'www.ziprecruiter.com': 'ZipRecruiter',
-      'hired.com': 'Hired',
-      'www.hired.com': 'Hired',
-      'remote.co': 'Remote.co',
-      'www.remote.co': 'Remote.co',
-      'weworkremotely.com': 'We Work Remotely',
-      'www.weworkremotely.com': 'We Work Remotely',
-      'remoteok.com': 'Remote OK',
-      'www.remoteok.com': 'Remote OK',
-      'flexjobs.com': 'FlexJobs',
-      'www.flexjobs.com': 'FlexJobs',
-    };
-    return knownSites[hostname];
+    return hostname.startsWith('www.') ? hostname.slice('www.'.length) : hostname;
   } catch {
     return undefined;
   }

@@ -682,4 +682,27 @@ describe('computeStats', () => {
     expect(stats.total).toBe(1);
     expect(stats.interviewEntryCount).toBe(0);
   });
+
+  it('skips interview-entry reads when includeInterviewEntries is false', async () => {
+    await writeIndex([
+      {
+        slug: '2026-Jun-01-SE-Acme',
+        status: 'applied',
+        appliedOn: '2026-06-01',
+        site: '',
+        targetRole: '',
+        tags: [],
+      },
+    ]);
+    // An interviews.md file that WOULD be counted if it were read. With the
+    // flag off, the summary path skips the read entirely.
+    await writeFile(
+      join(appliedDir, '2026-Jun-01-SE-Acme', 'interviews.md'),
+      ['## 2026-06-05 10:00 — Technical', '', '- Type: technical', ''].join('\n'),
+    );
+
+    const stats = await computeStats(appliedDir, { includeInterviewEntries: false });
+    expect(stats.total).toBe(1);
+    expect(stats.interviewEntryCount).toBe(0);
+  });
 });

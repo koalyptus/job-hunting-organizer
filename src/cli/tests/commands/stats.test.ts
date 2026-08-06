@@ -422,6 +422,7 @@ describe('stats command', () => {
 
       expect(statsCoreModule.computeStats).toHaveBeenCalledWith(expect.any(String), {
         employmentType: 'contract',
+        includeInterviewEntries: false,
       });
     });
 
@@ -519,6 +520,7 @@ describe('stats command', () => {
       expect(statsCoreModule.computeStats).toHaveBeenCalledWith(expect.any(String), {
         targetRole: 'backend',
         since: '30d',
+        includeInterviewEntries: false,
       });
     });
   });

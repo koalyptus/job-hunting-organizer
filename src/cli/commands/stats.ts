@@ -64,6 +64,9 @@ export const statsCommand = new Command('stats')
           targetRole: opts.role as string | undefined,
           since: opts.since as string | undefined,
           employmentType: opts.employmentType as EmploymentType | undefined,
+          // The summary path discards `interviewEntryCount`, so skip the
+          // per-application interviews.md reads.
+          includeInterviewEntries: false,
         };
 
         const results: { name: string; stats: CampaignStats }[] = [];
