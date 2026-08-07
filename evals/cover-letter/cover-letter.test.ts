@@ -12,7 +12,8 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { loadCases } from './cases.js';
-import { loadPromptTemplate } from '../../src/core/prompts.js';
+import { loadPromptTemplateWithVoice } from '../../src/core/prompts.js';
+import { humanize } from '../../src/core/humanize.js';
 import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';
 import { BANNED_PHRASES, PROFILE_ITEMS } from '../shared.js';
@@ -35,7 +36,7 @@ async function generate(opts: {
   profile: string;
   targetRole?: string;
 }): Promise<string> {
-  const prompt = await loadPromptTemplate('cover-letter');
+  const prompt = await loadPromptTemplateWithVoice('cover-letter', 'humanize-voice');
 
   const userMessage = `--- Job description ---\n${opts.jd}\n\n--- Candidate profile ---\n${opts.profile}${opts.targetRole ? `\n\n--- Target role ---\n${opts.targetRole}` : ''}`;
 
@@ -47,7 +48,9 @@ async function generate(opts: {
   const config = defaultLlmConfig();
   const result = await chatComplete(messages, config, { temperature: 0.3 });
 
-  return result.content;
+  // Mirror the shipped pipeline: the humanize pass runs on the raw output
+  // before it is measured, written, or refused.
+  return humanize(result.content);
 }
 
 describe('cover letter eval', () => {
