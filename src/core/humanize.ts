@@ -40,22 +40,25 @@ export const EM_DASH = String.fromCodePoint(0x2014);
 const EM_DASH_RUN = new RegExp(`[ \\t]*(?:${EM_DASH}){3,}[ \\t]*`, 'g');
 
 /**
- * Normalize mechanical AI tells in LLM prose.
- *
- * @param text - Raw LLM output.
- * @returns The cleaned text. Refusals are not special-cased here; callers run
- *   `isRefusal()` after this so refusals pass through unchanged.
+ * Fenced code block (triple backticks, optionally with a language tag), with
+ * the fences captured so `split` keeps them in the parts list. Fenced blocks
+ * are preserved verbatim: whitespace/em-dash normalization would corrupt
+ * code, and Q&A answers about implementation details legitimately contain it.
  */
-export function humanize(text: string): string {
-  if (!text) {
-    return text;
-  }
+const CODE_FENCE = /(```[\s\S]*?(?:```|$))/;
 
+/**
+ * Normalize mechanical AI tells in one prose segment (see `humanize`).
+ */
+function humanizeProse(text: string): string {
   let result = text;
 
   // Em-dash chains: a run of 3+ consecutive em-dashes → one comma. Spacing is
   // decided per-run so real commas (e.g. thousands separators) are never touched.
   result = result.replace(EM_DASH_RUN, (run, offset, whole) => {
+    if (offset === 0) {
+      return ''; // chain at the very start of the text: no leading comma
+    }
     const next = whole[offset + run.length] ?? '';
     if (next === '') {
       return ''; // dangling chain at EOF: drop it
@@ -92,4 +95,27 @@ export function humanize(text: string): string {
   result = result.replace(UNICODE_QUOTES, '"');
 
   return result;
+}
+
+/**
+ * Normalize mechanical AI tells in LLM prose.
+ *
+ * Fenced code blocks (``` … ```) are preserved verbatim — only the prose
+ * between fences is transformed, so code in Q&A answers is never mangled.
+ *
+ * @param text - Raw LLM output.
+ * @returns The cleaned text. Refusals are not special-cased here; callers run
+ *   `isRefusal()` after this so refusals pass through unchanged.
+ */
+export function humanize(text: string): string {
+  if (!text) {
+    return text;
+  }
+
+  // split() with a capturing group keeps the fences themselves at odd
+  // indexes; transform the prose (even indexes) and leave fences untouched.
+  return text
+    .split(CODE_FENCE)
+    .map((part, index) => (index % 2 === 1 ? part : humanizeProse(part)))
+    .join('');
 }

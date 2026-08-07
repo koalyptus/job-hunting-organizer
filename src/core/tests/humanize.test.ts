@@ -130,4 +130,45 @@ describe('humanize', () => {
     const once = humanize(input);
     expect(humanize(once)).toBe(once);
   });
+
+  it('leaves fenced code blocks untouched (reviewer probe)', () => {
+    const input =
+      'Here is the implementation:\n' +
+      '```js\n' +
+      '  const items = [1, 2,  3];\n' +
+      '  if (items.length) { run(items); }\n' +
+      '```\n' +
+      'That is the gist' +
+      CHAIN +
+      'in short.';
+    const expected =
+      'Here is the implementation:\n' +
+      '```js\n' +
+      '  const items = [1, 2,  3];\n' +
+      '  if (items.length) { run(items); }\n' +
+      '```\n' +
+      'That is the gist, in short.';
+    expect(humanize(input)).toBe(expected);
+  });
+
+  it('leaves em-dash chains and smart quotes inside fences alone', () => {
+    const input = 'Code:\n```\nconst msg = "a"' + CHAIN + '"b"; // it’s fine\n```\nDone.';
+    expect(humanize(input)).toBe(input);
+  });
+
+  it('treats an unterminated fence as code to the end of text', () => {
+    const input = '```\n  keep   this\n  spacing';
+    expect(humanize(input)).toBe(input);
+  });
+
+  it('drops an em-dash chain at the very start of the text', () => {
+    expect(humanize(CHAIN + 'b')).toBe('b');
+    expect(humanize('  ' + CHAIN + 'b')).toBe('b');
+  });
+
+  it('is idempotent with fenced code present', () => {
+    const input = 'Intro' + CHAIN + 'outro.\n```\n  a  b\n```\n';
+    const once = humanize(input);
+    expect(humanize(once)).toBe(once);
+  });
 });
