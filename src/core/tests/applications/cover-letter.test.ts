@@ -8,6 +8,7 @@ import {
   CoverLetterError,
   CoverLetterReadError,
 } from '../../applications/cover-letter.js';
+import { EM_DASH } from '../../humanize.js';
 import * as fsModule from '../../fs.js';
 
 const mockChatComplete = vi.fn();
@@ -40,6 +41,10 @@ vi.mock('../../config.js', () => ({
 
 vi.mock('../../prompts.js', () => ({
   loadPromptTemplate: vi.fn(async () => ({
+    body: 'You are a cover letter writer.',
+    temperature: 0.6,
+  })),
+  loadPromptTemplateWithVoice: vi.fn(async () => ({
     body: 'You are a cover letter writer.',
     temperature: 0.6,
   })),
@@ -188,6 +193,35 @@ describe('generateCoverLetter', () => {
     expect(coverLetter).toContain('I am excited to apply');
     expect(coverLetter).toContain('<!-- jho:start:cover-letter -->');
     expect(coverLetter).toContain('<!-- jho:end:cover-letter -->');
+  });
+
+  it('applies the mechanical humanize pass to the LLM output', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // A run of 3+ em-dashes → the post-processor rewrites it to commas.
+    mockChatComplete.mockResolvedValueOnce({
+      content: `I am excited to apply${EM_DASH.repeat(3)}and I leverage Go${EM_DASH.repeat(3)}for the modern web${EM_DASH.repeat(3)}at Test Corp.`,
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 300,
+    });
+
+    const result = await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+    });
+
+    expect(result.content).toBe(
+      'I am excited to apply, and I leverage Go, for the modern web, at Test Corp.',
+    );
+
+    const coverLetter = await readFile(
+      join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'cover-letter.md'),
+      'utf8',
+    );
+    expect(coverLetter).toContain('and I leverage Go, for the modern web, at Test Corp.');
+    expect(coverLetter).not.toContain(EM_DASH);
   });
 
   it('includes target role in the prompt when available', async () => {

@@ -39,5 +39,8 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Integration tests
+        run: npm run test:integration
+
       - name: Build
         run: npm run build

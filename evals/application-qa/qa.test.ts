@@ -13,7 +13,8 @@ import { fileURLToPath } from 'node:url';
 import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { PROFILE_ITEMS } from '../shared.js';
 import { loadCases } from './cases.js';
-import { loadPromptTemplate } from '../../src/core/prompts.js';
+import { loadPromptTemplateWithVoice } from '../../src/core/prompts.js';
+import { humanize } from '../../src/core/humanize.js';
 import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
@@ -31,7 +32,7 @@ const rubric = readFileSync(resolve(__dirname, '..', 'graders', 'qa-rubric.md'),
  * This calls the LLM — slow, non-deterministic.
  */
 async function generate(opts: { jd: string; profile: string; question: string }): Promise<string> {
-  const prompt = await loadPromptTemplate('application-qa');
+  const prompt = await loadPromptTemplateWithVoice('application-qa', 'humanize-voice');
 
   const userMessage = `--- Job description ---\n${opts.jd}\n\n--- Candidate profile ---\n${opts.profile}\n\n--- Question ---\n${opts.question}`;
 
@@ -43,7 +44,9 @@ async function generate(opts: { jd: string; profile: string; question: string })
   const config = defaultLlmConfig();
   const result = await chatComplete(messages, config, { temperature: 0.3 });
 
-  return result.content;
+  // Mirror the shipped pipeline: the humanize pass runs on the raw output
+  // before it is measured, written, or refused.
+  return humanize(result.content);
 }
 
 describe('application-qa eval', () => {

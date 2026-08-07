@@ -10,7 +10,8 @@ import { join } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
 import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
-import { loadPromptTemplate } from '../prompts.js';
+import { loadPromptTemplateWithVoice } from '../prompts.js';
+import { humanize } from '../humanize.js';
 import { readProfile } from '../campaign/profile-read.js';
 import { extractTargetRoles } from '../campaign/target-roles.js';
 import { readApplication } from './applications.js';
@@ -101,8 +102,11 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
   // Use provided steer or fall back to existing steer
   const steer = opts.steer ?? existingSteer;
 
-  // Load prompt
-  const { body: systemPrompt, temperature } = await loadPromptTemplate(PROMPT_NAME);
+  // Load prompt (with shared humanize voice block)
+  const { body: systemPrompt, temperature } = await loadPromptTemplateWithVoice(
+    PROMPT_NAME,
+    'humanize-voice',
+  );
 
   // Build user message
   const messageParts = [
@@ -170,8 +174,12 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
 
   const content = result.content.trim();
 
+  // Mechanical humanize pass (em-dash chains, stretched whitespace, smart
+  // quotes). Runs before the refusal check so refusals are left intact.
+  const cleaned = humanize(content);
+
   // Check for refusal
-  if (isRefusal(content)) {
+  if (isRefusal(cleaned)) {
     throw new CoverLetterError('LLM refused to generate cover letter');
   }
 
@@ -179,7 +187,7 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
   if (!opts.noSave) {
     await acquireLock(appFolder, async () => {
       let fileContent = await readFile(coverLetterPath, 'utf8').catch(() => '');
-      fileContent = replaceRegion(fileContent, 'cover-letter', content, {
+      fileContent = replaceRegion(fileContent, 'cover-letter', cleaned, {
         createIfMissing: true,
       });
 
@@ -199,13 +207,13 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
   }
 
   log?.info(
-    { slug, model: result.model, wordCount: countWords(content), durationMs: result.durationMs },
+    { slug, model: result.model, wordCount: countWords(cleaned), durationMs: result.durationMs },
     'cover-letter.generated',
   );
 
   return {
-    content,
-    wordCount: countWords(content),
+    content: cleaned,
+    wordCount: countWords(cleaned),
     model: result.model,
     durationMs: result.durationMs,
   };

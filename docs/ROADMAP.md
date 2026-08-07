@@ -67,6 +67,7 @@
   - [x] 8l — ICS Outlook.com compatibility
   - [x] 8m — detect-local-agents integration in init wizard
   - [ ] 8n — Interview status funnel consistency (stats showed 0 interviews)
+  - [x] 8o — Humanize LLM prose (cover-letter + Q&A): deterministic `humanize()` post-processor + shared `prompts/humanize-voice.md` voice block
 - [ ] **Phase 9** — Polish & public readiness
 
 ---

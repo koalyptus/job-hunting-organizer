@@ -8,6 +8,7 @@ import {
   AnswerError,
   QaReadError,
 } from '../../applications/application-qa.js';
+import { EM_DASH } from '../../humanize.js';
 
 const mockChatComplete = vi.fn();
 
@@ -39,6 +40,10 @@ vi.mock('../../config.js', () => ({
 
 vi.mock('../../prompts.js', () => ({
   loadPromptTemplate: vi.fn(async () => ({
+    body: 'You are a Q&A assistant.',
+    temperature: 0.6,
+  })),
+  loadPromptTemplateWithVoice: vi.fn(async () => ({
     body: 'You are a Q&A assistant.',
     temperature: 0.6,
   })),
@@ -168,6 +173,37 @@ describe('answerQuestion', () => {
     expect(qaContent).toContain('I have extensive experience with TypeScript and React.');
     expect(qaContent).toContain('- Source: application form');
     expect(qaContent).toContain('[text]');
+  });
+
+  it('applies the mechanical humanize pass to the LLM output', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // A run of 3+ em-dashes → the post-processor rewrites it to commas.
+    mockChatComplete.mockResolvedValueOnce({
+      content: `I have strong TypeScript skills${EM_DASH.repeat(3)}and I built React apps${EM_DASH.repeat(3)}for the modern web${EM_DASH.repeat(3)}at scale.`,
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 250,
+    });
+
+    const result = await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Tell me about your TypeScript experience.',
+    });
+
+    expect(result.answer).toBe(
+      'I have strong TypeScript skills, and I built React apps, for the modern web, at scale.',
+    );
+
+    const qaContent = await readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'qa.md'), 'utf8');
+    expect(qaContent).toContain(
+      'I have strong TypeScript skills, and I built React apps, for the modern web, at scale.',
+    );
+    // The answer block (after "Answer:") must not contain the raw em-dash.
+    const answerBlock = qaContent.split('- Answer:')[1] ?? '';
+    expect(answerBlock).not.toContain(EM_DASH);
   });
 
   it('appends to existing qa.md', async () => {

@@ -4,3 +4,4 @@ coverage/
 *.lock
 package-lock.json
 .lavish/
+prompts/humanize-voice.md
