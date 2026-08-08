@@ -14,6 +14,7 @@ import {
 import { chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
+import { SECTION_SEPARATOR, KNOWLEDGE_BASE_SECTION_HEADER } from '../constants.js';
 import type { LlmConfig } from '../types.js';
 
 /**
@@ -162,7 +163,7 @@ Generate the profile markdown following the template above.`;
   if (campaignRoot) {
     const kb = await loadKnowledgeBaseContext(campaignRoot, { maxChars });
     if (kb) {
-      userMessage += `\n\n---\n\n## Knowledge base\n\n${kb}`;
+      userMessage += `\n\n${SECTION_SEPARATOR}\n\n${KNOWLEDGE_BASE_SECTION_HEADER}\n\n${kb}`;
     }
   }
 

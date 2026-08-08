@@ -20,4 +20,7 @@ export const TARGET_ROLE_SECTION_HEADER = '## Target role';
 export const QUESTION_SECTION_HEADER = '## Question';
 export const KNOWLEDGE_BASE_SECTION_HEADER = '## Knowledge base';
 export const ADDITIONAL_INSTRUCTIONS_SECTION_HEADER = '## Additional instructions';
+export const DAYS_UNTIL_INTERVIEW_SECTION_HEADER = '## Days until interview';
+export const WEAK_TOPICS_SECTION_HEADER = '## Weak topics';
+export const RETRO_CROSS_REFERENCE_SECTION_HEADER = '## Retro cross-reference';
 export const VOICE_SECTION_HEADER = '## Personal voice guide';
