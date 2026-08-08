@@ -7,6 +7,7 @@ export * from './profile-builder.js';
 export * from './profile-read.js';
 export * from './profile-build.js';
 export * from './profile-writer.js';
+export * from './voice-read.js';
 export {
   RemoveCampaignError,
   InferCampaignError as RemoveCampaignInferError,

@@ -14,6 +14,7 @@ import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplateWithVoice } from '../prompts.js';
 import { humanize } from '../humanize.js';
 import { readProfile } from '../campaign/profile-read.js';
+import { readVoiceGuide, appendVoiceSection } from '../campaign/voice-read.js';
 import { readApplication } from './applications.js';
 import { loadKbContextForCampaign } from '../campaign/kb-context.js';
 import { atomicWrite } from '../fs.js';
@@ -91,6 +92,9 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
     throw new AnswerError(`Failed to read profile: ${msg}`);
   }
 
+  // Read personal voice guide if available
+  const voice = await readVoiceGuide(campaignRoot);
+
   // Load prompt (with shared humanize voice block)
   const { body: systemPrompt, temperature } = await loadPromptTemplateWithVoice(
     PROMPT_NAME,
@@ -125,6 +129,9 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
   if (kb) {
     messageParts.push('', '---', '', '## Knowledge base', '', kb);
   }
+
+  // Feed personal voice guide into the prompt when available
+  appendVoiceSection(messageParts, voice);
 
   // Add steer section if present
   if (steer) {

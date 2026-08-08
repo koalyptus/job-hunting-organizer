@@ -95,8 +95,10 @@ describe('init command', () => {
     vi.mocked(text)
       .mockResolvedValueOnce('') // LinkedIn URL
       .mockResolvedValueOnce('') // CV path
+      .mockResolvedValueOnce('') // KB source (skip)
       .mockResolvedValueOnce('') // GitHub user
-      .mockResolvedValueOnce(''); // LLM base URL
+      .mockResolvedValueOnce('') // LLM base URL
+      .mockResolvedValueOnce(''); // LLM model
     vi.mocked(confirm).mockResolvedValueOnce(false); // Re-init: no (first time)
     vi.mocked(password).mockResolvedValue('');
 
@@ -116,6 +118,11 @@ describe('init command', () => {
     expect(profile).toContain('# Profile — Candidate');
     expect(profile).toContain('## Target roles');
     expect(profile).toContain('<!-- jho:target-roles');
+
+    // Voice guide template written into knowledge-base/
+    const voice = await readFile(join(campaignDir, 'knowledge-base', 'my-voice.md'), 'utf8');
+    expect(voice).toContain('# My Voice');
+    expect(voice).toContain('jho:my-voice');
 
     // Campaign config written
     const campaignConfig = JSON.parse(await readFile(join(campaignDir, 'config.json'), 'utf8'));
@@ -217,6 +224,31 @@ describe('init command', () => {
         initialValue: cvPath,
       }),
     );
+  });
+
+  it('preserves an existing voice guide on re-init', async () => {
+    // Create existing campaign with a user-edited voice guide
+    const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+    const voicePath = join(campaignDir, 'knowledge-base', 'my-voice.md');
+    await mkdir(join(campaignDir, 'knowledge-base'), { recursive: true });
+    const customVoice = '# My Voice\n\nI write with dry wit and short sentences.\n';
+    await writeFile(voicePath, customVoice);
+
+    vi.mocked(confirm).mockResolvedValueOnce(true); // Confirm overwrite
+    vi.mocked(text)
+      .mockResolvedValueOnce('') // LinkedIn (skip)
+      .mockResolvedValueOnce('') // CV (skip)
+      .mockResolvedValueOnce('') // KB (skip)
+      .mockResolvedValueOnce('') // GitHub
+      .mockResolvedValueOnce('') // LLM base URL
+      .mockResolvedValueOnce(''); // LLM model
+    vi.mocked(password).mockResolvedValue('');
+
+    const { exitCode } = await run();
+    expect(exitCode).toBe(0);
+
+    // User content must survive re-init untouched
+    expect(await readFile(voicePath, 'utf8')).toBe(customVoice);
   });
 
   it('cancels on user decline at re-init', async () => {

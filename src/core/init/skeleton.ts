@@ -57,3 +57,37 @@ export function generateSkeletonProfile(githubUser: string, linkedinUrl: string 
 - Notes:
 `;
 }
+
+/**
+* Generate a skeleton my-voice.md with instructions and editable sections.
+* This file personalizes cover letters and application answers. It is
+* written to the campaign's `knowledge-base/` folder at init (never
+* overwritten on re-init) and is excluded from knowledge-base ingestion.
+*/
+export function generateVoiceGuideSkeleton(): string {
+return `# My Voice
+
+<!--
+jho:my-voice — personalizes your cover letters and application answers.
+The tool reads it for voice only and never ingests it as a knowledge-base document.
+Fill the sections below with your own phrasing, then delete this comment.
+-->
+
+## Tone
+<e.g. warm, direct, confident, understated, enthusiastic>
+
+## Vocabulary
+<words you favor>
+
+<words to avoid>
+
+## Sentence style
+<e.g. short sentences, varied rhythm, first person "I">
+
+## What to emphasize
+<strengths, values, and experiences you want highlighted>
+
+## What to avoid
+<topics, phrases, or claims to steer clear of>
+`;
+}

@@ -13,6 +13,7 @@ import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplateWithVoice } from '../prompts.js';
 import { humanize } from '../humanize.js';
 import { readProfile } from '../campaign/profile-read.js';
+import { readVoiceGuide, appendVoiceSection } from '../campaign/voice-read.js';
 import { extractTargetRoles } from '../campaign/target-roles.js';
 import { readApplication } from './applications.js';
 import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';
@@ -102,6 +103,9 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
   // Use provided steer or fall back to existing steer
   const steer = opts.steer ?? existingSteer;
 
+  // Read personal voice guide if available
+  const voice = await readVoiceGuide(campaignRoot);
+
   // Load prompt (with shared humanize voice block)
   const { body: systemPrompt, temperature } = await loadPromptTemplateWithVoice(
     PROMPT_NAME,
@@ -136,6 +140,9 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
   if (kb) {
     messageParts.push('', '---', '', '## Knowledge base', '', kb);
   }
+
+  // Feed personal voice guide into the prompt when available
+  appendVoiceSection(messageParts, voice);
 
   // Add steer section if present
   if (steer) {

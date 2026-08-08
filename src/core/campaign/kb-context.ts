@@ -1,6 +1,6 @@
 import { readdir } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
-import { resolveKnowledgeBaseDir } from '../paths.js';
+import { resolveKnowledgeBaseDir, DEFAULT_MY_VOICE_FILENAME } from '../paths.js';
 import { pathExists } from '../fs.js';
 import { readCv, CvError } from '../cv.js';
 import { KB_GITHUB, CV_EXTENSIONS } from '../constants.js';
@@ -140,6 +140,9 @@ async function collectKbDocsWithPaths(
     }
 
     if (item.isFile()) {
+      if (item.name === DEFAULT_MY_VOICE_FILENAME) {
+        continue;
+      }
       if (extname(item.name).toLowerCase() === '.json') {
         continue;
       }

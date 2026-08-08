@@ -1,7 +1,13 @@
-import { copyFile, mkdir } from 'node:fs/promises';
+import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { text, confirm, isCancel, log as clackLog } from '@clack/prompts';
-import { resolveCampaignRoot, resolveDataRoot, resolveProfilePath, ensureRoot } from '../paths.js';
+import {
+  resolveCampaignRoot,
+  resolveDataRoot,
+  resolveProfilePath,
+  resolveMyVoicePath,
+  ensureRoot,
+} from '../paths.js';
 import { pathExists } from '../fs.js';
 import {
   updateGlobalConfig,
@@ -31,6 +37,7 @@ import { promptLlm, loadExistingConfig, type DetectedLlmSuggestion } from './llm
 import { createDirectories } from '../campaign/directories.js';
 import { ingestKnowledgeBase } from '../campaign/kb-ingest.js';
 import { handleProfile } from '../campaign/profile-builder.js';
+import { generateVoiceGuideSkeleton } from './skeleton.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
 import { detectAgents } from 'detect-local-agents';
@@ -243,6 +250,20 @@ export async function runInit(opts: InitOptions): Promise<void> {
           clackLog.info(`Copied ${copied.length} knowledge-base doc(s) into ${kbDir}`);
         } else {
           clackLog.warn(`No supported docs found at ${kbPath} (expected PDF, DOCX, MD, TXT)`);
+        }
+      }
+
+      // --- Step 5c: Scaffold the personal voice guide (never overwrite) ---
+      const voicePath = resolveMyVoicePath(campaignRoot);
+      if (!(await pathExists(voicePath))) {
+        try {
+          await writeFile(voicePath, generateVoiceGuideSkeleton(), 'utf8');
+          clackLog.info(`Created voice guide template at ${voicePath}`);
+        } catch (err) {
+          // Fail-soft: a read-only KB dir must not abort init before configs are written (Step 6).
+          clackLog.warn(
+            `Could not create voice guide template at ${voicePath}: ${(err as Error).message}`,
+          );
         }
       }
 

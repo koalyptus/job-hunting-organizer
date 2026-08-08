@@ -1,17 +1,28 @@
 import { copyFile, readdir, stat, mkdir, rm } from 'node:fs/promises';
-import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
-import { resolveKnowledgeBaseDir } from '../paths.js';
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
+import { resolveKnowledgeBaseDir, DEFAULT_MY_VOICE_FILENAME } from '../paths.js';
 import { pathExists } from '../fs.js';
-import { CV_EXTENSIONS } from '../constants.js';
+import { CV_EXTENSIONS, KB_GITHUB } from '../constants.js';
 import { moduleLogger } from '../logger/logger.js';
 
 const log = moduleLogger(import.meta.url);
 
 /**
+ * Whether a file is the campaign's personal voice guide. The voice file is
+ * excluded from ingestion, re-sync cleanup, listing, and LLM context — it is
+ * a configuration file for output personalization, not a knowledge document.
+ * @param filename - The file name (basename) to test.
+ */
+function isMyVoiceFile(filename: string): boolean {
+  return filename === DEFAULT_MY_VOICE_FILENAME;
+}
+
+/**
  * Copy user knowledge-base docs from `source` into the campaign's
  * `knowledge-base/` folder. Accepts a single file or a directory
  * (walked recursively). Only {@link CV_EXTENSIONS} files are copied;
- * everything else is skipped silently.
+ * everything else is skipped silently. The `my-voice.md` file is explicitly
+ * excluded from ingestion as it's a configuration file, not a knowledge document.
  *
  * @param campaignRoot - Absolute path to the campaign root.
  * @param source - Absolute or relative path to a file or folder.
@@ -36,8 +47,8 @@ export async function ingestKnowledgeBase(campaignRoot: string, source: string):
 /**
  * List the knowledge-base doc relative paths currently present in the
  * campaign's `knowledge-base/` folder. Excludes the tool-owned `github/`
- * subfolder and any `*.json` caches. Returns an empty array when the
- * folder is absent.
+ * subfolder, any `*.json` caches, and the personal `my-voice.md` guide.
+ * Returns an empty array when the folder is absent.
  * @param campaignRoot - Absolute path to the campaign root.
  * @returns The relative doc paths (e.g. `tips.md`, `sub/notes.txt`).
  */
@@ -52,11 +63,11 @@ export async function listKnowledgeBase(campaignRoot: string): Promise<string[]>
 /**
  * Re-sync the knowledge base. When `sources` is non-empty, docs are
  * re-pulled from those external paths (the existing user docs are cleared
- * first, but the tool-owned `github/` subfolder and `*.json` caches are
- * preserved). When `sources` is empty, the knowledge base is simply
- * re-scanned in place — docs placed manually or via `jho kb add` are
- * left untouched and reported back. This means `jho kb update` always
- * reflects the current folder state and never errors on an empty source
+ * first, but the tool-owned `github/` subfolder, `*.json` caches, and the
+ * personal `my-voice.md` guide are preserved). When `sources` is empty, the
+ * knowledge base is simply re-scanned in place — docs placed manually or via
+ * `jho kb add` are left untouched and reported back. This means `jho kb update`
+ * always reflects the current folder state and never errors on an empty source
  * list.
  * @param campaignRoot - Absolute path to the campaign root.
  * @param sources - Source paths recorded at init (may be empty).
@@ -73,13 +84,16 @@ export async function syncKnowledgeBase(
     return listKnowledgeBase(campaignRoot);
   }
 
-  // Clear existing managed docs (keep github/, *.json, and any other user files).
-  // Only files with known doc extensions are removed; user subdirs and other
-  // files are preserved so manual additions survive a re-sync.
+  // Clear existing managed docs (keep github/, *.json, my-voice.md, and any
+  // other user files). Only files with known doc extensions are removed; user
+  // subdirs and other files are preserved so manual additions survive a re-sync.
   if (await pathExists(kbDir)) {
     const entries = await readdir(kbDir, { withFileTypes: true });
     for (const entry of entries) {
       if (entry.name === 'github') {
+        continue;
+      }
+      if (isMyVoiceFile(entry.name)) {
         continue;
       }
       if (entry.isFile() && extname(entry.name).toLowerCase() === '.json') {
@@ -121,6 +135,9 @@ async function listKbDocRelPaths(root: string, dir: string): Promise<string[]> {
       continue;
     }
     if (item.isFile()) {
+      if (isMyVoiceFile(item.name)) {
+        continue;
+      }
       if (extname(item.name).toLowerCase() === '.json') {
         continue;
       }
@@ -150,6 +167,12 @@ async function copyOne(
   if (!CV_EXTENSIONS.includes(extname(from).toLowerCase())) {
     return;
   }
+  // Skip my-voice.md by name so a coincidental file in an ingested source
+  // directory cannot overwrite the campaign's personal voice guide.
+  if (isMyVoiceFile(basename(from))) {
+    log.debug({ from }, 'kb.ingest.skipped_my_voice');
+    return;
+  }
   const rel = relative(sourceRoot, from).split('\\').join('/');
   if (rel.startsWith('..') || isAbsolute(rel)) {
     log.warn({ from, sourceRoot }, 'kb.ingest.skipped_path_traversal');
@@ -174,7 +197,7 @@ async function walkAndCopy(
   for (const item of items) {
     const abs = join(fromDir, item.name);
     if (item.isDirectory()) {
-      if (item.name === 'github') {
+      if (item.name === KB_GITHUB) {
         continue;
       }
       await walkAndCopy(abs, kbDir, sourceRoot, copied);
