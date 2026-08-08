@@ -59,13 +59,13 @@ export function generateSkeletonProfile(githubUser: string, linkedinUrl: string 
 }
 
 /**
-* Generate a skeleton my-voice.md with instructions and editable sections.
-* This file personalizes cover letters and application answers. It is
-* written to the campaign's `knowledge-base/` folder at init (never
-* overwritten on re-init) and is excluded from knowledge-base ingestion.
-*/
+ * Generate a skeleton my-voice.md with instructions and editable sections.
+ * This file personalizes cover letters and application answers. It is
+ * written to the campaign's `knowledge-base/` folder at init (never
+ * overwritten on re-init) and is excluded from knowledge-base ingestion.
+ */
 export function generateVoiceGuideSkeleton(): string {
-return `# My Voice
+  return `# My Voice
 
 <!--
 jho:my-voice — personalizes your cover letters and application answers.

@@ -32,9 +32,7 @@ export function appendVoiceSection(messageParts: string[], voice: string): void 
  * @param err - The error thrown by a readFile call.
  */
 function isMissingFile(err: unknown): boolean {
-  return (
-    err instanceof Error && (err as NodeJS.ErrnoException).code === 'ENOENT'
-  );
+  return err instanceof Error && (err as NodeJS.ErrnoException).code === 'ENOENT';
 }
 
 /**
