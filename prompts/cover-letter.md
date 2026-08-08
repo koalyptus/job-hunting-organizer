@@ -13,11 +13,18 @@ perspective** for the position.
 
 ## Input
 
-The user message contains three sections separated by `---` markers:
+The user message contains sections, each introduced by a `##` heading (with `---` separators between them):
 
 1. **Job description** — title, company, location, description, requirements, tags.
 2. **Candidate profile** — summary, skills, experience, education, preferences, target roles.
 3. **Target role** — the specific role from the candidate's profile that matches this job.
+4. **Knowledge base** (optional) — additional context documents from the candidate's knowledge base.
+5. **Personal voice guide** (optional) — a `my-voice.md` file containing the
+   candidate's preferred writing style, tone, phrasing patterns, and any
+   specific instructions for personalizing generated content. When present,
+   use this to inform the voice, tone, phrasing, and word choices of the
+   cover letter. The voice guide takes precedence over generic style
+   defaults but must not override the facts in the candidate profile.
 
 ## Output format
 

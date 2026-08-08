@@ -20,6 +20,15 @@ import { acquireLock } from '../locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
 import { computeHash, writeToolhash } from '../toolhash.js';
 import { aggregateRetros } from '../retro/aggregate.js';
+import {
+  SECTION_SEPARATOR,
+  JOB_DESCRIPTION_SECTION_HEADER,
+  CANDIDATE_PROFILE_SECTION_HEADER,
+  DAYS_UNTIL_INTERVIEW_SECTION_HEADER,
+  KNOWLEDGE_BASE_SECTION_HEADER,
+  ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
+  RETRO_CROSS_REFERENCE_SECTION_HEADER,
+} from '../constants.js';
 import { moduleLogger } from '../logger/logger.js';
 import type { Logger } from 'pino';
 import type {
@@ -196,9 +205,9 @@ export async function generatePrep(opts: GeneratePrepOptions): Promise<GenerateP
     retroTopics.length > 0
       ? [
           '',
-          '---',
+          SECTION_SEPARATOR,
           '',
-          '## Retro cross-reference',
+          RETRO_CROSS_REFERENCE_SECTION_HEADER,
           '',
           'Weak topics from previous failed interviews for this role:',
           '',
@@ -398,7 +407,7 @@ async function buildPrepPlan(
   const { body: systemPrompt, temperature } = await loadPromptTemplate(PROMPT_NAME);
 
   const messageParts = [
-    '## Job description',
+    JOB_DESCRIPTION_SECTION_HEADER,
     '',
     `Title: ${frontmatter.title}`,
     `Company: ${frontmatter.company}`,
@@ -406,15 +415,15 @@ async function buildPrepPlan(
     '',
     jdText,
     '',
-    '---',
+    SECTION_SEPARATOR,
     '',
-    '## Candidate profile',
+    CANDIDATE_PROFILE_SECTION_HEADER,
     '',
     profile,
     '',
-    '---',
+    SECTION_SEPARATOR,
     '',
-    '## Days until interview',
+    DAYS_UNTIL_INTERVIEW_SECTION_HEADER,
     '',
     String(days),
   ];
@@ -422,7 +431,7 @@ async function buildPrepPlan(
   // Feed user knowledge-base docs into the prompt (always-on; see kb-context).
   const kb = await loadKbContextForCampaign(resolveCampaignRoot(campaign), campaign);
   if (kb) {
-    messageParts.push('', '---', '', '## Knowledge base', '', kb);
+    messageParts.push('', SECTION_SEPARATOR, '', KNOWLEDGE_BASE_SECTION_HEADER, '', kb);
   }
 
   if (retroCrossRef) {
@@ -432,9 +441,9 @@ async function buildPrepPlan(
   if (steer) {
     messageParts.push(
       '',
-      '---',
+      SECTION_SEPARATOR,
       '',
-      '## Additional instructions',
+      ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
       '',
       'Follow these instructions as priority:',
       '',

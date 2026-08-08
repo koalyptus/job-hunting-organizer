@@ -48,6 +48,9 @@ export const DEFAULT_PROFILE_FILENAME = 'profile.md';
 /** Default name of the per-campaign knowledge-base directory. */
 export const DEFAULT_KNOWLEDGE_BASE_DIRNAME = 'knowledge-base';
 
+/** Default filename for the per-campaign personal voice file. */
+export const DEFAULT_MY_VOICE_FILENAME = 'my-voice.md';
+
 /** Default name of the campaigns subdirectory inside the data root. */
 export const DEFAULT_CAMPAIGNS_DIRNAME = 'campaigns';
 
@@ -184,6 +187,18 @@ export function resolveProfilePath(campaignRoot: string): string {
  */
 export function resolveKnowledgeBaseDir(campaignRoot: string): string {
   return resolve(campaignRoot, DEFAULT_KNOWLEDGE_BASE_DIRNAME);
+}
+
+/**
+ * Resolve the absolute path of the `my-voice.md` file inside a campaign's
+ * knowledge-base directory. The voice file is per-campaign by design and
+ * lives in `knowledge-base/` alongside other user docs. The caller must
+ * pass a campaign root (from {@link resolveCampaignRoot}).
+ * @param campaignRoot - The absolute path of the campaign's root directory.
+ * @returns The absolute path to the my-voice.md file in knowledge-base/.
+ */
+export function resolveMyVoicePath(campaignRoot: string): string {
+  return resolve(campaignRoot, DEFAULT_KNOWLEDGE_BASE_DIRNAME, DEFAULT_MY_VOICE_FILENAME);
 }
 
 /**

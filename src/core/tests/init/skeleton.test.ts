@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateSkeletonProfile } from '../../init/skeleton.js';
+import { generateSkeletonProfile, generateVoiceGuideSkeleton } from '../../init/skeleton.js';
 
 describe('generateSkeletonProfile', () => {
   it('includes GitHub user when provided', () => {
@@ -48,5 +48,23 @@ describe('generateSkeletonProfile', () => {
     expect(result).toContain('- Work style:');
     expect(result).toContain('- Work rights:');
     expect(result).toContain('- Notice period:');
+  });
+});
+
+describe('generateVoiceGuideSkeleton', () => {
+  it('contains the jho marker comment', () => {
+    const result = generateVoiceGuideSkeleton();
+    expect(result).toContain('<!--');
+    expect(result).toContain('jho:my-voice');
+  });
+
+  it('contains editable sections', () => {
+    const result = generateVoiceGuideSkeleton();
+    expect(result).toContain('# My Voice');
+    expect(result).toContain('## Tone');
+    expect(result).toContain('## Vocabulary');
+    expect(result).toContain('## Sentence style');
+    expect(result).toContain('## What to emphasize');
+    expect(result).toContain('## What to avoid');
   });
 });

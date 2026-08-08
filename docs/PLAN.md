@@ -10,7 +10,7 @@ A local-first CLI + MCP server that helps run a job-hunting campaign: profile fr
 2. Generate tailored cover letters from job-description URLs.
 3. Tailor answers to application questions (text or screenshot).
 4. Track applications, interview pipelines, and Q&A history.
-5. Schedule interviews to calendar (ICS default, Outlook opt-in).
+5. Schedule interviews to calendar (ICS export).
 
 ---
 
@@ -56,23 +56,22 @@ There is a small **config home** (holds the global `config.json` and `.locks/`) 
     │   ├── cv.<ext>                                    # user's CV (path configurable)
     │   ├── applied/                                    # per-application folders
     │   ├── knowledge-base/                             # user docs + tool-owned github/ cache
-    │   └── outlook-tokens.json                         # MSAL tokens (mode 0600)
+    │   │   └── my-voice.md                             # per-campaign voice guide template (created by jho init, editable)
     └── freelance/                                      # second campaign
         └── ...
 ```
 
-| Path                                              | Purpose                                                     | Git? |
-| ------------------------------------------------- | ----------------------------------------------------------- | ---- |
-| `<configHome>/config.json`                        | Global settings (LLM, GitHub, calendar, logging)            | no   |
-| `<configHome>/.locks/`                            | proper-lockfile sidecars                                    | no   |
-| `<dataRoot>/campaigns/<name>/config.json`         | Per-campaign settings (profile path, applied dir, KB)       | no   |
-| `<dataRoot>/campaigns/<name>/profile.md`          | Generated profile (per-campaign)                            | no   |
-| `<dataRoot>/campaigns/<name>/cv.<ext>`            | User's CV (path configurable)                               | no   |
-| `<dataRoot>/campaigns/<name>/applied/`            | Per-application folders                                     | no   |
-| `<dataRoot>/campaigns/<name>/knowledge-base/`     | User docs (PDF, DOCX, MD, TXT) + tool-owned `github/` cache | no   |
-| `<dataRoot>/campaigns/<name>/outlook-tokens.json` | MSAL tokens (mode 0600)                                     | no   |
-| `$JHO_CONFIG_HOME`                                | Override of config home (no CLI flag for it by design)      | n/a  |
-| `$JHO_DATA`                                       | Override of data root (no CLI flag for it by design)        | n/a  |
+| Path                                          | Purpose                                                     | Git? |
+| --------------------------------------------- | ----------------------------------------------------------- | ---- |
+| `<configHome>/config.json`                    | Global settings (LLM, GitHub, calendar, logging)            | no   |
+| `<configHome>/.locks/`                        | proper-lockfile sidecars                                    | no   |
+| `<dataRoot>/campaigns/<name>/config.json`     | Per-campaign settings (profile path, applied dir, KB)       | no   |
+| `<dataRoot>/campaigns/<name>/profile.md`      | Generated profile (per-campaign)                            | no   |
+| `<dataRoot>/campaigns/<name>/cv.<ext>`        | User's CV (path configurable)                               | no   |
+| `<dataRoot>/campaigns/<name>/applied/`        | Per-application folders                                     | no   |
+| `<dataRoot>/campaigns/<name>/knowledge-base/` | User docs (PDF, DOCX, MD, TXT) + tool-owned `github/` cache | no   |
+| `$JHO_CONFIG_HOME`                            | Override of config home (no CLI flag for it by design)      | n/a  |
+| `$JHO_DATA`                                   | Override of data root (no CLI flag for it by design)        | n/a  |
 
 Resolution precedence for the **config home**: **`$JHO_CONFIG_HOME` env var → default `~/.job-hunting-organizer/`**. There is no `--config-home` CLI flag; the env var is the only override.
 
@@ -508,7 +507,7 @@ identifier; the title is display-only.
 
 There are two config files, with **disjoint key sets by design**:
 
-- A **global** one at `<configHome>/config.json` (shared across every campaign): LLM endpoint, GitHub identity, calendar provider, logging defaults, and the location of the data root.
+- A **global** one at `<configHome>/config.json` (shared across every campaign): LLM endpoint, GitHub identity, logging defaults, and the location of the data root.
 - A **per-campaign** one at `<dataRoot>/campaigns/<name>/config.json` (varies per campaign): where this campaign's `profile.md`, CV, `applied/`, and knowledge base live.
 
 The two layers are *additive*, not an override cascade. `jho config` shows the global file; `jho campaign config` shows the campaign file. The CLI exposes a flat-merged view internally (global then campaign) for callers that want both, but the user-facing commands stay one-source-per-command — there is no merged `jho config show` view, on purpose.
@@ -521,10 +520,6 @@ The two layers are *additive*, not an override cascade. `jho config` shows the g
   "dataRoot": "/home/<user>/job-hunting-organizer-data",
   "llm": { "baseUrl": "http://localhost:11434/v1", "apiKey": "ollama", "model": "llama3.1" },
   "github": { "user": "maxgu", "token": "", "repos": [] },
-  "calendar": {
-    "defaultProvider": "ics",
-    "outlook": { "tenantId": "", "clientId": "", "clientSecret": "" }
-  },
   "logging": { "level": "info", "file": "", "redactPaths": [] }
 }
 ```
@@ -622,7 +617,7 @@ jho --version
 
 jho init [<name>] [--cv <path>] [--github <user>] [--linkedin <url>] [--profile <path>] [--kb <path>] [--yes]
   # Wizard prompts: campaign name (defaults to "default") → LinkedIn URL (optional) → CV path →
-  #   KB path (optional) → GitHub user (+token) → LLM baseUrl/key/model → calendar provider →
+  #   KB path (optional) → GitHub user (+token) → LLM baseUrl/key/model →
   #   runs profile build → reviews generated ## Target roles → writes global + campaign config.json + profile.md
 jho config [show|path|edit] [--reveal]
 jho campaign config [show|path|edit] [--reveal]
@@ -667,7 +662,7 @@ jho answer  [<slug>] "<question>" | --image <path> | --stdin [--steer <text>]
 
 jho interview [<slug>] add    --when "..." --type technical --duration 60
                               [--interviewer "..."] [--location "..."]
-                              [--provider ics|outlook] [--title "..."]
+                              [--title "..."]
 jho interview [<slug>] list
 jho interview [<slug>] mark <n> --status passed|failed|no-show
 jho interview [<slug>] notes <n> --append "..."
@@ -867,8 +862,7 @@ interface CalendarProvider {
 ### Implementations
 
 - **`IcsProvider`** (default, no setup) — writes `<applied>/<slug>/interview-<n>.ics`.
-- **`OutlookGraphProvider`** (opt-in) — MSAL device-code flow, tokens cached at `outlook-tokens.json` (mode 0600), `POST /me/events`.
-- Future: `GoogleProvider`, `CalDAVProvider` — same interface, one file each.
+- Future: `OutlookGraphProvider` (MSAL device-code flow), `GoogleProvider`, `CalDAVProvider` — same interface, one file each.
 
 ---
 
