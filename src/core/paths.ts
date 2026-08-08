@@ -237,7 +237,7 @@ export async function ensureRoot(root: string): Promise<boolean> {
  * @param p - The path to resolve.
  * @returns The real, resolved path.
  */
-export function safeRealpath(p: string): string {
+function safeRealpath(p: string): string {
   try {
     return realpathSync(p);
   } catch {

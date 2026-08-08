@@ -13,7 +13,7 @@ perspective** for the position.
 
 ## Input
 
-The user message contains sections separated by `---` markers:
+The user message contains sections, each introduced by a `##` heading (with `---` separators between them):
 
 1. **Job description** — title, company, location, description, requirements, tags.
 2. **Candidate profile** — summary, skills, experience, education, preferences, target roles.

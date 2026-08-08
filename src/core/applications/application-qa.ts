@@ -14,7 +14,15 @@ import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplateWithVoice } from '../prompts.js';
 import { humanize } from '../humanize.js';
 import { readProfile } from '../campaign/profile-read.js';
-import { readVoiceGuide, appendVoiceSection } from '../campaign/voice-read.js';
+import {
+  JOB_DESCRIPTION_SECTION_HEADER,
+  CANDIDATE_PROFILE_SECTION_HEADER,
+  QUESTION_SECTION_HEADER,
+  KNOWLEDGE_BASE_SECTION_HEADER,
+  ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
+  SECTION_SEPARATOR,
+} from '../constants.js';
+import { resolveVoiceGuide, appendVoiceSection } from '../campaign/voice-read.js';
 import { readApplication } from './applications.js';
 import { loadKbContextForCampaign } from '../campaign/kb-context.js';
 import { atomicWrite } from '../fs.js';
@@ -93,7 +101,7 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
   }
 
   // Read personal voice guide if available
-  const voice = await readVoiceGuide(campaignRoot);
+  const voice = await resolveVoiceGuide(campaignRoot);
 
   // Load prompt (with shared humanize voice block)
   const { body: systemPrompt, temperature } = await loadPromptTemplateWithVoice(
@@ -103,7 +111,7 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
 
   // Build message parts with steer
   const messageParts = [
-    '## Job description',
+    JOB_DESCRIPTION_SECTION_HEADER,
     '',
     `Title: ${frontmatter.title}`,
     `Company: ${frontmatter.company}`,
@@ -111,15 +119,15 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
     '',
     jdText,
     '',
-    '---',
+    SECTION_SEPARATOR,
     '',
-    '## Candidate profile',
+    CANDIDATE_PROFILE_SECTION_HEADER,
     '',
     profile,
     '',
-    '---',
+    SECTION_SEPARATOR,
     '',
-    '## Question',
+    QUESTION_SECTION_HEADER,
     '',
     question,
   ];
@@ -127,7 +135,7 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
   // Feed user knowledge-base docs into the prompt (always-on; see kb-context).
   const kb = await loadKbContextForCampaign(campaignRoot, campaign);
   if (kb) {
-    messageParts.push('', '---', '', '## Knowledge base', '', kb);
+    messageParts.push('', SECTION_SEPARATOR, '', KNOWLEDGE_BASE_SECTION_HEADER, '', kb);
   }
 
   // Feed personal voice guide into the prompt when available
@@ -137,9 +145,9 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
   if (steer) {
     messageParts.push(
       '',
-      '---',
+      SECTION_SEPARATOR,
       '',
-      '## Additional instructions',
+      ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
       '',
       'Follow these instructions as priority:',
       '',

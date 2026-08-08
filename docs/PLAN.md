@@ -56,7 +56,7 @@ There is a small **config home** (holds the global `config.json` and `.locks/`) 
     │   ├── cv.<ext>                                    # user's CV (path configurable)
     │   ├── applied/                                    # per-application folders
     │   ├── knowledge-base/                             # user docs + tool-owned github/ cache
-    │   │   └── my-voice.md                             # voice guide template (created by jho init, editable)
+    │   │   └── my-voice.md                             # per-campaign voice guide template (created by jho init, editable)
     │   └── outlook-tokens.json                         # MSAL tokens (mode 0600)
     └── freelance/                                      # second campaign
         └── ...
