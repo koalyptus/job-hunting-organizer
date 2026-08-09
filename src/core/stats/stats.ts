@@ -4,7 +4,7 @@ import { APPLICATION_STATUSES } from '../applications/types.js';
 import type { ApplicationStatus } from '../applications/types.js';
 import { listInterviews } from '../interviews/interviews.js';
 import type { CampaignStats, StatsOptions } from '../types.js';
-import { parseSince, toIsoDateString } from '../date.js';
+import { parseSince, toDateKey } from '../date.js';
 import { InvalidSinceError } from './errors.js';
 import { moduleLogger } from '../logger/logger.js';
 
@@ -37,7 +37,7 @@ export async function computeStats(
     let resolvedSince: string;
     try {
       const sinceDate = parseSince(opts.since);
-      resolvedSince = toIsoDateString(sinceDate);
+      resolvedSince = toDateKey(sinceDate);
     } catch {
       throw new InvalidSinceError(opts.since);
     }

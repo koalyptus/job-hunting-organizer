@@ -2,10 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   MONTH_ABBR,
   formatDate,
-  todayIso,
+  todayDateKey,
   parseDateOrNow,
   parseSince,
-  toIsoDateString,
+  toDateKey,
   daysInMonth,
   parseDatetime,
 } from '../date.js';
@@ -93,7 +93,7 @@ describe('parseDateOrNow', () => {
   });
 });
 
-describe('todayIso', () => {
+describe('todayDateKey', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -102,28 +102,28 @@ describe('todayIso', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-09T09:00:00+10:00'));
     const now = new Date();
-    expect(todayIso()).toBe(`${now.getFullYear()}-08-${String(now.getDate()).padStart(2, '0')}`);
+    expect(todayDateKey()).toBe(
+      `${now.getFullYear()}-08-${String(now.getDate()).padStart(2, '0')}`,
+    );
   });
 });
 
-describe('toIsoDateString', () => {
+describe('toDateKey', () => {
   it('formats a Date as YYYY-MM-DD', () => {
-    expect(toIsoDateString(new Date(2026, 5, 3))).toBe('2026-06-03');
+    expect(toDateKey(new Date(2026, 5, 3))).toBe('2026-06-03');
   });
 
   it('uses the local calendar day for a morning UTC+10 instant', () => {
     const d = new Date('2026-08-09T09:00:00+10:00');
-    expect(toIsoDateString(d)).toBe(
-      `${d.getFullYear()}-08-${String(d.getDate()).padStart(2, '0')}`,
-    );
+    expect(toDateKey(d)).toBe(`${d.getFullYear()}-08-${String(d.getDate()).padStart(2, '0')}`);
   });
 
   it('truncates an ISO datetime string at T', () => {
-    expect(toIsoDateString('2026-06-03T12:30:00Z')).toBe('2026-06-03');
+    expect(toDateKey('2026-06-03T12:30:00Z')).toBe('2026-06-03');
   });
 
   it('passes through an ISO date-only string', () => {
-    expect(toIsoDateString('2026-06-03')).toBe('2026-06-03');
+    expect(toDateKey('2026-06-03')).toBe('2026-06-03');
   });
 });
 

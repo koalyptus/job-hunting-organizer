@@ -5,8 +5,8 @@
  * Calendar-date formatting uses the *local* timezone. A slug records the
  * day the user applied on, as that user experienced it: formatting in UTC
  * dated morning applications in UTC+N zones (e.g. AEST) to the previous
- * day. Date-only inputs such as `'2026-06-21'` parse as UTC midnight and
- * still format to the same calendar day in zones at or ahead of UTC.
+ * day. Date-only inputs such as `'2026-06-21'` parse as local midnight
+ * and format to the same calendar day in every timezone.
  */
 
 /**
@@ -52,37 +52,29 @@ export function formatDate(d: Date): string {
 }
 
 /**
- * Format a `Date` as `YYYY-MM-DD` (ISO 8601 date-only) in the local timezone.
- * @param d - The date to format.
- * @returns A 10-character string like `2026-06-03`.
- */
-export function toIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-/**
- * Return today's local calendar date as `YYYY-MM-DD`.
- * @returns A 10-character string like `2026-06-03`.
- */
-export function todayIso(): string {
-  return toIsoDate(new Date());
-}
-
-/**
- * Format a `Date` or ISO string as `YYYY-MM-DD`. Dates use the local
- * calendar day; strings are truncated at `T` and returned as-is.
+ * Format a `Date` or date string as a `YYYY-MM-DD` calendar-day key.
+ * Dates use the local calendar day; date strings are truncated at `T`
+ * and returned as-is (a bare date string is already the key format).
  * @param input - A Date or ISO date/datetime string.
  * @returns A 10-character string like `2026-06-03`.
  */
-export function toIsoDateString(input: Date | string): string {
+export function toDateKey(input: Date | string): string {
   if (typeof input === 'string') {
     const tIdx = input.indexOf('T');
     return tIdx === -1 ? input : input.slice(0, tIdx);
   }
-  return toIsoDate(input);
+  const y = input.getFullYear();
+  const m = String(input.getMonth() + 1).padStart(2, '0');
+  const day = String(input.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Return today's local calendar day as a `YYYY-MM-DD` key.
+ * @returns A 10-character string like `2026-06-03`.
+ */
+export function todayDateKey(): string {
+  return toDateKey(new Date());
 }
 
 /** Matches a bare ISO 8601 calendar date with no time or offset. */

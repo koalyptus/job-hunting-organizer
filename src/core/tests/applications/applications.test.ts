@@ -14,7 +14,7 @@ import {
   readIndex,
   ApplicationNotFoundError,
 } from '../../applications/index.js';
-import { todayIso } from '../../date.js';
+import { todayDateKey } from '../../date.js';
 import * as fsModule from '../../fs.js';
 import { writeFrontmatter } from '../../parser/frontmatter.js';
 import { writeToolhash, computeHash } from '../../toolhash.js';
@@ -151,7 +151,7 @@ describe('createApplication', () => {
 
   it('uses today date when appliedOn is omitted', async () => {
     const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
-    const today = todayIso();
+    const today = todayDateKey();
     expect(slug).toContain(today.substring(0, 4));
   });
 

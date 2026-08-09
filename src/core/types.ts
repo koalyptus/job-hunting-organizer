@@ -322,7 +322,7 @@ export interface SlugBuildInput {
   company?: string | undefined;
   /** Job URL. Used to extract a site-specific job id (LinkedIn, Seek, Indeed). */
   url?: string | undefined;
-  /** Application date as ISO string or `Date`. Defaults to "now" (UTC). */
+  /** Application date as a `YYYY-MM-DD` key string or `Date`. Defaults to "now" (local). */
   appliedOn?: string | Date | undefined;
 }
 
