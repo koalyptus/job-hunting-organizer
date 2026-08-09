@@ -91,6 +91,14 @@ describe('parseDateOrNow', () => {
   it('throws on an empty string', () => {
     expect(() => parseDateOrNow('')).toThrow(/invalid date/);
   });
+
+  it('rejects invalid month/day combinations in date-only strings', () => {
+    expect(() => parseDateOrNow('2026-13-01')).toThrow(/invalid date/);
+    expect(() => parseDateOrNow('2026-02-30')).toThrow(/invalid date/);
+    expect(() => parseDateOrNow('2026-04-31')).toThrow(/invalid date/);
+    expect(() => parseDateOrNow('2026-00-15')).toThrow(/invalid date/);
+    expect(() => parseDateOrNow('2026-06-00')).toThrow(/invalid date/);
+  });
 });
 
 describe('todayDateKey', () => {
@@ -118,8 +126,16 @@ describe('toDateKey', () => {
     expect(toDateKey(d)).toBe(`${d.getFullYear()}-08-${String(d.getDate()).padStart(2, '0')}`);
   });
 
-  it('truncates an ISO datetime string at T', () => {
-    expect(toDateKey('2026-06-03T12:30:00Z')).toBe('2026-06-03');
+  it('parses a datetime string to its local calendar day (consistent with Date path)', () => {
+    // '2026-06-03T12:30:00Z' at 12:30 UTC is 22:30 UTC+10 (same day)
+    // The key should be the local calendar day of that instant.
+    const instant = '2026-06-03T12:30:00Z';
+    const d = new Date(instant);
+    const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+      d.getDate(),
+    ).padStart(2, '0')}`;
+    expect(toDateKey(instant)).toBe(expected);
+    expect(toDateKey(d)).toBe(expected);
   });
 
   it('passes through an ISO date-only string', () => {
