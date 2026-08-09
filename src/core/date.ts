@@ -68,7 +68,11 @@ export function toDateKey(input: Date | string): string {
     }
     // Datetime string: parse it and extract the local calendar day.
     // This matches the Date path behaviour.
-    return toDateKey(new Date(input));
+    const parsed = new Date(input);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new Error(`invalid date: ${input}`);
+    }
+    return toDateKey(parsed);
   }
   const y = input.getFullYear();
   const m = String(input.getMonth() + 1).padStart(2, '0');

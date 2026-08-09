@@ -138,15 +138,14 @@ describe('buildSlug', () => {
 
   it('dates a morning application to the local day, not the UTC day', () => {
     // Regression: a 09:00 UTC+10 (AEST) application is still the previous
-    // day in UTC, and used to be slugged a day early.
+    // day in UTC, and used to be slugged a day early. TZ is pinned to
+    // Australia/Brisbane in vitest.config.ts, so '2026-Aug-09' below is
+    // deterministic and fails against the old UTC-based implementation.
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date('2026-08-09T09:00:00+10:00'));
-      const now = new Date();
       const slug = buildSlug({ title: 'Engineer', company: 'Foo' });
-      expect(slug).toBe(
-        `${now.getFullYear()}-Aug-${String(now.getDate()).padStart(2, '0')}-engineer-foo`,
-      );
+      expect(slug).toBe('2026-Aug-09-engineer-foo');
     } finally {
       vi.useRealTimers();
     }

@@ -21,10 +21,18 @@ describe('formatDate', () => {
 
   it('uses the local calendar day, not the UTC day', () => {
     // A morning instant in UTC+10 still falls on the previous day in UTC.
-    // The slug must record the day the user experienced.
+    // The slug must record the day the user experienced. TZ is pinned to
+    // Australia/Brisbane (UTC+10) in vitest.config.ts, so the literal
+    // expectation below fails against the old UTC-based implementation.
     const d = new Date('2026-08-09T09:00:00+10:00');
     expect(d.getUTCDate()).toBe(8);
-    expect(formatDate(d)).toBe(`${d.getFullYear()}-Aug-${String(d.getDate()).padStart(2, '0')}`);
+    expect(formatDate(d)).toBe('2026-Aug-09');
+  });
+
+  it('formats a late-evening UTC-5 instant to its local day', () => {
+    // 23:30 UTC-5 on Dec 31 is 14:30 Jan 1 in UTC+10. The old UTC-based
+    // formatter read the UTC components, i.e. Dec 31.
+    expect(formatDate(new Date('2026-12-31T23:30:00-05:00'))).toBe('2027-Jan-01');
   });
 
   it('never disagrees with the local calendar components', () => {
@@ -108,11 +116,10 @@ describe('todayDateKey', () => {
 
   it("returns today's local calendar date, not the UTC date", () => {
     vi.useFakeTimers();
+    // 09:00 UTC+10 on Aug 9 is 23:00 UTC on Aug 8. With TZ pinned to
+    // Australia/Brisbane the local day is deterministically Aug 9.
     vi.setSystemTime(new Date('2026-08-09T09:00:00+10:00'));
-    const now = new Date();
-    expect(todayDateKey()).toBe(
-      `${now.getFullYear()}-08-${String(now.getDate()).padStart(2, '0')}`,
-    );
+    expect(todayDateKey()).toBe('2026-08-09');
   });
 });
 
@@ -122,20 +129,20 @@ describe('toDateKey', () => {
   });
 
   it('uses the local calendar day for a morning UTC+10 instant', () => {
-    const d = new Date('2026-08-09T09:00:00+10:00');
-    expect(toDateKey(d)).toBe(`${d.getFullYear()}-08-${String(d.getDate()).padStart(2, '0')}`);
+    // TZ pinned to Australia/Brisbane (UTC+10): 09:00+10:00 → Aug 9 local.
+    expect(toDateKey(new Date('2026-08-09T09:00:00+10:00'))).toBe('2026-08-09');
   });
 
   it('parses a datetime string to its local calendar day (consistent with Date path)', () => {
     // '2026-06-03T12:30:00Z' at 12:30 UTC is 22:30 UTC+10 (same day)
     // The key should be the local calendar day of that instant.
     const instant = '2026-06-03T12:30:00Z';
-    const d = new Date(instant);
-    const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-      d.getDate(),
-    ).padStart(2, '0')}`;
-    expect(toDateKey(instant)).toBe(expected);
-    expect(toDateKey(d)).toBe(expected);
+    expect(toDateKey(instant)).toBe('2026-06-03');
+    expect(toDateKey(new Date(instant))).toBe('2026-06-03');
+  });
+
+  it('throws on a malformed datetime string instead of returning NaN date', () => {
+    expect(() => toDateKey('garbageT...')).toThrow(/invalid date/);
   });
 
   it('passes through an ISO date-only string', () => {
