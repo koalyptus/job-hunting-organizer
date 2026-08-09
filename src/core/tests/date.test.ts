@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  formatDateUtc,
+  MONTH_ABBR,
+  formatDateLocal,
+  todayIso,
   parseDateOrNow,
   parseSince,
   toIsoDateString,
@@ -8,24 +10,41 @@ import {
   parseDatetime,
 } from '../date.js';
 
-describe('formatDateUtc', () => {
-  it('formats a UTC date as YYYY-MMM-DD', () => {
-    expect(formatDateUtc(new Date(Date.UTC(2026, 5, 3)))).toBe('2026-Jun-03');
+describe('formatDateLocal', () => {
+  it('formats a local date as YYYY-MMM-DD', () => {
+    expect(formatDateLocal(new Date(2026, 5, 3))).toBe('2026-Jun-03');
   });
 
   it('zero-pads the day', () => {
-    expect(formatDateUtc(new Date(Date.UTC(2026, 0, 1)))).toBe('2026-Jan-01');
+    expect(formatDateLocal(new Date(2026, 0, 1))).toBe('2026-Jan-01');
   });
 
-  it('uses UTC, not local time', () => {
-    // 2026-06-03 23:00 UTC is 2026-06-04 in some local zones. We expect
-    // the UTC date in the output, so we set a clearly-UTC noon time.
-    const d = new Date(Date.UTC(2026, 5, 3, 12, 0, 0));
-    expect(formatDateUtc(d)).toBe('2026-Jun-03');
+  it('uses the local calendar day, not the UTC day', () => {
+    // A morning instant in UTC+10 still falls on the previous day in UTC.
+    // The slug must record the day the user experienced.
+    const d = new Date('2026-08-09T09:00:00+10:00');
+    expect(d.getUTCDate()).toBe(8);
+    expect(formatDateLocal(d)).toBe(
+      `${d.getFullYear()}-Aug-${String(d.getDate()).padStart(2, '0')}`,
+    );
+  });
+
+  it('never disagrees with the local calendar components', () => {
+    const instants = [
+      new Date('2026-08-09T09:00:00+10:00'),
+      new Date('2026-01-01T00:30:00+13:00'),
+      new Date('2026-12-31T23:30:00-05:00'),
+    ];
+    for (const d of instants) {
+      const expected = `${d.getFullYear()}-${MONTH_ABBR[d.getMonth()]}-${String(
+        d.getDate(),
+      ).padStart(2, '0')}`;
+      expect(formatDateLocal(d)).toBe(expected);
+    }
   });
 
   it('handles December correctly', () => {
-    expect(formatDateUtc(new Date(Date.UTC(2026, 11, 31)))).toBe('2026-Dec-31');
+    expect(formatDateLocal(new Date(2026, 11, 31))).toBe('2026-Dec-31');
   });
 });
 
@@ -48,6 +67,25 @@ describe('parseDateOrNow', () => {
     expect(d.getTime()).toBeLessThanOrEqual(after);
   });
 
+  it('parses a date-only string as local midnight', () => {
+    const d = parseDateOrNow('2026-06-21');
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(5);
+    expect(d.getDate()).toBe(21);
+    expect(d.getHours()).toBe(0);
+  });
+
+  it('round-trips a date-only string through formatDateLocal', () => {
+    expect(formatDateLocal(parseDateOrNow('2026-06-21'))).toBe('2026-Jun-21');
+    expect(formatDateLocal(parseDateOrNow('2026-01-01'))).toBe('2026-Jan-01');
+    expect(formatDateLocal(parseDateOrNow('2026-12-31'))).toBe('2026-Dec-31');
+  });
+
+  it('still honours an explicit offset in a full datetime string', () => {
+    const d = parseDateOrNow('2026-06-03T00:00:00Z');
+    expect(d.toISOString()).toBe('2026-06-03T00:00:00.000Z');
+  });
+
   it('throws on an unparseable string', () => {
     expect(() => parseDateOrNow('not a date')).toThrow(/invalid date/);
   });
@@ -57,9 +95,29 @@ describe('parseDateOrNow', () => {
   });
 });
 
+describe('todayIso', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns today's local calendar date, not the UTC date", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-09T09:00:00+10:00'));
+    const now = new Date();
+    expect(todayIso()).toBe(`${now.getFullYear()}-08-${String(now.getDate()).padStart(2, '0')}`);
+  });
+});
+
 describe('toIsoDateString', () => {
   it('formats a Date as YYYY-MM-DD', () => {
-    expect(toIsoDateString(new Date(Date.UTC(2026, 5, 3)))).toBe('2026-06-03');
+    expect(toIsoDateString(new Date(2026, 5, 3))).toBe('2026-06-03');
+  });
+
+  it('uses the local calendar day for a morning UTC+10 instant', () => {
+    const d = new Date('2026-08-09T09:00:00+10:00');
+    expect(toIsoDateString(d)).toBe(
+      `${d.getFullYear()}-08-${String(d.getDate()).padStart(2, '0')}`,
+    );
   });
 
   it('truncates an ISO datetime string at T', () => {
@@ -94,9 +152,12 @@ describe('parseSince', () => {
     expect(d.toISOString()).toBe('2026-06-27T00:00:00.000Z');
   });
 
-  it('parses an ISO date string', () => {
+  it('parses an ISO date string as local midnight', () => {
     const d = parseSince('2026-01-15', now);
-    expect(d.toISOString()).toBe('2026-01-15T00:00:00.000Z');
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(0);
+    expect(d.getDate()).toBe(15);
+    expect(d.getHours()).toBe(0);
   });
 
   it('throws on an invalid string', () => {
