@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   MONTH_ABBR,
-  formatDateLocal,
+  formatDate,
   todayIso,
   parseDateOrNow,
   parseSince,
@@ -10,13 +10,13 @@ import {
   parseDatetime,
 } from '../date.js';
 
-describe('formatDateLocal', () => {
+describe('formatDate', () => {
   it('formats a local date as YYYY-MMM-DD', () => {
-    expect(formatDateLocal(new Date(2026, 5, 3))).toBe('2026-Jun-03');
+    expect(formatDate(new Date(2026, 5, 3))).toBe('2026-Jun-03');
   });
 
   it('zero-pads the day', () => {
-    expect(formatDateLocal(new Date(2026, 0, 1))).toBe('2026-Jan-01');
+    expect(formatDate(new Date(2026, 0, 1))).toBe('2026-Jan-01');
   });
 
   it('uses the local calendar day, not the UTC day', () => {
@@ -24,9 +24,7 @@ describe('formatDateLocal', () => {
     // The slug must record the day the user experienced.
     const d = new Date('2026-08-09T09:00:00+10:00');
     expect(d.getUTCDate()).toBe(8);
-    expect(formatDateLocal(d)).toBe(
-      `${d.getFullYear()}-Aug-${String(d.getDate()).padStart(2, '0')}`,
-    );
+    expect(formatDate(d)).toBe(`${d.getFullYear()}-Aug-${String(d.getDate()).padStart(2, '0')}`);
   });
 
   it('never disagrees with the local calendar components', () => {
@@ -39,12 +37,12 @@ describe('formatDateLocal', () => {
       const expected = `${d.getFullYear()}-${MONTH_ABBR[d.getMonth()]}-${String(
         d.getDate(),
       ).padStart(2, '0')}`;
-      expect(formatDateLocal(d)).toBe(expected);
+      expect(formatDate(d)).toBe(expected);
     }
   });
 
   it('handles December correctly', () => {
-    expect(formatDateLocal(new Date(2026, 11, 31))).toBe('2026-Dec-31');
+    expect(formatDate(new Date(2026, 11, 31))).toBe('2026-Dec-31');
   });
 });
 
@@ -75,10 +73,10 @@ describe('parseDateOrNow', () => {
     expect(d.getHours()).toBe(0);
   });
 
-  it('round-trips a date-only string through formatDateLocal', () => {
-    expect(formatDateLocal(parseDateOrNow('2026-06-21'))).toBe('2026-Jun-21');
-    expect(formatDateLocal(parseDateOrNow('2026-01-01'))).toBe('2026-Jan-01');
-    expect(formatDateLocal(parseDateOrNow('2026-12-31'))).toBe('2026-Dec-31');
+  it('round-trips a date-only string through formatDate', () => {
+    expect(formatDate(parseDateOrNow('2026-06-21'))).toBe('2026-Jun-21');
+    expect(formatDate(parseDateOrNow('2026-01-01'))).toBe('2026-Jan-01');
+    expect(formatDate(parseDateOrNow('2026-12-31'))).toBe('2026-Dec-31');
   });
 
   it('still honours an explicit offset in a full datetime string', () => {

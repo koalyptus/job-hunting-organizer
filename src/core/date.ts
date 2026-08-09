@@ -44,7 +44,7 @@ export function daysInMonth(year: number, month: number): number {
  * @param d - The date to format. The local calendar components are read.
  * @returns An 11-character string like `2026-Jun-03`.
  */
-export function formatDateLocal(d: Date): string {
+export function formatDate(d: Date): string {
   const y = d.getFullYear();
   const m = MONTH_ABBR[d.getMonth()];
   const day = String(d.getDate()).padStart(2, '0');

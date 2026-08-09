@@ -10,7 +10,7 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { formatDateLocal, parseDateOrNow, MONTH_ABBR } from '../date.js';
+import { MONTH_ABBR, formatDate, parseDateOrNow } from '../date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
 import { readCountersAsync, writeCountersAsync } from '../applications/counters.js';
@@ -109,7 +109,7 @@ export function companySlug(company: string, maxLen = 32): string {
  */
 export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): string {
   const date = parseDateOrNow(input.appliedOn);
-  const datePart = formatDateLocal(date);
+  const datePart = formatDate(date);
   const role = roleAbbr(input.title ?? 'unknown');
   const company = companySlug(input.company ?? 'unknown');
   const jobId = input.url !== undefined ? extractJobIdFromUrl(input.url) : null;
