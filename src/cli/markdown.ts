@@ -41,3 +41,11 @@ export function stripHtmlComments(content: string): string {
 export function stripAndRender(content: string): string {
   return renderMarkdown(stripHtmlComments(content));
 }
+
+/**
+ * Convert legacy `  > `-prefixed answer blockquotes (qa.md entries written
+ * before phase 8p) to plain text so old answers render and paste cleanly.
+ */
+export function stripBlockquoteMarkers(content: string): string {
+  return content.replace(/^ {0,3}> ?/gm, '');
+}

@@ -320,7 +320,6 @@ describe('answer command', () => {
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
       await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
-
       const spy = vi.spyOn(applicationQa, 'readQa').mockRejectedValue(new Error('Unexpected'));
 
       await expect(runCommand(answerCommand, ['answer', 'show', slug])).rejects.toThrow(
@@ -328,6 +327,25 @@ describe('answer command', () => {
       );
 
       spy.mockRestore();
+    });
+
+    it('normalizes legacy blockquote entries for display', async () => {
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      const appDir = join(campaignDir, 'applied', slug);
+      await mkdir(appDir, { recursive: true });
+      await writeFile(
+        join(appDir, 'qa.md'),
+        '# Q&A — Software Engineer @ Test Corp\n\n## Question\n\n- Answer:\n  > Line one.\n  > \n  > Line two.',
+      );
+
+      const { stdout, exitCode } = await runCommand(answerCommand, ['answer', 'show', slug]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Line one.');
+      expect(stdout).toContain('Line two.');
+      expect(stdout).not.toContain('> ');
+      expect(stdout).not.toContain('    * Answer:    Line one.');
     });
   });
 });
