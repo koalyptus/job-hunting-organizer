@@ -10,6 +10,7 @@ import {
   loadCampaignConfig,
 } from '../config/config.js';
 import { resolveProfilePath, resolveMyVoicePath } from '../paths.js';
+import { toDateKey } from '../date.js';
 import { createDirectories } from '../campaign/directories.js';
 import { ingestKnowledgeBase as ingestKbDocs } from '../campaign/kb-ingest.js';
 import { handleProfile } from '../campaign/profile-builder.js';
@@ -23,7 +24,7 @@ import {
 import type { LlmConfig } from '../types.js';
 
 /** Inputs for the locked init write steps (Steps 4-7). */
-export interface InitWriteOptions {
+interface InitWriteOptions {
   campaignRoot: string;
   name: string;
   dataRoot: string;
@@ -177,7 +178,10 @@ async function backupExistingProfile(campaignRoot: string, profilePath: string):
 
   const backupsDir = join(campaignRoot, 'backups');
   await mkdir(backupsDir, { recursive: true });
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19).replace('T', '_');
+  const now = new Date();
+  const datePart = toDateKey(now);
+  const timePart = now.toISOString().slice(11, 19).replace(/:/g, '-');
+  const ts = `${datePart}_${timePart}`;
   const backupPath = join(backupsDir, `profile.${ts}.md.bak`);
   await copyFile(profilePath, backupPath);
   clackLog.info(`Previous profile backed up to ${backupPath}`);

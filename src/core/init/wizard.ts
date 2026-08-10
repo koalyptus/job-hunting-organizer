@@ -54,7 +54,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
     }
   }
 
-  // --- Steps 1-2b: collect inputs ---
+  // --- Steps 1-3: collect inputs ---
   // Load existing configs early for pre-filling prompts.
   const existingConfig = loadExistingConfig();
   const existing = await loadExistingCampaignValues(name, log);
@@ -64,13 +64,13 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const kbPath = await promptKbPath(opts);
   const cvPathResolved = await validateCvWithRetry(cvPath, opts.yes ?? false);
 
-  // --- Step 2: GitHub ---
+  // --- Step 4: GitHub ---
   const github = await promptGithub(opts.github, opts.yes ?? false, existingConfig);
 
-  // --- Step 2b: Detect local OpenAI-compatible backends ---
+  // --- Step 5: Detect local OpenAI-compatible backends ---
   const detectedLlmSuggestion = opts.yes ? undefined : await detectLocalBackend(log);
 
-  // --- Step 3: LLM config ---
+  // --- Step 6: LLM config ---
   const llm = await promptLlm(opts.yes ?? false, existingConfig, detectedLlmSuggestion);
 
   const llmConfig = buildLlmConfig(llm, existingConfig);

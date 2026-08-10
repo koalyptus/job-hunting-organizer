@@ -16,6 +16,12 @@ export const DEFAULT_LOG_LEVEL = 'info';
 /** Environment variable for LinkedIn profile URL. */
 export const JHO_LINKEDIN_URL = 'JHO_LINKEDIN_URL';
 
+/** Environment variable for CV file path. */
+export const JHO_CV_PATH = 'JHO_CV_PATH';
+
+/** Environment variable for knowledge-base path. */
+export const JHO_KB_PATH = 'JHO_KB_PATH';
+
 // --- Agent detection constants ---
 
 /** Agent name for Ollama (used by detect-local-agents). */

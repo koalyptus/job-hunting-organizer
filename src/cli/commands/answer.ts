@@ -30,7 +30,9 @@ const showCommand = new Command('show')
     try {
       const resolvedSlug = resolveSlug(slug, campaign);
       const raw = await readQa(campaign, resolvedSlug);
-      userOutput(stripAndRender(stripBlockquoteMarkers(raw)));
+      const normalized = stripBlockquoteMarkers(raw);
+      const rendered = stripAndRender(normalized);
+      userOutput(rendered);
       log.info({ slug: resolvedSlug }, 'answer.show.completed');
     } catch (err) {
       if (err instanceof SlugMissingError) {

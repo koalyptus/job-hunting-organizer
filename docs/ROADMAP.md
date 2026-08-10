@@ -66,9 +66,9 @@
   - [x] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
   - [x] 8l — ICS Outlook.com compatibility
   - [x] 8m — detect-local-agents integration in init wizard
-  - [ ] 8n — Interview status funnel consistency (stats showed 0 interviews)
+  - [x] 8n — Interview status funnel consistency (stats showed 0 interviews)
   - [x] 8o — Humanize LLM prose (cover-letter + Q&A): deterministic `humanize()` post-processor + shared `prompts/humanize-voice.md` voice block
-  - [ ] 8p — Misc fixes: copy-paste-friendly `answer` output (plain qa.md storage) + init wizard step refactor
+  - [x] 8p — Misc fixes: copy-paste-friendly `answer` output (plain qa.md storage) + init wizard step refactor
 - [ ] **Phase 9** — Polish & public readiness
 
 ---

@@ -2,12 +2,12 @@ import { text, isCancel, log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
 import { loadCampaignConfig } from '../config/config.js';
 import { validateCvPath } from '../cv.js';
-import { JHO_LINKEDIN_URL } from './constants.js';
+import { JHO_LINKEDIN_URL, JHO_CV_PATH, JHO_KB_PATH } from './constants.js';
 import { InitCancelled } from './errors.js';
 import type { InitOptions } from './types.js';
 
 /** Existing campaign values used to pre-fill init prompts on re-init. */
-export interface ExistingCampaignValues {
+interface ExistingCampaignValues {
   cvPath?: string;
   linkedinUrl?: string;
 }
@@ -71,7 +71,7 @@ export async function promptCvPath(
   opts: InitOptions,
   existingCvPath: string | undefined,
 ): Promise<string | undefined> {
-  const envCvPath = process.env['JHO_CV_PATH'];
+  const envCvPath = process.env[JHO_CV_PATH];
   let cvPath = (opts.cv ?? envCvPath)?.trim() || undefined;
 
   if (!cvPath && !opts.yes) {
@@ -99,7 +99,7 @@ export async function promptCvPath(
  * @throws {InitCancelled} if the user cancels.
  */
 export async function promptKbPath(opts: InitOptions): Promise<string | undefined> {
-  const envKbPath = process.env['JHO_KB_PATH'];
+  const envKbPath = process.env[JHO_KB_PATH];
   let kbPath = (opts.kb ?? envKbPath)?.trim() || undefined;
 
   if (!kbPath && !opts.yes) {
