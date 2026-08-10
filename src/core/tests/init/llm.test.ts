@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { text, password, isCancel } from '@clack/prompts';
-import { promptLlm, loadExistingConfig } from '../../init/llm.js';
+import { promptLlm, loadExistingConfig, detectLocalBackend, buildLlmConfig } from '../../init/llm.js';
+import { detectAgents } from 'detect-local-agents';
 import { clearConfigCache } from '../../config/config.js';
 import { InitCancelled } from '../../init/errors.js';
 import {
@@ -23,6 +24,10 @@ vi.mock('@clack/prompts', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+}));
+
+vi.mock('detect-local-agents', () => ({
+  detectAgents: vi.fn(),
 }));
 
 describe('loadExistingConfig', () => {
@@ -359,5 +364,74 @@ describe('promptLlm', () => {
         defaultValue: 'http://localhost:11434/v1',
       }),
     );
+  });
+});
+
+describe('detectLocalBackend', () => {
+  const mockDetectAgents = vi.mocked(detectAgents);
+  const mockLog = { debug: vi.fn() } as any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns ollama suggestion when ollama agent found', async () => {
+    mockDetectAgents.mockResolvedValueOnce([
+      { name: 'ollama', binary: '/usr/bin/ollama', version: '0.3.0' },
+    ] as any);
+    const result = await detectLocalBackend(mockLog);
+    expect(result).toEqual({ baseUrl: 'http://localhost:11434/v1', model: 'llama3.1' });
+  });
+
+  it('returns lmstudio suggestion when lmstudio agent found', async () => {
+    mockDetectAgents.mockResolvedValueOnce([
+      { name: 'lmstudio', binary: '/usr/bin/lms', version: '0.2.0' },
+    ] as any);
+    const result = await detectLocalBackend(mockLog);
+    expect(result).toEqual({ baseUrl: 'http://localhost:1234/v1', model: 'auto' });
+  });
+
+  it('returns undefined when no agents found', async () => {
+    mockDetectAgents.mockResolvedValueOnce([]);
+    const result = await detectLocalBackend(mockLog);
+    expect(result).toBeUndefined();
+  });
+
+  it('returns undefined when detectAgents rejects', async () => {
+    mockDetectAgents.mockRejectedValueOnce(new Error('spawn fail'));
+    const result = await detectLocalBackend(mockLog);
+    expect(result).toBeUndefined();
+    expect(mockLog.debug).toHaveBeenCalled();
+  });
+});
+
+describe('buildLlmConfig', () => {
+  it('returns config when baseUrl and model present', () => {
+    const result = buildLlmConfig({ baseUrl: 'http://localhost:11434/v1', model: 'llama3' }, null);
+    expect(result).toEqual({
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: 'no-key',
+      model: 'llama3',
+      timeoutMs: 1_200_000,
+    });
+  });
+
+  it('returns undefined when no baseUrl', () => {
+    expect(buildLlmConfig({ model: 'llama3' }, null)).toBeUndefined();
+  });
+
+  it('returns undefined when no model', () => {
+    expect(buildLlmConfig({ baseUrl: 'http://localhost:11434/v1' }, null)).toBeUndefined();
+  });
+
+  it('preserves existing config timeout', () => {
+    const existing = { llm: { timeoutMs: 600_000 } } as any;
+    const result = buildLlmConfig({ baseUrl: 'http://localhost:11434/v1', model: 'llama3' }, existing);
+    expect(result?.timeoutMs).toBe(600_000);
+  });
+
+  it('uses provided apiKey when set', () => {
+    const result = buildLlmConfig({ baseUrl: 'http://localhost:11434/v1', model: 'llama3', apiKey: 'sk-123' }, null);
+    expect(result?.apiKey).toBe('sk-123');
   });
 });
