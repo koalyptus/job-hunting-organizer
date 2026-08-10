@@ -1,37 +1,19 @@
-import { copyFile, mkdir, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
 import {
   resolveCampaignRoot,
   resolveDataRoot,
   resolveProfilePath,
-  resolveMyVoicePath,
   ensureRoot,
 } from '../paths.js';
 import { pathExists } from '../fs.js';
-import {
-  updateGlobalConfig,
-  updateCampaignConfig,
-  loadGlobalConfig,
-  loadCampaignConfig,
-} from '../config/config.js';
 import { validateName } from '../validate.js';
 import { acquireLock } from '../locks.js';
 import type { InitOptions } from './types.js';
-import {
-  DEFAULT_CAMPAIGN,
-  DEFAULT_LOG_LEVEL,
-  DEFAULT_LLM_BASE_URL,
-  DEFAULT_LLM_API_KEY,
-  DEFAULT_LLM_MODEL,
-} from './constants.js';
+import { DEFAULT_CAMPAIGN } from './constants.js';
 import { promptLinkedin, promptCvPath, promptKbPath, validateCvWithRetry, loadExistingCampaignValues } from './init-inputs.js';
 import { promptGithub } from './github.js';
 import { promptLlm, loadExistingConfig, detectLocalBackend, buildLlmConfig } from './llm.js';
-import { createDirectories } from '../campaign/directories.js';
-import { ingestKnowledgeBase } from '../campaign/kb-ingest.js';
-import { handleProfile } from '../campaign/profile-builder.js';
-import { generateVoiceGuideSkeleton } from './skeleton.js';
+import { runLockedInitSteps, printInitSummary } from './init-write.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../logger/logger.js';
 
@@ -97,112 +79,33 @@ export async function runInit(opts: InitOptions): Promise<void> {
   await ensureRoot(campaignRoot);
   await acquireLock(
     campaignRoot,
-    async () => {
-      // --- Step 5: Create directory structure ---
-      const { kbDir } = await createDirectories(campaignRoot);
-
-      // --- Step 5b: Ingest optional knowledge-base source ---
-      const kbSources: string[] = [];
-      if (kbPath) {
-        const kbSourceAbs = resolve(campaignRoot, kbPath);
-        const copied = await ingestKnowledgeBase(campaignRoot, kbSourceAbs);
-        if (copied.length > 0) {
-          kbSources.push(kbSourceAbs);
-          clackLog.info(`Copied ${copied.length} knowledge-base doc(s) into ${kbDir}`);
-        } else {
-          clackLog.warn(`No supported docs found at ${kbPath} (expected PDF, DOCX, MD, TXT)`);
-        }
-      }
-
-      // --- Step 5c: Scaffold the personal voice guide (never overwrite) ---
-      const voicePath = resolveMyVoicePath(campaignRoot);
-      if (!(await pathExists(voicePath))) {
-        try {
-          await writeFile(voicePath, generateVoiceGuideSkeleton(), 'utf8');
-          clackLog.info(`Created voice guide template at ${voicePath}`);
-        } catch (err) {
-          // Fail-soft: a read-only KB dir must not abort init before configs are written (Step 6).
-          clackLog.warn(
-            `Could not create voice guide template at ${voicePath}: ${(err as Error).message}`,
-          );
-        }
-      }
-
-      // --- Step 6: Write configs early (so CV path is saved even if profile build fails) ---
-      const profilePath = resolveProfilePath(campaignRoot);
-
-      // Deep-merge logging to preserve user-customised values on re-init.
-      const currentConfig = loadGlobalConfig();
-      updateGlobalConfig({
-        version: 1,
-        dataRoot,
-        llm: {
-          baseUrl: llm.baseUrl || DEFAULT_LLM_BASE_URL,
-          apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
-          model: llm.model || DEFAULT_LLM_MODEL,
-          timeoutMs: currentConfig.llm.timeoutMs,
-        },
-        github: {
-          user: github.user ?? '',
-          token: github.token ?? '',
-          repos: [],
-        },
-        logging: {
-          ...currentConfig.logging,
-          level: DEFAULT_LOG_LEVEL,
-          disableFileLogging: currentConfig.logging?.disableFileLogging ?? false,
-          redactPaths: currentConfig.logging?.redactPaths ?? [],
-        },
-      });
-
-      updateCampaignConfig(name, {
-        version: 1,
-        profile: { path: profilePath },
-        cv: { path: cvPathResolved ?? '' },
-        linkedin: { url: linkedinUrl ?? '' },
-        knowledgeBase: { dir: kbDir, sources: kbSources },
-      });
-
-      // --- Step 7: Profile build (may fail — config is already saved) ---
-      // Backup existing profile before overwriting on re-init.
-      if (await pathExists(profilePath)) {
-        const backupsDir = join(campaignRoot, 'backups');
-        await mkdir(backupsDir, { recursive: true });
-        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19).replace('T', '_');
-        const backupPath = join(backupsDir, `profile.${ts}.md.bak`);
-        await copyFile(profilePath, backupPath);
-        clackLog.info(`Previous profile backed up to ${backupPath}`);
-      }
-
-      await handleProfile({
+    () =>
+      runLockedInitSteps({
         campaignRoot,
-        profileFlag: opts.profile,
+        name,
+        dataRoot,
+        kbPath,
         cvPath: cvPathResolved,
-        githubUser: github.user,
-        githubToken: github.token,
         linkedinUrl,
+        github,
+        llm,
         llmConfig,
+        profileFlag: opts.profile,
         nonInteractive: opts.yes ?? false,
-        maxChars: loadCampaignConfig(name).knowledgeBase.maxChars,
         log,
-      });
-    },
+      }),
     { retries: 3 },
   );
 
   // --- Step 9: Summary ---
   log.info({ campaign: name }, 'init.wizard.completed');
-  clackLog.success(`Campaign "${name}" created`);
-  clackLog.info(`
-  Profile: ${resolveProfilePath(campaignRoot)}
-  ${linkedinUrl ? `LinkedIn: ${linkedinUrl}` : 'LinkedIn: (not set)'}
-  ${cvPathResolved ? `CV: ${cvPathResolved}` : 'CV: (not set)'}
-  ${github.user ? `GitHub: ${github.user}` : 'GitHub: (not set)'}
-  LLM: ${llmConfig ? `${llm.baseUrl} (${llm.model})` : '(not configured)'}
-
-Next steps:
-  jho track <job-url>       # record a new application
-  jho profile show          # view your profile
-  jho campaign config show  # view campaign config
-`);
+  printInitSummary(name, {
+    profilePath: resolveProfilePath(campaignRoot),
+    linkedinUrl,
+    cvPath: cvPathResolved,
+    githubUser: github.user,
+    hasLlm: Boolean(llm.baseUrl && llm.model),
+    baseUrl: llm.baseUrl,
+    model: llm.model,
+  });
 }
