@@ -17,7 +17,7 @@ import {
 } from './index-builder.js';
 import { removeCounterEntry } from './counters.js';
 import { replaceRegion } from '../parser/markers.js';
-import { toIsoDateString, todayIso } from '../date.js';
+import { toDateKey, todayDateKey } from '../date.js';
 import type {
   ApplicationEntry,
   ApplicationStatus,
@@ -144,7 +144,7 @@ export async function createApplication(input: CreateApplicationInput): Promise<
     const folder = join(appliedDir, slug);
     await mkdir(folder, { recursive: true });
 
-    const appliedOn = input.appliedOn !== undefined ? toIsoDateString(input.appliedOn) : todayIso();
+    const appliedOn = input.appliedOn !== undefined ? toDateKey(input.appliedOn) : todayDateKey();
 
     const fm: ApplicationFrontmatter = {
       slug,

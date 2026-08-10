@@ -1,31 +1,56 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  formatDateUtc,
+  MONTH_ABBR,
+  formatDate,
+  todayDateKey,
   parseDateOrNow,
   parseSince,
-  toIsoDateString,
+  toDateKey,
   daysInMonth,
   parseDatetime,
 } from '../date.js';
 
-describe('formatDateUtc', () => {
-  it('formats a UTC date as YYYY-MMM-DD', () => {
-    expect(formatDateUtc(new Date(Date.UTC(2026, 5, 3)))).toBe('2026-Jun-03');
+describe('formatDate', () => {
+  it('formats a local date as YYYY-MMM-DD', () => {
+    expect(formatDate(new Date(2026, 5, 3))).toBe('2026-Jun-03');
   });
 
   it('zero-pads the day', () => {
-    expect(formatDateUtc(new Date(Date.UTC(2026, 0, 1)))).toBe('2026-Jan-01');
+    expect(formatDate(new Date(2026, 0, 1))).toBe('2026-Jan-01');
   });
 
-  it('uses UTC, not local time', () => {
-    // 2026-06-03 23:00 UTC is 2026-06-04 in some local zones. We expect
-    // the UTC date in the output, so we set a clearly-UTC noon time.
-    const d = new Date(Date.UTC(2026, 5, 3, 12, 0, 0));
-    expect(formatDateUtc(d)).toBe('2026-Jun-03');
+  it('uses the local calendar day, not the UTC day', () => {
+    // A morning instant in UTC+10 still falls on the previous day in UTC.
+    // The slug must record the day the user experienced. TZ is pinned to
+    // Australia/Brisbane (UTC+10) in vitest.config.ts, so the literal
+    // expectation below fails against the old UTC-based implementation.
+    const d = new Date('2026-08-09T09:00:00+10:00');
+    expect(d.getUTCDate()).toBe(8);
+    expect(formatDate(d)).toBe('2026-Aug-09');
+  });
+
+  it('formats a late-evening UTC-5 instant to its local day', () => {
+    // 23:30 UTC-5 on Dec 31 is 14:30 Jan 1 in UTC+10. The old UTC-based
+    // formatter read the UTC components, i.e. Dec 31.
+    expect(formatDate(new Date('2026-12-31T23:30:00-05:00'))).toBe('2027-Jan-01');
+  });
+
+  it('never disagrees with the local calendar components', () => {
+    const instants = [
+      new Date('2026-08-09T09:00:00+10:00'),
+      new Date('2026-01-01T00:30:00+13:00'),
+      new Date('2026-12-31T23:30:00-05:00'),
+    ];
+    for (const d of instants) {
+      const expected = `${d.getFullYear()}-${MONTH_ABBR[d.getMonth()]}-${String(
+        d.getDate(),
+      ).padStart(2, '0')}`;
+      expect(formatDate(d)).toBe(expected);
+    }
   });
 
   it('handles December correctly', () => {
-    expect(formatDateUtc(new Date(Date.UTC(2026, 11, 31)))).toBe('2026-Dec-31');
+    expect(formatDate(new Date(2026, 11, 31))).toBe('2026-Dec-31');
   });
 });
 
@@ -48,6 +73,25 @@ describe('parseDateOrNow', () => {
     expect(d.getTime()).toBeLessThanOrEqual(after);
   });
 
+  it('parses a date-only string as local midnight', () => {
+    const d = parseDateOrNow('2026-06-21');
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(5);
+    expect(d.getDate()).toBe(21);
+    expect(d.getHours()).toBe(0);
+  });
+
+  it('round-trips a date-only string through formatDate', () => {
+    expect(formatDate(parseDateOrNow('2026-06-21'))).toBe('2026-Jun-21');
+    expect(formatDate(parseDateOrNow('2026-01-01'))).toBe('2026-Jan-01');
+    expect(formatDate(parseDateOrNow('2026-12-31'))).toBe('2026-Dec-31');
+  });
+
+  it('still honours an explicit offset in a full datetime string', () => {
+    const d = parseDateOrNow('2026-06-03T00:00:00Z');
+    expect(d.toISOString()).toBe('2026-06-03T00:00:00.000Z');
+  });
+
   it('throws on an unparseable string', () => {
     expect(() => parseDateOrNow('not a date')).toThrow(/invalid date/);
   });
@@ -55,19 +99,54 @@ describe('parseDateOrNow', () => {
   it('throws on an empty string', () => {
     expect(() => parseDateOrNow('')).toThrow(/invalid date/);
   });
+
+  it('rejects invalid month/day combinations in date-only strings', () => {
+    expect(() => parseDateOrNow('2026-13-01')).toThrow(/invalid date/);
+    expect(() => parseDateOrNow('2026-02-30')).toThrow(/invalid date/);
+    expect(() => parseDateOrNow('2026-04-31')).toThrow(/invalid date/);
+    expect(() => parseDateOrNow('2026-00-15')).toThrow(/invalid date/);
+    expect(() => parseDateOrNow('2026-06-00')).toThrow(/invalid date/);
+  });
 });
 
-describe('toIsoDateString', () => {
-  it('formats a Date as YYYY-MM-DD', () => {
-    expect(toIsoDateString(new Date(Date.UTC(2026, 5, 3)))).toBe('2026-06-03');
+describe('todayDateKey', () => {
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('truncates an ISO datetime string at T', () => {
-    expect(toIsoDateString('2026-06-03T12:30:00Z')).toBe('2026-06-03');
+  it("returns today's local calendar date, not the UTC date", () => {
+    vi.useFakeTimers();
+    // 09:00 UTC+10 on Aug 9 is 23:00 UTC on Aug 8. With TZ pinned to
+    // Australia/Brisbane the local day is deterministically Aug 9.
+    vi.setSystemTime(new Date('2026-08-09T09:00:00+10:00'));
+    expect(todayDateKey()).toBe('2026-08-09');
+  });
+});
+
+describe('toDateKey', () => {
+  it('formats a Date as YYYY-MM-DD', () => {
+    expect(toDateKey(new Date(2026, 5, 3))).toBe('2026-06-03');
+  });
+
+  it('uses the local calendar day for a morning UTC+10 instant', () => {
+    // TZ pinned to Australia/Brisbane (UTC+10): 09:00+10:00 → Aug 9 local.
+    expect(toDateKey(new Date('2026-08-09T09:00:00+10:00'))).toBe('2026-08-09');
+  });
+
+  it('parses a datetime string to its local calendar day (consistent with Date path)', () => {
+    // '2026-06-03T12:30:00Z' at 12:30 UTC is 22:30 UTC+10 (same day)
+    // The key should be the local calendar day of that instant.
+    const instant = '2026-06-03T12:30:00Z';
+    expect(toDateKey(instant)).toBe('2026-06-03');
+    expect(toDateKey(new Date(instant))).toBe('2026-06-03');
+  });
+
+  it('throws on a malformed datetime string instead of returning NaN date', () => {
+    expect(() => toDateKey('garbageT...')).toThrow(/invalid date/);
   });
 
   it('passes through an ISO date-only string', () => {
-    expect(toIsoDateString('2026-06-03')).toBe('2026-06-03');
+    expect(toDateKey('2026-06-03')).toBe('2026-06-03');
   });
 });
 
@@ -94,9 +173,12 @@ describe('parseSince', () => {
     expect(d.toISOString()).toBe('2026-06-27T00:00:00.000Z');
   });
 
-  it('parses an ISO date string', () => {
+  it('parses an ISO date string as local midnight', () => {
     const d = parseSince('2026-01-15', now);
-    expect(d.toISOString()).toBe('2026-01-15T00:00:00.000Z');
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(0);
+    expect(d.getDate()).toBe(15);
+    expect(d.getHours()).toBe(0);
   });
 
   it('throws on an invalid string', () => {

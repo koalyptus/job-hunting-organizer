@@ -2,7 +2,7 @@
 // Example: 2026-Jun-03-SE-Nuage-Technology-Group-92448554-1
 //
 // Components:
-//   YYYY-MMM-DD  : appliedOn (default: today, UTC)
+//   YYYY-MMM-DD  : appliedOn (default: today, local calendar date)
 //   roleAbbr     : first 2-3 words of title, sanitized, <= 24 chars
 //   companySlug  : company name, lowercased + hyphens, <= 32 chars
 //   jobId        : optional, extracted from the URL (LinkedIn, Seek, Indeed, generic)
@@ -10,7 +10,7 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { formatDateUtc, parseDateOrNow, MONTH_ABBR } from '../date.js';
+import { MONTH_ABBR, formatDate, parseDateOrNow } from '../date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
 import { readCountersAsync, writeCountersAsync } from '../applications/counters.js';
@@ -109,7 +109,7 @@ export function companySlug(company: string, maxLen = 32): string {
  */
 export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): string {
   const date = parseDateOrNow(input.appliedOn);
-  const datePart = formatDateUtc(date);
+  const datePart = formatDate(date);
   const role = roleAbbr(input.title ?? 'unknown');
   const company = companySlug(input.company ?? 'unknown');
   const jobId = input.url !== undefined ? extractJobIdFromUrl(input.url) : null;

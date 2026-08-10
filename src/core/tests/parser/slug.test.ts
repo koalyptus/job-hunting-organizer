@@ -131,9 +131,29 @@ describe('buildSlug', () => {
     expect(slug).toBe('2026-Jun-03-software-engineer-nuage-92448554');
   });
 
-  it('uses today (UTC) when appliedOn is omitted', () => {
+  it('uses today (local calendar date) when appliedOn is omitted', () => {
     const slug = buildSlug({ title: 'Engineer', company: 'Foo' });
     expect(slug).toMatch(/^\d{4}-[A-Z][a-z]{2}-\d{2}-engineer-foo$/);
+  });
+
+  it('dates a morning application to the local day, not the UTC day', () => {
+    // Regression: a 09:00 UTC+10 (AEST) application is still the previous
+    // day in UTC, and used to be slugged a day early. TZ is pinned to
+    // Australia/Brisbane in vitest.config.ts, so '2026-Aug-09' below is
+    // deterministic and fails against the old UTC-based implementation.
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-08-09T09:00:00+10:00'));
+      const slug = buildSlug({ title: 'Engineer', company: 'Foo' });
+      expect(slug).toBe('2026-Aug-09-engineer-foo');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps a date-only appliedOn on the same calendar day', () => {
+    const slug = buildSlug({ title: 'Engineer', company: 'Foo', appliedOn: '2026-06-21' });
+    expect(slug).toBe('2026-Jun-21-engineer-foo');
   });
 
   it('falls back to "unknown" for missing title/company', () => {

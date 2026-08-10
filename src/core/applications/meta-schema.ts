@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { toIsoDate, todayIso } from '../date.js';
+import { toDateKey, todayDateKey } from '../date.js';
 
 /**
  * Zod schema for the `meta.md` frontmatter in each application folder.
@@ -48,8 +48,8 @@ export const ApplicationFrontmatterSchema = z.object({
   /** Application date as ISO date string (e.g. `'2026-06-03'`). */
   appliedOn: z
     .string()
-    .or(z.date().transform((d) => toIsoDate(d)))
-    .default(() => todayIso()),
+    .or(z.date().transform((d) => toDateKey(d)))
+    .default(() => todayDateKey()),
   /** Job title. */
   title: z.string().default(''),
   /** Company name. */

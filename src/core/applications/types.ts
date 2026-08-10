@@ -118,7 +118,7 @@ export interface CreateApplicationInput {
   company?: string;
   /** Job posting URL. */
   url?: string;
-  /** Application date. Defaults to now (UTC). */
+  /** Application date. Defaults to now (local calendar day). */
   appliedOn?: string | Date;
   /** Initial status. Default: `'applied'`. */
   status?: ApplicationStatus;
