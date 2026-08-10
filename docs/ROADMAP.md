@@ -1025,7 +1025,7 @@ Enhance `jho init` to auto-detect local OpenAI-compatible backends (Ollama, LM S
 
 #### 8p — Misc fixes: `answer` output copy-paste + init wizard refactor
 
-1. `jho answer` qa.md entries were stored as markdown blockquotes (`  > ` per
+1. `jho answer` qa.md entries were stored as markdown blockquotes (` >` per
    line) and rendered indented by `answer show`, forcing manual cleanup when
    pasting into job-site textareas. Fix: store the answer as plain text,
    normalize legacy blockquote entries in the `answer show` render path

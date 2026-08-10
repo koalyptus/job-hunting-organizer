@@ -3,7 +3,12 @@ import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { text, password, isCancel } from '@clack/prompts';
-import { promptLlm, loadExistingConfig, detectLocalBackend, buildLlmConfig } from '../../init/llm.js';
+import {
+  promptLlm,
+  loadExistingConfig,
+  detectLocalBackend,
+  buildLlmConfig,
+} from '../../init/llm.js';
 import { detectAgents } from 'detect-local-agents';
 import { clearConfigCache } from '../../config/config.js';
 import { InitCancelled } from '../../init/errors.js';
@@ -426,12 +431,18 @@ describe('buildLlmConfig', () => {
 
   it('preserves existing config timeout', () => {
     const existing = { llm: { timeoutMs: 600_000 } } as any;
-    const result = buildLlmConfig({ baseUrl: 'http://localhost:11434/v1', model: 'llama3' }, existing);
+    const result = buildLlmConfig(
+      { baseUrl: 'http://localhost:11434/v1', model: 'llama3' },
+      existing,
+    );
     expect(result?.timeoutMs).toBe(600_000);
   });
 
   it('uses provided apiKey when set', () => {
-    const result = buildLlmConfig({ baseUrl: 'http://localhost:11434/v1', model: 'llama3', apiKey: 'sk-123' }, null);
+    const result = buildLlmConfig(
+      { baseUrl: 'http://localhost:11434/v1', model: 'llama3', apiKey: 'sk-123' },
+      null,
+    );
     expect(result?.apiKey).toBe('sk-123');
   });
 });

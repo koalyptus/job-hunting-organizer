@@ -1,16 +1,17 @@
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
-import {
-  resolveCampaignRoot,
-  resolveDataRoot,
-  resolveProfilePath,
-  ensureRoot,
-} from '../paths.js';
+import { resolveCampaignRoot, resolveDataRoot, resolveProfilePath, ensureRoot } from '../paths.js';
 import { pathExists } from '../fs.js';
 import { validateName } from '../validate.js';
 import { acquireLock } from '../locks.js';
 import type { InitOptions } from './types.js';
 import { DEFAULT_CAMPAIGN } from './constants.js';
-import { promptLinkedin, promptCvPath, promptKbPath, validateCvWithRetry, loadExistingCampaignValues } from './init-inputs.js';
+import {
+  promptLinkedin,
+  promptCvPath,
+  promptKbPath,
+  validateCvWithRetry,
+  loadExistingCampaignValues,
+} from './init-inputs.js';
 import { promptGithub } from './github.js';
 import { promptLlm, loadExistingConfig, detectLocalBackend, buildLlmConfig } from './llm.js';
 import { runLockedInitSteps, printInitSummary } from './init-write.js';

@@ -168,9 +168,7 @@ const x = 1;
   describe('stripBlockquoteMarkers', () => {
     it('strips the legacy two-space blockquote prefix from answer lines', async () => {
       const { stripBlockquoteMarkers } = await import('../markdown.js');
-      expect(stripBlockquoteMarkers('  > Line one.\n  > Line two.')).toBe(
-        'Line one.\nLine two.',
-      );
+      expect(stripBlockquoteMarkers('  > Line one.\n  > Line two.')).toBe('Line one.\nLine two.');
     });
 
     it('strips plain and zero-space blockquote markers', async () => {

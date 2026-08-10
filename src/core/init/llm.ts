@@ -157,9 +157,7 @@ export async function promptLlm(
  * suggested baseUrl/model, or undefined when none is detected. Uses binary
  * presence, not just installation.
  */
-export async function detectLocalBackend(
-  log: Logger,
-): Promise<DetectedLlmSuggestion | undefined> {
+export async function detectLocalBackend(log: Logger): Promise<DetectedLlmSuggestion | undefined> {
   try {
     const agents = await detectAgents();
     const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.binary);

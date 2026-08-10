@@ -196,7 +196,9 @@ describe('init-inputs', () => {
     });
 
     it('returns empty when config load fails', async () => {
-      mockLoadCampaignConfig.mockImplementationOnce(() => { throw new Error('not found'); });
+      mockLoadCampaignConfig.mockImplementationOnce(() => {
+        throw new Error('not found');
+      });
       const log = { debug: vi.fn() } as any;
       const result = await loadExistingCampaignValues('test', log);
       expect(result).toEqual({});
