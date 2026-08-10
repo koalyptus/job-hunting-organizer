@@ -236,7 +236,8 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
       `- Source: ${source}`,
       ...(steer ? [`- Steer: ${steer}`] : []),
       `- Answer:`,
-      `  > ${cleaned.split('\n').join('\n  > ')}`,
+      '',
+      cleaned,
       '',
     ].join('\n');
 
