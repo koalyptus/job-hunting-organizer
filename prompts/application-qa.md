@@ -59,3 +59,5 @@ The answer must:
 8. **Additional instructions.** When an "Additional instructions" section is present
    in the user message, follow those instructions as priority. They may refine tone,
    emphasis, or content focus.
+9. Do NOT use markdown blockquote prefixes (`  > `). Answer text is written to qa.md
+   and displayed to the user — clean paragraphs only, no blockquote decorators.
