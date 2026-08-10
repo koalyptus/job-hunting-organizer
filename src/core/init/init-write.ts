@@ -11,7 +11,7 @@ import {
 } from '../config/config.js';
 import { resolveProfilePath, resolveMyVoicePath } from '../paths.js';
 import { createDirectories } from '../campaign/directories.js';
-import { ingestKnowledgeBase } from '../campaign/kb-ingest.js';
+import { ingestKnowledgeBase as ingestKbDocs } from '../campaign/kb-ingest.js';
 import { handleProfile } from '../campaign/profile-builder.js';
 import { generateVoiceGuideSkeleton } from './skeleton.js';
 import {
@@ -50,7 +50,7 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
   const { kbDir } = await createDirectories(campaignRoot);
 
   // --- Step 5b: Ingest optional knowledge-base source ---
-  const kbSources = await ingestInitKnowledgeBase(campaignRoot, opts.kbPath, kbDir);
+  const kbSources = await ingestKnowledgeBase(campaignRoot, opts.kbPath, kbDir);
 
   // --- Step 5c: Scaffold the personal voice guide (never overwrite) ---
   await scaffoldVoiceGuide(campaignRoot);
@@ -77,7 +77,7 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
 }
 
 /** Ingest the optional knowledge-base source; returns the recorded sources. */
-async function ingestInitKnowledgeBase(
+async function ingestKnowledgeBase(
   campaignRoot: string,
   kbPath: string | undefined,
   kbDir: string,
@@ -88,7 +88,7 @@ async function ingestInitKnowledgeBase(
   }
 
   const kbSourceAbs = resolve(campaignRoot, kbPath);
-  const copied = await ingestKnowledgeBase(campaignRoot, kbSourceAbs);
+  const copied = await ingestKbDocs(campaignRoot, kbSourceAbs);
   if (copied.length > 0) {
     kbSources.push(kbSourceAbs);
     clackLog.info(`Copied ${copied.length} knowledge-base doc(s) into ${kbDir}`);
@@ -186,7 +186,7 @@ async function backupExistingProfile(campaignRoot: string, profilePath: string):
 /** Step 9: print the init summary. */
 export function printInitSummary(
   name: string,
-  info: {
+  summary: {
     profilePath: string;
     linkedinUrl: string | undefined;
     cvPath: string | undefined;
@@ -198,11 +198,11 @@ export function printInitSummary(
 ): void {
   clackLog.success(`Campaign "${name}" created`);
   clackLog.info(`
-  Profile: ${info.profilePath}
-  ${info.linkedinUrl ? `LinkedIn: ${info.linkedinUrl}` : 'LinkedIn: (not set)'}
-  ${info.cvPath ? `CV: ${info.cvPath}` : 'CV: (not set)'}
-  ${info.githubUser ? `GitHub: ${info.githubUser}` : 'GitHub: (not set)'}
-  LLM: ${info.hasLlm ? `${info.baseUrl} (${info.model})` : '(not configured)'}
+  Profile: ${summary.profilePath}
+  ${summary.linkedinUrl ? `LinkedIn: ${summary.linkedinUrl}` : 'LinkedIn: (not set)'}
+  ${summary.cvPath ? `CV: ${summary.cvPath}` : 'CV: (not set)'}
+  ${summary.githubUser ? `GitHub: ${summary.githubUser}` : 'GitHub: (not set)'}
+  LLM: ${summary.hasLlm ? `${summary.baseUrl} (${summary.model})` : '(not configured)'}
 
 Next steps:
   jho track <job-url>       # record a new application

@@ -16,7 +16,7 @@ import type { Logger } from 'pino';
 import type { LlmConfig } from '../types.js';
 
 /** Result of the LLM prompts step. */
-interface LlmResult {
+interface LlmPromptResult {
   baseUrl: string | undefined;
   apiKey: string | undefined;
   model: string | undefined;
@@ -68,7 +68,7 @@ export async function promptLlm(
   nonInteractive: boolean,
   existingConfig: ReturnType<typeof loadGlobalConfig> | null,
   detectedSuggestion?: DetectedLlmSuggestion,
-): Promise<LlmResult> {
+): Promise<LlmPromptResult> {
   const defaultBaseUrl = getConfigValue(
     existingConfig?.llm?.baseUrl,
     'LLM_BASE_URL',
