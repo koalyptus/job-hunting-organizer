@@ -1,4 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { text, isCancel } from '@clack/prompts';
+import { validateCvPath } from '../../../core/cv.js';
+import { loadCampaignConfig } from '../../../core/config/config.js';
+import {
+  promptLinkedin,
+  promptCvPath,
+  promptKbPath,
+  validateCvWithRetry,
+  loadExistingCampaignValues,
+} from '../../../core/init/init-inputs.js';
+import { JHO_LINKEDIN_URL, JHO_CV_PATH, JHO_KB_PATH } from '../../../core/init/constants.js';
+import type { CampaignConfig } from '../../../core/types.js';
+import type { Logger } from 'pino';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),
@@ -13,20 +26,6 @@ vi.mock('../../../core/cv.js', () => ({
 vi.mock('../../../core/config/config.js', () => ({
   loadCampaignConfig: vi.fn(),
 }));
-
-import { text, isCancel } from '@clack/prompts';
-import { validateCvPath } from '../../../core/cv.js';
-import { loadCampaignConfig } from '../../../core/config/config.js';
-import {
-  promptLinkedin,
-  promptCvPath,
-  promptKbPath,
-  validateCvWithRetry,
-  loadExistingCampaignValues,
-} from '../../../core/init/init-inputs.js';
-import { JHO_LINKEDIN_URL, JHO_CV_PATH, JHO_KB_PATH } from '../../../core/init/constants.js';
-import type { CampaignConfig } from '../../../core/types.js';
-import type { Logger } from 'pino';
 
 const mockText = vi.mocked(text);
 const mockIsCancel = vi.mocked(isCancel);
