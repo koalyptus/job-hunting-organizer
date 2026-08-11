@@ -48,6 +48,12 @@ initRootLogger();
 const log = getRootLogger();
 log.info({ args: process.argv.slice(2) }, 'cli.start');
 
+// Phase 9a.2 — bootstrap storage: create the singleton store once at startup.
+// Core domains do NOT consume it yet (that is Phase 9b+); this call proves the
+// wiring and makes `getStore()` available for explicit threading in later phases.
+import { getStore } from '../storage/index.js';
+void getStore();
+
 const program = new Command('jho')
   .version(VERSION)
   .description('Local-first CLI for running a AI assisted job-hunting campaign');
