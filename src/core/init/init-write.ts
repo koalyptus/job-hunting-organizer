@@ -203,6 +203,7 @@ export function printInitSummary(
     baseUrl: string | undefined;
     model: string | undefined;
   },
+  voicePath?: string,
 ): void {
   clackLog.success(`Campaign "${name}" created`);
   clackLog.info(`
@@ -213,8 +214,9 @@ export function printInitSummary(
   LLM: ${summary.hasLlm ? `${summary.baseUrl} (${summary.model})` : '(not configured)'}
 
 Next steps:
-  jho track <job-url>       # record a new application
-  jho profile show          # view your profile
-  jho campaign config show  # view campaign config
+  jho track <job-url>              # record a new application
+  jho profile show                 # view your profile
+  jho campaign config show         # view campaign config
+${voicePath ? `  edit ${voicePath}  # personalise your writing voice` : ''}
 `);
 }

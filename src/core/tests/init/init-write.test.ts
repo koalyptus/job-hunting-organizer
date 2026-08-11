@@ -181,15 +181,19 @@ describe('runLockedInitSteps', () => {
 
 describe('printInitSummary', () => {
   it('prints summary with all fields set', () => {
-    printInitSummary('my-campaign', {
-      profilePath: '/path/to/profile.md',
-      linkedinUrl: 'https://linkedin.com/in/test',
-      cvPath: '/path/to/cv.pdf',
-      githubUser: 'testuser',
-      hasLlm: true,
-      baseUrl: 'http://localhost:11434/v1',
-      model: 'llama3',
-    });
+    printInitSummary(
+      'my-campaign',
+      {
+        profilePath: '/path/to/profile.md',
+        linkedinUrl: 'https://linkedin.com/in/test',
+        cvPath: '/path/to/cv.pdf',
+        githubUser: 'testuser',
+        hasLlm: true,
+        baseUrl: 'http://localhost:11434/v1',
+        model: 'llama3',
+      },
+      '/path/to/knowledge-base/my-voice.md',
+    );
 
     expect(clackLog.success).toHaveBeenCalledWith('Campaign "my-campaign" created');
     expect(clackLog.info).toHaveBeenCalledWith(
@@ -202,6 +206,9 @@ describe('printInitSummary', () => {
     expect(clackLog.info).toHaveBeenCalledWith(expect.stringContaining('GitHub: testuser'));
     expect(clackLog.info).toHaveBeenCalledWith(
       expect.stringContaining('LLM: http://localhost:11434/v1 (llama3)'),
+    );
+    expect(clackLog.info).toHaveBeenCalledWith(
+      expect.stringContaining('edit /path/to/knowledge-base/my-voice.md'),
     );
   });
 

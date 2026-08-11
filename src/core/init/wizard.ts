@@ -1,5 +1,11 @@
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
-import { resolveCampaignRoot, resolveDataRoot, resolveProfilePath, ensureRoot } from '../paths.js';
+import {
+  resolveCampaignRoot,
+  resolveDataRoot,
+  resolveProfilePath,
+  resolveMyVoicePath,
+  ensureRoot,
+} from '../paths.js';
 import { pathExists } from '../fs.js';
 import { validateName } from '../validate.js';
 import { acquireLock } from '../locks.js';
@@ -100,13 +106,17 @@ export async function runInit(opts: InitOptions): Promise<void> {
 
   // --- Step 12: Summary ---
   log.info({ campaign: name }, 'init.wizard.completed');
-  printInitSummary(name, {
-    profilePath: resolveProfilePath(campaignRoot),
-    linkedinUrl,
-    cvPath: cvPathResolved,
-    githubUser: github.user,
-    hasLlm: Boolean(llm.baseUrl && llm.model),
-    baseUrl: llm.baseUrl,
-    model: llm.model,
-  });
+  printInitSummary(
+    name,
+    {
+      profilePath: resolveProfilePath(campaignRoot),
+      linkedinUrl,
+      cvPath: cvPathResolved,
+      githubUser: github.user,
+      hasLlm: Boolean(llm.baseUrl && llm.model),
+      baseUrl: llm.baseUrl,
+      model: llm.model,
+    },
+    resolveMyVoicePath(campaignRoot),
+  );
 }
