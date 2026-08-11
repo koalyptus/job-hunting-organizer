@@ -18,6 +18,8 @@ import {
   DEFAULT_LLM_MODEL,
 } from '../../init/constants.js';
 import type { GlobalConfig } from '../../types.js';
+import type { Logger } from 'pino';
+import type { DetectedAgent } from 'detect-local-agents';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),
@@ -374,7 +376,7 @@ describe('promptLlm', () => {
 
 describe('detectLocalBackend', () => {
   const mockDetectAgents = vi.mocked(detectAgents);
-  const mockLog = { debug: vi.fn() } as any;
+  const mockLog = { debug: vi.fn() } as unknown as Logger;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -383,7 +385,7 @@ describe('detectLocalBackend', () => {
   it('returns ollama suggestion when ollama agent found', async () => {
     mockDetectAgents.mockResolvedValueOnce([
       { name: 'ollama', binary: '/usr/bin/ollama', version: '0.3.0' },
-    ] as any);
+    ] as DetectedAgent[]);
     const result = await detectLocalBackend(mockLog);
     expect(result).toEqual({ baseUrl: 'http://localhost:11434/v1', model: 'llama3.1' });
   });
@@ -391,7 +393,7 @@ describe('detectLocalBackend', () => {
   it('returns lmstudio suggestion when lmstudio agent found', async () => {
     mockDetectAgents.mockResolvedValueOnce([
       { name: 'lmstudio', binary: '/usr/bin/lms', version: '0.2.0' },
-    ] as any);
+    ] as DetectedAgent[]);
     const result = await detectLocalBackend(mockLog);
     expect(result).toEqual({ baseUrl: 'http://localhost:1234/v1', model: 'auto' });
   });
@@ -430,7 +432,7 @@ describe('buildLlmConfig', () => {
   });
 
   it('preserves existing config timeout', () => {
-    const existing = { llm: { timeoutMs: 600_000 } } as any;
+    const existing = { llm: { timeoutMs: 600_000 } } as unknown as GlobalConfig;
     const result = buildLlmConfig(
       { baseUrl: 'http://localhost:11434/v1', model: 'llama3' },
       existing,

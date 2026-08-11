@@ -24,6 +24,9 @@ import {
   validateCvWithRetry,
   loadExistingCampaignValues,
 } from '../../../core/init/init-inputs.js';
+import { JHO_LINKEDIN_URL, JHO_CV_PATH, JHO_KB_PATH } from '../../../core/init/constants.js';
+import type { CampaignConfig } from '../../../core/types.js';
+import type { Logger } from 'pino';
 
 const mockText = vi.mocked(text);
 const mockIsCancel = vi.mocked(isCancel);
@@ -34,9 +37,9 @@ describe('init-inputs', () => {
   const savedEnv: Record<string, string | undefined> = {};
 
   beforeEach(() => {
-    savedEnv['JHO_LINKEDIN_URL'] = process.env['JHO_LINKEDIN_URL'];
-    savedEnv['JHO_CV_PATH'] = process.env['JHO_CV_PATH'];
-    savedEnv['JHO_KB_PATH'] = process.env['JHO_KB_PATH'];
+    savedEnv[JHO_LINKEDIN_URL] = process.env[JHO_LINKEDIN_URL];
+    savedEnv[JHO_CV_PATH] = process.env[JHO_CV_PATH];
+    savedEnv[JHO_KB_PATH] = process.env[JHO_KB_PATH];
     vi.clearAllMocks();
   });
 
@@ -189,8 +192,8 @@ describe('init-inputs', () => {
       mockLoadCampaignConfig.mockReturnValueOnce({
         cv: { path: '/cv.pdf' },
         linkedin: { url: 'https://linkedin.com/in/test' },
-      } as any);
-      const log = { debug: vi.fn() } as any;
+      } as CampaignConfig);
+      const log = { debug: vi.fn() } as unknown as Logger;
       const result = await loadExistingCampaignValues('test', log);
       expect(result).toEqual({ cvPath: '/cv.pdf', linkedinUrl: 'https://linkedin.com/in/test' });
     });
@@ -199,7 +202,7 @@ describe('init-inputs', () => {
       mockLoadCampaignConfig.mockImplementationOnce(() => {
         throw new Error('not found');
       });
-      const log = { debug: vi.fn() } as any;
+      const log = { debug: vi.fn() } as unknown as Logger;
       const result = await loadExistingCampaignValues('test', log);
       expect(result).toEqual({});
       expect(log.debug).toHaveBeenCalled();
