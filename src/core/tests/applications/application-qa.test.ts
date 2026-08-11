@@ -9,6 +9,7 @@ import {
   QaReadError,
 } from '../../applications/application-qa.js';
 import { EM_DASH } from '../../humanize.js';
+import { JHO_DATA } from '../../init/constants.js';
 
 const mockChatComplete = vi.fn();
 
@@ -81,8 +82,8 @@ describe('answerQuestion', () => {
   beforeEach(async () => {
     mockChatComplete.mockReset();
     workDir = await mkdtemp(join(tmpdir(), 'jho-qa-'));
-    originalJhoData = process.env['JHO_DATA'];
-    process.env['JHO_DATA'] = workDir;
+    originalJhoData = process.env[JHO_DATA];
+    process.env[JHO_DATA] = workDir;
     campaignRoot = join(workDir, 'campaigns', 'test-campaign');
     appliedDir = join(campaignRoot, 'applied');
     await mkdir(appliedDir, { recursive: true });
@@ -90,9 +91,9 @@ describe('answerQuestion', () => {
 
   afterEach(async () => {
     if (originalJhoData !== undefined) {
-      process.env['JHO_DATA'] = originalJhoData;
+      process.env[JHO_DATA] = originalJhoData;
     } else {
-      delete process.env['JHO_DATA'];
+      delete process.env[JHO_DATA];
     }
     await rm(workDir, { recursive: true, force: true });
   });
@@ -397,9 +398,34 @@ describe('answerQuestion', () => {
     expect(result.answer).toBe(multilineAnswer);
 
     const qaContent = await readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'qa.md'), 'utf8');
-    expect(qaContent).toContain('  > First line.');
-    expect(qaContent).toContain('  > Second line.');
-    expect(qaContent).toContain('  > Third line.');
+    expect(qaContent).toContain('First line.');
+    expect(qaContent).toContain('Second line.');
+    expect(qaContent).toContain('Third line.');
+    expect(qaContent).not.toContain('  > ');
+  });
+
+  it('stores the answer as plain text, not a blockquote', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'First paragraph.\n\nSecond paragraph.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Test?',
+    });
+
+    const qaContent = await readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'qa.md'), 'utf8');
+    // Plain answer body directly after "- Answer:" + blank line — no ">" anywhere.
+    expect(qaContent).toContain('- Answer:\n\nFirst paragraph.');
+    expect(qaContent).toContain('\n\nSecond paragraph.');
+    expect(qaContent).not.toMatch(/^\s{0,3}>/m);
   });
 
   it('handles different image mime types', async () => {
@@ -590,8 +616,8 @@ describe('readQa', () => {
 
   beforeEach(async () => {
     workDir = await mkdtemp(join(tmpdir(), 'jho-qa-read-'));
-    originalJhoData = process.env['JHO_DATA'];
-    process.env['JHO_DATA'] = workDir;
+    originalJhoData = process.env[JHO_DATA];
+    process.env[JHO_DATA] = workDir;
     campaignRoot = join(workDir, 'campaigns', 'test-campaign');
     appliedDir = join(campaignRoot, 'applied');
     await mkdir(appliedDir, { recursive: true });
@@ -599,9 +625,9 @@ describe('readQa', () => {
 
   afterEach(async () => {
     if (originalJhoData !== undefined) {
-      process.env['JHO_DATA'] = originalJhoData;
+      process.env[JHO_DATA] = originalJhoData;
     } else {
-      delete process.env['JHO_DATA'];
+      delete process.env[JHO_DATA];
     }
     await rm(workDir, { recursive: true, force: true });
   });

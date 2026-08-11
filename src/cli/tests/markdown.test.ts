@@ -164,4 +164,28 @@ const x = 1;
       expect(stripHtmlComments('no comments here')).toBe('no comments here');
     });
   });
+
+  describe('stripBlockquoteMarkers', () => {
+    it('strips the legacy two-space blockquote prefix from answer lines', async () => {
+      const { stripBlockquoteMarkers } = await import('../markdown.js');
+      expect(stripBlockquoteMarkers('  > Line one.\n  > Line two.')).toBe('Line one.\nLine two.');
+    });
+
+    it('strips plain and zero-space blockquote markers', async () => {
+      const { stripBlockquoteMarkers } = await import('../markdown.js');
+      expect(stripBlockquoteMarkers('> a\n> b\n>c')).toBe('a\nb\nc');
+    });
+
+    it('turns empty blockquote lines into blank lines', async () => {
+      const { stripBlockquoteMarkers } = await import('../markdown.js');
+      expect(stripBlockquoteMarkers('  > one\n  > \n  > two')).toBe('one\n\ntwo');
+    });
+
+    it('leaves non-quote lines untouched', async () => {
+      const { stripBlockquoteMarkers } = await import('../markdown.js');
+      expect(stripBlockquoteMarkers('- Source: email\nplain text')).toBe(
+        '- Source: email\nplain text',
+      );
+    });
+  });
 });

@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { mkdir, readdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import * as path from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import { pathExists } from './fs.js';
 import { getRootLogger } from './logger/logger.js';
 import { SLUG_PATTERN } from './parser/slug.js';
@@ -288,14 +289,14 @@ export function findSlugFromCwd(cwd: string, appliedDir: string): string | null 
   }
 
   const normalizedCwd = safeRealpath(cwd);
-  const parts = normalizedCwd.split(sep);
+  const parts = normalizedCwd.split(path.sep);
   for (let i = parts.length - 1; i >= 0; i--) {
     const candidate = parts[i];
     if (candidate === undefined) {
       continue;
     }
     if (SLUG_PATTERN.test(candidate)) {
-      const candidatePath = parts.slice(0, i + 1).join(sep);
+      const candidatePath = parts.slice(0, i + 1).join(path.sep);
       if (isUnder(candidatePath, appliedDir)) {
         return candidate;
       }
@@ -335,7 +336,7 @@ export function findCampaignFromCwd(cwd: string, dataRoot: string): string | nul
   if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
     return null;
   }
-  const first = rel.split(sep)[0];
+  const first = rel.split(path.sep)[0];
   return first ?? null;
 }
 

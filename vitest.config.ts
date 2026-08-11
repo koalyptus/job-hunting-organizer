@@ -7,7 +7,7 @@ export default defineConfig({
     // on every runner (CI default is UTC). See date.test.ts regression tests.
     env: { TZ: 'Australia/Brisbane' },
     include: ['src/**/*.{test,spec}.ts'],
-    setupFiles: ['./src/test-setup.ts'],
+    setupFiles: ['./tests/setup.ts'],
     passWithNoTests: true,
     coverage: {
       provider: 'v8',

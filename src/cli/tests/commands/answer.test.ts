@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../core/config/config.js';
+import { JHO_CONFIG_HOME, JHO_DATA } from '../../../core/init/constants.js';
 import { runCommand } from '../helpers.js';
 import { answerCommand } from '../../commands/answer.js';
 import * as applicationQa from '../../../core/applications/application-qa.js';
@@ -32,11 +33,11 @@ describe('answer command', () => {
   let originalJhoData: string | undefined;
 
   beforeEach(async () => {
-    originalJhoConfigHome = process.env['JHO_CONFIG_HOME'];
-    originalJhoData = process.env['JHO_DATA'];
+    originalJhoConfigHome = process.env[JHO_CONFIG_HOME];
+    originalJhoData = process.env[JHO_DATA];
     testHome = await mkdtemp(join(tmpdir(), 'jho-answer-'));
-    process.env['JHO_CONFIG_HOME'] = join(testHome, '.jho');
-    process.env['JHO_DATA'] = join(testHome, 'data');
+    process.env[JHO_CONFIG_HOME] = join(testHome, '.jho');
+    process.env[JHO_DATA] = join(testHome, 'data');
     clearConfigCache();
 
     // Set up global config
@@ -72,14 +73,14 @@ describe('answer command', () => {
     clearConfigCache();
     vi.restoreAllMocks();
     if (originalJhoConfigHome === undefined) {
-      delete process.env['JHO_CONFIG_HOME'];
+      delete process.env[JHO_CONFIG_HOME];
     } else {
-      process.env['JHO_CONFIG_HOME'] = originalJhoConfigHome;
+      process.env[JHO_CONFIG_HOME] = originalJhoConfigHome;
     }
     if (originalJhoData === undefined) {
-      delete process.env['JHO_DATA'];
+      delete process.env[JHO_DATA];
     } else {
-      process.env['JHO_DATA'] = originalJhoData;
+      process.env[JHO_DATA] = originalJhoData;
     }
     await rm(testHome, { recursive: true, force: true });
   });
@@ -320,7 +321,6 @@ describe('answer command', () => {
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');
       await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
-
       const spy = vi.spyOn(applicationQa, 'readQa').mockRejectedValue(new Error('Unexpected'));
 
       await expect(runCommand(answerCommand, ['answer', 'show', slug])).rejects.toThrow(
@@ -328,6 +328,25 @@ describe('answer command', () => {
       );
 
       spy.mockRestore();
+    });
+
+    it('normalizes legacy blockquote entries for display', async () => {
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      const appDir = join(campaignDir, 'applied', slug);
+      await mkdir(appDir, { recursive: true });
+      await writeFile(
+        join(appDir, 'qa.md'),
+        '# Q&A — Software Engineer @ Test Corp\n\n## Question\n\n- Answer:\n  > Line one.\n  > \n  > Line two.',
+      );
+
+      const { stdout, exitCode } = await runCommand(answerCommand, ['answer', 'show', slug]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Line one.');
+      expect(stdout).toContain('Line two.');
+      expect(stdout).not.toContain('> ');
+      expect(stdout).not.toContain('    * Answer:    Line one.');
     });
   });
 });

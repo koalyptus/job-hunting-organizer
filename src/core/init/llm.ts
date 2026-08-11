@@ -1,10 +1,22 @@
 import { text, password, isCancel } from '@clack/prompts';
+import { log as clackLog } from '@clack/prompts';
+import { detectAgents } from 'detect-local-agents';
 import { clearConfigCache, loadGlobalConfig, getConfigValue } from '../config/config.js';
-import { DEFAULT_LLM_BASE_URL, DEFAULT_LLM_API_KEY, DEFAULT_LLM_MODEL } from './constants.js';
+import {
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_API_KEY,
+  DEFAULT_LLM_MODEL,
+  BACKEND_NAME_OLLAMA,
+  BACKEND_NAME_LMSTUDIO,
+  DEFAULT_LMSTUDIO_BASE_URL,
+  LMSTUDIO_DEFAULT_MODEL,
+} from './constants.js';
 import { InitCancelled } from './errors.js';
+import type { Logger } from 'pino';
+import type { LlmConfig } from '../types.js';
 
 /** Result of the LLM prompts step. */
-interface LlmResult {
+interface LlmPromptResult {
   baseUrl: string | undefined;
   apiKey: string | undefined;
   model: string | undefined;
@@ -56,7 +68,7 @@ export async function promptLlm(
   nonInteractive: boolean,
   existingConfig: ReturnType<typeof loadGlobalConfig> | null,
   detectedSuggestion?: DetectedLlmSuggestion,
-): Promise<LlmResult> {
+): Promise<LlmPromptResult> {
   const defaultBaseUrl = getConfigValue(
     existingConfig?.llm?.baseUrl,
     'LLM_BASE_URL',
@@ -138,4 +150,62 @@ export async function promptLlm(
 
   const llmModel = modelInput || undefined;
   return { baseUrl: llmBaseUrl, apiKey: llmApiKey, model: llmModel };
+}
+
+/**
+ * Detect a local OpenAI-compatible backend (Ollama or LM Studio) and return a
+ * suggested baseUrl/model, or undefined when none is detected. Uses binary
+ * presence, not just installation.
+ */
+export async function detectLocalBackend(log: Logger): Promise<DetectedLlmSuggestion | undefined> {
+  try {
+    const agents = await detectAgents();
+    const ollama = agents.find((a) => a.name === BACKEND_NAME_OLLAMA && a.binary);
+    const lmstudio = agents.find((a) => a.name === BACKEND_NAME_LMSTUDIO && a.binary);
+
+    if (ollama) {
+      clackLog.info(
+        `Detected Ollama → suggested baseUrl: ${DEFAULT_LLM_BASE_URL}, model: ${DEFAULT_LLM_MODEL} (${ollama.binary} ${ollama.version ?? ''})`,
+      );
+      return { baseUrl: DEFAULT_LLM_BASE_URL, model: DEFAULT_LLM_MODEL };
+    }
+
+    if (lmstudio) {
+      clackLog.info(
+        `Detected LM Studio → suggested baseUrl: ${DEFAULT_LMSTUDIO_BASE_URL}, model: ${LMSTUDIO_DEFAULT_MODEL} (${lmstudio.binary} ${lmstudio.version ?? ''})`,
+      );
+      return { baseUrl: DEFAULT_LMSTUDIO_BASE_URL, model: LMSTUDIO_DEFAULT_MODEL };
+    }
+
+    clackLog.warn(
+      'No local OpenAI-compatible backend detected. Install Ollama (free, private) or enter API key manually.',
+    );
+    return undefined;
+  } catch (err) {
+    log.debug({ err }, 'detect-local-agents.failed');
+    clackLog.warn('Agent detection failed, continuing with manual LLM config');
+    return undefined;
+  }
+}
+
+/**
+ * Build the LLM config written to global config. apiKey is optional for local
+ * LLMs; falls back to the default ('no-key') when empty. Returns undefined
+ * when no baseUrl/model is configured.
+ */
+export function buildLlmConfig(
+  llm: { baseUrl?: string; apiKey?: string; model?: string },
+  existingConfig: ReturnType<typeof loadGlobalConfig> | null,
+): LlmConfig | undefined {
+  const hasLlm = Boolean(llm.baseUrl && llm.model);
+  if (!hasLlm) {
+    return undefined;
+  }
+
+  return {
+    baseUrl: llm.baseUrl!,
+    apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
+    model: llm.model!,
+    timeoutMs: existingConfig?.llm.timeoutMs ?? 1_200_000,
+  };
 }

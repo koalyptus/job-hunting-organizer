@@ -41,3 +41,16 @@ export function stripHtmlComments(content: string): string {
 export function stripAndRender(content: string): string {
   return renderMarkdown(stripHtmlComments(content));
 }
+
+/**
+ * Convert legacy `  > `-prefixed answer blockquotes (qa.md entries written
+ * before phase 8p) to plain text so old answers render and paste cleanly.
+ *
+ * This applies to the entire file, so legitimate user-authored blockquotes
+ * (if any) would also be stripped — acceptable because `qa.md` is
+ * machine-generated and the user's answer body never contains blockquote
+ * syntax.
+ */
+export function stripBlockquoteMarkers(content: string): string {
+  return content.replace(/^ {0,3}> ?/gm, '');
+}

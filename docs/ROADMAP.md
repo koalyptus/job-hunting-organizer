@@ -66,8 +66,9 @@
   - [x] 8i — Upgrade to `@modelcontextprotocol/server` + `@modelcontextprotocol/client` v2
   - [x] 8l — ICS Outlook.com compatibility
   - [x] 8m — detect-local-agents integration in init wizard
-  - [ ] 8n — Interview status funnel consistency (stats showed 0 interviews)
+  - [x] 8n — Interview status funnel consistency (stats showed 0 interviews)
   - [x] 8o — Humanize LLM prose (cover-letter + Q&A): deterministic `humanize()` post-processor + shared `prompts/humanize-voice.md` voice block
+  - [x] 8p — Misc fixes: copy-paste-friendly `answer` output (plain qa.md storage) + init wizard step refactor
 - [ ] **Phase 9** — Polish & public readiness
 
 ---
@@ -1019,6 +1020,28 @@ Enhance `jho init` to auto-detect local OpenAI-compatible backends (Ollama, LM S
 **Follow-up decided** (captain, 2026-08-05, option (a)): the detailed snapshot (`jho stats --campaign <name>`) reports `interview entries: N` — the total interview entries across all applications, regardless of status — so interviews on `rejected` apps (e.g. the 2 hr interviews on `javascript-developer`) stay visible next to the funnel. Per the captain's scoping refinement, it is **not** shown in the global summary (`jho stats` without `--campaign`, text or JSON). Implements `src/core/types.ts` (`CampaignStats.interviewEntryCount`), `src/core/stats/stats.ts` (counts entries via `listInterviews`), `src/core/stats/format.ts` (full renderer only), `src/cli/commands/stats.ts` (global JSON strips the field).
 
 **Commit**: `fix(interviews): auto-advance status to interview on interview log + repair backfill`
+
+---
+
+#### 8p — Misc fixes: `answer` output copy-paste + init wizard refactor
+
+1. `jho answer` qa.md entries were stored as markdown blockquotes (` >` per
+   line) and rendered indented by `answer show`, forcing manual cleanup when
+   pasting into job-site textareas. Fix: store the answer as plain text,
+   normalize legacy blockquote entries in the `answer show` render path
+   (`stripBlockquoteMarkers`), and forbid blockquote lines explicitly in the
+   `application-qa` prompt.
+2. The 347-line `runInit` wizard was split into named step functions in
+   dedicated modules: `init-inputs.ts` (LinkedIn/CV/KB prompts + CV retry),
+   `init-write.ts` (locked filesystem/config/profile writes +
+   `printInitSummary`), and `llm.ts` (backend detection + LLM config build).
+   `wizard.ts` is now a linear orchestrator. Behavior-identical; the 32 CLI
+   init tests are the safety net.
+
+**Deliverable**: plain-text qa.md answers + a wizard that reads as a sequence
+of named steps.
+
+**Commit**: `refactor(init): misc fixes — plain-text answers + wizard decomposition`
 
 ---
 
