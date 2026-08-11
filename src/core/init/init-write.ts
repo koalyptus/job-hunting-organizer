@@ -23,7 +23,7 @@ import {
 } from './constants.js';
 import type { LlmConfig } from '../types.js';
 
-/** Inputs for the locked init write steps (Steps 4-7). */
+/** Inputs for the locked init write steps (Steps 7-11). */
 interface InitWriteOptions {
   campaignRoot: string;
   name: string;
@@ -47,21 +47,21 @@ interface InitWriteOptions {
 export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> {
   const { campaignRoot, name, log } = opts;
 
-  // --- Step 5: Create directory structure ---
+  // --- Step 7: Create directory structure ---
   const { kbDir } = await createDirectories(campaignRoot);
 
-  // --- Step 5b: Ingest optional knowledge-base source ---
+  // --- Step 8: Ingest optional knowledge-base source ---
   const kbSources = await ingestKnowledgeBase(campaignRoot, opts.kbPath, kbDir);
 
-  // --- Step 5c: Scaffold the personal voice guide (never overwrite) ---
+  // --- Step 9: Scaffold the personal voice guide (never overwrite) ---
   await scaffoldVoiceGuide(campaignRoot);
 
-  // --- Step 6: Write configs early (so CV path is saved even if profile build fails) ---
+  // --- Step 10: Write configs early (so CV path is saved even if profile build fails) ---
   const profilePath = resolveProfilePath(campaignRoot);
   writeInitGlobalConfig(opts.dataRoot, opts.llm, opts.github);
   writeInitCampaignConfig(name, profilePath, opts.cvPath, opts.linkedinUrl, kbDir, kbSources);
 
-  // --- Step 7: Profile build (may fail — config is already saved) ---
+  // --- Step 11: Profile build (may fail — config is already saved) ---
   await backupExistingProfile(campaignRoot, profilePath);
   await handleProfile({
     campaignRoot,
@@ -180,14 +180,18 @@ async function backupExistingProfile(campaignRoot: string, profilePath: string):
   await mkdir(backupsDir, { recursive: true });
   const now = new Date();
   const datePart = toDateKey(now);
-  const timePart = now.toISOString().slice(11, 19).replace(/:/g, '-');
+  const timePart = [
+    String(now.getHours()).padStart(2, '0'),
+    String(now.getMinutes()).padStart(2, '0'),
+    String(now.getSeconds()).padStart(2, '0'),
+  ].join('-');
   const ts = `${datePart}_${timePart}`;
   const backupPath = join(backupsDir, `profile.${ts}.md.bak`);
   await copyFile(profilePath, backupPath);
   clackLog.info(`Previous profile backed up to ${backupPath}`);
 }
 
-/** Step 9: print the init summary. */
+/** Step 12: print the init summary. */
 export function printInitSummary(
   name: string,
   summary: {

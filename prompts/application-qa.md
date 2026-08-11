@@ -33,7 +33,8 @@ application form. Read the question from the image.
 Return **only** the answer text as plain markdown. No labels, no
 "Answer:" prefix, no meta-commentary.
 Do not use blockquote lines (`>`), headings, or horizontal rules — plain
-paragraphs and short bullet lists only.
+paragraphs and short bullet lists only. Answer text is stored in `qa.md`
+and displayed to the user, so blockquote decorators would leak into output.
 
 The answer must:
 
@@ -59,5 +60,3 @@ The answer must:
 8. **Additional instructions.** When an "Additional instructions" section is present
    in the user message, follow those instructions as priority. They may refine tone,
    emphasis, or content focus.
-9. Do NOT use markdown blockquote prefixes (` >`). Answer text is written to qa.md
-   and displayed to the user — clean paragraphs only, no blockquote decorators.

@@ -94,7 +94,7 @@ export async function promptCvPath(
 }
 
 /**
- * Step 2b: knowledge-base source path (optional). Pre-fills from --kb and
+ * Step 3: knowledge-base source path (optional). Pre-fills from --kb and
  * JHO_KB_PATH.
  * @throws {InitCancelled} if the user cancels.
  */

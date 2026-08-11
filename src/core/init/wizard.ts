@@ -75,7 +75,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
 
   const llmConfig = buildLlmConfig(llm, existingConfig);
 
-  // --- Steps 4-7: Directory creation, config writes, profile (locked) ---
+  // --- Steps 7-11: Directory creation, config writes, profile (locked) ---
   // Ensure campaign root exists before locking (proper-lockfile requires the path).
   await ensureRoot(campaignRoot);
   await acquireLock(
@@ -98,7 +98,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
     { retries: 3 },
   );
 
-  // --- Step 9: Summary ---
+  // --- Step 12: Summary ---
   log.info({ campaign: name }, 'init.wizard.completed');
   printInitSummary(name, {
     profilePath: resolveProfilePath(campaignRoot),
