@@ -9,7 +9,7 @@ import {
   QaReadError,
 } from '../../applications/application-qa.js';
 import { EM_DASH } from '../../humanize.js';
-import { JHO_CONFIG_HOME, JHO_DATA } from '../../init/constants.js';
+import { JHO_DATA } from '../../init/constants.js';
 
 const mockChatComplete = vi.fn();
 
