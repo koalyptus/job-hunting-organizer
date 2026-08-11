@@ -9,6 +9,7 @@ import {
   QaReadError,
 } from '../../applications/application-qa.js';
 import { EM_DASH } from '../../humanize.js';
+import { JHO_CONFIG_HOME, JHO_DATA } from '../../init/constants.js';
 
 const mockChatComplete = vi.fn();
 
@@ -81,8 +82,8 @@ describe('answerQuestion', () => {
   beforeEach(async () => {
     mockChatComplete.mockReset();
     workDir = await mkdtemp(join(tmpdir(), 'jho-qa-'));
-    originalJhoData = process.env['JHO_DATA'];
-    process.env['JHO_DATA'] = workDir;
+    originalJhoData = process.env[JHO_DATA];
+    process.env[JHO_DATA] = workDir;
     campaignRoot = join(workDir, 'campaigns', 'test-campaign');
     appliedDir = join(campaignRoot, 'applied');
     await mkdir(appliedDir, { recursive: true });
@@ -90,9 +91,9 @@ describe('answerQuestion', () => {
 
   afterEach(async () => {
     if (originalJhoData !== undefined) {
-      process.env['JHO_DATA'] = originalJhoData;
+      process.env[JHO_DATA] = originalJhoData;
     } else {
-      delete process.env['JHO_DATA'];
+      delete process.env[JHO_DATA];
     }
     await rm(workDir, { recursive: true, force: true });
   });
@@ -615,8 +616,8 @@ describe('readQa', () => {
 
   beforeEach(async () => {
     workDir = await mkdtemp(join(tmpdir(), 'jho-qa-read-'));
-    originalJhoData = process.env['JHO_DATA'];
-    process.env['JHO_DATA'] = workDir;
+    originalJhoData = process.env[JHO_DATA];
+    process.env[JHO_DATA] = workDir;
     campaignRoot = join(workDir, 'campaigns', 'test-campaign');
     appliedDir = join(campaignRoot, 'applied');
     await mkdir(appliedDir, { recursive: true });
@@ -624,9 +625,9 @@ describe('readQa', () => {
 
   afterEach(async () => {
     if (originalJhoData !== undefined) {
-      process.env['JHO_DATA'] = originalJhoData;
+      process.env[JHO_DATA] = originalJhoData;
     } else {
-      delete process.env['JHO_DATA'];
+      delete process.env[JHO_DATA];
     }
     await rm(workDir, { recursive: true, force: true });
   });

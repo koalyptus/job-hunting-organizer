@@ -5,6 +5,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { log as clackLog } from '@clack/prompts';
 import { runLockedInitSteps, printInitSummary } from '../../init/init-write.js';
 import { clearConfigCache } from '../../config/config.js';
+import { JHO_CONFIG_HOME, JHO_DATA } from '../../init/constants.js';
 import { childLogger } from '../../logger/logger.js';
 
 vi.mock('@clack/prompts', () => ({
@@ -31,11 +32,11 @@ describe('runLockedInitSteps', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    originalJhoConfigHome = process.env['JHO_CONFIG_HOME'];
-    originalJhoData = process.env['JHO_DATA'];
+    originalJhoConfigHome = process.env[JHO_CONFIG_HOME];
+    originalJhoData = process.env[JHO_DATA];
     testHome = await mkdtemp(join(tmpdir(), 'jho-init-write-test-'));
-    process.env['JHO_CONFIG_HOME'] = join(testHome, '.jho');
-    process.env['JHO_DATA'] = join(testHome, 'data');
+    process.env[JHO_CONFIG_HOME] = join(testHome, '.jho');
+    process.env[JHO_DATA] = join(testHome, 'data');
     clearConfigCache();
 
     // Set up global config directory
@@ -46,14 +47,14 @@ describe('runLockedInitSteps', () => {
   afterEach(async () => {
     clearConfigCache();
     if (originalJhoConfigHome === undefined) {
-      delete process.env['JHO_CONFIG_HOME'];
+      delete process.env[JHO_CONFIG_HOME];
     } else {
-      process.env['JHO_CONFIG_HOME'] = originalJhoConfigHome;
+      process.env[JHO_CONFIG_HOME] = originalJhoConfigHome;
     }
     if (originalJhoData === undefined) {
-      delete process.env['JHO_DATA'];
+      delete process.env[JHO_DATA];
     } else {
-      process.env['JHO_DATA'] = originalJhoData;
+      process.env[JHO_DATA] = originalJhoData;
     }
     await rm(testHome, { recursive: true, force: true });
   });

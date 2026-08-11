@@ -60,7 +60,7 @@ describe('init-inputs', () => {
     });
 
     it('uses JHO_LINKEDIN_URL env var', async () => {
-      process.env['JHO_LINKEDIN_URL'] = 'https://linkedin.com/in/env';
+      process.env[JHO_LINKEDIN_URL] = 'https://linkedin.com/in/env';
       const result = await promptLinkedin({}, undefined);
       expect(result).toBe('https://linkedin.com/in/env');
     });
@@ -104,7 +104,7 @@ describe('init-inputs', () => {
     });
 
     it('uses JHO_CV_PATH env var', async () => {
-      process.env['JHO_CV_PATH'] = '/env/cv.pdf';
+      process.env[JHO_CV_PATH] = '/env/cv.pdf';
       const result = await promptCvPath({}, undefined);
       expect(result).toBe('/env/cv.pdf');
     });
@@ -133,7 +133,7 @@ describe('init-inputs', () => {
     });
 
     it('uses JHO_KB_PATH env var', async () => {
-      process.env['JHO_KB_PATH'] = '/env/kb';
+      process.env[JHO_KB_PATH] = '/env/kb';
       const result = await promptKbPath({});
       expect(result).toBe('/env/kb');
     });

@@ -22,6 +22,12 @@ export const JHO_CV_PATH = 'JHO_CV_PATH';
 /** Environment variable for knowledge-base path. */
 export const JHO_KB_PATH = 'JHO_KB_PATH';
 
+/** Environment variable for campaign data root. */
+export const JHO_DATA = 'JHO_DATA';
+
+/** Environment variable for global config home. */
+export const JHO_CONFIG_HOME = 'JHO_CONFIG_HOME';
+
 // --- Agent detection constants ---
 
 /** Agent name for Ollama (used by detect-local-agents). */

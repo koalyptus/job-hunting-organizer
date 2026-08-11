@@ -16,6 +16,7 @@ import {
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
+  JHO_CONFIG_HOME,
 } from '../../init/constants.js';
 import type { GlobalConfig } from '../../types.js';
 import type { Logger } from 'pino';
@@ -42,18 +43,18 @@ describe('loadExistingConfig', () => {
   let originalJhoConfigHome: string | undefined;
 
   beforeEach(async () => {
-    originalJhoConfigHome = process.env['JHO_CONFIG_HOME'];
+    originalJhoConfigHome = process.env[JHO_CONFIG_HOME];
     testHome = await mkdtemp(join(tmpdir(), 'jho-llm-test-'));
-    process.env['JHO_CONFIG_HOME'] = join(testHome, '.jho');
+    process.env[JHO_CONFIG_HOME] = join(testHome, '.jho');
     clearConfigCache();
   });
 
   afterEach(async () => {
     clearConfigCache();
     if (originalJhoConfigHome === undefined) {
-      delete process.env['JHO_CONFIG_HOME'];
+      delete process.env[JHO_CONFIG_HOME];
     } else {
-      process.env['JHO_CONFIG_HOME'] = originalJhoConfigHome;
+      process.env[JHO_CONFIG_HOME] = originalJhoConfigHome;
     }
     await rm(testHome, { recursive: true, force: true });
   });
