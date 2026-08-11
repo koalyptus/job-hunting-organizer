@@ -61,16 +61,12 @@ npm run test:integration
 integration-tests/
 ├── helpers.ts              # Shared setup utilities
 ├── mocks.ts                # Shared vitest mock factories
-├── cli/                    # CLI tests (Commander parseAsync)
+├── cli/                    # CLI end-to-end tests
 │   ├── application-lifecycle.test.ts
 │   ├── campaign-init.test.ts
 │   └── doctor-diagnostics.test.ts
-├── mcp/                    # MCP tests (tool dispatch)
-│   └── tools-e2e.test.ts
-└── cli/                    # CLI tests (Commander parseAsync)
-    ├── application-lifecycle.test.ts
-    ├── campaign-init.test.ts
-    └── doctor-diagnostics.test.ts
+└── mcp/                    # MCP tool dispatch tests
+    └── tools-e2e.test.ts
 ```
 
 **What's mocked vs real**:
