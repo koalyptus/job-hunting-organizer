@@ -20,6 +20,16 @@ interface FileSystemWithAppend {
   };
 }
 
+const LOCK_KEY_SANITIZE = /[^a-zA-Z0-9_-]/g;
+const LOCK_STALE_MS = 10_000;
+const LOCK_RETRIES = { retries: 5, minTimeout: 50, maxTimeout: 500 };
+const LOCK_DIR = '.locks';
+const LOCK_EXT = '.lock';
+const TEMP_EXT = '.tmp';
+const RANDOM_SUFFIX_LENGTH = 6;
+const KIND_FILE = 'file';
+const KIND_DIR = 'directory';
+
 /**
  * Re-export the canonical data-root resolver so the storage module is a
  * self-contained entry point. The real implementation lives in
@@ -63,7 +73,7 @@ function toStorageStat(stats: {
   mtime: Date;
 }): StorageStat {
   return {
-    kind: stats.isDirectory() ? 'directory' : 'file',
+    kind: stats.isDirectory() ? KIND_DIR : KIND_FILE,
     size: stats.size,
     mtimeMs: stats.mtime.getTime(),
   };
@@ -140,7 +150,11 @@ export class LocalFileStore implements FileStore {
     }
 
     // Temp + rename for atomicity
-    const tmp = `${abs}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2, 8)}.tmp`;
+    const timestamp = Date.now();
+    const random = Math.random()
+      .toString(36)
+      .slice(2, 2 + RANDOM_SUFFIX_LENGTH);
+    const tmp = `${abs}.${process.pid}.${timestamp}.${random}${TEMP_EXT}`;
     try {
       await this.fs.promises.writeFile(tmp, content);
       await this.fs.promises.rename(tmp, abs);
@@ -170,6 +184,8 @@ export class LocalFileStore implements FileStore {
     // Single atomic engine call — appendFile opens with O_APPEND, so
     // concurrent appenders cannot lose updates (a composed read+write
     // would race: two appenders read the same base, then one overwrites).
+    // Cast via `unknown` because `IFileSystem['promises']` lacks `appendFile`
+    // in the typed surface (though every engine implements it at runtime).
     await (this.fs as unknown as FileSystemWithAppend).promises.appendFile(abs, content);
   }
 
@@ -367,8 +383,8 @@ export class LocalFileStore implements FileStore {
 
   async withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
     // Use proper-lockfile for advisory locking (same as src/core/locks.ts).
-    // Lock on a sidecar file under the data root's .locks/ directory.
-    const lockDir = this.fs.join(this.dataRoot, '.locks');
+    // Lock on a sidecar file under the data root's LOCK_DIR/ directory.
+    const lockDir = this.fs.join(this.dataRoot, LOCK_DIR);
     await this.fs.promises.mkdir(lockDir, { recursive: true });
     // Canonicalize the lock directory (which exists) so processes reaching
     // the same data root through different path spellings (symlinked homes,
@@ -376,12 +392,16 @@ export class LocalFileStore implements FileStore {
     // core/locks.ts. `realpath: false` stays: the base file itself never
     // exists on disk (proper-lockfile would fail to resolve it).
     const canonicalLockDir = await this.fs.promises.realpath(lockDir);
-    const lockFile = this.fs.join(canonicalLockDir, `${key.replace(/[\W]/g, '_')}.lock`);
-    // Use proper-lockfile via dynamic import to avoid hard dependency in types
+    const lockFile = this.fs.join(
+      canonicalLockDir,
+      `${key.replace(LOCK_KEY_SANITIZE, '_')}${LOCK_EXT}`,
+    );
+    // Dynamic import to avoid a hard dependency on proper-lockfile in the
+    // type layer (only used here; consumers of the port don't pay the cost).
     const lockfile = await import('proper-lockfile');
     const release = await lockfile.default.lock(lockFile, {
-      retries: { retries: 5, minTimeout: 50, maxTimeout: 500 },
-      stale: 10_000,
+      retries: LOCK_RETRIES,
+      stale: LOCK_STALE_MS,
       realpath: false,
     });
     try {

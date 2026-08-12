@@ -1,17 +1,32 @@
 export type StoragePath = string;
 
+/**
+ * A filesystem entry kind.
+ */
 export type StorageEntryKind = 'file' | 'directory';
 
+/**
+ * Portable stat result — avoids coupling to Node's `fs.Stats` or
+ * engine-specific types. `mtimeMs` is the modification time as epoch
+ * milliseconds (i.e. `Date.getTime()`), not a `Date` object.
+ */
 export interface StorageStat {
   readonly kind: StorageEntryKind;
   readonly size: number;
   readonly mtimeMs: number;
 }
 
+/**
+ * Options for `readdir`.
+ */
 export interface ReadDirOptions {
+  /** Include `.` and `..` entries (default: false). */
   readonly includeSpecialEntries?: boolean;
 }
 
+/**
+ * Error raised when a storage path does not exist.
+ */
 export class StorageNotFoundError extends Error {
   constructor(public readonly path: StoragePath) {
     super(`Not found: ${path}`);
@@ -19,6 +34,9 @@ export class StorageNotFoundError extends Error {
   }
 }
 
+/**
+ * Error raised when a storage path already exists.
+ */
 export class StorageAlreadyExistsError extends Error {
   constructor(public readonly path: StoragePath) {
     super(`Already exists: ${path}`);
@@ -26,6 +44,9 @@ export class StorageAlreadyExistsError extends Error {
   }
 }
 
+/**
+ * Error raised when removing a non-empty directory without `recursive`.
+ */
 export class StorageNotEmptyError extends Error {
   constructor(public readonly path: StoragePath) {
     super(`Directory not empty: ${path}`);
@@ -33,6 +54,9 @@ export class StorageNotEmptyError extends Error {
   }
 }
 
+/**
+ * Error raised when an operation is not supported by the storage backend.
+ */
 export class StorageUnsupportedError extends Error {
   constructor(
     public readonly operation: string,
@@ -43,19 +67,39 @@ export class StorageUnsupportedError extends Error {
   }
 }
 
+/**
+ * Storage port — filesystem abstraction decoupling core logic from
+ * persistence. All paths are `StoragePath` (relative POSIX, no leading
+ * slash, no `..`, no drive letters). Implementations must enforce
+ * root confinement and map engine errors to the port's error classes.
+ */
 export interface FileStore {
+  /** Read a file as UTF-8 string. */
   read(path: StoragePath): Promise<string>;
+  /** Read a file as raw bytes. */
   readBytes(path: StoragePath): Promise<Uint8Array>;
+  /** Write a file (atomic via temp + rename). Creates parent dirs. */
   write(path: StoragePath, content: string | Uint8Array): Promise<void>;
+  /** Append to a file (atomic, single engine call). Creates parent dirs. */
   append(path: StoragePath, content: string | Uint8Array): Promise<void>;
+  /** Check if a path exists. */
   exists(path: StoragePath): Promise<boolean>;
+  /** Get portable stat for a path. */
   stat(path: StoragePath): Promise<StorageStat>;
+  /** List directory entries (filters `.` and `..` by default). */
   readdir(path: StoragePath, options?: ReadDirOptions): Promise<StoragePath[]>;
+  /** Create a directory (recursive, idempotent for existing dirs). */
   mkdir(path: StoragePath): Promise<void>;
+  /** Rename/move a path (source must exist, dest must not). */
   rename(from: StoragePath, to: StoragePath): Promise<void>;
+  /** Remove a path (file, empty dir, or recursive tree). */
   rm(path: StoragePath, options?: { readonly recursive?: boolean }): Promise<void>;
+  /** Copy a file or directory tree. */
   copy(from: StoragePath, to: StoragePath): Promise<void>;
+  /** Advisory lock on a key — serializes concurrent holders. */
   withLock<T>(key: string, fn: () => Promise<T>): Promise<T>;
+  /** Join path segments into a normalized StoragePath. */
   joinPath(...parts: string[]): StoragePath;
+  /** Return the absolute data root this store operates under. */
   getDataRoot(): string;
 }
