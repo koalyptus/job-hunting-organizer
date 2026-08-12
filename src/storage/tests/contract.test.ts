@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { LocalFileStore, createStore, resolveDataRoot } from '../local.js';
+import { LocalFileStore, createStore, resolveDataRoot } from '../local/file-store.js';
 import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
 
 describe('LocalFileStore contract suite', () => {

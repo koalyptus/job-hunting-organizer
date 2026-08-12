@@ -1,9 +1,9 @@
 import type { IFileSystem } from '@file-services/types';
 import { createNodeFs } from '@file-services/node';
-import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from './types.js';
-import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from './types.js';
-import { getRootLogger } from '../core/logger/logger.js';
-import { resolveDataRoot } from '../core/paths.js';
+import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from '../types.js';
+import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
+import { getRootLogger } from '../../core/logger/logger.js';
+import { resolveDataRoot } from '../../core/paths.js';
 
 /**
  * Re-export the canonical data-root resolver so the storage module is a
