@@ -2,8 +2,23 @@ import type { IFileSystem } from '@file-services/types';
 import { createNodeFs } from '@file-services/node';
 import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from '../types.js';
 import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
-import { getRootLogger } from '../../core/logger/logger.js';
+import { moduleLogger } from '../../core/logger/logger.js';
 import { resolveDataRoot } from '../../core/paths.js';
+
+const log = moduleLogger(import.meta.url);
+
+/**
+ * The typed async surface omits `appendFile` even though every vendored
+ * engine (node-fs, memfs) exposes it at runtime. Reach it through this
+ * minimal typed extension so `append` is a single atomic engine call
+ * instead of a composed read+write (which has a TOCTOU lost-update window
+ * when two appenders race).
+ */
+interface FileSystemWithAppend {
+  promises: IFileSystem['promises'] & {
+    appendFile(path: string, data: string | Uint8Array): Promise<void>;
+  };
+}
 
 /**
  * Re-export the canonical data-root resolver so the storage module is a
@@ -152,22 +167,10 @@ export class LocalFileStore implements FileStore {
       }
     }
 
-    // The vendored async surface has no appendFile — compose read+write.
-    // Missing file → empty suffix; preserves byte semantics for Uint8Array.
-    let existing: Uint8Array = new Uint8Array(0);
-    try {
-      existing = await this.fs.promises.readFile(abs);
-    } catch (err) {
-      const code = (err as NodeJS.ErrnoException).code;
-      if (code !== 'ENOENT' && code !== 'ENOTDIR') {
-        throw err;
-      }
-    }
-    const suffix = typeof content === 'string' ? new TextEncoder().encode(content) : content;
-    const combined = new Uint8Array(existing.length + suffix.length);
-    combined.set(existing, 0);
-    combined.set(suffix, existing.length);
-    await this.fs.promises.writeFile(abs, combined);
+    // Single atomic engine call — appendFile opens with O_APPEND, so
+    // concurrent appenders cannot lose updates (a composed read+write
+    // would race: two appenders read the same base, then one overwrites).
+    await (this.fs as unknown as FileSystemWithAppend).promises.appendFile(abs, content);
   }
 
   async exists(path: StoragePath): Promise<boolean> {
@@ -312,6 +315,17 @@ export class LocalFileStore implements FileStore {
     const src = toAbsolute(this.fs, this.dataRoot, from);
     const dest = toAbsolute(this.fs, this.dataRoot, to);
 
+    // Source must exist — normalize to the port's not-found error (same as rename).
+    try {
+      await this.fs.promises.stat(src);
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT' || code === 'ENOTDIR') {
+        throw new StorageNotFoundError(from);
+      }
+      throw err;
+    }
+
     // Check destination doesn't exist
     try {
       await this.fs.promises.stat(dest);
@@ -356,7 +370,13 @@ export class LocalFileStore implements FileStore {
     // Lock on a sidecar file under the data root's .locks/ directory.
     const lockDir = this.fs.join(this.dataRoot, '.locks');
     await this.fs.promises.mkdir(lockDir, { recursive: true });
-    const lockFile = this.fs.join(lockDir, `${key.replace(/[\W]/g, '_')}.lock`);
+    // Canonicalize the lock directory (which exists) so processes reaching
+    // the same data root through different path spellings (symlinked homes,
+    // macOS /tmp → /private/tmp) contend on the same lockfile, matching
+    // core/locks.ts. `realpath: false` stays: the base file itself never
+    // exists on disk (proper-lockfile would fail to resolve it).
+    const canonicalLockDir = await this.fs.promises.realpath(lockDir);
+    const lockFile = this.fs.join(canonicalLockDir, `${key.replace(/[\W]/g, '_')}.lock`);
     // Use proper-lockfile via dynamic import to avoid hard dependency in types
     const lockfile = await import('proper-lockfile');
     const release = await lockfile.default.lock(lockFile, {
@@ -370,7 +390,7 @@ export class LocalFileStore implements FileStore {
       try {
         await release();
       } catch {
-        getRootLogger().child({ module: 'LocalFileStore' }).warn({ key }, 'lock.release.failed');
+        log.warn({ key }, 'lock.release.failed');
       }
     }
   }

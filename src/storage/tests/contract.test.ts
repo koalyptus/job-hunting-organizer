@@ -199,6 +199,12 @@ describe('LocalFileStore contract suite', () => {
       await store.write('b.txt', '2');
       await expect(store.copy('a.txt', 'b.txt')).rejects.toBeInstanceOf(StorageAlreadyExistsError);
     });
+
+    it('throws StorageNotFoundError if source missing', async () => {
+      await expect(store.copy('missing.txt', 'dst.txt')).rejects.toBeInstanceOf(
+        StorageNotFoundError,
+      );
+    });
   });
 
   describe('joinPath', () => {

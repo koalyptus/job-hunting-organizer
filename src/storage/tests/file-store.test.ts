@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -105,9 +105,12 @@ describe('LocalFileStore unit suite', () => {
       });
     });
 
-    it('rethrows non-ENOENT/ENOTDIR read errors', async () => {
+    it('rethrows non-ENOENT/ENOTDIR append errors', async () => {
       await store.mkdir('d');
-      await expect(store.append('d', 'x')).rejects.toMatchObject({ code: 'EISDIR' });
+      // appendFile-on-directory: EISDIR on POSIX; Windows may report EPERM
+      await expect(store.append('d', 'x')).rejects.toMatchObject({
+        code: expect.stringMatching(/^(EISDIR|EPERM)$/),
+      });
     });
 
     it('appends byte arrays', async () => {
@@ -206,6 +209,19 @@ describe('LocalFileStore unit suite', () => {
   });
 
   describe('copy', () => {
+    it('maps missing source to StorageNotFoundError', async () => {
+      await expect(store.copy('missing.txt', 'dst.txt')).rejects.toBeInstanceOf(
+        StorageNotFoundError,
+      );
+    });
+
+    it('rethrows non-ENOENT/ENOTDIR source-stat errors', async () => {
+      await store.write('a', 'x');
+      await symlink('b', join(root, 'a.lnk'));
+      await symlink('a.lnk', join(root, 'b'));
+      await expect(store.copy('a.lnk', 'dst.txt')).rejects.toMatchObject({ code: 'ELOOP' });
+    });
+
     it('rethrows dest-parent mkdir failures other than EEXIST', async () => {
       await store.write('a.txt', 'x');
       await store.write('f.txt', 'x');
@@ -218,7 +234,10 @@ describe('LocalFileStore unit suite', () => {
   describe('withLock', () => {
     it('logs a warning and still resolves when releasing fails', async () => {
       const result = await store.withLock('task1', async () => {
-        await writeFile(join(root, '.locks', 'task1.lock.lock', 'blocker'), 'x');
+        // The lock dir is canonicalized via realpath — plant the blocker in
+        // the canonical location so release() hits a non-empty directory.
+        const canonicalLocks = await realpath(join(root, '.locks'));
+        await writeFile(join(canonicalLocks, 'task1.lock.lock', 'blocker'), 'x');
         return 'done';
       });
       expect(result).toBe('done');
