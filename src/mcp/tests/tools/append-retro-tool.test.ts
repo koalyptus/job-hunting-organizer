@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { appendRetro } from '../../../core/retro/retro.js';
 import { registerAppendRetro } from '../../tools/append-retro-tool.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -60,7 +61,7 @@ describe('append_retro tool', () => {
       index: 2,
     });
 
-    const { client } = await createTestServer(registerAppendRetro);
+    const { client } = await createTestServer((srv) => registerAppendRetro(srv, createStore()));
 
     const result = await client.callTool({
       name: 'append_retro',
@@ -95,7 +96,7 @@ describe('append_retro tool', () => {
       index: 3,
     });
 
-    const { client } = await createTestServer(registerAppendRetro);
+    const { client } = await createTestServer((srv) => registerAppendRetro(srv, createStore()));
 
     const result = await client.callTool({
       name: 'append_retro',
@@ -117,7 +118,7 @@ describe('append_retro tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(appendRetro).mockRejectedValue(new Error('at least one new weak topic is required'));
 
-    const { client } = await createTestServer(registerAppendRetro);
+    const { client } = await createTestServer((srv) => registerAppendRetro(srv, createStore()));
 
     const result = await client.callTool({
       name: 'append_retro',

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { INTERVIEW_TYPES } from '../../../core/interviews/types.js';
 import { addInterview } from '../../../core/interviews/interviews.js';
 import { registerAddInterview } from '../../tools/add-interview.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -43,6 +44,7 @@ vi.mock('../../../core/interviews/interviews.js', () => ({
 }));
 
 vi.mock('../../../core/paths.js', () => ({
+  resolveDataRoot: vi.fn(),
   resolveCampaignRoot: vi.fn((name: string) => `/campaigns/${name}`),
   resolveAppliedDir: vi.fn((root: string) => `${root}/applied`),
 }));
@@ -55,7 +57,7 @@ describe('add_interview tool', () => {
   it('adds an interview and returns the index', async () => {
     vi.mocked(addInterview).mockResolvedValue({ index: 3 });
 
-    const { client } = await createTestServer(registerAddInterview);
+    const { client } = await createTestServer((srv) => registerAddInterview(srv, createStore()));
 
     const result = await client.callTool({
       name: 'add_interview',
@@ -83,7 +85,7 @@ describe('add_interview tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(addInterview).mockRejectedValue(new Error('application not found'));
 
-    const { client } = await createTestServer(registerAddInterview);
+    const { client } = await createTestServer((srv) => registerAddInterview(srv, createStore()));
 
     const result = await client.callTool({
       name: 'add_interview',

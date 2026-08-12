@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { AddInterviewInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { addInterview } from '../../core/interviews/interviews.js';
@@ -11,7 +12,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerAddInterview(server: McpServer): void {
+export function registerAddInterview(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'add_interview',
     { description: 'Add a new interview entry for an application', inputSchema: AddInterviewInput },

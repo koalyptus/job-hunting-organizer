@@ -6,7 +6,7 @@ import { mcpLogger, getMcpLogPath } from './logger.js';
 import { registerTools } from './tools.js';
 import { registerResources } from './resources/index.js';
 import { registerPrompts } from './prompts/index.js';
-import { getStore } from '../storage/index.js';
+import { createStore } from '../storage/index.js';
 
 const SERVER_NAME = 'jho-mcp';
 
@@ -59,14 +59,14 @@ export async function startServer(): Promise<void> {
     safeLogFatal('unhandledRejection', reason);
   });
 
-  // Phase 9a.2 — bootstrap storage: create the singleton store once at startup.
-  // Core domains do NOT consume it yet (that is Phase 9b+); this call proves
-  // the wiring and makes `getStore()` available for explicit threading later.
-  void getStore();
+  // Bootstrap storage: build the store once at startup and thread it
+  // explicitly into the tool constructors. Tools accept but do not consume
+  // it yet — wiring only; core domains switch to the store later.
+  const store = createStore();
 
   const server = createServer();
 
-  registerTools(server);
+  registerTools(server, store);
   registerResources(server);
   registerPrompts(server);
 

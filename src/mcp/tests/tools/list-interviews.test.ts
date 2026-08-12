@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { listInterviews } from '../../../core/interviews/interviews.js';
 import { registerListInterviews } from '../../tools/list-interviews.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -51,7 +52,7 @@ describe('list_interviews tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(listInterviews).mockResolvedValue([]);
 
-    const { client } = await createTestServer(registerListInterviews);
+    const { client } = await createTestServer((srv) => registerListInterviews(srv, createStore()));
 
     const result = await client.callTool({
       name: 'list_interviews',
@@ -68,7 +69,7 @@ describe('list_interviews tool', () => {
       throw new Error('test error');
     });
 
-    const { client } = await createTestServer(registerListInterviews);
+    const { client } = await createTestServer((srv) => registerListInterviews(srv, createStore()));
 
     const result = await client.callTool({
       name: 'list_interviews',

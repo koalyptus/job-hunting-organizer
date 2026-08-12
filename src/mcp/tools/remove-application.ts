@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { RemoveApplicationInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import {
@@ -15,7 +16,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerRemoveApplication(server: McpServer): void {
+export function registerRemoveApplication(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'remove_application',
     {

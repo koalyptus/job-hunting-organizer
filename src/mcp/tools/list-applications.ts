@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { ListApplicationsInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { runListApplications } from '../../core/list/list.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerListApplications(server: McpServer): void {
+export function registerListApplications(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'list_applications',
     {

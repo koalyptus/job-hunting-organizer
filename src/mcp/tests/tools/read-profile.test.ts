@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { resolveCampaignRoot } from '../../../core/paths.js';
 import { readProfile } from '../../../core/campaign/profile-read.js';
 import { registerReadProfile } from '../../tools/read-profile.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -45,7 +46,7 @@ describe('read_profile tool', () => {
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
     vi.mocked(readProfile).mockResolvedValue('# Candidate Profile\n\nExperienced engineer...');
 
-    const { client } = await createTestServer(registerReadProfile);
+    const { client } = await createTestServer((srv) => registerReadProfile(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_profile',
@@ -61,7 +62,7 @@ describe('read_profile tool', () => {
       throw new Error('test error');
     });
 
-    const { client } = await createTestServer(registerReadProfile);
+    const { client } = await createTestServer((srv) => registerReadProfile(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_profile',

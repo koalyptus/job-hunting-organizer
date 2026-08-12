@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { GetRootInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot } from '../../core/paths.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerGetRoot(server: McpServer): void {
+export function registerGetRoot(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'get_root',
     { description: 'Resolve the campaign root directory path', inputSchema: GetRootInput },

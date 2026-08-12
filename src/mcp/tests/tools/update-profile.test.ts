@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { writeProfile } from '../../../core/campaign/profile-writer.js';
 import { registerUpdateProfile } from '../../tools/update-profile.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -42,7 +43,7 @@ describe('update_profile tool', () => {
   it('writes profile and returns success', async () => {
     vi.mocked(writeProfile).mockResolvedValue(true);
 
-    const { client } = await createTestServer(registerUpdateProfile);
+    const { client } = await createTestServer((srv) => registerUpdateProfile(srv, createStore()));
 
     const result = await client.callTool({
       name: 'update_profile',
@@ -56,7 +57,7 @@ describe('update_profile tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(writeProfile).mockRejectedValue(new Error('failed to write profile'));
 
-    const { client } = await createTestServer(registerUpdateProfile);
+    const { client } = await createTestServer((srv) => registerUpdateProfile(srv, createStore()));
 
     const result = await client.callTool({
       name: 'update_profile',

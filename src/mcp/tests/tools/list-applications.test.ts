@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
 import { runListApplications } from '../../../core/list/list.js';
 import { registerListApplications } from '../../tools/list-applications.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -64,7 +65,9 @@ describe('list_applications tool', () => {
       entries: [{ slug: 'test-app', status: 'applied' }] as never[],
     });
 
-    const { client } = await createTestServer(registerListApplications);
+    const { client } = await createTestServer((srv) =>
+      registerListApplications(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'list_applications',
@@ -80,7 +83,9 @@ describe('list_applications tool', () => {
       throw new Error('test error');
     });
 
-    const { client } = await createTestServer(registerListApplications);
+    const { client } = await createTestServer((srv) =>
+      registerListApplications(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'list_applications',

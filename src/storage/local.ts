@@ -1,21 +1,9 @@
-import { dirname, isAbsolute, join as pathJoin, relative, resolve } from 'node:path';
-import {
-  appendFile,
-  mkdir,
-  readFile,
-  rmdir,
-  stat,
-  unlink,
-  writeFile,
-  rename,
-  readdir,
-} from 'node:fs/promises';
+import type { IFileSystem } from '@file-services/types';
+import { createNodeFs } from '@file-services/node';
 import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from './types.js';
 import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from './types.js';
 import { getRootLogger } from '../core/logger/logger.js';
 import { resolveDataRoot } from '../core/paths.js';
-
-const log = getRootLogger().child({ module: 'LocalFileStore' });
 
 /**
  * Re-export the canonical data-root resolver so the storage module is a
@@ -28,8 +16,10 @@ export { resolveDataRoot };
 /**
  * Normalize a StoragePath to an absolute host path under the data root.
  * Validates: no leading slash, no `..`, no drive letters.
+ * Path arithmetic goes through the injected file system's own path API
+ * (no `node:path` imports under `src/storage/`).
  */
-function toAbsolute(root: string, path: StoragePath): string {
+function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
   if (path === '') {
     return root;
   }
@@ -38,41 +28,50 @@ function toAbsolute(root: string, path: StoragePath): string {
       `Invalid StoragePath: "${path}" — must be relative POSIX, no leading slash, no '..', no drive letters`,
     );
   }
-  const abs = resolve(root, path);
+  const abs = fs.resolve(root, path);
   // Ensure we don't escape the root (defense in depth)
-  const rel = relative(root, abs);
-  if (rel.startsWith('..') || isAbsolute(rel)) {
+  const rel = fs.relative(root, abs);
+  if (rel.startsWith('..') || fs.isAbsolute(rel)) {
     throw new Error(`Path escapes data root: "${path}"`);
   }
   return abs;
 }
 
 /**
- * Convert a Node `fs.Stats` to our portable `StorageStat`.
+ * Convert the vendor's `IFileSystemStats` (mtime as `Date`) to our portable
+ * `StorageStat` (mtimeMs as epoch millis).
  */
 function toStorageStat(stats: {
   isFile(): boolean;
   isDirectory(): boolean;
   size: number;
-  mtimeMs: number;
+  mtime: Date;
 }): StorageStat {
   return {
     kind: stats.isDirectory() ? 'directory' : 'file',
     size: stats.size,
-    mtimeMs: stats.mtimeMs,
+    mtimeMs: stats.mtime.getTime(),
   };
 }
 
 /**
- * LocalFileStore — thin wrapper over node:fs/promises.
- * This adapter absorbs the logic of src/core/fs.ts and src/core/locks.ts.
- * The temp+rename atomic-write helper stays ours.
+ * LocalFileStore — maps the FileStore port over a vendored IFileSystem.
+ * The ENGINE is `@file-services/node` (`createNodeFs()`, pinned at 11.1.1);
+ * the adapter keeps ours — toAbsolute path guard, StoragePath → error
+ * mapping, temp+rename atomic write, the recursive copy, and the
+ * proper-lockfile binding.
+ *
+ * The IFileSystem is injected (constructor) so the contract suite can later
+ * run against an in-memory adapter; the default is the node-backed engine.
+ * Constructor performs no I/O — getDataRoot() is pure resolution.
  */
 export class LocalFileStore implements FileStore {
+  private readonly fs: IFileSystem;
   private readonly dataRoot: string;
 
-  constructor(dataRoot?: string) {
+  constructor(dataRoot?: string, fs?: IFileSystem) {
     this.dataRoot = dataRoot ?? resolveDataRoot();
+    this.fs = fs ?? createNodeFs();
   }
 
   getDataRoot(): string {
@@ -86,9 +85,9 @@ export class LocalFileStore implements FileStore {
   }
 
   async read(path: StoragePath): Promise<string> {
-    const abs = toAbsolute(this.dataRoot, path);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
     try {
-      return await readFile(abs, 'utf8');
+      return await this.fs.promises.readFile(abs, 'utf8');
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code === 'ENOENT' || code === 'ENOTDIR') {
@@ -99,9 +98,9 @@ export class LocalFileStore implements FileStore {
   }
 
   async readBytes(path: StoragePath): Promise<Uint8Array> {
-    const abs = toAbsolute(this.dataRoot, path);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
     try {
-      return await readFile(abs);
+      return await this.fs.promises.readFile(abs);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code === 'ENOENT' || code === 'ENOTDIR') {
@@ -112,12 +111,12 @@ export class LocalFileStore implements FileStore {
   }
 
   async write(path: StoragePath, content: string | Uint8Array): Promise<void> {
-    const abs = toAbsolute(this.dataRoot, path);
-    const parent = dirname(abs);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
+    const parent = this.fs.dirname(abs);
 
     // Ensure parent directory exists
     try {
-      await mkdir(parent, { recursive: true });
+      await this.fs.promises.mkdir(parent, { recursive: true });
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code !== 'EEXIST') {
@@ -128,12 +127,12 @@ export class LocalFileStore implements FileStore {
     // Temp + rename for atomicity
     const tmp = `${abs}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2, 8)}.tmp`;
     try {
-      await writeFile(tmp, content);
-      await rename(tmp, abs);
+      await this.fs.promises.writeFile(tmp, content);
+      await this.fs.promises.rename(tmp, abs);
     } catch (err) {
       // Cleanup temp on failure
       try {
-        await unlink(tmp);
+        await this.fs.promises.unlink(tmp);
       } catch {
         // Ignore cleanup errors
       }
@@ -142,23 +141,39 @@ export class LocalFileStore implements FileStore {
   }
 
   async append(path: StoragePath, content: string | Uint8Array): Promise<void> {
-    const abs = toAbsolute(this.dataRoot, path);
-    const parent = dirname(abs);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
+    const parent = this.fs.dirname(abs);
     try {
-      await mkdir(parent, { recursive: true });
+      await this.fs.promises.mkdir(parent, { recursive: true });
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code !== 'EEXIST') {
         throw err;
       }
     }
-    await appendFile(abs, content);
+
+    // The vendored async surface has no appendFile — compose read+write.
+    // Missing file → empty suffix; preserves byte semantics for Uint8Array.
+    let existing: Uint8Array = new Uint8Array(0);
+    try {
+      existing = await this.fs.promises.readFile(abs);
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code !== 'ENOENT' && code !== 'ENOTDIR') {
+        throw err;
+      }
+    }
+    const suffix = typeof content === 'string' ? new TextEncoder().encode(content) : content;
+    const combined = new Uint8Array(existing.length + suffix.length);
+    combined.set(existing, 0);
+    combined.set(suffix, existing.length);
+    await this.fs.promises.writeFile(abs, combined);
   }
 
   async exists(path: StoragePath): Promise<boolean> {
-    const abs = toAbsolute(this.dataRoot, path);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
     try {
-      await stat(abs);
+      await this.fs.promises.stat(abs);
       return true;
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
@@ -170,9 +185,9 @@ export class LocalFileStore implements FileStore {
   }
 
   async stat(path: StoragePath): Promise<StorageStat> {
-    const abs = toAbsolute(this.dataRoot, path);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
     try {
-      const stats = await stat(abs);
+      const stats = await this.fs.promises.stat(abs);
       return toStorageStat(stats);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
@@ -184,9 +199,9 @@ export class LocalFileStore implements FileStore {
   }
 
   async readdir(path: StoragePath, options?: ReadDirOptions): Promise<StoragePath[]> {
-    const abs = toAbsolute(this.dataRoot, path);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
     try {
-      const entries = await readdir(abs);
+      const entries = await this.fs.promises.readdir(abs);
       if (!options?.includeSpecialEntries) {
         return entries.filter((e) => e !== '.' && e !== '..');
       }
@@ -204,14 +219,14 @@ export class LocalFileStore implements FileStore {
   }
 
   async mkdir(path: StoragePath): Promise<void> {
-    const abs = toAbsolute(this.dataRoot, path);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
     try {
-      await mkdir(abs, { recursive: true });
+      await this.fs.promises.mkdir(abs, { recursive: true });
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code === 'EEXIST') {
         // Check if it's a file — that's an error per contract
-        const stats = await stat(abs);
+        const stats = await this.fs.promises.stat(abs);
         if (stats.isFile()) {
           throw new StorageAlreadyExistsError(path);
         }
@@ -223,12 +238,12 @@ export class LocalFileStore implements FileStore {
   }
 
   async rename(from: StoragePath, to: StoragePath): Promise<void> {
-    const src = toAbsolute(this.dataRoot, from);
-    const dest = toAbsolute(this.dataRoot, to);
+    const src = toAbsolute(this.fs, this.dataRoot, from);
+    const dest = toAbsolute(this.fs, this.dataRoot, to);
 
     // Check source exists
     try {
-      await stat(src);
+      await this.fs.promises.stat(src);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code === 'ENOENT' || code === 'ENOTDIR') {
@@ -239,7 +254,7 @@ export class LocalFileStore implements FileStore {
 
     // Check destination doesn't exist
     try {
-      await stat(dest);
+      await this.fs.promises.stat(dest);
       throw new StorageAlreadyExistsError(to);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
@@ -249,9 +264,9 @@ export class LocalFileStore implements FileStore {
     }
 
     // Ensure dest parent exists
-    const destParent = dirname(dest);
+    const destParent = this.fs.dirname(dest);
     try {
-      await mkdir(destParent, { recursive: true });
+      await this.fs.promises.mkdir(destParent, { recursive: true });
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code !== 'EEXIST') {
@@ -259,24 +274,29 @@ export class LocalFileStore implements FileStore {
       }
     }
 
-    await rename(src, dest);
+    await this.fs.promises.rename(src, dest);
   }
 
   async rm(path: StoragePath, options?: { readonly recursive?: boolean }): Promise<void> {
-    const abs = toAbsolute(this.dataRoot, path);
+    const abs = toAbsolute(this.fs, this.dataRoot, path);
     try {
-      const stats = await stat(abs);
+      const stats = await this.fs.promises.stat(abs);
       if (stats.isDirectory()) {
         if (!options?.recursive) {
           // Check if empty
-          const entries = await readdir(abs);
+          const entries = await this.fs.promises.readdir(abs);
           if (entries.length > 0) {
             throw new StorageNotEmptyError(path);
           }
         }
-        await rmdir(abs, { recursive: options?.recursive ?? false });
+        // rmdir handles the (empty) directory; rm with recursive handles trees
+        if (options?.recursive) {
+          await this.fs.promises.rm(abs, { recursive: true });
+        } else {
+          await this.fs.promises.rmdir(abs);
+        }
       } else {
-        await unlink(abs);
+        await this.fs.promises.unlink(abs);
       }
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
@@ -289,12 +309,12 @@ export class LocalFileStore implements FileStore {
   }
 
   async copy(from: StoragePath, to: StoragePath): Promise<void> {
-    const src = toAbsolute(this.dataRoot, from);
-    const dest = toAbsolute(this.dataRoot, to);
+    const src = toAbsolute(this.fs, this.dataRoot, from);
+    const dest = toAbsolute(this.fs, this.dataRoot, to);
 
     // Check destination doesn't exist
     try {
-      await stat(dest);
+      await this.fs.promises.stat(dest);
       throw new StorageAlreadyExistsError(to);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
@@ -304,9 +324,9 @@ export class LocalFileStore implements FileStore {
     }
 
     // Ensure dest parent exists
-    const destParent = dirname(dest);
+    const destParent = this.fs.dirname(dest);
     try {
-      await mkdir(destParent, { recursive: true });
+      await this.fs.promises.mkdir(destParent, { recursive: true });
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code !== 'EEXIST') {
@@ -318,25 +338,25 @@ export class LocalFileStore implements FileStore {
   }
 
   private async copyRecursive(src: string, dest: string): Promise<void> {
-    const stats = await stat(src);
+    const stats = await this.fs.promises.stat(src);
     if (stats.isDirectory()) {
-      await mkdir(dest, { recursive: true });
-      const entries = await readdir(src);
+      await this.fs.promises.mkdir(dest, { recursive: true });
+      const entries = await this.fs.promises.readdir(src);
       for (const entry of entries) {
-        await this.copyRecursive(pathJoin(src, entry), pathJoin(dest, entry));
+        await this.copyRecursive(this.fs.join(src, entry), this.fs.join(dest, entry));
       }
     } else {
-      const data = await readFile(src);
-      await writeFile(dest, data);
+      const data = await this.fs.promises.readFile(src);
+      await this.fs.promises.writeFile(dest, data);
     }
   }
 
   async withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
-    // Use proper-lockfile for advisory locking (same as src/core/locks.ts)
-    // Lock on a sidecar file under the data root's .locks/ directory
-    const lockDir = pathJoin(this.dataRoot, '.locks');
-    await mkdir(lockDir, { recursive: true });
-    const lockFile = pathJoin(lockDir, `${key.replace(/[\W]/g, '_')}.lock`);
+    // Use proper-lockfile for advisory locking (same as src/core/locks.ts).
+    // Lock on a sidecar file under the data root's .locks/ directory.
+    const lockDir = this.fs.join(this.dataRoot, '.locks');
+    await this.fs.promises.mkdir(lockDir, { recursive: true });
+    const lockFile = this.fs.join(lockDir, `${key.replace(/[\W]/g, '_')}.lock`);
     // Use proper-lockfile via dynamic import to avoid hard dependency in types
     const lockfile = await import('proper-lockfile');
     const release = await lockfile.default.lock(lockFile, {
@@ -350,33 +370,20 @@ export class LocalFileStore implements FileStore {
       try {
         await release();
       } catch {
-        log.warn({ key }, 'lock.release.failed');
+        getRootLogger().child({ module: 'LocalFileStore' }).warn({ key }, 'lock.release.failed');
       }
     }
   }
 }
 
 /**
- * Factory function — returns a singleton LocalFileStore over the data root.
- * One store instance, data root only. configHome is deliberately NOT routed
- * through the port (config.json holds creds/logs; local-only by definition;
- * config.ts and logs.ts stay on direct fs).
+ * Factory function — creates a LocalFileStore over the data root.
+ * No module-level provider/global. Each caller builds the store explicitly
+ * at its entry point and threads the returned `FileStore` into
+ * command/tool constructors (wiring only — core does not consume it yet).
+ * configHome is deliberately NOT routed through the port (config.json holds
+ * creds/logs; local-only by definition; config.ts and logs.ts stay on direct fs).
  */
-let storeInstance: LocalFileStore | null = null;
-
 export function createStore(dataRoot?: string): FileStore {
-  if (!storeInstance) {
-    storeInstance = new LocalFileStore(dataRoot);
-  }
-  return storeInstance;
-}
-
-/**
- * Get the singleton store instance, creating it on first call. Use this at
- * process bootstrap (CLI / MCP startup) to prove the wiring; downstream
- * phases thread the returned `FileStore` explicitly into constructors rather
- * than re-calling this (no module-level provider/global in core code).
- */
-export function getStore(dataRoot?: string): FileStore {
-  return createStore(dataRoot);
+  return new LocalFileStore(dataRoot);
 }

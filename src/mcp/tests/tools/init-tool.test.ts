@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { runInit } from '../../../core/init/wizard.js';
 import { registerInit } from '../../tools/init-tool.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -41,7 +42,7 @@ describe('init tool', () => {
   it('initializes a campaign with default name and returns ok', async () => {
     vi.mocked(runInit).mockResolvedValue(undefined);
 
-    const { client } = await createTestServer(registerInit);
+    const { client } = await createTestServer((srv) => registerInit(srv, createStore()));
 
     const result = await client.callTool({ name: 'init', arguments: { campaign: 'default' } });
     expect(runInit).toHaveBeenCalledWith({
@@ -58,7 +59,7 @@ describe('init tool', () => {
   it('initializes with custom CV, GitHub, and LinkedIn', async () => {
     vi.mocked(runInit).mockResolvedValue(undefined);
 
-    const { client } = await createTestServer(registerInit);
+    const { client } = await createTestServer((srv) => registerInit(srv, createStore()));
 
     const result = await client.callTool({
       name: 'init',
@@ -83,7 +84,7 @@ describe('init tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(runInit).mockRejectedValue(new Error('invalid campaign name'));
 
-    const { client } = await createTestServer(registerInit);
+    const { client } = await createTestServer((srv) => registerInit(srv, createStore()));
 
     const result = await client.callTool({
       name: 'init',

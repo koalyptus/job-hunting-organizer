@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { generatePrep, appendTopic } from '../../../core/prepare/prepare.js';
 import { registerPrepare } from '../../tools/prepare-tool.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -57,7 +58,7 @@ describe('prepare tool', () => {
       durationMs: 6000,
     });
 
-    const { client } = await createTestServer(registerPrepare);
+    const { client } = await createTestServer((srv) => registerPrepare(srv, createStore()));
 
     const result = await client.callTool({
       name: 'prepare',
@@ -87,7 +88,7 @@ describe('prepare tool', () => {
       durationMs: 3000,
     });
 
-    const { client } = await createTestServer(registerPrepare);
+    const { client } = await createTestServer((srv) => registerPrepare(srv, createStore()));
 
     const result = await client.callTool({
       name: 'prepare',
@@ -106,7 +107,7 @@ describe('prepare tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(generatePrep).mockRejectedValue(new Error('Failed to read JD'));
 
-    const { client } = await createTestServer(registerPrepare);
+    const { client } = await createTestServer((srv) => registerPrepare(srv, createStore()));
 
     const result = await client.callTool({
       name: 'prepare',
@@ -117,7 +118,7 @@ describe('prepare tool', () => {
   });
 
   it('adds topics when topics option is provided', async () => {
-    const { client } = await createTestServer(registerPrepare);
+    const { client } = await createTestServer((srv) => registerPrepare(srv, createStore()));
 
     const result = await client.callTool({
       name: 'prepare',

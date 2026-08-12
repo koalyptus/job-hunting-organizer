@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { KbAddInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { ingestKnowledgeBase } from '../../core/campaign/kb-ingest.js';
@@ -13,7 +14,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerKbAdd(server: McpServer): void {
+export function registerKbAdd(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'kb_add',
     {

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { INTERVIEW_STATUSES } from '../../../core/interviews/types.js';
 import { markInterviewStatus, appendInterviewNotes } from '../../../core/interviews/interviews.js';
 import { registerMarkInterview } from '../../tools/mark-interview.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -41,6 +42,7 @@ vi.mock('../../../core/interviews/interviews.js', () => ({
 }));
 
 vi.mock('../../../core/paths.js', () => ({
+  resolveDataRoot: vi.fn(),
   resolveCampaignRoot: vi.fn((name: string) => `/campaigns/${name}`),
   resolveAppliedDir: vi.fn((root: string) => `${root}/applied`),
 }));
@@ -53,7 +55,7 @@ describe('mark_interview tool', () => {
   it('marks an interview status with 0-based to 1-based index conversion', async () => {
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
 
-    const { client } = await createTestServer(registerMarkInterview);
+    const { client } = await createTestServer((srv) => registerMarkInterview(srv, createStore()));
 
     const result = await client.callTool({
       name: 'mark_interview',
@@ -71,7 +73,7 @@ describe('mark_interview tool', () => {
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockResolvedValue(true);
 
-    const { client } = await createTestServer(registerMarkInterview);
+    const { client } = await createTestServer((srv) => registerMarkInterview(srv, createStore()));
 
     const result = await client.callTool({
       name: 'mark_interview',
@@ -99,7 +101,7 @@ describe('mark_interview tool', () => {
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockResolvedValue(true);
 
-    const { client } = await createTestServer(registerMarkInterview);
+    const { client } = await createTestServer((srv) => registerMarkInterview(srv, createStore()));
 
     await client.callTool({
       name: 'mark_interview',
@@ -112,7 +114,7 @@ describe('mark_interview tool', () => {
     vi.mocked(markInterviewStatus).mockResolvedValue(true);
     vi.mocked(appendInterviewNotes).mockRejectedValue(new Error('interviews.md not found'));
 
-    const { client } = await createTestServer(registerMarkInterview);
+    const { client } = await createTestServer((srv) => registerMarkInterview(srv, createStore()));
 
     const result = await client.callTool({
       name: 'mark_interview',
@@ -131,7 +133,7 @@ describe('mark_interview tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(markInterviewStatus).mockRejectedValue(new Error('interview not found'));
 
-    const { client } = await createTestServer(registerMarkInterview);
+    const { client } = await createTestServer((srv) => registerMarkInterview(srv, createStore()));
 
     const result = await client.callTool({
       name: 'mark_interview',

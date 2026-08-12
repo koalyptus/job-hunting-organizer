@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { answerQuestion } from '../../../core/applications/application-qa.js';
 import { registerAnswerQuestion } from '../../tools/answer-question.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -57,7 +58,7 @@ describe('answer_question tool', () => {
       durationMs: 4000,
     });
 
-    const { client } = await createTestServer(registerAnswerQuestion);
+    const { client } = await createTestServer((srv) => registerAnswerQuestion(srv, createStore()));
 
     const result = await client.callTool({
       name: 'answer_question',
@@ -87,7 +88,7 @@ describe('answer_question tool', () => {
       durationMs: 2000,
     });
 
-    const { client } = await createTestServer(registerAnswerQuestion);
+    const { client } = await createTestServer((srv) => registerAnswerQuestion(srv, createStore()));
 
     const result = await client.callTool({
       name: 'answer_question',
@@ -110,7 +111,7 @@ describe('answer_question tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(answerQuestion).mockRejectedValue(new Error('LLM refused to answer the question'));
 
-    const { client } = await createTestServer(registerAnswerQuestion);
+    const { client } = await createTestServer((srv) => registerAnswerQuestion(srv, createStore()));
 
     const result = await client.callTool({
       name: 'answer_question',

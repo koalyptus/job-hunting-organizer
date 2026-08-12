@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { registerKbUpdate } from '../../tools/kb-update.js';
+import { createStore } from '../../../storage/index.js';
 import { syncKnowledgeBase } from '../../../core/campaign/kb-ingest.js';
 import { loadCampaignConfig } from '../../../core/config/config.js';
 
@@ -47,7 +48,7 @@ describe('kb_update tool', () => {
   });
 
   it('syncs KB successfully', async () => {
-    const { client } = await createTestServer(registerKbUpdate);
+    const { client } = await createTestServer((srv) => registerKbUpdate(srv, createStore()));
 
     const result = await client.callTool({ name: 'kb_update', arguments: { campaign: 'default' } });
     const parsed = JSON.parse(getTextContent(result));
@@ -57,7 +58,7 @@ describe('kb_update tool', () => {
   it('returns error when sync fails', async () => {
     vi.mocked(syncKnowledgeBase).mockRejectedValue(new Error('sync failed'));
 
-    const { client } = await createTestServer(registerKbUpdate);
+    const { client } = await createTestServer((srv) => registerKbUpdate(srv, createStore()));
 
     const result = await client.callTool({ name: 'kb_update', arguments: { campaign: 'default' } });
     expect(result.isError).toBe(true);
@@ -68,7 +69,7 @@ describe('kb_update tool', () => {
     vi.mocked(syncKnowledgeBase).mockResolvedValue(['doc1.md', 'doc2.md']);
     vi.mocked(loadCampaignConfig).mockReturnValue({ knowledgeBase: {} } as never);
 
-    const { client } = await createTestServer(registerKbUpdate);
+    const { client } = await createTestServer((srv) => registerKbUpdate(srv, createStore()));
 
     const result = await client.callTool({ name: 'kb_update', arguments: { campaign: 'default' } });
     const parsed = JSON.parse(getTextContent(result));

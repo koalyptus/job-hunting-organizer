@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { renderOwnership } from '../../../core/campaign/ownership.js';
 import { registerOwnership } from '../../tools/ownership-tool.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -39,7 +40,7 @@ describe('ownership tool', () => {
       '| File | Tool writes |\n| --- | --- |\n| meta.md | yes |',
     );
 
-    const { client } = await createTestServer(registerOwnership);
+    const { client } = await createTestServer((srv) => registerOwnership(srv, createStore()));
 
     const result = await client.callTool({ name: 'ownership', arguments: {} });
     expect(getTextContent(result)).toContain('meta.md');
@@ -51,7 +52,7 @@ describe('ownership tool', () => {
       throw new Error('test error');
     });
 
-    const { client } = await createTestServer(registerOwnership);
+    const { client } = await createTestServer((srv) => registerOwnership(srv, createStore()));
 
     const result = await client.callTool({ name: 'ownership', arguments: {} });
     expect(result.isError).toBe(true);

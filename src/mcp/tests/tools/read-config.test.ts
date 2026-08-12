@@ -33,6 +33,7 @@ vi.mock('../../../core/config/config.view.js', () => ({
 import { loadGlobalConfig } from '../../../core/config/config.js';
 import { redactSecrets } from '../../../core/config/config.view.js';
 import { registerReadConfig } from '../../tools/read-config.js';
+import { createStore } from '../../../storage/index.js';
 
 describe('read_config tool', () => {
   beforeEach(() => {
@@ -60,7 +61,7 @@ describe('read_config tool', () => {
       global: { ...testConfig.global, llm: { ...testConfig.global.llm, apiKey: '[REDACTED]' } },
     } as never);
 
-    const { client } = await createTestServer(registerReadConfig);
+    const { client } = await createTestServer((srv) => registerReadConfig(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_config', arguments: {} });
     const data = JSON.parse(getTextContent(result));
@@ -76,7 +77,7 @@ describe('read_config tool', () => {
       throw new Error('Cannot read config file: "config.json" not found');
     });
 
-    const { client } = await createTestServer(registerReadConfig);
+    const { client } = await createTestServer((srv) => registerReadConfig(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_config', arguments: {} });
 
@@ -103,7 +104,7 @@ describe('read_config tool', () => {
       campaign: { targetRole: 'test' },
     } as never);
 
-    const { client } = await createTestServer(registerReadConfig);
+    const { client } = await createTestServer((srv) => registerReadConfig(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_config', arguments: {} });
     const data = JSON.parse(getTextContent(result));
@@ -117,7 +118,7 @@ describe('read_config tool', () => {
     vi.mocked(loadGlobalConfig).mockReturnValue({} as never);
     vi.mocked(redactSecrets).mockReturnValue({} as never);
 
-    const { client } = await createTestServer(registerReadConfig);
+    const { client } = await createTestServer((srv) => registerReadConfig(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_config', arguments: {} });
     const data = JSON.parse(getTextContent(result));
@@ -131,7 +132,7 @@ describe('read_config tool', () => {
       throw new Error('Unexpected token }\\n at position 42 in JSON string');
     });
 
-    const { client } = await createTestServer(registerReadConfig);
+    const { client } = await createTestServer((srv) => registerReadConfig(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_config', arguments: {} });
     expect(result.isError).toBe(true);

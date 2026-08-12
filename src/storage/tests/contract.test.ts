@@ -267,11 +267,13 @@ describe('LocalFileStore contract suite', () => {
     });
   });
 
-  describe('createStore singleton', () => {
-    it('returns the same instance for same root', async () => {
+  describe('createStore factory', () => {
+    it('returns a fresh instance per call', async () => {
       const s1 = createStore(root);
       const s2 = createStore(root);
-      expect(s1).toBe(s2);
+      expect(s1).not.toBe(s2);
+      expect(s1.getDataRoot()).toBe(root);
+      expect(s2.getDataRoot()).toBe(root);
     });
   });
 

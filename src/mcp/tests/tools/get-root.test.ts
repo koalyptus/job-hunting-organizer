@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { resolveCampaignRoot } from '../../../core/paths.js';
 import { registerGetRoot } from '../../tools/get-root.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -34,7 +35,7 @@ describe('get_root tool', () => {
   it('calls resolveCampaignRoot and returns JSON', async () => {
     vi.mocked(resolveCampaignRoot).mockReturnValue('/data/campaigns/default');
 
-    const { client } = await createTestServer(registerGetRoot);
+    const { client } = await createTestServer((srv) => registerGetRoot(srv, createStore()));
 
     const result = await client.callTool({ name: 'get_root', arguments: { campaign: 'default' } });
     const data = JSON.parse(getTextContent(result));
@@ -47,7 +48,7 @@ describe('get_root tool', () => {
       throw new Error('campaign not found: nonexistent');
     });
 
-    const { client } = await createTestServer(registerGetRoot);
+    const { client } = await createTestServer((srv) => registerGetRoot(srv, createStore()));
 
     const result = await client.callTool({
       name: 'get_root',

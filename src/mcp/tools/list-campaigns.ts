@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { ListCampaignsInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { runListCampaigns } from '../../core/list/list.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerListCampaigns(server: McpServer): void {
+export function registerListCampaigns(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'list_campaigns',
     { description: 'List all campaigns under the data root', inputSchema: ListCampaignsInput },

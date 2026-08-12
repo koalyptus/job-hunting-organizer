@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { AnswerQuestionInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { answerQuestion } from '../../core/applications/application-qa.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerAnswerQuestion(server: McpServer): void {
+export function registerAnswerQuestion(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'answer_question',
     {

@@ -40,6 +40,7 @@ import {
 } from '../core/parser/prompt-parser.js';
 import { dispatchNaturalLanguage, validateParsedCommand } from './nl-dispatch.js';
 import { userError, userOutput } from './output.js';
+import { createStore } from '../storage/index.js';
 
 const VERSION = getPackageVersion();
 
@@ -48,11 +49,12 @@ initRootLogger();
 const log = getRootLogger();
 log.info({ args: process.argv.slice(2) }, 'cli.start');
 
-// Phase 9a.2 — bootstrap storage: create the singleton store once at startup.
-// Core domains do NOT consume it yet (that is Phase 9b+); this call proves the
-// wiring and makes `getStore()` available for explicit threading in later phases.
-import { getStore } from '../storage/index.js';
-void getStore();
+// Bootstrap storage: build the store once at startup as the wiring point.
+// Core domains do NOT consume it yet; commands switch to it when they adopt
+// the store explicitly. Kept as a local at the entry so the dependency is
+// visible at the call site, not hidden behind a module-level provider.
+const store = createStore();
+log.debug({ dataRoot: store.getDataRoot() }, 'cli.storage.ready');
 
 const program = new Command('jho')
   .version(VERSION)

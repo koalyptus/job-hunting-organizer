@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerUpdateConfig } from '../../tools/update-config.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -38,7 +39,7 @@ describe('update_config tool', () => {
   });
 
   it('updates config and clears cache', async () => {
-    const { client } = await createTestServer(registerUpdateConfig);
+    const { client } = await createTestServer((srv) => registerUpdateConfig(srv, createStore()));
 
     const result = await client.callTool({
       name: 'update_config',
@@ -55,7 +56,7 @@ describe('update_config tool', () => {
       throw new Error('invalid config');
     });
 
-    const { client } = await createTestServer(registerUpdateConfig);
+    const { client } = await createTestServer((srv) => registerUpdateConfig(srv, createStore()));
 
     const result = await client.callTool({
       name: 'update_config',

@@ -5,6 +5,7 @@ import { EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { computeStats } from '../../../core/stats/stats.js';
 import { registerGetStats } from '../../tools/get-stats.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -70,7 +71,7 @@ describe('get_stats tool', () => {
       interviewEntryCount: 4,
     });
 
-    const { client } = await createTestServer(registerGetStats);
+    const { client } = await createTestServer((srv) => registerGetStats(srv, createStore()));
 
     const result = await client.callTool({ name: 'get_stats', arguments: { campaign: 'default' } });
     const data = JSON.parse(getTextContent(result));
@@ -85,7 +86,7 @@ describe('get_stats tool', () => {
       throw new Error('test error');
     });
 
-    const { client } = await createTestServer(registerGetStats);
+    const { client } = await createTestServer((srv) => registerGetStats(srv, createStore()));
 
     const result = await client.callTool({ name: 'get_stats', arguments: { campaign: 'default' } });
     expect(result.isError).toBe(true);

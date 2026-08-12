@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { KbUpdateInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { syncKnowledgeBase } from '../../core/campaign/kb-ingest.js';
@@ -12,7 +13,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerKbUpdate(server: McpServer): void {
+export function registerKbUpdate(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'kb_update',
     {

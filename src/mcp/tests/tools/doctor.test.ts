@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { diagnoseCampaign, diagnoseApp } from '../../../core/doctor/doctor.js';
 import { registerDoctor } from '../../tools/doctor-tool.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -48,7 +49,7 @@ describe('doctor tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(diagnoseCampaign).mockResolvedValue([]);
 
-    const { client } = await createTestServer(registerDoctor);
+    const { client } = await createTestServer((srv) => registerDoctor(srv, createStore()));
 
     const result = await client.callTool({ name: 'doctor', arguments: { campaign: 'default' } });
     const data = JSON.parse(getTextContent(result));
@@ -61,7 +62,7 @@ describe('doctor tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(diagnoseApp).mockResolvedValue([]);
 
-    const { client } = await createTestServer(registerDoctor);
+    const { client } = await createTestServer((srv) => registerDoctor(srv, createStore()));
 
     await client.callTool({
       name: 'doctor',
@@ -80,7 +81,7 @@ describe('doctor tool', () => {
       throw new Error('test error');
     });
 
-    const { client } = await createTestServer(registerDoctor);
+    const { client } = await createTestServer((srv) => registerDoctor(srv, createStore()));
 
     const result = await client.callTool({ name: 'doctor', arguments: { campaign: 'default' } });
     expect(result.isError).toBe(true);

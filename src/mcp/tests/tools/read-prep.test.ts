@@ -31,6 +31,7 @@ vi.mock('../../../core/prepare/index.js', () => ({
 
 import { readPrep } from '../../../core/prepare/index.js';
 import { registerReadPrep } from '../../tools/read-prep.js';
+import { createStore } from '../../../storage/index.js';
 
 describe('read_prep tool', () => {
   beforeEach(() => {
@@ -42,7 +43,7 @@ describe('read_prep tool', () => {
       '# Prep Plan\n\n## Week 1\n- Research React hooks pattern\n- Study Typescript generics';
     vi.mocked(readPrep).mockResolvedValue(testPrepContent);
 
-    const { client } = await createTestServer(registerReadPrep);
+    const { client } = await createTestServer((srv) => registerReadPrep(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_prep',
@@ -58,7 +59,7 @@ describe('read_prep tool', () => {
       throw new Error('Prep not found: missing-app');
     });
 
-    const { client } = await createTestServer(registerReadPrep);
+    const { client } = await createTestServer((srv) => registerReadPrep(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_prep',
