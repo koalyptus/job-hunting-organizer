@@ -1,4 +1,4 @@
-import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -70,9 +70,11 @@ describe('LocalFileStore unit suite', () => {
 
     it('cleans up the temp file when the rename fails', async () => {
       await store.mkdir('d');
-      await expect(store.write('d', 'x')).rejects.toMatchObject({ code: 'EISDIR' });
-      const leftovers = (await import('node:fs/promises')).readdir(root);
-      expect((await leftovers).filter((e) => e.endsWith('.tmp'))).toEqual([]);
+      // POSIX reports EISDIR for rename-onto-directory; Windows reports EPERM.
+      await expect(store.write('d', 'x')).rejects.toMatchObject({
+        code: expect.stringMatching(/^(EISDIR|EPERM)$/),
+      });
+      expect((await readdir(root)).filter((e) => e.endsWith('.tmp'))).toEqual([]);
     });
 
     it('swallows temp-cleanup errors when the rename fails', async () => {
