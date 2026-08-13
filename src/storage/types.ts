@@ -7,13 +7,13 @@ export type StorageEntryKind = 'file' | 'directory';
 
 /**
  * Portable stat result — avoids coupling to Node's `fs.Stats` or
- * engine-specific types. `mtimeMs` is the modification time as epoch
+ * engine-specific types. `modifiedAtMs` is the modification time as epoch
  * milliseconds (i.e. `Date.getTime()`), not a `Date` object.
  */
 export interface StorageStat {
   readonly kind: StorageEntryKind;
   readonly size: number;
-  readonly mtimeMs: number;
+  readonly modifiedAtMs: number;
 }
 
 /**

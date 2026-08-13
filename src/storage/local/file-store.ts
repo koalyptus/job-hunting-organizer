@@ -64,7 +64,7 @@ function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
 
 /**
  * Convert the vendor's `IFileSystemStats` (mtime as `Date`) to our portable
- * `StorageStat` (mtimeMs as epoch millis).
+ * `StorageStat` (modifiedAtMs as epoch millis).
  */
 function toStorageStat(stats: {
   isFile(): boolean;
@@ -75,7 +75,7 @@ function toStorageStat(stats: {
   return {
     kind: stats.isDirectory() ? KIND_DIR : KIND_FILE,
     size: stats.size,
-    mtimeMs: stats.mtime.getTime(),
+    modifiedAtMs: stats.mtime.getTime(),
   };
 }
 
