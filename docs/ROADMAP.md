@@ -72,6 +72,7 @@
 - [ ] **Phase 9** — Storage port & adapter
   - [x] 9a — Storage port, adapter, bootstrap & guards
   - [x] 9b — Storage module JSDoc & comment hygiene
+  - [ ] 9b1 — Disposable real-data smoke-run gate
   - [ ] 9c — Migrate remaining `core/fs.ts` consumers onto the port
   - [ ] 9d — Complete error-class coverage & contract tests
   - [ ] 9e — In-memory `FileStore` for tests
@@ -1101,6 +1102,14 @@ Standard `@param`/`@returns`/`@throws` JSDoc on the `FileStore` interface and th
 **Deliverable**: storage public surface is documented at the port boundary; no misleading comments.
 
 **Commit**: `docs(storage): standard JSDoc, drop POSIX wording`
+
+#### 9b1 — Disposable real-data smoke-run gate (next PR)
+
+The lavish plan's Phase 2 gate includes a "real-data smoke run on a disposable data copy (`JHO_DATA` to a temp dir)" — not yet added in PR #60. Add a storage integration test (or CI step) that copies a sanitized real-layout fixture into a temp dir, points the store at it, and exercises the wired `createStore()` through the CLI/MCP entry points (`list`, `read`, `stat`, `readdir`, `withLock`) end-to-end. Proves the bootstrap wiring works on real data without touching the user's actual data root.
+
+**Deliverable**: smoke gate runs in CI alongside the standard battery; core still does not consume the store (that is Phase 3+). Fixture is sanitized (no real CVs/credentials/URLs).
+
+**Commit**: `test(storage): disposable real-data smoke-run gate`
 
 #### 9c — Migrate remaining `core/fs.ts` consumers onto the port
 
