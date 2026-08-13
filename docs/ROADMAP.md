@@ -69,7 +69,10 @@
   - [x] 8n — Interview status funnel consistency (stats showed 0 interviews)
   - [x] 8o — Humanize LLM prose (cover-letter + Q&A): deterministic `humanize()` post-processor + shared `prompts/humanize-voice.md` voice block
   - [x] 8p — Misc fixes: copy-paste-friendly `answer` output (plain qa.md storage) + init wizard step refactor
-- [ ] **Phase 9** — Polish & public readiness
+- [ ] **Phase 9** — Storage port & adapter
+  - [x] 9a — Storage port, adapter, bootstrap & guards
+  - [x] 9b — Storage architecture docs
+- [ ] **Phase 10** — Polish & public readiness
 
 ---
 
@@ -720,9 +723,9 @@ Four small fixes/enhancements to the retro surface, plus a coverage gap close:
 
 ---
 
-#### 7m — Remove Phase 9 (Calendar providers) and email/calendar integration
+#### 7m — Remove old Phase 9 (Calendar providers) and email/calendar integration
 
-Phase 9 was never implemented and is being removed from the roadmap. All calendar/email provider references are stripped from the codebase:
+The former Phase 9 (calendar providers) was never implemented and is being removed from the roadmap. All calendar/email provider references are stripped from the codebase:
 
 - `CalendarProvider` type removed from `src/core/types.ts`
 - `calendar` config section removed from `GlobalConfig` and Zod schema
@@ -731,7 +734,7 @@ Phase 9 was never implemented and is being removed from the roadmap. All calenda
 - Outlook redaction paths removed from Zod schema's secret list
 - All test fixtures updated
 
-**Deliverable**: Calendar providers completely removed; Phase 9 (Polish & public readiness) is now the final unchecked phase.
+**Deliverable**: Calendar providers completely removed; Phase 10 (Polish & public readiness) is now the final unchecked phase.
 
 **Commit**: `chore: remove Phase 9 calendar providers and email/calendar integration`
 
@@ -1060,13 +1063,42 @@ of named steps.
 - `AGENTS.md` — drop "(planned)" from the `## MCP tools` and `## Resources` headings; reconcile the tool/resource lists with the real Zod schemas; bump "Current phase".
 - `docs/ROADMAP.md` — check the Phase 8 box (`- [x]`).
 - `examples/mcp-clients/{claude-desktop,cursor,continue}.json`, `glama.json` `maintainers`, `package.json` `mcp` field (already in scope above).
-- `docs/help/mcp.md` + `jho help mcp` wiring are **Phase 11**, not required to close Phase 9.
+- `docs/help/mcp.md` + `jho help mcp` wiring are **Phase 11**, not required to close Phase 10.
 
 **Commit**: `docs: README, help topics, examples, glama-ready`
 
 ---
 
-## Phase 9 — Polish & public readiness
+## Phase 9 — Storage port & adapter
+
+**Scope**:
+
+Decouple core logic from the concrete filesystem behind a `FileStore` port, so the storage backend is swappable (the on-disk markdown + JSON layout stays the contract; the engine is an injected implementation detail). Introduced in PR #60.
+
+- `src/storage/types.ts` — `FileStore` port (relative, host-native `StoragePath`; `StorageStat` mirroring the vendor's `IFileSystemStats` shape with `mtime: Date`; `ReadDirOptions`; port error classes `StorageNotFoundError` / `StorageAlreadyExistsError` / `StorageNotEmptyError` / `StorageUnsupportedError`).
+- `src/storage/local/file-store.ts` — `LocalFileStore` adapter over an injected `@file-services` engine (`createNodeFs()`), anchored to an absolute `dataRoot` from config.
+- `src/storage/local/path-guard.ts` — path-confinement helpers: `toAbsolute` (rejects absolute, `..`, drive letters, symlink escapes), `canonicalizeRoot` (realpath, macOS `/tmp` → `/private/tmp` and Windows 8.3 handling), `assertWithinRoot`, `forbidRootTarget` (mutations may not target the root).
+- `src/storage/index.ts` — barrel re-exporting the port, adapter factory, and `resolveDataRoot` (delegates to `core/paths.ts`).
+- `src/cli/index.ts` (`createStore()`) and `src/mcp/server.ts` (`createStore()`) — wire the `LocalFileStore` (data root resolved from config via `resolveDataRoot`) into the CLI and MCP server.
+- Tests: `src/storage/tests/contract.test.ts` (port contract + invalid-path/symlink-escape guards) and `src/storage/tests/path-guard.test.ts` (direct unit tests of every guard vector), plus `src/storage/tests/file-store.test.ts`. Full cross-platform coverage (Linux/macOS/Windows × Node 20/22).
+
+### 9a — Storage port, adapter, bootstrap & guards (delivered in PR #60)
+
+The `FileStore` interface, `LocalFileStore` adapter, `path-guard` confinement helpers, the `index.ts` barrel, and the `core/bootstrap.ts` wiring. Root confinement and symlink-escape guards verified against macOS symlinked temp roots and Windows 8.3 short-name spellings.
+
+**Deliverable**: core depends only on `FileStore`/`StorageStat`; no engine types leak past the adapter. CI green on all platforms.
+
+**Commit**: `feat(storage): FileStore port, LocalFileStore adapter, bootstrap wiring, path-confinement guards`
+
+#### 9b — Storage architecture docs (delivered)
+
+- `docs/STORAGE.md` — why a port (swappable backend, on-disk format stays the contract), the `FileStore` contract and `StorageStat` shape, the root-confinement / symlink-guard model, and engine injection via `createStore()`.
+
+**Deliverable**: storage design documented; referenced from this roadmap.
+
+**Commit**: `docs: storage port architecture`
+
+### Phase 10 — Polish & public readiness
 
 **Scope**:
 
