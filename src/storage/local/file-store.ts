@@ -4,6 +4,7 @@ import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from '../typ
 import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
 import { moduleLogger } from '../../core/logger/logger.js';
 import { resolveDataRoot } from '../../core/paths.js';
+import { toAbsolute, forbidRootTarget, canonicalizeRoot } from './path-guard.js';
 
 const log = moduleLogger(import.meta.url);
 
@@ -22,7 +23,6 @@ interface FileSystemWithAppend {
 
 const LOCK_KEY_SANITIZE = /[^a-zA-Z0-9_-]/g;
 /** A StoragePath must be relative — reject Windows drive letters (`C:`). `fs.isAbsolute` already catches these on Windows; this also guards POSIX. */
-const STORAGEPATH_NO_DRIVE = /^[a-zA-Z]:/;
 const LOCK_STALE_MS = 10_000;
 const LOCK_RETRIES = { retries: 5, minTimeout: 50, maxTimeout: 500 };
 const LOCK_DIR = '.locks';
@@ -32,139 +32,16 @@ const RANDOM_SUFFIX_LENGTH = 6;
 const KIND_FILE = 'file';
 const KIND_DIR = 'directory';
 
-/**
- * Re-export the canonical data-root resolver so the storage module is a
- * self-contained entry point. The real implementation lives in
- * `core/paths.ts` (single source of truth for `~/.job-hunting-organizer-data`
- * and the `$JHO_DATA` override); we do not re-implement it here.
- */
+/** Re-export the data-root resolver so the storage module is a self-contained entry point; the implementation stays in core/paths.ts. */
 export { resolveDataRoot };
 
 /**
- * Normalize a StoragePath to an absolute host path under the data root.
- *
- * Security contract (defense in depth — the engine is unrooted and does NOT
- * confine, so every escape must be caught here):
- *  1. Reject absolute paths, ".." segments, and Windows drive letters
- *     (e.g. "C:") — both host-native (fs.isAbsolute) and explicit.
- *  2. Reject anything that escapes the root after resolution, including via
- *     symlinks: the literal relative form must not start with "..", AND the
- *     deepest existing ancestor is canonicalized (realpath) and re-checked,
- *     because a symlink inside the root can point outside it. (realpath on a
- *     not-yet-existing write target throws ENOENT, so we walk up to the
- *     nearest existing ancestor; an ELOOP from a symlink cycle is left to
- *     surface as-is.)
- *
- * An empty / "." path resolves to the ROOT itself (so reads can list the
- * store root); mutating operations separately forbid targeting the root via
- * `forbidRootTarget`. Path arithmetic uses the engine's own path API (no
- * `node:path` imports under `src/storage/`).
- */
-function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
-  if (fs.isAbsolute(path) || path.startsWith('..') || STORAGEPATH_NO_DRIVE.test(path)) {
-    throw new Error(
-      `Invalid StoragePath: "${path}" — must be relative (host-native), no absolute paths, no '..', no drive letters`,
-    );
-  }
-  const abs = fs.resolve(root, path);
-  const canonicalRoot = canonicalizeRoot(fs, root);
-  // Literal ".." check uses the declared root (both symlink-spelled); the
-  // symlink-aware walk below uses the canonical root.
-  assertWithinRoot(fs, root, canonicalRoot, abs, path);
-  return abs;
-}
-
-/**
- * Canonicalize the data root once. macOS keeps /var/folders (and /tmp) as a
- * symlink to /private/var/folders, so the root passed in may not be the
- * on-disk canonical path. Comparing canonical-vs-canonical in assertWithinRoot
- * avoids every normal path tripping the escape check on such platforms.
- */
-function canonicalizeRoot(fs: IFileSystem, root: string): string {
-  try {
-    return fs.realpathSync(root);
-  } catch {
-    return root;
-  }
-}
-
-/**
- * Confirm `abs` stays under `root`, defeating both literal ".." escapes and
- * symlink escapes. The literal check compares against the declared `root`
- * (so a symlinked root like /tmp → /private/tmp is fine); the realpath walk
- * compares against `canonicalRoot` so a symlink *inside* the root pointing
- * *outside* it is detected. The walk canonicalizes the deepest existing
- * ancestor (the write target itself may not exist yet).
- */
-function assertWithinRoot(
-  fs: IFileSystem,
-  root: string,
-  canonicalRoot: string,
-  abs: string,
-  path: StoragePath,
-): void {
-  const rel = fs.relative(root, abs);
-  if (rel.startsWith('..') || fs.isAbsolute(rel)) {
-    throw new Error(`Path escapes data root: "${path}"`);
-  }
-  // Walk up to the nearest existing ancestor and canonicalize it.
-  let dir = abs;
-  for (;;) {
-    try {
-      const real = fs.realpathSync(dir);
-      const realRel = fs.relative(canonicalRoot, real);
-      if (realRel.startsWith('..') || fs.isAbsolute(realRel)) {
-        throw new Error(`Path escapes data root via symlink: "${path}"`);
-      }
-      return;
-    } catch (err) {
-      const code = (err as NodeJS.ErrnoException).code;
-      if (code === 'ENOENT' || code === 'ENOTDIR') {
-        // ENOENT: component missing. ENOTDIR: a path component is a file, not a
-        // directory (e.g. "f.txt/child") — still walk up to the nearest real
-        // directory ancestor and check confinement there.
-        const parent = fs.dirname(dir);
-        if (parent === dir || parent === root) {
-          // Reached the root (or above) without finding an existing entry —
-          // the resolved path is under root by construction.
-          return;
-        }
-        dir = parent;
-        continue;
-      }
-      // ELOOP (symlink cycle) or any other error: surface as-is (callers map
-      // ELOOP/ENOENT appropriately; other codes rethrow).
-      throw err;
-    }
-  }
-}
-
-/**
- * Mutating operations must never target the data root itself (e.g. rm('.')
- * would delete the entire store). Reads may target the root; writes may not.
- * Compares against both the declared and canonical root (macOS /tmp →
- * /private/tmp) so a root spelled either way is rejected.
- */
-function forbidRootTarget(
-  path: StoragePath,
-  abs: string,
-  root: string,
-  canonicalRoot: string,
-): void {
-  if (abs === root || abs === canonicalRoot) {
-    throw new Error(`Invalid StoragePath: "${path}" — must not target the data root`);
-  }
-}
-
-/**
  * LocalFileStore — maps the FileStore port over a vendored IFileSystem.
- * The ENGINE is `@file-services/node` (`createNodeFs()`, pinned at 11.1.1);
- * the adapter keeps ours — toAbsolute path guard, StoragePath → error
- * mapping, temp+rename atomic write, the recursive copy, and the
- * proper-lockfile binding.
- *
- * The IFileSystem is injected (constructor) so the contract suite can later
- * run against an in-memory adapter; the default is the node-backed engine.
+ * ENGINE: `@file-services/node` (createNodeFs(), pinned 11.1.1). The adapter
+ * adds the root-confining path guard (src/storage/local/path-guard.ts), the
+ * StoragePath → error mapping, temp+rename atomic write, recursive copy, and the
+ * proper-lockfile binding. The IFileSystem is injected so the contract suite can
+ * run against an in-memory adapter; default is the node-backed engine.
  * Constructor performs no I/O — getDataRoot() is pure resolution.
  */
 export class LocalFileStore implements FileStore {
