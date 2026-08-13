@@ -83,86 +83,86 @@ export class StorageUnsupportedError extends Error {
 export interface FileStore {
   /**
    * Read a file as a UTF-8 string.
-   * @param path - relative storage path to read.
+   * @param {StoragePath} path - relative storage path to read.
    * @throws {StorageNotFoundError} if the path does not exist.
    */
   read(path: StoragePath): Promise<string>;
 
   /**
    * Read a file as raw bytes.
-   * @param path - relative storage path to read.
+   * @param {StoragePath} path - relative storage path to read.
    * @throws {StorageNotFoundError} if the path does not exist.
    */
   readBytes(path: StoragePath): Promise<Uint8Array>;
 
   /**
    * Write a file (atomic via temp + rename); creates parent directories.
-   * @param path - relative storage path to write.
-   * @param content - string or binary content to write.
+   * @param {StoragePath} path - relative storage path to write.
+   * @param {string | Uint8Array} content - string or binary content to write.
    */
   write(path: StoragePath, content: string | Uint8Array): Promise<void>;
 
   /**
    * Append to a file (atomic, single engine call); creates parent directories.
-   * @param path - relative storage path to append to.
-   * @param content - string or binary content to append.
+   * @param {StoragePath} path - relative storage path to append to.
+   * @param {string | Uint8Array} content - string or binary content to append.
    */
   append(path: StoragePath, content: string | Uint8Array): Promise<void>;
 
   /**
    * Check whether a path exists.
-   * @param path - relative storage path to check.
+   * @param {StoragePath} path - relative storage path to check.
    * @returns true if the path exists, false otherwise.
    */
   exists(path: StoragePath): Promise<boolean>;
 
   /**
    * Get a portable stat for a path.
-   * @param path - relative storage path to stat.
+   * @param {StoragePath} path - relative storage path to stat.
    * @throws {StorageNotFoundError} if the path does not exist.
    */
   stat(path: StoragePath): Promise<StorageStat>;
 
   /**
    * List directory entries (`.` and `..` filtered by default).
-   * @param path - relative storage path of the directory.
-   * @param options - optional readdir options (e.g. include special entries).
+   * @param {StoragePath} path - relative storage path of the directory.
+   * @param {ReadDirOptions} [options] - optional readdir options (e.g. include special entries).
    * @returns the directory entry names.
    */
   readdir(path: StoragePath, options?: ReadDirOptions): Promise<StoragePath[]>;
 
   /**
    * Create a directory (recursive, idempotent for an existing directory).
-   * @param path - relative storage path of the directory to create.
+   * @param {StoragePath} path - relative storage path of the directory to create.
    * @throws {StorageAlreadyExistsError} if the path is an existing file.
    */
   mkdir(path: StoragePath): Promise<void>;
 
   /**
    * Rename/move a path.
-   * @param from - source relative storage path (must exist).
-   * @param to - destination relative storage path (must not exist).
+   * @param {StoragePath} from - source relative storage path (must exist).
+   * @param {StoragePath} to - destination relative storage path (must not exist).
    */
   rename(from: StoragePath, to: StoragePath): Promise<void>;
 
   /**
    * Remove a path (a file, an empty directory, or a recursive tree).
-   * @param path - relative storage path to remove.
-   * @param options - optional; pass `{ recursive: true }` to remove a tree.
+   * @param {StoragePath} path - relative storage path to remove.
+   * @param {{ readonly recursive?: boolean }} [options] - optional; pass `{ recursive: true }` to remove a tree.
    */
   rm(path: StoragePath, options?: { readonly recursive?: boolean }): Promise<void>;
 
   /**
    * Copy a file or directory tree.
-   * @param from - source relative storage path (must exist).
-   * @param to - destination relative storage path (must not exist).
+   * @param {StoragePath} from - source relative storage path (must exist).
+   * @param {StoragePath} to - destination relative storage path (must not exist).
    */
   copy(from: StoragePath, to: StoragePath): Promise<void>;
 
   /**
    * Advisory lock on a key — serializes concurrent holders.
-   * @param key - lock key identifying the critical section.
-   * @param fn - async critical section; runs while the lock is held.
+   * @param {string} key - lock key identifying the critical section.
+   * @param {() => Promise<T>} fn - async critical section; runs while the lock is held.
    * @returns the value returned by `fn`.
    */
   withLock<T>(key: string, fn: () => Promise<T>): Promise<T>;

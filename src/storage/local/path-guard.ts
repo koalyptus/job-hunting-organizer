@@ -8,9 +8,9 @@ const STORAGEPATH_NO_DRIVE = /^[a-zA-Z]:/;
  * Resolve a StoragePath to an absolute path under `root`, rejecting absolute
  * paths, `".."`, drive letters, and any resolved escape (incl. via symlinks).
  * Empty / `"."` resolves to `root` itself.
- * @param fs - the injected file system.
- * @param root - the data root all paths are confined to.
- * @param path - relative storage path to resolve.
+ * @param {IFileSystem} fs - the injected file system.
+ * @param {string} root - the data root all paths are confined to.
+ * @param {StoragePath} path - relative storage path to resolve.
  * @returns the absolute host path.
  */
 export function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
@@ -28,8 +28,8 @@ export function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): st
 /**
  * Canonical form of `root` (realpath). macOS keeps /tmp (and /var/folders) as a
  * symlink to /private/..., so the on-disk path differs from the declared one.
- * @param fs - the injected file system.
- * @param root - the data root to canonicalize.
+ * @param {IFileSystem} fs - the injected file system.
+ * @param {string} root - the data root to canonicalize.
  * @returns the realpath, or `root` unchanged if it does not exist.
  */
 export function canonicalizeRoot(fs: IFileSystem, root: string): string {
@@ -46,11 +46,11 @@ export function canonicalizeRoot(fs: IFileSystem, root: string): string {
  * canonical root so a symlink *inside* the root pointing *outside* is caught.
  * The walk canonicalizes the deepest existing ancestor (an ENOENT/ENOTDIR target
  * walks up; an ELOOP cycle surfaces as-is).
- * @param fs - the injected file system.
- * @param root - the declared data root.
- * @param canonicalRoot - the canonical (realpath) data root.
- * @param abs - the resolved absolute path to check.
- * @param path - the original storage path (for error messages).
+ * @param {IFileSystem} fs - the injected file system.
+ * @param {string} root - the declared data root.
+ * @param {string} canonicalRoot - the canonical (realpath) data root.
+ * @param {string} abs - the resolved absolute path to check.
+ * @param {StoragePath} path - the original storage path (for error messages).
  */
 function assertWithinRoot(
   fs: IFileSystem,
@@ -90,10 +90,10 @@ function assertWithinRoot(
 /**
  * Reject a path that resolves to the root itself (e.g. `rm('.')` would delete
  * the whole store). Reads may target the root; mutating ops must not.
- * @param path - the original storage path (for error messages).
- * @param abs - the resolved absolute path.
- * @param root - the declared data root.
- * @param canonicalRoot - the canonical (realpath) data root.
+ * @param {StoragePath} path - the original storage path (for error messages).
+ * @param {string} abs - the resolved absolute path.
+ * @param {string} root - the declared data root.
+ * @param {string} canonicalRoot - the canonical (realpath) data root.
  */
 export function forbidRootTarget(
   path: StoragePath,
