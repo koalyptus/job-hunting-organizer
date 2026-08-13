@@ -1,10 +1,9 @@
 /**
  * A storage path: a RELATIVE path in the engine's host-native format
- * (POSIX `/` on Linux/macOS, `\` on Windows — the same convention Node's
- * `node:path` uses). Callers must pass relative paths; absolute paths,
- * `..` segments, and Windows drive letters are rejected at the boundary.
- * The port does not re-separate or normalize paths — it delegates to the
- * injected file system's own path API.
+ * (the same convention Node's `node:path` uses). Callers must pass relative
+ * paths; absolute paths, `..` segments, and Windows drive letters are rejected
+ * at the boundary. The port does not re-separate or normalize paths — it
+ * delegates to the injected file system's own path API.
  */
 export type StoragePath = string;
 
@@ -77,35 +76,100 @@ export class StorageUnsupportedError extends Error {
 
 /**
  * Storage port — filesystem abstraction decoupling core logic from
- * persistence. All paths are `StoragePath` (relative POSIX, no leading
+ * persistence. All paths are `StoragePath` (relative, host-native, no leading
  * slash, no `..`, no drive letters). Implementations must enforce
  * root confinement and map engine errors to the port's error classes.
  */
 export interface FileStore {
-  /** Read a file as UTF-8 string. */
+  /**
+   * Read a file as a UTF-8 string.
+   * @param path - relative storage path to read.
+   * @throws {StorageNotFoundError} if the path does not exist.
+   */
   read(path: StoragePath): Promise<string>;
-  /** Read a file as raw bytes. */
+
+  /**
+   * Read a file as raw bytes.
+   * @param path - relative storage path to read.
+   * @throws {StorageNotFoundError} if the path does not exist.
+   */
   readBytes(path: StoragePath): Promise<Uint8Array>;
-  /** Write a file (atomic via temp + rename). Creates parent dirs. */
+
+  /**
+   * Write a file (atomic via temp + rename); creates parent directories.
+   * @param path - relative storage path to write.
+   * @param content - string or binary content to write.
+   */
   write(path: StoragePath, content: string | Uint8Array): Promise<void>;
-  /** Append to a file (atomic, single engine call). Creates parent dirs. */
+
+  /**
+   * Append to a file (atomic, single engine call); creates parent directories.
+   * @param path - relative storage path to append to.
+   * @param content - string or binary content to append.
+   */
   append(path: StoragePath, content: string | Uint8Array): Promise<void>;
-  /** Check if a path exists. */
+
+  /**
+   * Check whether a path exists.
+   * @param path - relative storage path to check.
+   * @returns true if the path exists, false otherwise.
+   */
   exists(path: StoragePath): Promise<boolean>;
-  /** Get portable stat for a path. */
+
+  /**
+   * Get a portable stat for a path.
+   * @param path - relative storage path to stat.
+   * @throws {StorageNotFoundError} if the path does not exist.
+   */
   stat(path: StoragePath): Promise<StorageStat>;
-  /** List directory entries (filters `.` and `..` by default). */
+
+  /**
+   * List directory entries (`.` and `..` filtered by default).
+   * @param path - relative storage path of the directory.
+   * @param options - optional readdir options (e.g. include special entries).
+   * @returns the directory entry names.
+   */
   readdir(path: StoragePath, options?: ReadDirOptions): Promise<StoragePath[]>;
-  /** Create a directory (recursive, idempotent for existing dirs). */
+
+  /**
+   * Create a directory (recursive, idempotent for an existing directory).
+   * @param path - relative storage path of the directory to create.
+   * @throws {StorageAlreadyExistsError} if the path is an existing file.
+   */
   mkdir(path: StoragePath): Promise<void>;
-  /** Rename/move a path (source must exist, dest must not). */
+
+  /**
+   * Rename/move a path.
+   * @param from - source relative storage path (must exist).
+   * @param to - destination relative storage path (must not exist).
+   */
   rename(from: StoragePath, to: StoragePath): Promise<void>;
-  /** Remove a path (file, empty dir, or recursive tree). */
+
+  /**
+   * Remove a path (a file, an empty directory, or a recursive tree).
+   * @param path - relative storage path to remove.
+   * @param options - optional; pass `{ recursive: true }` to remove a tree.
+   */
   rm(path: StoragePath, options?: { readonly recursive?: boolean }): Promise<void>;
-  /** Copy a file or directory tree. */
+
+  /**
+   * Copy a file or directory tree.
+   * @param from - source relative storage path (must exist).
+   * @param to - destination relative storage path (must not exist).
+   */
   copy(from: StoragePath, to: StoragePath): Promise<void>;
-  /** Advisory lock on a key — serializes concurrent holders. */
+
+  /**
+   * Advisory lock on a key — serializes concurrent holders.
+   * @param key - lock key identifying the critical section.
+   * @param fn - async critical section; runs while the lock is held.
+   * @returns the value returned by `fn`.
+   */
   withLock<T>(key: string, fn: () => Promise<T>): Promise<T>;
-  /** Return the absolute data root this store operates under. */
+
+  /**
+   * Return the absolute data root this store operates under.
+   * @returns the store's data-root absolute path.
+   */
   getDataRoot(): string;
 }

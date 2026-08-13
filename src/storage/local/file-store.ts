@@ -22,7 +22,7 @@ interface FileSystemWithAppend {
 }
 
 const LOCK_KEY_SANITIZE = /[^a-zA-Z0-9_-]/g;
-/** A StoragePath must be relative — reject Windows drive letters (`C:`). `fs.isAbsolute` already catches these on Windows; this also guards POSIX. */
+/** Rejects Windows drive letters (`C:`), which `fs.isAbsolute` does not treat as absolute on every platform. */
 const LOCK_STALE_MS = 10_000;
 const LOCK_RETRIES = { retries: 5, minTimeout: 50, maxTimeout: 500 };
 const LOCK_DIR = '.locks';
