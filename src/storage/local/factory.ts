@@ -1,8 +1,13 @@
-import type { FileStore } from './types.js';
-import { LocalFileStore } from './local/file-store.js';
+import type { FileStore } from '../types.js';
+import { LocalFileStore } from './file-store.js';
 
 /**
  * Factory — builds a LocalFileStore over the data root.
+ *
+ * Co-located with `LocalFileStore` because it constructs that adapter
+ * directly (no adapter-selection logic yet). If a future adapter (e.g. an
+ * in-memory store for tests) needs choosing, this is where the selection
+ * would live, and at that point it may move up to `storage/factory.ts`.
  *
  * Kept as an explicit factory (not a module-level singleton/global) so each
  * entry point constructs the store once at startup and threads the returned
