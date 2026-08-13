@@ -65,23 +65,6 @@ function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
 }
 
 /**
- * Convert the vendor's `IFileSystemStats` (mtime as `Date`) to our portable
- * `StorageStat` (modifiedAtMs as epoch millis).
- */
-function toStorageStat(stats: {
-  isFile(): boolean;
-  isDirectory(): boolean;
-  size: number;
-  mtime: Date;
-}): StorageStat {
-  return {
-    kind: stats.isDirectory() ? KIND_DIR : KIND_FILE,
-    size: stats.size,
-    modifiedAtMs: stats.mtime.getTime(),
-  };
-}
-
-/**
  * LocalFileStore — maps the FileStore port over a vendored IFileSystem.
  * The ENGINE is `@file-services/node` (`createNodeFs()`, pinned at 11.1.1);
  * the adapter keeps ours — toAbsolute path guard, StoragePath → error
@@ -203,7 +186,11 @@ export class LocalFileStore implements FileStore {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
     try {
       const stats = await this.fs.promises.stat(abs);
-      return toStorageStat(stats);
+      return {
+        kind: stats.isDirectory() ? KIND_DIR : KIND_FILE,
+        size: stats.size,
+        mtime: stats.mtime,
+      };
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code === 'ENOENT' || code === 'ENOTDIR') {

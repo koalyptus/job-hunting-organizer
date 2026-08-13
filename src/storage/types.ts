@@ -14,14 +14,14 @@ export type StoragePath = string;
 export type StorageEntryKind = 'file' | 'directory';
 
 /**
- * Portable stat result — avoids coupling to Node's `fs.Stats` or
- * engine-specific types. `modifiedAtMs` is the modification time as epoch
- * milliseconds (i.e. `Date.getTime()`), not a `Date` object.
+ * Portable stat result. Mirrors the vendor's `IFileSystemStats` shape
+ * (mtime as a `Date`, like Node's `fs.Stats`) rather than re-casting it,
+ * so the adapter passes the engine result through unchanged.
  */
 export interface StorageStat {
   readonly kind: StorageEntryKind;
   readonly size: number;
-  readonly modifiedAtMs: number;
+  readonly mtime: Date;
 }
 
 /**
