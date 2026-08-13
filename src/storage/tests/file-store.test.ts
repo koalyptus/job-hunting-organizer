@@ -231,6 +231,73 @@ describe('LocalFileStore unit suite', () => {
     });
   });
 
+  describe('error-propagation rethrows', () => {
+    // An unexpected errno (EACCES) on the underlying fs must be propagated
+    // verbatim through every guard, not swallowed or mapped. Drives the
+    // `throw err` branches of exists/stat/readdir/rename/copy source-stat
+    // guards that ENOENT/ENOTDIR/ELOOP variants do not reach.
+    const eacces = Object.assign(new Error('EACCES'), { code: 'EACCES' });
+    const failing: IFileSystem = {
+      ...createNodeFs(),
+      promises: {
+        ...createNodeFs().promises,
+        stat: async () => {
+          throw eacces;
+        },
+        readdir: async () => {
+          throw eacces;
+        },
+      },
+    };
+    const failingStore = new LocalFileStore(root, failing);
+
+    it('rethrows unexpected stat errors on exists', async () => {
+      await expect(failingStore.exists('a.txt')).rejects.toBe(eacces);
+    });
+
+    it('rethrows unexpected stat errors on stat', async () => {
+      await expect(failingStore.stat('a.txt')).rejects.toBe(eacces);
+    });
+
+    it('rethrows ENOTDIR as Not-a-directory on readdir', async () => {
+      const enotdir = Object.assign(new Error('ENOTDIR'), { code: 'ENOTDIR' });
+      const readdirFailing: IFileSystem = {
+        ...createNodeFs(),
+        promises: {
+          ...createNodeFs().promises,
+          readdir: async () => {
+            throw enotdir;
+          },
+        },
+      };
+      const s = new LocalFileStore(root, readdirFailing);
+      await expect(s.readdir('sub')).rejects.toThrow('Not a directory');
+    });
+
+    it('rethrows other readdir errors verbatim', async () => {
+      const ebusy = Object.assign(new Error('EBUSY'), { code: 'EBUSY' });
+      const readdirFailing: IFileSystem = {
+        ...createNodeFs(),
+        promises: {
+          ...createNodeFs().promises,
+          readdir: async () => {
+            throw ebusy;
+          },
+        },
+      };
+      const s = new LocalFileStore(root, readdirFailing);
+      await expect(s.readdir('sub')).rejects.toBe(ebusy);
+    });
+
+    it('rethrows unexpected source-stat errors on rename', async () => {
+      await expect(failingStore.rename('a.txt', 'b.txt')).rejects.toBe(eacces);
+    });
+
+    it('rethrows unexpected source-stat errors on copy', async () => {
+      await expect(failingStore.copy('a.txt', 'b.txt')).rejects.toBe(eacces);
+    });
+  });
+
   describe('withLock', () => {
     it('logs a warning and still resolves when releasing fails', async () => {
       const result = await store.withLock('task1', async () => {
