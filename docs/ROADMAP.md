@@ -72,6 +72,10 @@
 - [ ] **Phase 9** — Storage port & adapter
   - [x] 9a — Storage port, adapter, bootstrap & guards
   - [x] 9b — Storage architecture docs
+  - [ ] 9c — Migrate remaining `core/fs.ts` consumers onto the port
+  - [ ] 9d — Complete error-class coverage & contract tests
+  - [ ] 9e — In-memory `FileStore` for tests
+  - [ ] 9f — Campaign-scoped store routing
 - [ ] **Phase 10** — Polish & public readiness
 
 ---
@@ -1084,7 +1088,7 @@ Decouple core logic from the concrete filesystem behind a `FileStore` port, so t
 
 ### 9a — Storage port, adapter, bootstrap & guards (delivered in PR #60)
 
-The `FileStore` interface, `LocalFileStore` adapter, `path-guard` confinement helpers, the `index.ts` barrel, and the `core/bootstrap.ts` wiring. Root confinement and symlink-escape guards verified against macOS symlinked temp roots and Windows 8.3 short-name spellings.
+The `FileStore` interface, `LocalFileStore` adapter, `path-guard` confinement helpers, the `index.ts` barrel, and the `createStore()` wiring in `cli/index.ts` + `mcp/server.ts`. Root confinement and symlink-escape guards verified against macOS symlinked temp roots and Windows 8.3 short-name spellings.
 
 **Deliverable**: core depends only on `FileStore`/`StorageStat`; no engine types leak past the adapter. CI green on all platforms.
 
@@ -1097,6 +1101,30 @@ The `FileStore` interface, `LocalFileStore` adapter, `path-guard` confinement he
 **Deliverable**: storage design documented; referenced from this roadmap.
 
 **Commit**: `docs: storage port architecture`
+
+#### 9c — Migrate remaining `core/fs.ts` consumers onto the port
+
+`src/cli/commands/remove-application.ts` still imports `pathExists` from `core/fs.js`, bypassing the `FileStore` port. Route it through the injected store so no CLI command touches `node:fs` / `core/fs` directly.
+
+**Deliverable**: all CLI/MCP paths go through `FileStore`; `core/fs.ts` is retired or reduced to internal use only.
+
+#### 9d — Complete error-class coverage & contract tests
+
+`StorageUnsupportedError` is declared but never thrown by `LocalFileStore`; wire it where an operation is genuinely unsupported (or document it as reserved). Add contract tests for `StorageNotEmptyError` (non-recursive `rm` on a non-empty dir) and `StorageAlreadyExistsError` (write/mkdir over an existing file) paths not yet asserted.
+
+**Deliverable**: every port error class is either exercised or explicitly reserved; contract suite covers the full error surface.
+
+#### 9e — In-memory `FileStore` for tests
+
+`factory.ts` is structured for adapter selection; add a `MemoryFileStore` implementing `FileStore` so CLI/MCP tools can be unit-tested without a temp directory. Selectable via `createStore` when an in-memory root is passed.
+
+**Deliverable**: tool-level unit tests run against `MemoryFileStore`; no disk I/O in the unit tier.
+
+#### 9f — Campaign-scoped store routing
+
+`createStore()` resolves a single global data root. Campaign-scoped operations in `core/campaign/*` still compute roots via `resolveDataRoot()` + path joins directly. Expose a campaign-aware store accessor (campaign name → `FileStore` rooted at that campaign) so campaign logic routes through the port consistently.
+
+**Deliverable**: campaign operations resolve their store through the port rather than ad-hoc path joins.
 
 ### Phase 10 — Polish & public readiness
 
