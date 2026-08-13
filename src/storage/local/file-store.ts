@@ -42,26 +42,85 @@ export { resolveDataRoot };
 
 /**
  * Normalize a StoragePath to an absolute host path under the data root.
- * Validates: no leading slash, no `..`, no drive letters.
- * Path arithmetic goes through the injected file system's own path API
- * (no `node:path` imports under `src/storage/`).
+ *
+ * Security contract (defense in depth — the engine is unrooted and does NOT
+ * confine, so every escape must be caught here):
+ *  1. Reject absolute paths, ".." segments, and Windows drive letters
+ *     (e.g. "C:") — both host-native (fs.isAbsolute) and explicit.
+ *  2. Reject anything that escapes the root after resolution, including via
+ *     symlinks: the literal relative form must not start with "..", AND the
+ *     deepest existing ancestor is canonicalized (realpath) and re-checked,
+ *     because a symlink inside the root can point outside it. (realpath on a
+ *     not-yet-existing write target throws ENOENT, so we walk up to the
+ *     nearest existing ancestor; an ELOOP from a symlink cycle is left to
+ *     surface as-is.)
+ *
+ * An empty / "." path resolves to the ROOT itself (so reads can list the
+ * store root); mutating operations separately forbid targeting the root via
+ * `forbidRootTarget`. Path arithmetic uses the engine's own path API (no
+ * `node:path` imports under `src/storage/`).
  */
 function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
-  if (path === '') {
-    return root;
-  }
   if (fs.isAbsolute(path) || path.startsWith('..') || STORAGEPATH_NO_DRIVE.test(path)) {
     throw new Error(
       `Invalid StoragePath: "${path}" — must be relative (host-native), no absolute paths, no '..', no drive letters`,
     );
   }
   const abs = fs.resolve(root, path);
-  // Ensure we don't escape the root (defense in depth)
+  assertWithinRoot(fs, root, abs, path);
+  return abs;
+}
+
+/**
+ * Confirm `abs` stays under `root`, defeating both literal ".." escapes and
+ * symlink escapes. Canonicalizes the deepest existing ancestor (the write
+ * target itself may not exist yet) and checks that the real path is confined.
+ */
+function assertWithinRoot(fs: IFileSystem, root: string, abs: string, path: StoragePath): void {
   const rel = fs.relative(root, abs);
   if (rel.startsWith('..') || fs.isAbsolute(rel)) {
     throw new Error(`Path escapes data root: "${path}"`);
   }
-  return abs;
+  // Walk up to the nearest existing ancestor and canonicalize it.
+  let dir = abs;
+  for (;;) {
+    try {
+      const real = fs.realpathSync(dir);
+      const realRel = fs.relative(root, real);
+      if (realRel.startsWith('..') || fs.isAbsolute(realRel)) {
+        throw new Error(`Path escapes data root via symlink: "${path}"`);
+      }
+      return;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT' || code === 'ENOTDIR') {
+        // ENOENT: component missing. ENOTDIR: a path component is a file, not a
+        // directory (e.g. "f.txt/child") — still walk up to the nearest real
+        // directory ancestor and check confinement there.
+        const parent = fs.dirname(dir);
+        if (parent === dir || parent === root) {
+          // Reached the root (or above) without finding an existing entry —
+          // the resolved path is under root by construction.
+          return;
+        }
+        dir = parent;
+        continue;
+      }
+      // ELOOP (symlink cycle) or any other error: surface as-is (callers map
+      // ELOOP/ENOENT appropriately; other codes rethrow).
+      throw err;
+    }
+  }
+}
+
+/**
+ * Mutating operations must never target the data root itself (e.g. rm('.')
+ * would delete the entire store). Reads may target the root; writes may not.
+ */
+function forbidRootTarget(path: StoragePath, abs: string, root: string): void {
+  if (abs === root) {
+    throw new Error(`Invalid StoragePath: "${path}" — must not target the data root`);
+  }
 }
 
 /**
@@ -116,6 +175,7 @@ export class LocalFileStore implements FileStore {
 
   async write(path: StoragePath, content: string | Uint8Array): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
+    forbidRootTarget(path, abs, this.dataRoot);
     const parent = this.fs.dirname(abs);
 
     // Ensure parent directory exists
@@ -150,6 +210,7 @@ export class LocalFileStore implements FileStore {
 
   async append(path: StoragePath, content: string | Uint8Array): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
+    forbidRootTarget(path, abs, this.dataRoot);
     const parent = this.fs.dirname(abs);
     try {
       await this.fs.promises.mkdir(parent, { recursive: true });
@@ -222,6 +283,7 @@ export class LocalFileStore implements FileStore {
 
   async mkdir(path: StoragePath): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
+    forbidRootTarget(path, abs, this.dataRoot);
     try {
       await this.fs.promises.mkdir(abs, { recursive: true });
     } catch (err) {
@@ -242,6 +304,8 @@ export class LocalFileStore implements FileStore {
   async rename(from: StoragePath, to: StoragePath): Promise<void> {
     const src = toAbsolute(this.fs, this.dataRoot, from);
     const dest = toAbsolute(this.fs, this.dataRoot, to);
+    forbidRootTarget(from, src, this.dataRoot);
+    forbidRootTarget(to, dest, this.dataRoot);
 
     // Check source exists
     try {
@@ -281,6 +345,7 @@ export class LocalFileStore implements FileStore {
 
   async rm(path: StoragePath, options?: { readonly recursive?: boolean }): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
+    forbidRootTarget(path, abs, this.dataRoot);
     try {
       const stats = await this.fs.promises.stat(abs);
       if (stats.isDirectory()) {
@@ -313,6 +378,8 @@ export class LocalFileStore implements FileStore {
   async copy(from: StoragePath, to: StoragePath): Promise<void> {
     const src = toAbsolute(this.fs, this.dataRoot, from);
     const dest = toAbsolute(this.fs, this.dataRoot, to);
+    forbidRootTarget(from, src, this.dataRoot);
+    forbidRootTarget(to, dest, this.dataRoot);
 
     // Source must exist — normalize to the port's not-found error (same as rename).
     try {

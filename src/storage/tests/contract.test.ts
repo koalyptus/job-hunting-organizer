@@ -229,6 +229,42 @@ describe('LocalFileStore contract suite', () => {
     it('rejects drive letters', async () => {
       await expect(store.write('C:/windows.txt', 'x')).rejects.toThrow();
     });
+
+    it('rejects root-targeting mutations (empty / "." / "a/.."), but allows root reads', async () => {
+      // Reads may target the root (listing the store root is benign).
+      await expect(store.stat('')).resolves.toMatchObject({ kind: 'directory' });
+      await expect(store.readdir('')).resolves.toBeDefined();
+      // Mutations must never target the whole store.
+      await expect(store.write('', 'x')).rejects.toThrow(/must not target the data root/);
+      await expect(store.write('.', 'x')).rejects.toThrow(/must not target the data root/);
+      await expect(store.write('a/..', 'x')).rejects.toThrow(/must not target the data root/);
+      await expect(store.mkdir('.')).rejects.toThrow(/must not target the data root/);
+      await expect(store.rm('.', { recursive: true })).rejects.toThrow(
+        /must not target the data root/,
+      );
+      await expect(store.rename('.', 'other')).rejects.toThrow(/must not target the data root/);
+      await expect(store.copy('.', 'other')).rejects.toThrow(/must not target the data root/);
+    });
+
+    it('rejects a path that escapes the root via symlink', async () => {
+      const nodeFs = await import('node:fs');
+      const root = store.getDataRoot();
+      // Create a symlink inside the root pointing OUTSIDE it, so the literal
+      // rel check (..) passes but the canonicalized parent lands elsewhere.
+      const outside = join(tmpdir(), `jho-escape-${Date.now()}`);
+      const linkPath = join(root, 'escape-link');
+      await nodeFs.promises.mkdir(outside, { recursive: true });
+      try {
+        await nodeFs.promises.symlink(outside, linkPath, 'dir');
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== 'EEXIST') {
+          throw err;
+        }
+      }
+      await expect(store.write('escape-link/secret.txt', 'x')).rejects.toThrow(/escapes data root/);
+      await nodeFs.promises.rm(linkPath, { force: true });
+      await nodeFs.promises.rm(outside, { recursive: true, force: true });
+    });
   });
 
   describe('withLock', () => {
