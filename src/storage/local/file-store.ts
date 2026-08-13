@@ -106,9 +106,14 @@ export class LocalFileStore implements FileStore {
   }
 
   joinPath(...parts: string[]): StoragePath {
-    // Delegate to the engine's path join so StoragePath normalization stays
-    // consistent with host-path joins used elsewhere in the adapter.
-    return this.fs.join(...parts);
+    // StoragePath is POSIX regardless of host OS, so join with '/' and drop
+    // empty segments (normalizes trailing/leading slashes). Using the
+    // engine's host-aware join would emit '\' on Windows and break the
+    // portable contract.
+    return parts
+      .flatMap((p) => p.split('/'))
+      .filter(Boolean)
+      .join('/');
   }
 
   async read(path: StoragePath): Promise<string> {
