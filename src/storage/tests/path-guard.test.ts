@@ -10,29 +10,25 @@ const fs: IFileSystem = createNodeFs();
 
 describe('path-guard: toAbsolute', () => {
   let root: string;
-  let canonicalRoot: string;
 
   beforeAll(async () => {
     root = await mkdtemp(join(tmpdir(), 'jho-guard-'));
-    canonicalRoot = await realpath(root);
   });
   afterAll(async () => {
     await rm(root, { recursive: true, force: true });
   });
 
   it('resolves a relative path under the root', () => {
-    expect(toAbsolute(fs, root, 'a/b.txt')).toBe(join(canonicalRoot, 'a/b.txt'));
+    expect(toAbsolute(fs, root, 'a/b.txt')).toBe(join(root, 'a/b.txt'));
   });
 
   it('treats empty / "." as the root itself', () => {
-    expect(toAbsolute(fs, root, '')).toBe(canonicalRoot);
-    expect(toAbsolute(fs, root, '.')).toBe(canonicalRoot);
+    expect(toAbsolute(fs, root, '')).toBe(root);
+    expect(toAbsolute(fs, root, '.')).toBe(root);
   });
 
   it('resolves nested relative paths', () => {
-    expect(toAbsolute(fs, root, 'deep/nested/file.txt')).toBe(
-      join(canonicalRoot, 'deep/nested/file.txt'),
-    );
+    expect(toAbsolute(fs, root, 'deep/nested/file.txt')).toBe(join(root, 'deep/nested/file.txt'));
   });
 
   it('rejects absolute paths', () => {
@@ -80,14 +76,29 @@ describe('path-guard: toAbsolute', () => {
   it('accepts a normal path whose ancestor is a real (non-escaping) directory', async () => {
     const deep = join(root, 'real', 'nested');
     await mkdir(deep, { recursive: true });
-    expect(toAbsolute(fs, root, 'real/nested/file.txt')).toBe(
-      join(canonicalRoot, 'real/nested/file.txt'),
-    );
+    expect(toAbsolute(fs, root, 'real/nested/file.txt')).toBe(join(root, 'real/nested/file.txt'));
   });
 
   it('does not flag a file used as a directory (ENOTDIR) as an escape', () => {
     // "f.txt/child" — f.txt is a file. The walk-up must not throw "escapes".
     expect(() => toAbsolute(fs, root, 'f.txt/child')).not.toThrow(/escapes/);
+  });
+
+  it('resolves against the declared root even when it is a symlink (macOS /tmp, Windows 8.3)', async () => {
+    // CI runners spell the temp root differently from its canonical form
+    // (macOS /var/folders -> /private/var/folders; Windows RUNNER~1 -> runneradmin).
+    // toAbsolute resolves against the declared root, so the result keeps that
+    // spelling — it must not be compared against the canonical path.
+    const real = await mkdtemp(join(tmpdir(), 'jho-real-'));
+    const link = await mkdtemp(join(tmpdir(), 'jho-link-'));
+    await rm(link, { recursive: true, force: true });
+    await symlink(real, link, 'dir');
+    try {
+      expect(toAbsolute(fs, link, 'a/b.txt')).toBe(join(link, 'a/b.txt'));
+    } finally {
+      await rm(real, { recursive: true, force: true });
+      await rm(link, { recursive: true, force: true });
+    }
   });
 });
 
