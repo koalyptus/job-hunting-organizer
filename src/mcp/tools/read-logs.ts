@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { ReadLogsInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveConfigHome } from '../../core/paths.js';
@@ -13,7 +14,7 @@ import { resolve } from 'node:path';
  *
  * @param server - The MCP server instance.
  */
-export function registerReadLogs(server: McpServer): void {
+export function registerReadLogs(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'read_logs',
     {

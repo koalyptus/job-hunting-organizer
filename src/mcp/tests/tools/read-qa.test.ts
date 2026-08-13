@@ -31,6 +31,7 @@ vi.mock('../../../core/applications/application-qa.js', () => ({
 
 import { readQa } from '../../../core/applications/application-qa.js';
 import { registerReadQa } from '../../tools/read-qa.js';
+import { createStore } from '../../../storage/index.js';
 
 describe('read_qa tool', () => {
   beforeEach(() => {
@@ -42,7 +43,7 @@ describe('read_qa tool', () => {
       '# Q&A\n\n## 2026-01-15 "Tell me about yourself"\n\n- Source: application form\n- Answer: I am a dedicated software engineer with 5 years of experience...';
     vi.mocked(readQa).mockResolvedValue(testQaContent);
 
-    const { client } = await createTestServer(registerReadQa);
+    const { client } = await createTestServer((srv) => registerReadQa(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_qa',
@@ -60,7 +61,7 @@ describe('read_qa tool', () => {
       );
     });
 
-    const { client } = await createTestServer(registerReadQa);
+    const { client } = await createTestServer((srv) => registerReadQa(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_qa',

@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { ReadCampaignConfigInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { loadCampaignConfig } from '../../core/config/config.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerReadCampaignConfig(server: McpServer): void {
+export function registerReadCampaignConfig(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'read_campaign_config',
     { description: 'Read campaign configuration (redacted)', inputSchema: ReadCampaignConfigInput },

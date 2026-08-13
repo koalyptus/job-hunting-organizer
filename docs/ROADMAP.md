@@ -69,7 +69,15 @@
   - [x] 8n — Interview status funnel consistency (stats showed 0 interviews)
   - [x] 8o — Humanize LLM prose (cover-letter + Q&A): deterministic `humanize()` post-processor + shared `prompts/humanize-voice.md` voice block
   - [x] 8p — Misc fixes: copy-paste-friendly `answer` output (plain qa.md storage) + init wizard step refactor
-- [ ] **Phase 9** — Polish & public readiness
+- [ ] **Phase 9** — Storage port & adapter
+  - [x] 9a — Storage port, adapter, bootstrap & guards
+  - [x] 9b — Storage module JSDoc & comment hygiene
+  - [ ] 9b1 — Disposable real-data smoke-run gate
+  - [ ] 9c — Migrate remaining `core/fs.ts` consumers onto the port
+  - [ ] 9d — Complete error-class coverage & contract tests
+  - [ ] 9e — In-memory `FileStore` for tests
+  - [ ] 9f — Campaign-scoped store routing
+- [ ] **Phase 10** — Polish & public readiness
 
 ---
 
@@ -720,9 +728,9 @@ Four small fixes/enhancements to the retro surface, plus a coverage gap close:
 
 ---
 
-#### 7m — Remove Phase 9 (Calendar providers) and email/calendar integration
+#### 7m — Remove old Phase 9 (Calendar providers) and email/calendar integration
 
-Phase 9 was never implemented and is being removed from the roadmap. All calendar/email provider references are stripped from the codebase:
+The former Phase 9 (calendar providers) was never implemented and is being removed from the roadmap. All calendar/email provider references are stripped from the codebase:
 
 - `CalendarProvider` type removed from `src/core/types.ts`
 - `calendar` config section removed from `GlobalConfig` and Zod schema
@@ -731,7 +739,7 @@ Phase 9 was never implemented and is being removed from the roadmap. All calenda
 - Outlook redaction paths removed from Zod schema's secret list
 - All test fixtures updated
 
-**Deliverable**: Calendar providers completely removed; Phase 9 (Polish & public readiness) is now the final unchecked phase.
+**Deliverable**: Calendar providers completely removed; Phase 10 (Polish & public readiness) is now the final unchecked phase.
 
 **Commit**: `chore: remove Phase 9 calendar providers and email/calendar integration`
 
@@ -1060,13 +1068,74 @@ of named steps.
 - `AGENTS.md` — drop "(planned)" from the `## MCP tools` and `## Resources` headings; reconcile the tool/resource lists with the real Zod schemas; bump "Current phase".
 - `docs/ROADMAP.md` — check the Phase 8 box (`- [x]`).
 - `examples/mcp-clients/{claude-desktop,cursor,continue}.json`, `glama.json` `maintainers`, `package.json` `mcp` field (already in scope above).
-- `docs/help/mcp.md` + `jho help mcp` wiring are **Phase 11**, not required to close Phase 9.
+- `docs/help/mcp.md` + `jho help mcp` wiring are **Phase 11**, not required to close Phase 10.
 
 **Commit**: `docs: README, help topics, examples, glama-ready`
 
 ---
 
-## Phase 9 — Polish & public readiness
+## Phase 9 — Storage port & adapter
+
+**Scope**:
+
+Decouple core logic from the concrete filesystem behind a `FileStore` port, so the storage backend is swappable (the on-disk markdown + JSON layout stays the contract; the engine is an injected implementation detail). Introduced in PR #60.
+
+- `src/storage/types.ts` — `FileStore` port (relative, host-native `StoragePath`; `StorageStat` mirroring the vendor's `IFileSystemStats` shape with `mtime: Date`; `ReadDirOptions`; port error classes `StorageNotFoundError` / `StorageAlreadyExistsError` / `StorageNotEmptyError` / `StorageUnsupportedError`).
+- `src/storage/local/file-store.ts` — `LocalFileStore` adapter over an injected `@file-services` engine (`createNodeFs()`), anchored to an absolute `dataRoot` from config.
+- `src/storage/local/path-guard.ts` — path-confinement helpers: `toAbsolute` (rejects absolute, `..`, drive letters, symlink escapes), `canonicalizeRoot` (realpath, macOS `/tmp` → `/private/tmp` and Windows 8.3 handling), `assertWithinRoot`, `forbidRootTarget` (mutations may not target the root).
+- `src/storage/index.ts` — barrel re-exporting the port, adapter factory, and `resolveDataRoot` (delegates to `core/paths.ts`).
+- `src/cli/index.ts` (`createStore()`) and `src/mcp/server.ts` (`createStore()`) — wire the `LocalFileStore` (data root resolved from config via `resolveDataRoot`) into the CLI and MCP server.
+- Tests: `src/storage/tests/contract.test.ts` (port contract + invalid-path/symlink-escape guards) and `src/storage/tests/path-guard.test.ts` (direct unit tests of every guard vector), plus `src/storage/tests/file-store.test.ts`. Full cross-platform coverage (Linux/macOS/Windows × Node 20/22).
+
+### 9a — Storage port, adapter, bootstrap & guards (delivered in PR #60)
+
+The `FileStore` interface, `LocalFileStore` adapter, `path-guard` confinement helpers, the `index.ts` barrel, and the `createStore()` wiring in `cli/index.ts` + `mcp/server.ts`. Root confinement and symlink-escape guards verified against macOS symlinked temp roots and Windows 8.3 short-name spellings.
+
+**Deliverable**: core depends only on `FileStore`/`StorageStat`; no engine types leak past the adapter. CI green on all platforms.
+
+**Commit**: `feat(storage): FileStore port, LocalFileStore adapter, bootstrap wiring, path-confinement guards`
+
+#### 9b — Storage module JSDoc & comment hygiene (delivered)
+
+Standard `@param`/`@returns`/`@throws` JSDoc on the `FileStore` interface and the `path-guard` helpers (explicit `{Type}` tokens), member-level docs on `StorageStat` fields, and removal of stale/verbose comments ("POSIX" path-convention wording, the over-long `toAbsolute` prose). Done in PR #60 review.
+
+**Deliverable**: storage public surface is documented at the port boundary; no misleading comments.
+
+**Commit**: `docs(storage): standard JSDoc, drop POSIX wording`
+
+#### 9b1 — Disposable real-data smoke-run gate (next PR)
+
+The lavish plan's Phase 2 gate includes a "real-data smoke run on a disposable data copy (`JHO_DATA` to a temp dir)" — not yet added in PR #60. Add a storage integration test (or CI step) that copies a sanitized real-layout fixture into a temp dir, points the store at it, and exercises the wired `createStore()` through the CLI/MCP entry points (`list`, `read`, `stat`, `readdir`, `withLock`) end-to-end. Proves the bootstrap wiring works on real data without touching the user's actual data root.
+
+**Deliverable**: smoke gate runs in CI alongside the standard battery; core still does not consume the store (that is Phase 3+). Fixture is sanitized (no real CVs/credentials/URLs).
+
+**Commit**: `test(storage): disposable real-data smoke-run gate`
+
+#### 9c — Migrate remaining `core/fs.ts` consumers onto the port
+
+`src/cli/commands/remove-application.ts` still imports `pathExists` from `core/fs.js`, bypassing the `FileStore` port. Route it through the injected store so no CLI command touches `node:fs` / `core/fs` directly.
+
+**Deliverable**: all CLI/MCP paths go through `FileStore`; `core/fs.ts` is retired or reduced to internal use only.
+
+#### 9d — Complete error-class coverage & contract tests
+
+`StorageUnsupportedError` is declared but never thrown by `LocalFileStore`; wire it where an operation is genuinely unsupported (or document it as reserved). Add contract tests for `StorageNotEmptyError` (non-recursive `rm` on a non-empty dir) and `StorageAlreadyExistsError` (write/mkdir over an existing file) paths not yet asserted.
+
+**Deliverable**: every port error class is either exercised or explicitly reserved; contract suite covers the full error surface.
+
+#### 9e — In-memory `FileStore` for tests
+
+`factory.ts` is structured for adapter selection; add a `MemoryFileStore` implementing `FileStore` so CLI/MCP tools can be unit-tested without a temp directory. Selectable via `createStore` when an in-memory root is passed.
+
+**Deliverable**: tool-level unit tests run against `MemoryFileStore`; no disk I/O in the unit tier.
+
+#### 9f — Campaign-scoped store routing
+
+`createStore()` resolves a single global data root. Campaign-scoped operations in `core/campaign/*` still compute roots via `resolveDataRoot()` + path joins directly. Expose a campaign-aware store accessor (campaign name → `FileStore` rooted at that campaign) so campaign logic routes through the port consistently.
+
+**Deliverable**: campaign operations resolve their store through the port rather than ad-hoc path joins.
+
+### Phase 10 — Polish & public readiness
 
 **Scope**:
 

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { extractJdFromUrl, extractJdFromText } from '../../../core/jobs/extract.js';
 import { registerExtractJd } from '../../tools/extract-jd.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -77,7 +78,7 @@ describe('extract_jd tool', () => {
       description: 'Job description text',
     });
 
-    const { client } = await createTestServer(registerExtractJd);
+    const { client } = await createTestServer((srv) => registerExtractJd(srv, createStore()));
 
     const result = await client.callTool({
       name: 'extract_jd',
@@ -101,7 +102,7 @@ describe('extract_jd tool', () => {
       description: 'Raw text description',
     });
 
-    const { client } = await createTestServer(registerExtractJd);
+    const { client } = await createTestServer((srv) => registerExtractJd(srv, createStore()));
 
     const result = await client.callTool({
       name: 'extract_jd',
@@ -118,7 +119,7 @@ describe('extract_jd tool', () => {
   });
 
   it('returns error when neither url nor text is provided', async () => {
-    const { client } = await createTestServer(registerExtractJd);
+    const { client } = await createTestServer((srv) => registerExtractJd(srv, createStore()));
 
     const result = await client.callTool({
       name: 'extract_jd',
@@ -131,7 +132,7 @@ describe('extract_jd tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(extractJdFromUrl).mockRejectedValue(new Error('Failed to fetch URL'));
 
-    const { client } = await createTestServer(registerExtractJd);
+    const { client } = await createTestServer((srv) => registerExtractJd(srv, createStore()));
 
     const result = await client.callTool({
       name: 'extract_jd',

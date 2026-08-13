@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { OwnershipInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { renderOwnership } from '../../core/campaign/ownership.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerOwnership(server: McpServer): void {
+export function registerOwnership(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'ownership',
     {

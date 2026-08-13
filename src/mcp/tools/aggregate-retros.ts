@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { AggregateRetrosInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
@@ -11,7 +12,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerAggregateRetros(server: McpServer): void {
+export function registerAggregateRetros(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'aggregate_retros',
     {

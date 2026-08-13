@@ -6,6 +6,7 @@ import { mcpLogger, getMcpLogPath } from './logger.js';
 import { registerTools } from './tools.js';
 import { registerResources } from './resources/index.js';
 import { registerPrompts } from './prompts/index.js';
+import { createStore } from '../storage/index.js';
 
 const SERVER_NAME = 'jho-mcp';
 
@@ -58,9 +59,14 @@ export async function startServer(): Promise<void> {
     safeLogFatal('unhandledRejection', reason);
   });
 
+  // Bootstrap storage: build the store once at startup and thread it
+  // explicitly into the tool constructors. Tools accept but do not consume
+  // it yet — wiring only; core domains switch to the store later.
+  const store = createStore();
+
   const server = createServer();
 
-  registerTools(server);
+  registerTools(server, store);
   registerResources(server);
   registerPrompts(server);
 

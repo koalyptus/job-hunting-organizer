@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { TrackApplicationInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { runTrack } from '../../core/track/track.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerTrackApplication(server: McpServer): void {
+export function registerTrackApplication(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'track_application',
     {

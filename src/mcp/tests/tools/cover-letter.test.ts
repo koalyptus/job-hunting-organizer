@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { generateCoverLetter, readCoverLetter } from '../../../core/applications/cover-letter.js';
 import { registerCoverLetter, registerReadCoverLetter } from '../../tools/cover-letter.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -60,7 +61,7 @@ describe('cover_letter tool', () => {
       durationMs: 5000,
     });
 
-    const { client } = await createTestServer(registerCoverLetter);
+    const { client } = await createTestServer((srv) => registerCoverLetter(srv, createStore()));
 
     const result = await client.callTool({
       name: 'cover_letter',
@@ -84,7 +85,7 @@ describe('cover_letter tool', () => {
       durationMs: 3000,
     });
 
-    const { client } = await createTestServer(registerCoverLetter);
+    const { client } = await createTestServer((srv) => registerCoverLetter(srv, createStore()));
 
     const result = await client.callTool({
       name: 'cover_letter',
@@ -106,7 +107,7 @@ describe('cover_letter tool', () => {
       durationMs: 1000,
     });
 
-    const { client } = await createTestServer(registerCoverLetter);
+    const { client } = await createTestServer((srv) => registerCoverLetter(srv, createStore()));
 
     const result = await client.callTool({
       name: 'cover_letter',
@@ -124,7 +125,7 @@ describe('cover_letter tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(generateCoverLetter).mockRejectedValue(new Error('Failed to read JD'));
 
-    const { client } = await createTestServer(registerCoverLetter);
+    const { client } = await createTestServer((srv) => registerCoverLetter(srv, createStore()));
 
     const result = await client.callTool({
       name: 'cover_letter',
@@ -143,7 +144,7 @@ describe('read_cover_letter tool', () => {
   it('reads an existing cover letter', async () => {
     vi.mocked(readCoverLetter).mockResolvedValue('# Cover Letter\nDear Hiring Manager...');
 
-    const { client } = await createTestServer(registerReadCoverLetter);
+    const { client } = await createTestServer((srv) => registerReadCoverLetter(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_cover_letter',
@@ -158,7 +159,7 @@ describe('read_cover_letter tool', () => {
       new Error('No cover letter found for "missing-app"'),
     );
 
-    const { client } = await createTestServer(registerReadCoverLetter);
+    const { client } = await createTestServer((srv) => registerReadCoverLetter(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_cover_letter',

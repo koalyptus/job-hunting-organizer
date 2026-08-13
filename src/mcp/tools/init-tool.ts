@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { InitInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { runInit } from '../../core/init/wizard.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerInit(server: McpServer): void {
+export function registerInit(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'init',
     {

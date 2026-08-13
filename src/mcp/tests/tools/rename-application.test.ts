@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerRenameApplication } from '../../tools/rename-application.js';
+import { createStore } from '../../../storage/index.js';
 import { renameApplication } from '../../../core/applications/rename.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -62,7 +63,9 @@ describe('rename_application tool', () => {
   it('renames an application successfully', async () => {
     vi.mocked(renameApplication).mockResolvedValue(undefined);
 
-    const { client } = await createTestServer(registerRenameApplication);
+    const { client } = await createTestServer((srv) =>
+      registerRenameApplication(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'rename_application',
@@ -77,7 +80,9 @@ describe('rename_application tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(renameApplication).mockRejectedValue(new Error('rename failed'));
 
-    const { client } = await createTestServer(registerRenameApplication);
+    const { client } = await createTestServer((srv) =>
+      registerRenameApplication(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'rename_application',

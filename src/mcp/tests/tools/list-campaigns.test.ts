@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { runListCampaigns } from '../../../core/list/list.js';
 import { registerListCampaigns } from '../../tools/list-campaigns.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -39,7 +40,7 @@ describe('list_campaigns tool', () => {
       campaigns: [{ name: 'default', applicationCount: 0 }],
     });
 
-    const { client } = await createTestServer(registerListCampaigns);
+    const { client } = await createTestServer((srv) => registerListCampaigns(srv, createStore()));
 
     const result = await client.callTool({ name: 'list_campaigns', arguments: {} });
     const data = JSON.parse(getTextContent(result));
@@ -52,7 +53,7 @@ describe('list_campaigns tool', () => {
       throw new Error('test error');
     });
 
-    const { client } = await createTestServer(registerListCampaigns);
+    const { client } = await createTestServer((srv) => registerListCampaigns(srv, createStore()));
 
     const result = await client.callTool({ name: 'list_campaigns', arguments: {} });
     expect(result.isError).toBe(true);

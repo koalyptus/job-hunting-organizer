@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { registerReadCampaignConfig } from '../../tools/read-campaign-config.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -37,7 +38,9 @@ describe('read_campaign_config tool', () => {
   });
 
   it('returns campaign config', async () => {
-    const { client } = await createTestServer(registerReadCampaignConfig);
+    const { client } = await createTestServer((srv) =>
+      registerReadCampaignConfig(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'read_campaign_config',
@@ -52,7 +55,9 @@ describe('read_campaign_config tool', () => {
       throw new Error('config error');
     });
 
-    const { client } = await createTestServer(registerReadCampaignConfig);
+    const { client } = await createTestServer((srv) =>
+      registerReadCampaignConfig(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'read_campaign_config',
@@ -69,7 +74,9 @@ describe('read_campaign_config tool', () => {
       clientSecret: 'secret-secret',
     } as unknown as ReturnType<typeof loadCampaignConfig>);
 
-    const { client } = await createTestServer(registerReadCampaignConfig);
+    const { client } = await createTestServer((srv) =>
+      registerReadCampaignConfig(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'read_campaign_config',

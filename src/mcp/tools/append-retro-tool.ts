@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { AppendRetroInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { appendRetro } from '../../core/retro/retro.js';
@@ -10,7 +11,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerAppendRetro(server: McpServer): void {
+export function registerAppendRetro(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'append_retro',
     {

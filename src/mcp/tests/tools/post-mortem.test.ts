@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { startRetro } from '../../../core/retro/retro.js';
 import { registerPostMortem } from '../../tools/post-mortem.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -59,7 +60,7 @@ describe('post_mortem tool', () => {
       index: 1,
     });
 
-    const { client } = await createTestServer(registerPostMortem);
+    const { client } = await createTestServer((srv) => registerPostMortem(srv, createStore()));
 
     const result = await client.callTool({
       name: 'post_mortem',
@@ -91,7 +92,7 @@ describe('post_mortem tool', () => {
       index: 1,
     });
 
-    const { client } = await createTestServer(registerPostMortem);
+    const { client } = await createTestServer((srv) => registerPostMortem(srv, createStore()));
 
     const result = await client.callTool({
       name: 'post_mortem',
@@ -112,7 +113,7 @@ describe('post_mortem tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(startRetro).mockRejectedValue(new Error('at least one weak topic is required'));
 
-    const { client } = await createTestServer(registerPostMortem);
+    const { client } = await createTestServer((srv) => registerPostMortem(srv, createStore()));
 
     const result = await client.callTool({
       name: 'post_mortem',

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { registerKbAdd } from '../../tools/kb-add.js';
+import { createStore } from '../../../storage/index.js';
 import { ingestKnowledgeBase } from '../../../core/campaign/kb-ingest.js';
 import { loadCampaignConfig } from '../../../core/config/config.js';
 
@@ -54,7 +55,7 @@ describe('kb_add tool', () => {
   });
 
   it('copies KB docs successfully', async () => {
-    const { client } = await createTestServer(registerKbAdd);
+    const { client } = await createTestServer((srv) => registerKbAdd(srv, createStore()));
 
     const result = await client.callTool({
       name: 'kb_add',
@@ -68,7 +69,7 @@ describe('kb_add tool', () => {
   it('returns error when ingest fails', async () => {
     vi.mocked(ingestKnowledgeBase).mockRejectedValue(new KbError('ingest failed'));
 
-    const { client } = await createTestServer(registerKbAdd);
+    const { client } = await createTestServer((srv) => registerKbAdd(srv, createStore()));
 
     const result = await client.callTool({
       name: 'kb_add',
@@ -82,7 +83,7 @@ describe('kb_add tool', () => {
     vi.mocked(ingestKnowledgeBase).mockResolvedValue(['doc1.md', 'doc2.md']);
     vi.mocked(loadCampaignConfig).mockReturnValue({ knowledgeBase: {} } as never);
 
-    const { client } = await createTestServer(registerKbAdd);
+    const { client } = await createTestServer((srv) => registerKbAdd(srv, createStore()));
 
     const result = await client.callTool({
       name: 'kb_add',

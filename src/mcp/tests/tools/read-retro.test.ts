@@ -31,6 +31,7 @@ vi.mock('../../../core/retro/index.js', () => ({
 
 import { showRetro } from '../../../core/retro/index.js';
 import { registerReadRetro } from '../../tools/read-retro.js';
+import { createStore } from '../../../storage/index.js';
 
 describe('read_retro tool', () => {
   beforeEach(() => {
@@ -42,7 +43,7 @@ describe('read_retro tool', () => {
       '# Retro\n\n## Week 1\n- Fixed SQL performance issues\n- Learned about connection pooling';
     vi.mocked(showRetro).mockResolvedValue(testRetroContent);
 
-    const { client } = await createTestServer(registerReadRetro);
+    const { client } = await createTestServer((srv) => registerReadRetro(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_retro',
@@ -58,7 +59,7 @@ describe('read_retro tool', () => {
       throw new Error('retro not found: missing-app');
     });
 
-    const { client } = await createTestServer(registerReadRetro);
+    const { client } = await createTestServer((srv) => registerReadRetro(srv, createStore()));
 
     const result = await client.callTool({
       name: 'read_retro',

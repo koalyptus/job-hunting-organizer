@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { repairApp, repairAll } from '../../../core/repair/repair.js';
 import { registerRepair } from '../../tools/repair-tool.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -48,7 +49,7 @@ describe('repair tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(repairAll).mockResolvedValue({ actions: [], isIndexRebuilt: true });
 
-    const { client } = await createTestServer(registerRepair);
+    const { client } = await createTestServer((srv) => registerRepair(srv, createStore()));
 
     const result = await client.callTool({ name: 'repair', arguments: { campaign: 'default' } });
     const data = JSON.parse(getTextContent(result));
@@ -61,7 +62,7 @@ describe('repair tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(repairApp).mockResolvedValue({ actions: [], isIndexRebuilt: false });
 
-    const { client } = await createTestServer(registerRepair);
+    const { client } = await createTestServer((srv) => registerRepair(srv, createStore()));
 
     await client.callTool({
       name: 'repair',
@@ -80,7 +81,7 @@ describe('repair tool', () => {
       throw new Error('test error');
     });
 
-    const { client } = await createTestServer(registerRepair);
+    const { client } = await createTestServer((srv) => registerRepair(srv, createStore()));
 
     const result = await client.callTool({ name: 'repair', arguments: { campaign: 'default' } });
     expect(result.isError).toBe(true);

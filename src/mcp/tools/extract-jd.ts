@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { ExtractJdInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { getConfig } from '../../core/config/config.js';
@@ -12,7 +13,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerExtractJd(server: McpServer): void {
+export function registerExtractJd(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'extract_jd',
     {

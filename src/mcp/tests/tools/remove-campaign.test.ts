@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { registerRemoveCampaign } from '../../tools/remove-campaign.js';
+import { createStore } from '../../../storage/index.js';
 import { removeCampaign } from '../../../core/campaign/remove-campaign.js';
 import { mcpLogger } from '../../logger.js';
 
@@ -52,7 +53,7 @@ describe('remove_campaign tool', () => {
   });
 
   it('removes a campaign successfully', async () => {
-    const { client } = await createTestServer(registerRemoveCampaign);
+    const { client } = await createTestServer((srv) => registerRemoveCampaign(srv, createStore()));
 
     const result = await client.callTool({
       name: 'remove_campaign',
@@ -73,7 +74,7 @@ describe('remove_campaign tool', () => {
   });
 
   it('passes confirm=true explicitly', async () => {
-    const { client } = await createTestServer(registerRemoveCampaign);
+    const { client } = await createTestServer((srv) => registerRemoveCampaign(srv, createStore()));
 
     const result = await client.callTool({
       name: 'remove_campaign',
@@ -84,7 +85,7 @@ describe('remove_campaign tool', () => {
   });
 
   it('passes confirm=false explicitly', async () => {
-    const { client } = await createTestServer(registerRemoveCampaign);
+    const { client } = await createTestServer((srv) => registerRemoveCampaign(srv, createStore()));
 
     const result = await client.callTool({
       name: 'remove_campaign',
@@ -97,7 +98,7 @@ describe('remove_campaign tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(removeCampaign).mockRejectedValue(new Error('campaign not found'));
 
-    const { client } = await createTestServer(registerRemoveCampaign);
+    const { client } = await createTestServer((srv) => registerRemoveCampaign(srv, createStore()));
 
     const result = await client.callTool({
       name: 'remove_campaign',

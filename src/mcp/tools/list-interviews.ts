@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { ListInterviewsInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
@@ -11,7 +12,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerListInterviews(server: McpServer): void {
+export function registerListInterviews(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'list_interviews',
     { description: 'List all interviews for an application', inputSchema: ListInterviewsInput },

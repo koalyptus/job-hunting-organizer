@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/server';
+import type { FileStore } from '../../storage/types.js';
 import { ReadProfileInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot } from '../../core/paths.js';
@@ -11,7 +12,7 @@ import { mcpLogger } from '../logger.js';
  *
  * @param server - The MCP server instance.
  */
-export function registerReadProfile(server: McpServer): void {
+export function registerReadProfile(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'read_profile',
     { description: 'Read the candidate profile for a campaign', inputSchema: ReadProfileInput },

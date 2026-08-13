@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { readShowData, readShowFile, ShowError } from '../../../core/applications/show.js';
 import { registerShowApplication } from '../../tools/show-application.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -67,7 +68,7 @@ describe('show_application tool', () => {
     });
     vi.mocked(readShowFile).mockResolvedValue('# Job Description\n\nWe are hiring...');
 
-    const { client } = await createTestServer(registerShowApplication);
+    const { client } = await createTestServer((srv) => registerShowApplication(srv, createStore()));
 
     const result = await client.callTool({
       name: 'show_application',
@@ -88,7 +89,7 @@ describe('show_application tool', () => {
     });
     vi.mocked(readShowFile).mockRejectedValue(new ShowError('File not found: jd.md'));
 
-    const { client } = await createTestServer(registerShowApplication);
+    const { client } = await createTestServer((srv) => registerShowApplication(srv, createStore()));
 
     const result = await client.callTool({
       name: 'show_application',
@@ -104,7 +105,7 @@ describe('show_application tool', () => {
     vi.mocked(resolveAppliedDir).mockReturnValue('/data/campaigns/default/applied');
     vi.mocked(readShowData).mockRejectedValue(new Error('test error'));
 
-    const { client } = await createTestServer(registerShowApplication);
+    const { client } = await createTestServer((srv) => registerShowApplication(srv, createStore()));
 
     const result = await client.callTool({
       name: 'show_application',
@@ -124,7 +125,7 @@ describe('show_application tool', () => {
     });
     vi.mocked(readShowFile).mockRejectedValue(new Error('disk failure'));
 
-    const { client } = await createTestServer(registerShowApplication);
+    const { client } = await createTestServer((srv) => registerShowApplication(srv, createStore()));
 
     const result = await client.callTool({
       name: 'show_application',

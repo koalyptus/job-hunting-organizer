@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
 import { runTrack } from '../../../core/track/track.js';
 import { registerTrackApplication } from '../../tools/track-application.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -53,7 +54,9 @@ describe('track_application tool', () => {
   it('creates an application from URL', async () => {
     vi.mocked(runTrack).mockResolvedValue({ slug: 'new-app', changed: true });
 
-    const { client } = await createTestServer(registerTrackApplication);
+    const { client } = await createTestServer((srv) =>
+      registerTrackApplication(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'track_application',
@@ -68,7 +71,9 @@ describe('track_application tool', () => {
   it('updates an existing application by slug', async () => {
     vi.mocked(runTrack).mockResolvedValue({ slug: 'existing-app', changed: true });
 
-    const { client } = await createTestServer(registerTrackApplication);
+    const { client } = await createTestServer((srv) =>
+      registerTrackApplication(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'track_application',
@@ -82,7 +87,9 @@ describe('track_application tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(runTrack).mockRejectedValue(new Error('failed to track'));
 
-    const { client } = await createTestServer(registerTrackApplication);
+    const { client } = await createTestServer((srv) =>
+      registerTrackApplication(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'track_application',

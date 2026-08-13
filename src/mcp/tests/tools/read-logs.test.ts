@@ -27,6 +27,7 @@ vi.mock('../../logger.js', () => ({
 }));
 
 vi.mock('../../../core/paths.js', () => ({
+  resolveDataRoot: vi.fn(),
   resolveConfigHome: vi.fn(() => '/home/user/.job-hunting-organizer'),
   resolveCampaignRoot: vi.fn(),
   resolveAppliedDir: vi.fn(),
@@ -39,6 +40,7 @@ vi.mock('node:fs', () => ({
 
 import { existsSync, readFileSync } from 'node:fs';
 import { registerReadLogs } from '../../tools/read-logs.js';
+import { createStore } from '../../../storage/index.js';
 
 describe('read_logs tool', () => {
   beforeEach(() => {
@@ -51,7 +53,7 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: {} });
     const data = getTextContent(result);
@@ -62,7 +64,7 @@ describe('read_logs tool', () => {
   it('returns error when log file does not exist', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: {} });
     expect(result.isError).toBe(true);
@@ -75,7 +77,7 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: { level: 'error' } });
     const data = getTextContent(result);
@@ -89,7 +91,7 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: { tail: 2 } });
     const data = getTextContent(result);
@@ -103,7 +105,7 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: { level: 'info' } });
     const data = getTextContent(result);
@@ -118,7 +120,7 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: { level: 'warn' } });
     const data = getTextContent(result);
@@ -131,7 +133,7 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: { json: true } });
     const data = getTextContent(result);
@@ -145,7 +147,7 @@ describe('read_logs tool', () => {
       throw new Error('EACCES: permission denied');
     });
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: {} });
     expect(result.isError).toBe(true);
@@ -157,7 +159,7 @@ describe('read_logs tool', () => {
     vi.mocked(existsSync).mockImplementation((p) => String(p).includes('jho-mcp.log'));
     vi.mocked(readFileSync).mockReturnValue(testLogContent);
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: {} });
     const data = getTextContent(result);
@@ -173,7 +175,7 @@ describe('read_logs tool', () => {
       return String(p).includes('jho-mcp.log') ? mcpLog : cliLog;
     });
 
-    const { client } = await createTestServer(registerReadLogs);
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
 
     const result = await client.callTool({ name: 'read_logs', arguments: {} });
     const data = getTextContent(result);

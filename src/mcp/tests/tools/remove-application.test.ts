@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerRemoveApplication } from '../../tools/remove-application.js';
+import { createStore } from '../../../storage/index.js';
 import { deleteApplication } from '../../../core/applications/applications.js';
 import { mcpLogger } from '../../logger.js';
 
@@ -51,7 +52,9 @@ describe('remove_application tool', () => {
   it('removes an application successfully', async () => {
     vi.mocked(deleteApplication).mockResolvedValue(true);
 
-    const { client } = await createTestServer(registerRemoveApplication);
+    const { client } = await createTestServer((srv) =>
+      registerRemoveApplication(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'remove_application',
@@ -74,7 +77,9 @@ describe('remove_application tool', () => {
   it('returns error when application not found', async () => {
     vi.mocked(deleteApplication).mockResolvedValue(false);
 
-    const { client } = await createTestServer(registerRemoveApplication);
+    const { client } = await createTestServer((srv) =>
+      registerRemoveApplication(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'remove_application',
@@ -87,7 +92,9 @@ describe('remove_application tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(deleteApplication).mockRejectedValue(new Error('delete failed'));
 
-    const { client } = await createTestServer(registerRemoveApplication);
+    const { client } = await createTestServer((srv) =>
+      registerRemoveApplication(srv, createStore()),
+    );
 
     const result = await client.callTool({
       name: 'remove_application',

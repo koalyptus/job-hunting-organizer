@@ -3,6 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { aggregateRetros } from '../../../core/retro/aggregate.js';
 import { registerAggregateRetros } from '../../tools/aggregate-retros.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -32,6 +33,7 @@ vi.mock('../../logger.js', () => ({
 }));
 
 vi.mock('../../../core/paths.js', () => ({
+  resolveDataRoot: vi.fn(),
   resolveCampaignRoot: vi.fn(() => '/data/campaigns/default'),
   resolveAppliedDir: vi.fn(() => '/data/campaigns/default/applied'),
 }));
@@ -54,7 +56,7 @@ describe('aggregate_retros tool', () => {
       { label: 'Behavioral — STAR format', count: 2, apps: ['app1', 'app4'] },
     ]);
 
-    const { client } = await createTestServer(registerAggregateRetros);
+    const { client } = await createTestServer((srv) => registerAggregateRetros(srv, createStore()));
 
     const result = await client.callTool({
       name: 'aggregate_retros',
@@ -75,7 +77,7 @@ describe('aggregate_retros tool', () => {
       { label: 'System design — consistency models', count: 1, apps: ['app1'] },
     ]);
 
-    const { client } = await createTestServer(registerAggregateRetros);
+    const { client } = await createTestServer((srv) => registerAggregateRetros(srv, createStore()));
 
     const result = await client.callTool({
       name: 'aggregate_retros',
@@ -92,7 +94,7 @@ describe('aggregate_retros tool', () => {
   it('returns error when core function fails', async () => {
     vi.mocked(aggregateRetros).mockRejectedValue(new Error('Failed to list applications'));
 
-    const { client } = await createTestServer(registerAggregateRetros);
+    const { client } = await createTestServer((srv) => registerAggregateRetros(srv, createStore()));
 
     const result = await client.callTool({
       name: 'aggregate_retros',
