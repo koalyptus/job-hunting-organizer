@@ -21,6 +21,8 @@ interface FileSystemWithAppend {
 }
 
 const LOCK_KEY_SANITIZE = /[^a-zA-Z0-9_-]/g;
+/** A StoragePath must be relative POSIX — no Windows drive letters (e.g. `C:`). */
+const STORAGEPATH_NO_DRIVE = /^[a-zA-Z]:/;
 const LOCK_STALE_MS = 10_000;
 const LOCK_RETRIES = { retries: 5, minTimeout: 50, maxTimeout: 500 };
 const LOCK_DIR = '.locks';
@@ -48,7 +50,7 @@ function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
   if (path === '') {
     return root;
   }
-  if (path.startsWith('/') || path.startsWith('..') || /^[a-zA-Z]:/.test(path)) {
+  if (path.startsWith('/') || path.startsWith('..') || STORAGEPATH_NO_DRIVE.test(path)) {
     throw new Error(
       `Invalid StoragePath: "${path}" — must be relative POSIX, no leading slash, no '..', no drive letters`,
     );
@@ -414,16 +416,4 @@ export class LocalFileStore implements FileStore {
       }
     }
   }
-}
-
-/**
- * Factory function — creates a LocalFileStore over the data root.
- * No module-level provider/global. Each caller builds the store explicitly
- * at its entry point and threads the returned `FileStore` into
- * command/tool constructors (wiring only — core does not consume it yet).
- * configHome is deliberately NOT routed through the port (config.json holds
- * creds/logs; local-only by definition; config.ts and logs.ts stay on direct fs).
- */
-export function createStore(dataRoot?: string): FileStore {
-  return new LocalFileStore(dataRoot);
 }

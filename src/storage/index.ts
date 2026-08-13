@@ -13,4 +13,5 @@ export type {
 // `resolveDataRoot` is re-exported from `core/paths.js` (single source of
 // truth for the data root and the `$JHO_DATA` override). The adapter does
 // not re-implement it.
-export { LocalFileStore, resolveDataRoot, createStore } from './local/file-store.js';
+export { LocalFileStore, resolveDataRoot } from './local/file-store.js';
+export { createStore } from './factory.js';
