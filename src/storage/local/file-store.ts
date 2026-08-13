@@ -67,16 +67,42 @@ function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
     );
   }
   const abs = fs.resolve(root, path);
-  assertWithinRoot(fs, root, abs, path);
+  const canonicalRoot = canonicalizeRoot(fs, root);
+  // Literal ".." check uses the declared root (both symlink-spelled); the
+  // symlink-aware walk below uses the canonical root.
+  assertWithinRoot(fs, root, canonicalRoot, abs, path);
   return abs;
 }
 
 /**
- * Confirm `abs` stays under `root`, defeating both literal ".." escapes and
- * symlink escapes. Canonicalizes the deepest existing ancestor (the write
- * target itself may not exist yet) and checks that the real path is confined.
+ * Canonicalize the data root once. macOS keeps /var/folders (and /tmp) as a
+ * symlink to /private/var/folders, so the root passed in may not be the
+ * on-disk canonical path. Comparing canonical-vs-canonical in assertWithinRoot
+ * avoids every normal path tripping the escape check on such platforms.
  */
-function assertWithinRoot(fs: IFileSystem, root: string, abs: string, path: StoragePath): void {
+function canonicalizeRoot(fs: IFileSystem, root: string): string {
+  try {
+    return fs.realpathSync(root);
+  } catch {
+    return root;
+  }
+}
+
+/**
+ * Confirm `abs` stays under `root`, defeating both literal ".." escapes and
+ * symlink escapes. The literal check compares against the declared `root`
+ * (so a symlinked root like /tmp → /private/tmp is fine); the realpath walk
+ * compares against `canonicalRoot` so a symlink *inside* the root pointing
+ * *outside* it is detected. The walk canonicalizes the deepest existing
+ * ancestor (the write target itself may not exist yet).
+ */
+function assertWithinRoot(
+  fs: IFileSystem,
+  root: string,
+  canonicalRoot: string,
+  abs: string,
+  path: StoragePath,
+): void {
   const rel = fs.relative(root, abs);
   if (rel.startsWith('..') || fs.isAbsolute(rel)) {
     throw new Error(`Path escapes data root: "${path}"`);
@@ -86,7 +112,7 @@ function assertWithinRoot(fs: IFileSystem, root: string, abs: string, path: Stor
   for (;;) {
     try {
       const real = fs.realpathSync(dir);
-      const realRel = fs.relative(root, real);
+      const realRel = fs.relative(canonicalRoot, real);
       if (realRel.startsWith('..') || fs.isAbsolute(realRel)) {
         throw new Error(`Path escapes data root via symlink: "${path}"`);
       }
@@ -116,9 +142,16 @@ function assertWithinRoot(fs: IFileSystem, root: string, abs: string, path: Stor
 /**
  * Mutating operations must never target the data root itself (e.g. rm('.')
  * would delete the entire store). Reads may target the root; writes may not.
+ * Compares against both the declared and canonical root (macOS /tmp →
+ * /private/tmp) so a root spelled either way is rejected.
  */
-function forbidRootTarget(path: StoragePath, abs: string, root: string): void {
-  if (abs === root) {
+function forbidRootTarget(
+  path: StoragePath,
+  abs: string,
+  root: string,
+  canonicalRoot: string,
+): void {
+  if (abs === root || abs === canonicalRoot) {
     throw new Error(`Invalid StoragePath: "${path}" — must not target the data root`);
   }
 }
@@ -175,7 +208,7 @@ export class LocalFileStore implements FileStore {
 
   async write(path: StoragePath, content: string | Uint8Array): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
-    forbidRootTarget(path, abs, this.dataRoot);
+    forbidRootTarget(path, abs, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
     const parent = this.fs.dirname(abs);
 
     // Ensure parent directory exists
@@ -210,7 +243,7 @@ export class LocalFileStore implements FileStore {
 
   async append(path: StoragePath, content: string | Uint8Array): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
-    forbidRootTarget(path, abs, this.dataRoot);
+    forbidRootTarget(path, abs, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
     const parent = this.fs.dirname(abs);
     try {
       await this.fs.promises.mkdir(parent, { recursive: true });
@@ -283,7 +316,7 @@ export class LocalFileStore implements FileStore {
 
   async mkdir(path: StoragePath): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
-    forbidRootTarget(path, abs, this.dataRoot);
+    forbidRootTarget(path, abs, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
     try {
       await this.fs.promises.mkdir(abs, { recursive: true });
     } catch (err) {
@@ -304,8 +337,8 @@ export class LocalFileStore implements FileStore {
   async rename(from: StoragePath, to: StoragePath): Promise<void> {
     const src = toAbsolute(this.fs, this.dataRoot, from);
     const dest = toAbsolute(this.fs, this.dataRoot, to);
-    forbidRootTarget(from, src, this.dataRoot);
-    forbidRootTarget(to, dest, this.dataRoot);
+    forbidRootTarget(from, src, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
+    forbidRootTarget(to, dest, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
 
     // Check source exists
     try {
@@ -345,7 +378,7 @@ export class LocalFileStore implements FileStore {
 
   async rm(path: StoragePath, options?: { readonly recursive?: boolean }): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
-    forbidRootTarget(path, abs, this.dataRoot);
+    forbidRootTarget(path, abs, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
     try {
       const stats = await this.fs.promises.stat(abs);
       if (stats.isDirectory()) {
@@ -378,8 +411,8 @@ export class LocalFileStore implements FileStore {
   async copy(from: StoragePath, to: StoragePath): Promise<void> {
     const src = toAbsolute(this.fs, this.dataRoot, from);
     const dest = toAbsolute(this.fs, this.dataRoot, to);
-    forbidRootTarget(from, src, this.dataRoot);
-    forbidRootTarget(to, dest, this.dataRoot);
+    forbidRootTarget(from, src, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
+    forbidRootTarget(to, dest, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
 
     // Source must exist — normalize to the port's not-found error (same as rename).
     try {
