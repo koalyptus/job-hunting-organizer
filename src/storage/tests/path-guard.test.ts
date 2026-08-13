@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtemp, rm, symlink, mkdir, realpath } from 'node:fs/promises';
+import { mkdtemp, rm, symlink, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createNodeFs } from '@file-services/node';
@@ -109,7 +109,11 @@ describe('path-guard: canonicalizeRoot', () => {
     await rm(link, { recursive: true, force: true });
     await symlink(real, link, 'dir');
     try {
-      expect(canonicalizeRoot(fs, link)).toBe(await realpath(real));
+      // Both go through the engine's realpathSync, so they agree on Windows
+      // (where node:fs realpath may return a different 8.3 spelling than the
+      // engine). The point is that a symlinked root canonicalizes to the same
+      // place as its real target.
+      expect(canonicalizeRoot(fs, link)).toBe(canonicalizeRoot(fs, real));
     } finally {
       await rm(real, { recursive: true, force: true });
       await rm(link, { recursive: true, force: true });
@@ -128,7 +132,7 @@ describe('path-guard: forbidRootTarget', () => {
 
   beforeAll(async () => {
     root = await mkdtemp(join(tmpdir(), 'jho-guard-'));
-    canonicalRoot = await realpath(root);
+    canonicalRoot = canonicalizeRoot(fs, root);
   });
   afterAll(async () => {
     await rm(root, { recursive: true, force: true });
@@ -149,8 +153,8 @@ describe('path-guard: forbidRootTarget', () => {
     await rm(link, { recursive: true, force: true });
     await symlink(real, link, 'dir');
     try {
-      // declared = symlink, canonical = real; both must be rejected
-      const canonical = await realpath(real);
+      // declared = symlink, canonical = realpath; both must be rejected
+      const canonical = canonicalizeRoot(fs, real);
       expect(() => forbidRootTarget('', link, link, canonical)).toThrow(
         /must not target the data root/,
       );
