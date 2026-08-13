@@ -1,7 +1,7 @@
 ---
 slug: 2026-Jan-15-SE-ACME-Corp-sample-role
 status: applied
-appliedDate: 2026-01-15
+appliedOn: 2026-01-15
 title: Sample Engineer
 company: ACME Corp
 location: Anywhere

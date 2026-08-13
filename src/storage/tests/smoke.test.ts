@@ -35,7 +35,7 @@ describe('FileStore smoke (real-data layout, disposable temp root)', () => {
   describe('read', () => {
     it('reads a UTF-8 file from the wired layout', async () => {
       const store = createStore(tempDir);
-      const meta = await store.read('applied/sample-role/meta.md');
+      const meta = await store.read('applied/2026-Jan-15-SE-ACME-Corp-sample-role/meta.md');
       expect(meta).toContain('ACME Corp');
       expect(meta).toContain('Sample Engineer');
     });
@@ -57,7 +57,7 @@ describe('FileStore smoke (real-data layout, disposable temp root)', () => {
   describe('readBytes', () => {
     it('reads raw bytes whose decoded text matches the fixture', async () => {
       const store = createStore(tempDir);
-      const bytes = await store.readBytes('applied/sample-role/jd.md');
+      const bytes = await store.readBytes('applied/2026-Jan-15-SE-ACME-Corp-sample-role/jd.md');
       const decoded = new TextDecoder().decode(bytes);
       expect(decoded).toContain('Sample Engineer');
     });
@@ -73,7 +73,7 @@ describe('FileStore smoke (real-data layout, disposable temp root)', () => {
   describe('exists', () => {
     it('returns true for a real fixture path', async () => {
       const store = createStore(tempDir);
-      expect(await store.exists('applied/sample-role/meta.md')).toBe(true);
+      expect(await store.exists('applied/2026-Jan-15-SE-ACME-Corp-sample-role/meta.md')).toBe(true);
     });
 
     it('returns false for a non-existent path', async () => {
@@ -83,14 +83,14 @@ describe('FileStore smoke (real-data layout, disposable temp root)', () => {
 
     it('returns true for a directory entry', async () => {
       const store = createStore(tempDir);
-      expect(await store.exists('applied/sample-role')).toBe(true);
+      expect(await store.exists('applied/2026-Jan-15-SE-ACME-Corp-sample-role')).toBe(true);
     });
   });
 
   describe('stat', () => {
     it('returns kind=directory and a Date mtime for a directory', async () => {
       const store = createStore(tempDir);
-      const dirStat = await store.stat('applied/sample-role');
+      const dirStat = await store.stat('applied/2026-Jan-15-SE-ACME-Corp-sample-role');
       expect(dirStat.kind).toBe('directory');
       expect(dirStat.mtime).toBeInstanceOf(Date);
       expect(Number.isFinite(dirStat.mtime.getTime())).toBe(true);
@@ -98,7 +98,7 @@ describe('FileStore smoke (real-data layout, disposable temp root)', () => {
 
     it('returns kind=file for a file', async () => {
       const store = createStore(tempDir);
-      const fileStat = await store.stat('applied/sample-role/meta.md');
+      const fileStat = await store.stat('applied/2026-Jan-15-SE-ACME-Corp-sample-role/meta.md');
       expect(fileStat.kind).toBe('file');
       expect(fileStat.size).toBeGreaterThan(0);
     });
@@ -112,12 +112,15 @@ describe('FileStore smoke (real-data layout, disposable temp root)', () => {
   });
 
   describe('readdir', () => {
-    it('lists applied/ entries including sample-role', async () => {
+    it('lists applied/ entries including the slug-conforming fixture folder', async () => {
       const store = createStore(tempDir);
       const entries = await store.readdir('applied');
-      expect(entries).toContain('sample-role');
-      expect(entries).not.toContain('.');
-      expect(entries).not.toContain('..');
+      // The fixture folder name matches SLUG_PATTERN, so it mirrors a real
+      // application directory the CLI would recognise via cwd inference.
+      expect(entries).toContain('2026-Jan-15-SE-ACME-Corp-sample-role');
+      // Documented contract: readdir filters '.' and '..' by default, so the
+      // returned set is exactly the real entries (no special entries).
+      expect(entries.sort()).toEqual(['2026-Jan-15-SE-ACME-Corp-sample-role']);
     });
 
     it('lists knowledge-base/ entries including notes.md', async () => {
@@ -209,8 +212,11 @@ describe('FileStore smoke (real-data layout, disposable temp root)', () => {
   describe('write round-trip', () => {
     it('writes a new file under the temp root and reads it back', async () => {
       const store = createStore(tempDir);
-      await store.write('applied/sample-role/notes.md', 'placeholder write');
-      const got = await store.read('applied/sample-role/notes.md');
+      await store.write(
+        'applied/2026-Jan-15-SE-ACME-Corp-sample-role/notes.md',
+        'placeholder write',
+      );
+      const got = await store.read('applied/2026-Jan-15-SE-ACME-Corp-sample-role/notes.md');
       expect(got).toBe('placeholder write');
     });
 
