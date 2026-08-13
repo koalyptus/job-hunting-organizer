@@ -71,7 +71,7 @@
   - [x] 8p — Misc fixes: copy-paste-friendly `answer` output (plain qa.md storage) + init wizard step refactor
 - [ ] **Phase 9** — Storage port & adapter
   - [x] 9a — Storage port, adapter, bootstrap & guards
-  - [x] 9b — Storage architecture docs
+  - [x] 9b — Storage module JSDoc & comment hygiene
   - [ ] 9c — Migrate remaining `core/fs.ts` consumers onto the port
   - [ ] 9d — Complete error-class coverage & contract tests
   - [ ] 9e — In-memory `FileStore` for tests
@@ -1094,13 +1094,13 @@ The `FileStore` interface, `LocalFileStore` adapter, `path-guard` confinement he
 
 **Commit**: `feat(storage): FileStore port, LocalFileStore adapter, bootstrap wiring, path-confinement guards`
 
-#### 9b — Storage architecture docs (delivered)
+#### 9b — Storage module JSDoc & comment hygiene (delivered)
 
-- `docs/STORAGE.md` — why a port (swappable backend, on-disk format stays the contract), the `FileStore` contract and `StorageStat` shape, the root-confinement / symlink-guard model, and engine injection via `createStore()`.
+Standard `@param`/`@returns`/`@throws` JSDoc on the `FileStore` interface and the `path-guard` helpers (explicit `{Type}` tokens), member-level docs on `StorageStat` fields, and removal of stale/verbose comments ("POSIX" path-convention wording, the over-long `toAbsolute` prose). Done in PR #60 review.
 
-**Deliverable**: storage design documented; referenced from this roadmap.
+**Deliverable**: storage public surface is documented at the port boundary; no misleading comments.
 
-**Commit**: `docs: storage port architecture`
+**Commit**: `docs(storage): standard JSDoc, drop POSIX wording`
 
 #### 9c — Migrate remaining `core/fs.ts` consumers onto the port
 
