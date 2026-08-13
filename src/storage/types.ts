@@ -18,8 +18,11 @@ export type StorageEntryKind = 'file' | 'directory';
  * so the adapter passes the engine result through unchanged.
  */
 export interface StorageStat {
+  /** Entry kind (`'file'` or `'directory'`). */
   readonly kind: StorageEntryKind;
+  /** Size in bytes. */
   readonly size: number;
+  /** Last modification time (a `Date`, like Node's `fs.Stats.mtime`). */
   readonly mtime: Date;
 }
 
