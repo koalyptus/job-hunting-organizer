@@ -106,9 +106,9 @@ export class LocalFileStore implements FileStore {
   }
 
   joinPath(...parts: string[]): StoragePath {
-    // POSIX join: normalize segments, filter empty, join with '/'
-    const segments = parts.flatMap((p) => p.split('/')).filter(Boolean);
-    return segments.join('/');
+    // Delegate to the engine's path join so StoragePath normalization stays
+    // consistent with host-path joins used elsewhere in the adapter.
+    return this.fs.join(...parts);
   }
 
   async read(path: StoragePath): Promise<string> {
