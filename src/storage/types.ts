@@ -1,3 +1,11 @@
+/**
+ * A storage path: a RELATIVE path in the engine's host-native format
+ * (POSIX `/` on Linux/macOS, `\` on Windows — the same convention Node's
+ * `node:path` uses). Callers must pass relative paths; absolute paths,
+ * `..` segments, and Windows drive letters are rejected at the boundary.
+ * The port does not re-separate or normalize paths — it delegates to the
+ * injected file system's own path API.
+ */
 export type StoragePath = string;
 
 /**
@@ -98,8 +106,6 @@ export interface FileStore {
   copy(from: StoragePath, to: StoragePath): Promise<void>;
   /** Advisory lock on a key — serializes concurrent holders. */
   withLock<T>(key: string, fn: () => Promise<T>): Promise<T>;
-  /** Join path segments into a normalized StoragePath. */
-  joinPath(...parts: string[]): StoragePath;
   /** Return the absolute data root this store operates under. */
   getDataRoot(): string;
 }

@@ -208,14 +208,6 @@ describe('LocalFileStore contract suite', () => {
     });
   });
 
-  describe('joinPath', () => {
-    it('joins POSIX segments', async () => {
-      expect(store.joinPath('a', 'b', 'c')).toBe('a/b/c');
-      expect(store.joinPath('a/', '/b')).toBe('a/b');
-      expect(store.joinPath('', 'x')).toBe('x');
-    });
-  });
-
   describe('nested write implies dirs (S3-friendly)', () => {
     it('write to deep path creates all parents', async () => {
       await store.write('a/b/c/d/e.txt', 'deep');

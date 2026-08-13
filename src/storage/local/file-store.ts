@@ -21,7 +21,7 @@ interface FileSystemWithAppend {
 }
 
 const LOCK_KEY_SANITIZE = /[^a-zA-Z0-9_-]/g;
-/** A StoragePath must be relative POSIX — no Windows drive letters (e.g. `C:`). */
+/** A StoragePath must be relative — reject Windows drive letters (`C:`). `fs.isAbsolute` already catches these on Windows; this also guards POSIX. */
 const STORAGEPATH_NO_DRIVE = /^[a-zA-Z]:/;
 const LOCK_STALE_MS = 10_000;
 const LOCK_RETRIES = { retries: 5, minTimeout: 50, maxTimeout: 500 };
@@ -50,9 +50,9 @@ function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
   if (path === '') {
     return root;
   }
-  if (path.startsWith('/') || path.startsWith('..') || STORAGEPATH_NO_DRIVE.test(path)) {
+  if (fs.isAbsolute(path) || path.startsWith('..') || STORAGEPATH_NO_DRIVE.test(path)) {
     throw new Error(
-      `Invalid StoragePath: "${path}" — must be relative POSIX, no leading slash, no '..', no drive letters`,
+      `Invalid StoragePath: "${path}" — must be relative (host-native), no absolute paths, no '..', no drive letters`,
     );
   }
   const abs = fs.resolve(root, path);
@@ -103,17 +103,6 @@ export class LocalFileStore implements FileStore {
 
   getDataRoot(): string {
     return this.dataRoot;
-  }
-
-  joinPath(...parts: string[]): StoragePath {
-    // StoragePath is POSIX regardless of host OS, so join with '/' and drop
-    // empty segments (normalizes trailing/leading slashes). Using the
-    // engine's host-aware join would emit '\' on Windows and break the
-    // portable contract.
-    return parts
-      .flatMap((p) => p.split('/'))
-      .filter(Boolean)
-      .join('/');
   }
 
   async read(path: StoragePath): Promise<string> {
