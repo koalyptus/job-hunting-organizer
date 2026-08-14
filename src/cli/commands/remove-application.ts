@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { join, relative } from 'node:path';
+import { isAbsolute, join, relative } from 'node:path';
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
@@ -63,9 +63,14 @@ export const removeApplicationCommand = new Command('remove-application')
       // path helpers use). If they ever diverge, a `..`-escaping path would
       // fall outside the store root and must never reach the port — fail
       // closed rather than silently querying an escaped path.
-      if (applicationFolderRel === '' || applicationFolderRel.startsWith('..')) {
+      if (
+        applicationFolderRel === '' ||
+        applicationFolderRel.startsWith('..') ||
+        isAbsolute(applicationFolderRel)
+      ) {
         throw new ApplicationNotFoundError(resolvedSlug);
       }
+
       if (!(await store.exists(applicationFolderRel))) {
         throw new ApplicationNotFoundError(resolvedSlug);
       }

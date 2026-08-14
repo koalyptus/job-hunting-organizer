@@ -137,4 +137,23 @@ describe('remove-application routes preflight through the FileStore port', () =>
     expect(exitCode).toBe(1);
     expect(stderr).toContain('not found');
   });
+
+  it('fails closed when the resolved path is absolute (cross-drive)', async () => {
+    // On a different drive `relative()` returns an absolute drive-letter
+    // path; the guard must reject it before the port is queried.
+    mockedCreateStore.mockReturnValue({
+      getDataRoot: () => 'C:\\other-root',
+      exists: async () => {
+        throw new Error('must not reach the port with an absolute path');
+      },
+    } as unknown as FileStore);
+
+    const { stderr, exitCode } = await runCommand(removeApplicationCommand, [
+      'remove-application',
+      SLUG,
+      '--yes',
+    ]);
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('not found');
+  });
 });
