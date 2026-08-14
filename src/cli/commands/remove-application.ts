@@ -49,13 +49,13 @@ export const removeApplicationCommand = new Command('remove-application')
 
       const resolvedSlug = resolveSlug(slug, campaign);
       log = log.child({ slug: resolvedSlug });
+      const store = createStore();
 
       // Pre-flight: the application must exist (no lock needed). Route the
       // existence check through the FileStore port rather than node:fs so no
       // CLI path touches disk directly; the store's data root is the same
       // $JHO_DATA resolution the path helpers use, so the relative path is
       // well-defined and stays inside the store root.
-      const store = createStore();
       const folder = join(appliedDir, resolvedSlug);
       const applicationFolderRel = relative(store.getDataRoot(), folder);
       // `relative` only yields a store-valid StoragePath when the applied dir
