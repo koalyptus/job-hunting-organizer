@@ -73,7 +73,7 @@
   - [x] 9a — Storage port, adapter, bootstrap & guards
   - [x] 9b — Storage module JSDoc & comment hygiene
   - [ ] 9b1 — Disposable real-data smoke-run gate
-  - [ ] 9c — Migrate remaining `core/fs.ts` consumers onto the port
+  - [x] 9c — Migrate remaining `core/fs.ts` consumers onto the port
   - [ ] 9d — Complete error-class coverage & contract tests
   - [ ] 9e — In-memory `FileStore` for tests
   - [ ] 9f — Campaign-scoped store routing

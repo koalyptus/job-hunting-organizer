@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
@@ -7,7 +7,7 @@ import { deleteApplication, ApplicationNotFoundError } from '../../core/applicat
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userSuccess, userInfo } from '../output.js';
 import { bold, cyan } from '../colors.js';
-import { pathExists } from '../../core/fs.js';
+import { createStore } from '../../storage/index.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 
@@ -50,9 +50,23 @@ export const removeApplicationCommand = new Command('remove-application')
       const resolvedSlug = resolveSlug(slug, campaign);
       log = log.child({ slug: resolvedSlug });
 
-      // Pre-flight: the application must exist (no lock needed).
+      // Pre-flight: the application must exist (no lock needed). Route the
+      // existence check through the FileStore port rather than node:fs so no
+      // CLI path touches disk directly; the store's data root is the same
+      // $JHO_DATA resolution the path helpers use, so the relative path is
+      // well-defined and stays inside the store root.
+      const store = createStore();
       const folder = join(appliedDir, resolvedSlug);
-      if (!(await pathExists(folder))) {
+      const applicationFolderRel = relative(store.getDataRoot(), folder);
+      // `relative` only yields a store-valid StoragePath when the applied dir
+      // resolves under the store's data root (same $JHO_DATA resolution the
+      // path helpers use). If they ever diverge, a `..`-escaping path would
+      // fall outside the store root and must never reach the port — fail
+      // closed rather than silently querying an escaped path.
+      if (applicationFolderRel === '' || applicationFolderRel.startsWith('..')) {
+        throw new ApplicationNotFoundError(resolvedSlug);
+      }
+      if (!(await store.exists(applicationFolderRel))) {
         throw new ApplicationNotFoundError(resolvedSlug);
       }
 
