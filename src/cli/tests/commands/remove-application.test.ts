@@ -22,7 +22,8 @@ vi.mock('@clack/prompts', async (importOriginal) => {
 
 const mockedConfirm = vi.mocked(confirm);
 
-describe('remove-application command', () => {
+/** Integration test — real disk, real store */
+describe('remove-application command (integration)', () => {
   let testHome: string;
   let originalJhoConfigHome: string | undefined;
   let originalJhoData: string | undefined;
@@ -43,13 +44,12 @@ describe('remove-application command', () => {
       JSON.stringify({
         version: 1,
         dataRoot: join(testHome, 'data'),
-        llm: { baseUrl: '', apiKey: '', model: '' },
+        llm: { baseUrl: '', apiKey: '***', model: '' },
         github: { user: '', token: '', repos: [] },
         logging: { level: 'info', file: '', redactPaths: [] },
       }),
     );
 
-    // Create a campaign with one application.
     const appliedDir = join(testHome, 'data', 'campaigns', 'default', 'applied');
     await mkdir(join(appliedDir, SLUG), { recursive: true });
     await writeFile(join(appliedDir, SLUG, 'meta.md'), '# App\n');
@@ -124,11 +124,6 @@ describe('remove-application command', () => {
     const origCwd = process.cwd();
     process.chdir(appDir);
     try {
-      // Decline the prompt so we never delete the process working
-      // directory — removing the cwd fails with EBUSY on Windows. This
-      // still exercises cwd inference: a missing slug would error with
-      // "missing" before the confirmation prompt, and the resolved slug
-      // is echoed in the prompt message.
       mockedConfirm.mockResolvedValue(false);
       const { stdout, exitCode } = await run();
       expect(exitCode).toBe(0);
@@ -136,8 +131,6 @@ describe('remove-application command', () => {
       expect(stdout).not.toContain('missing');
       expect(mockedConfirm).toHaveBeenCalledTimes(1);
       expect(mockedConfirm.mock.calls[0]![0]!.message).toContain(SLUG);
-
-      // Folder remains because we declined.
       const statResult = await stat(appDir);
       expect(statResult.isDirectory()).toBe(true);
     } finally {

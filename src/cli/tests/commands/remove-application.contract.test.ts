@@ -9,23 +9,15 @@ import type { FileStore } from '../../../storage/types.js';
 
 const SLUG = '2026-Jan-15-frontend-acme-12345';
 
-/**
- * Regression guard for Phase 9c: the CLI `remove-application` command must
- * route its existence preflight through the injected `FileStore` port, never
- * `node:fs` / `core/fs` directly. We stub `createStore` so the only way the
- * command can decide "exists" is via the port, and assert it is called with a
- * ROOT-RELATIVE (not absolute) `StoragePath`.
- */
-vi.mock('../../../storage/index.js', () => {
-  return {
-    createStore: vi.fn(),
-  };
-});
+vi.mock('../../../storage/index.js', () => ({
+  createStore: vi.fn(),
+}));
 
 import { createStore } from '../../../storage/index.js';
 
 const mockedCreateStore = vi.mocked(createStore);
 
+/** Port contract test — stubbed store, verifies preflight routes through FileStore */
 describe('remove-application routes preflight through the FileStore port', () => {
   let testHome: string;
   let existsCalls: string[];
@@ -53,15 +45,24 @@ describe('remove-application routes preflight through the FileStore port', () =>
     );
 
     existsCalls = [];
-    const store = {
+    const store: FileStore = {
       getDataRoot: () => join(testHome, 'data'),
       exists: async (p: string) => {
         existsCalls.push(p);
-        // The folder lives on disk for the delete step, but the preflight
-        // decision comes solely from this stubbed port call.
         return true;
       },
-    } as unknown as FileStore;
+      read: async () => '',
+      readBytes: async () => new Uint8Array(),
+      write: async () => {},
+      append: async () => {},
+      stat: async () => ({ kind: 'file' as const, size: 0, mtime: new Date() }),
+      readdir: async () => [],
+      mkdir: async () => {},
+      rename: async () => {},
+      rm: async () => {},
+      copy: async () => {},
+      withLock: async <T>(_key: string, fn: () => Promise<T>) => fn(),
+    };
     mockedCreateStore.mockReturnValue(store);
   });
 
@@ -88,8 +89,6 @@ describe('remove-application routes preflight through the FileStore port', () =>
     expect(existsCalls.length).toBeGreaterThan(0);
     const calledPath = existsCalls[0]!;
     expect(calledPath).toContain(SLUG);
-    // A StoragePath is relative to the data root and must not carry the
-    // absolute data-root prefix (e.g. `/tmp/.../data/...`).
     expect(calledPath.startsWith(testHome)).toBe(false);
     expect(calledPath).not.toContain(join(testHome, 'data'));
   });
@@ -97,9 +96,6 @@ describe('remove-application routes preflight through the FileStore port', () =>
   it('passes the application folder as a root-relative path to the store', async () => {
     await runCommand(removeApplicationCommand, ['remove-application', SLUG, '--yes']);
     expect(existsCalls.length).toBeGreaterThan(0);
-    // The resolved StoragePath is relative to the data root, i.e. it names
-    // the application folder (campaigns/default/applied/<slug>), not the
-    // absolute disk path.
     expect(existsCalls[0]).toBe(join('campaigns', 'default', 'applied', SLUG));
   });
 
@@ -107,7 +103,18 @@ describe('remove-application routes preflight through the FileStore port', () =>
     mockedCreateStore.mockReturnValue({
       getDataRoot: () => join(testHome, 'data'),
       exists: async () => false,
-    } as unknown as FileStore);
+      read: async () => '',
+      readBytes: async () => new Uint8Array(),
+      write: async () => {},
+      append: async () => {},
+      stat: async () => ({ kind: 'file' as const, size: 0, mtime: new Date() }),
+      readdir: async () => [],
+      mkdir: async () => {},
+      rename: async () => {},
+      rm: async () => {},
+      copy: async () => {},
+      withLock: async <T>(_key: string, fn: () => Promise<T>) => fn(),
+    } as FileStore);
 
     const { stderr, exitCode } = await runCommand(removeApplicationCommand, [
       'remove-application',
@@ -119,41 +126,52 @@ describe('remove-application routes preflight through the FileStore port', () =>
   });
 
   it('constructs the StoragePath directly from the known layout; no filesystem-relative math can produce an escaping path', async () => {
-    // The StoragePath is now constructed directly from the known layout:
-    // campaigns/<campaign>/applied/<slug>. This is inherently well-formed
-    // and cannot escape the store root, so the old "escaping path" scenario
-    // is impossible. The test documents that getDataRoot() divergence
-    // no longer affects the preflight path.
-    // Create the folder on disk so deleteApplication succeeds.
     const appliedDir = join(testHome, 'data', 'campaigns', 'default', 'applied');
     await mkdir(join(appliedDir, SLUG), { recursive: true });
 
     mockedCreateStore.mockReturnValue({
       getDataRoot: () => join(testHome, 'other-root'),
       exists: async () => true,
-    } as unknown as FileStore);
+      read: async () => '',
+      readBytes: async () => new Uint8Array(),
+      write: async () => {},
+      append: async () => {},
+      stat: async () => ({ kind: 'file' as const, size: 0, mtime: new Date() }),
+      readdir: async () => [],
+      mkdir: async () => {},
+      rename: async () => {},
+      rm: async () => {},
+      copy: async () => {},
+      withLock: async <T>(_key: string, fn: () => Promise<T>) => fn(),
+    } as FileStore);
 
     const { exitCode } = await runCommand(removeApplicationCommand, [
       'remove-application',
       SLUG,
       '--yes',
     ]);
-    // The command succeeds because the path is well-formed regardless
-    // of what getDataRoot() returns.
     expect(exitCode).toBe(0);
   });
 
   it('constructs the StoragePath directly from the known layout; cross-drive absolute paths are impossible', async () => {
-    // Same reasoning: the StoragePath is constructed from components,
-    // never from filesystem-relative math. It cannot be absolute.
-    // Create the folder on disk so deleteApplication succeeds.
     const appliedDir = join(testHome, 'data', 'campaigns', 'default', 'applied');
     await mkdir(join(appliedDir, SLUG), { recursive: true });
 
     mockedCreateStore.mockReturnValue({
       getDataRoot: () => 'C:\\\\other-root',
       exists: async () => true,
-    } as unknown as FileStore);
+      read: async () => '',
+      readBytes: async () => new Uint8Array(),
+      write: async () => {},
+      append: async () => {},
+      stat: async () => ({ kind: 'file' as const, size: 0, mtime: new Date() }),
+      readdir: async () => [],
+      mkdir: async () => {},
+      rename: async () => {},
+      rm: async () => {},
+      copy: async () => {},
+      withLock: async <T>(_key: string, fn: () => Promise<T>) => fn(),
+    } as FileStore);
 
     const { exitCode } = await runCommand(removeApplicationCommand, [
       'remove-application',
