@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { isAbsolute, join, relative } from 'node:path';
+import { join } from 'node:path';
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
@@ -52,24 +52,10 @@ export const removeApplicationCommand = new Command('remove-application')
       const store = createStore();
 
       // Pre-flight: the application must exist (no lock needed). Route the
-      // existence check through the FileStore port. The store's data root
-      // resolves via the global config, same as the path helpers, so the
-      // relative path is well-defined and stays inside the store root.
-      const folder = join(appliedDir, resolvedSlug);
-      const applicationFolderRel = relative(store.getDataRoot(), folder);
-      // `relative` only yields a store-valid StoragePath when the applied dir
-      // resolves under the store's data root (same config resolution the
-      // path helpers use). If they ever diverge, a `..`-escaping path would
-      // fall outside the store root and must never reach the port — fail
-      // closed rather than silently querying an escaped path.
-      if (
-        applicationFolderRel === '' ||
-        applicationFolderRel.startsWith('..') ||
-        isAbsolute(applicationFolderRel)
-      ) {
-        throw new ApplicationNotFoundError(resolvedSlug);
-      }
-
+      // existence check through the FileStore port. The StoragePath is the
+      // root-relative path under the data root: campaigns/<campaign>/applied/<slug>.
+      // This works uniformly across all storage backends (local, S3, etc.).
+      const applicationFolderRel = join('campaigns', campaign, 'applied', resolvedSlug);
       if (!(await store.exists(applicationFolderRel))) {
         throw new ApplicationNotFoundError(resolvedSlug);
       }

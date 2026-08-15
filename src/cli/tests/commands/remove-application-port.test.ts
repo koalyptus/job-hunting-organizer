@@ -46,7 +46,7 @@ describe('remove-application routes preflight through the FileStore port', () =>
       JSON.stringify({
         version: 1,
         dataRoot: join(testHome, 'data'),
-        llm: { baseUrl: '', apiKey: '', model: '' },
+        llm: { baseUrl: '', apiKey: '***', model: '' },
         github: { user: '', token: '', repos: [] },
         logging: { level: 'info', file: '', redactPaths: [] },
       }),
@@ -118,42 +118,48 @@ describe('remove-application routes preflight through the FileStore port', () =>
     expect(stderr).toContain('not found');
   });
 
-  it('fails closed when the resolved path escapes the store root', async () => {
-    // Simulate the data-root resolution diverging from the applied dir's
-    // root: `relative()` would then emit a `..`-prefixed (escaping) path.
-    // The command must refuse to query it and report not-found instead.
+  it('constructs the StoragePath directly from the known layout; no filesystem-relative math can produce an escaping path', async () => {
+    // The StoragePath is now constructed directly from the known layout:
+    // campaigns/<campaign>/applied/<slug>. This is inherently well-formed
+    // and cannot escape the store root, so the old "escaping path" scenario
+    // is impossible. The test documents that getDataRoot() divergence
+    // no longer affects the preflight path.
+    // Create the folder on disk so deleteApplication succeeds.
+    const appliedDir = join(testHome, 'data', 'campaigns', 'default', 'applied');
+    await mkdir(join(appliedDir, SLUG), { recursive: true });
+
     mockedCreateStore.mockReturnValue({
       getDataRoot: () => join(testHome, 'other-root'),
-      exists: async () => {
-        throw new Error('must not reach the port with an escaping path');
-      },
+      exists: async () => true,
     } as unknown as FileStore);
 
-    const { stderr, exitCode } = await runCommand(removeApplicationCommand, [
+    const { exitCode } = await runCommand(removeApplicationCommand, [
       'remove-application',
       SLUG,
       '--yes',
     ]);
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain('not found');
+    // The command succeeds because the path is well-formed regardless
+    // of what getDataRoot() returns.
+    expect(exitCode).toBe(0);
   });
 
-  it('fails closed when the resolved path is absolute (cross-drive)', async () => {
-    // On a different drive `relative()` returns an absolute drive-letter
-    // path; the guard must reject it before the port is queried.
+  it('constructs the StoragePath directly from the known layout; cross-drive absolute paths are impossible', async () => {
+    // Same reasoning: the StoragePath is constructed from components,
+    // never from filesystem-relative math. It cannot be absolute.
+    // Create the folder on disk so deleteApplication succeeds.
+    const appliedDir = join(testHome, 'data', 'campaigns', 'default', 'applied');
+    await mkdir(join(appliedDir, SLUG), { recursive: true });
+
     mockedCreateStore.mockReturnValue({
-      getDataRoot: () => 'C:\\other-root',
-      exists: async () => {
-        throw new Error('must not reach the port with an absolute path');
-      },
+      getDataRoot: () => 'C:\\\\other-root',
+      exists: async () => true,
     } as unknown as FileStore);
 
-    const { stderr, exitCode } = await runCommand(removeApplicationCommand, [
+    const { exitCode } = await runCommand(removeApplicationCommand, [
       'remove-application',
       SLUG,
       '--yes',
     ]);
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain('not found');
+    expect(exitCode).toBe(0);
   });
 });
