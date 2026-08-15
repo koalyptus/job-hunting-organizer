@@ -7,7 +7,7 @@ import { deleteApplication, ApplicationNotFoundError } from '../../core/applicat
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userSuccess, userInfo } from '../output.js';
 import { bold, cyan } from '../colors.js';
-import { pathExists } from '../../core/fs.js';
+import { createStore } from '../../storage/index.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 
@@ -49,10 +49,14 @@ export const removeApplicationCommand = new Command('remove-application')
 
       const resolvedSlug = resolveSlug(slug, campaign);
       log = log.child({ slug: resolvedSlug });
+      const store = createStore();
 
-      // Pre-flight: the application must exist (no lock needed).
-      const folder = join(appliedDir, resolvedSlug);
-      if (!(await pathExists(folder))) {
+      // Pre-flight: the application must exist (no lock needed). Route the
+      // existence check through the FileStore port. The StoragePath is the
+      // root-relative path under the data root: campaigns/<campaign>/applied/<slug>.
+      // This works uniformly across all storage backends (local, S3, etc.).
+      const applicationFolderRel = join('campaigns', campaign, 'applied', resolvedSlug);
+      if (!(await store.exists(applicationFolderRel))) {
         throw new ApplicationNotFoundError(resolvedSlug);
       }
 

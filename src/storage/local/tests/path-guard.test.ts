@@ -3,7 +3,7 @@ import { mkdtemp, rm, symlink, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createNodeFs } from '@file-services/node';
-import { toAbsolute, forbidRootTarget, canonicalizeRoot } from '../local/path-guard.js';
+import { toAbsolute, forbidRootTarget, canonicalizeRoot } from '../path-guard.js';
 import type { IFileSystem } from '@file-services/types';
 
 const fs: IFileSystem = createNodeFs();

@@ -2,9 +2,13 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { LocalFileStore, resolveDataRoot } from '../local/file-store.js';
-import { createStore } from '../local/factory.js';
-import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
+import { LocalFileStore, resolveDataRoot } from '../file-store.js';
+import { createStore } from '../factory.js';
+import {
+  StorageNotFoundError,
+  StorageAlreadyExistsError,
+  StorageNotEmptyError,
+} from '../../types.js';
 
 describe('LocalFileStore contract suite', () => {
   let root: string;
