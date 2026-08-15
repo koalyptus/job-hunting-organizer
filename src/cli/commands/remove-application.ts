@@ -52,14 +52,13 @@ export const removeApplicationCommand = new Command('remove-application')
       const store = createStore();
 
       // Pre-flight: the application must exist (no lock needed). Route the
-      // existence check through the FileStore port rather than node:fs so no
-      // CLI path touches disk directly; the store's data root is the same
-      // $JHO_DATA resolution the path helpers use, so the relative path is
-      // well-defined and stays inside the store root.
+      // existence check through the FileStore port. The store's data root
+      // resolves via the global config, same as the path helpers, so the
+      // relative path is well-defined and stays inside the store root.
       const folder = join(appliedDir, resolvedSlug);
       const applicationFolderRel = relative(store.getDataRoot(), folder);
       // `relative` only yields a store-valid StoragePath when the applied dir
-      // resolves under the store's data root (same $JHO_DATA resolution the
+      // resolves under the store's data root (same config resolution the
       // path helpers use). If they ever diverge, a `..`-escaping path would
       // fall outside the store root and must never reach the port — fail
       // closed rather than silently querying an escaped path.
