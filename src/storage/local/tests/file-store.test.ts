@@ -4,8 +4,8 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createNodeFs } from '@file-services/node';
 import type { IFileSystem } from '@file-services/types';
-import { LocalFileStore } from '../local/file-store.js';
-import { StorageNotFoundError } from '../types.js';
+import { LocalFileStore } from '../file-store.js';
+import { StorageNotFoundError } from '../../types.js';
 
 /**
  * LocalFileStore implementation-detail suite — the error branches the

@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createStore } from '../local/factory.js';
-import { StorageNotFoundError } from '../types.js';
+import { createStore } from '../factory.js';
+import { StorageNotFoundError } from '../../types.js';
 
 /**
  * Storage integration smoke gate — proves the wired LocalFileStore reads and
