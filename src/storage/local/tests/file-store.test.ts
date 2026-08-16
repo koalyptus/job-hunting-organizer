@@ -72,9 +72,7 @@ describe('LocalFileStore unit suite', () => {
       await store.mkdir('d');
       // The port maps "write over an existing entry" to StorageAlreadyExistsError
       // before any temp+rename I/O, so no temp file is leaked.
-      await expect(store.write('d', 'x')).rejects.toBeInstanceOf(
-        StorageAlreadyExistsError,
-      );
+      await expect(store.write('d', 'x')).rejects.toBeInstanceOf(StorageAlreadyExistsError);
       expect((await readdir(root)).filter((e) => e.endsWith('.tmp'))).toEqual([]);
     });
 
