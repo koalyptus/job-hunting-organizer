@@ -94,6 +94,25 @@ describe('LocalFileStore unit suite', () => {
       const failingStore = new LocalFileStore(root, failing);
       await expect(failingStore.write('a.txt', 'x')).rejects.toBe(err);
     });
+
+    it('cleans up temp file and rethrows when rename fails but unlink succeeds', async () => {
+      const base = createNodeFs();
+      const renameErr = Object.assign(new Error('EACCES'), { code: 'EACCES' });
+      const failingFs: IFileSystem = {
+        ...base,
+        promises: {
+          ...base.promises,
+          rename: async () => {
+            throw renameErr;
+          },
+        },
+      };
+      const failingStore = new LocalFileStore(root, failingFs);
+      // rename fails, but unlink succeeds — the temp is cleaned up and the
+      // original rename error is rethrown.
+      await expect(failingStore.write('a.txt', 'x')).rejects.toBe(renameErr);
+      expect((await readdir(root)).filter((e) => e.endsWith('.tmp'))).toEqual([]);
+    });
   });
 
   describe('append', () => {
