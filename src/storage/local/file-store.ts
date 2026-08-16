@@ -1,7 +1,7 @@
 import type { IFileSystem } from '@file-services/types';
 import { createNodeFs } from '@file-services/node';
 import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from '../types.js';
-import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
+import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError, StorageUnsupportedError } from '../types.js';
 import { moduleLogger } from '../../core/logger/logger.js';
 import { resolveDataRoot } from '../../core/paths.js';
 import { toAbsolute, forbidRootTarget, canonicalizeRoot } from './path-guard.js';
@@ -43,8 +43,20 @@ export { resolveDataRoot };
  * proper-lockfile binding. The IFileSystem is injected so the contract suite can
  * run against an in-memory adapter; default is the node-backed engine.
  * Constructor performs no I/O — getDataRoot() is pure resolution.
+ *
+ * Every `FileStore` method is implemented, so `StorageUnsupportedError` is
+ * intentionally never thrown (it is reserved for adapters that cannot honor a
+ * given operation — see its doc in types.ts).
  */
 export class LocalFileStore implements FileStore {
+  /**
+   * Port error classes this adapter reserves but never throws (today every
+   * `FileStore` method is implemented). Exposed so callers and tooling can
+   * distinguish "implemented" from "reserved" without re-reading the docs.
+   * See `StorageUnsupportedError` in types.ts for the rationale.
+   */
+  static readonly RESERVED_ERRORS = [StorageUnsupportedError] as const;
+
   private readonly fs: IFileSystem;
   private readonly dataRoot: string;
 
@@ -86,6 +98,23 @@ export class LocalFileStore implements FileStore {
   async write(path: StoragePath, content: string | Uint8Array): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
     forbidRootTarget(path, abs, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
+    // Existing directory at the target path is not a valid write target:
+    // the temp+rename below would fail with EISDIR, but surfacing the
+    // port's StorageAlreadyExistsError is the explicit contract for "write
+    // over an existing entry". (Writing over an existing FILE is a supported
+    // atomic overwrite, covered by other tests, so only directories reject.)
+    try {
+      const existing = await this.fs.promises.stat(abs);
+      if (existing.isDirectory()) {
+        throw new StorageAlreadyExistsError(path);
+      }
+    } catch (err) {
+      if (err instanceof StorageAlreadyExistsError) {
+        throw err;
+      }
+      // ENOENT/other: path is free (or another stat error) — proceed to write.
+    }
+
     const parent = this.fs.dirname(abs);
 
     // Ensure parent directory exists

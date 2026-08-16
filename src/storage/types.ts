@@ -66,6 +66,15 @@ export class StorageNotEmptyError extends Error {
 
 /**
  * Error raised when an operation is not supported by the storage backend.
+ *
+ * RESERVED: `LocalFileStore` delegates every operation to the injected
+ * `@file-services` engine and does not currently reject any supported
+ * `FileStore` method — so this class is intentionally not thrown today. It
+ * is kept as a first-class port error so future adapters (e.g. a read-only
+ * or object-store-backed implementation that cannot honor `append`,
+ * `rename`, or `withLock`) can surface unsupported operations without
+ * inventing a new error type. `LocalFileStore` references it below to make
+ * the reservation explicit.
  */
 export class StorageUnsupportedError extends Error {
   constructor(

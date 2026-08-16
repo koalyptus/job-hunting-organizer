@@ -8,6 +8,7 @@ import {
   StorageNotFoundError,
   StorageAlreadyExistsError,
   StorageNotEmptyError,
+  StorageUnsupportedError,
 } from '../../types.js';
 
 describe('LocalFileStore contract suite', () => {
@@ -54,6 +55,13 @@ describe('LocalFileStore contract suite', () => {
       await store.write('f.txt', 'v1');
       await store.write('f.txt', 'v2');
       expect(await store.read('f.txt')).toBe('v2');
+    });
+
+    it('throws StorageAlreadyExistsError when target is an existing directory', async () => {
+      await store.mkdir('d');
+      await expect(store.write('d', 'x')).rejects.toBeInstanceOf(
+        StorageAlreadyExistsError,
+      );
     });
   });
 
@@ -303,6 +311,35 @@ describe('LocalFileStore contract suite', () => {
   describe('getDataRoot', () => {
     it('returns the configured root', async () => {
       expect(store.getDataRoot()).toBe(root);
+    });
+  });
+
+  describe('error-class coverage', () => {
+    it('throws StorageAlreadyExistsError writing over an existing directory', async () => {
+      await store.mkdir('dir');
+      await expect(store.write('dir', 'payload')).rejects.toBeInstanceOf(
+        StorageAlreadyExistsError,
+      );
+    });
+
+    it('throws StorageAlreadyExistsError mkdir over an existing file', async () => {
+      await store.write('file.txt', 'x');
+      await expect(store.mkdir('file.txt')).rejects.toBeInstanceOf(
+        StorageAlreadyExistsError,
+      );
+    });
+
+    it('throws StorageNotEmptyError for non-recursive rm on a non-empty dir', async () => {
+      await store.write('nonempty/a.txt', 'x');
+      await expect(store.rm('nonempty')).rejects.toBeInstanceOf(
+        StorageNotEmptyError,
+      );
+    });
+
+    it('reserves StorageUnsupportedError (not thrown by LocalFileStore)', async () => {
+      // Every FileStore method is implemented, so the class is intentionally
+      // never thrown; the reservation is made explicit on the adapter.
+      expect(LocalFileStore.RESERVED_ERRORS).toContain(StorageUnsupportedError);
     });
   });
 
