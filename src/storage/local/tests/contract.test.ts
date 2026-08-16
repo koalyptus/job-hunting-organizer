@@ -339,7 +339,7 @@ describe('LocalFileStore contract suite', () => {
     it('reserves StorageUnsupportedError (not thrown by LocalFileStore)', async () => {
       // Every FileStore method is implemented, so the class is intentionally
       // never thrown; the reservation is made explicit on the adapter.
-      expect(LocalFileStore.RESERVED_ERRORS).toContain(StorageUnsupportedError);
+      expect(LocalFileStore.RESERVED_PORT_ERRORS).toContain(StorageUnsupportedError);
     });
   });
 

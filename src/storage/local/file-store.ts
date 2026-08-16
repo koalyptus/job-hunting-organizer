@@ -55,7 +55,7 @@ export class LocalFileStore implements FileStore {
    * distinguish "implemented" from "reserved" without re-reading the docs.
    * See `StorageUnsupportedError` in types.ts for the rationale.
    */
-  static readonly RESERVED_ERRORS = [StorageUnsupportedError] as const;
+  static readonly RESERVED_PORT_ERRORS = [StorageUnsupportedError] as const;
 
   private readonly fs: IFileSystem;
   private readonly dataRoot: string;
