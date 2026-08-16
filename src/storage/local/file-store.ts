@@ -27,7 +27,6 @@ interface FileSystemWithAppend {
 }
 
 const LOCK_KEY_SANITIZE = /[^a-zA-Z0-9_-]/g;
-/** Rejects Windows drive letters (`C:`), which `fs.isAbsolute` does not treat as absolute on every platform. */
 const LOCK_STALE_MS = 10_000;
 const LOCK_RETRIES = { retries: 5, minTimeout: 50, maxTimeout: 500 };
 const LOCK_DIR = '.locks';
@@ -117,7 +116,9 @@ export class LocalFileStore implements FileStore {
       if (err instanceof StorageAlreadyExistsError) {
         throw err;
       }
-      // ENOENT/other: path is free (or another stat error) — proceed to write.
+      // ENOENT/other: path is free, or stat itself failed (e.g. symlink→dir
+      // whose target is not a directory) — proceed to write; the engine will
+      // surface a clear error if the final target is invalid.
     }
 
     const parent = this.fs.dirname(abs);

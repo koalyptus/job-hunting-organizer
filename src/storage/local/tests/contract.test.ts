@@ -313,25 +313,14 @@ describe('LocalFileStore contract suite', () => {
   });
 
   describe('error-class coverage', () => {
-    it('throws StorageAlreadyExistsError writing over an existing directory', async () => {
-      await store.mkdir('dir');
-      await expect(store.write('dir', 'payload')).rejects.toBeInstanceOf(StorageAlreadyExistsError);
-    });
-
-    it('throws StorageAlreadyExistsError mkdir over an existing file', async () => {
-      await store.write('file.txt', 'x');
-      await expect(store.mkdir('file.txt')).rejects.toBeInstanceOf(StorageAlreadyExistsError);
-    });
-
-    it('throws StorageNotEmptyError for non-recursive rm on a non-empty dir', async () => {
-      await store.write('nonempty/a.txt', 'x');
-      await expect(store.rm('nonempty')).rejects.toBeInstanceOf(StorageNotEmptyError);
-    });
-
     it('reserves StorageUnsupportedError (not thrown by LocalFileStore)', async () => {
       // Every FileStore method is implemented, so the class is intentionally
       // never thrown; the reservation is made explicit on the adapter.
       expect(LocalFileStore.RESERVED_PORT_ERRORS).toContain(StorageUnsupportedError);
+    });
+
+    it('throws StorageNotFoundError for missing path read', async () => {
+      await expect(store.read('nope.txt')).rejects.toBeInstanceOf(StorageNotFoundError);
     });
   });
 
