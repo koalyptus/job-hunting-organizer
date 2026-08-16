@@ -1,5 +1,5 @@
 import type { FileStore } from '../types.js';
-import { LocalFileStore } from './file-store.js';
+import { LocalFileStore } from './local-file-store.js';
 
 /**
  * Factory — builds a LocalFileStore over the data root.

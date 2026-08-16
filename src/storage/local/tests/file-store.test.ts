@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createNodeFs } from '@file-services/node';
 import type { IFileSystem } from '@file-services/types';
-import { LocalFileStore } from '../file-store.js';
+import { LocalFileStore } from '../local-file-store.js';
 import { StorageNotFoundError, StorageAlreadyExistsError } from '../../types.js';
 
 /**
