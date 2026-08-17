@@ -22,7 +22,7 @@ interface FileSystemWithAppend {
 }
 
 const MEMORY_ROOT = '/';
-const DATA_ROOT_LABEL = 'memory://jho';
+const MEMORY_DATA_ROOT = 'memory://jho';
 const TEMP_EXT = '.tmp';
 const RANDOM_SUFFIX_LENGTH = 6;
 const KIND_FILE = 'file';
@@ -37,11 +37,10 @@ const KIND_DIR = 'directory';
  */
 function createMemoryFileSystem(): IFileSystem {
   const vol = new Volume();
-  const memfs = createFsFromVolume(vol);
-  // The volume starts with an empty `/`; ensure the root exists so path-guard's
-  // canonicalizeRoot (realpathSync) resolves rather than falling back to root.
+  const volumeFs = createFsFromVolume(vol);
+  // The volume starts with an empty `/`, ensure root directory exists first
   try {
-    memfs.mkdirSync(MEMORY_ROOT, { recursive: true });
+    volumeFs.mkdirSync(MEMORY_ROOT, { recursive: true });
   } catch {
     // Root already present.
   }
@@ -49,8 +48,8 @@ function createMemoryFileSystem(): IFileSystem {
     ...nodePath,
     sep: nodePath.sep,
     delimiter: nodePath.delimiter,
-    realpathSync: memfs.realpathSync.bind(memfs),
-    promises: memfs.promises,
+    realpathSync: volumeFs.realpathSync.bind(volumeFs),
+    promises: volumeFs.promises,
   } as unknown as IFileSystem;
 }
 
@@ -73,7 +72,7 @@ export class MemoryFileStore implements FileStore {
   }
 
   getDataRoot(): string {
-    return DATA_ROOT_LABEL;
+    return MEMORY_DATA_ROOT;
   }
 
   async read(path: StoragePath): Promise<string> {
