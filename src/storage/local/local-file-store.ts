@@ -1,12 +1,7 @@
 import type { IFileSystem } from '@file-services/types';
 import { createNodeFs } from '@file-services/node';
 import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from '../types.js';
-import {
-  StorageNotFoundError,
-  StorageAlreadyExistsError,
-  StorageNotEmptyError,
-  StorageUnsupportedError,
-} from '../types.js';
+import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
 import { moduleLogger } from '../../core/logger/logger.js';
 import { resolveDataRoot } from '../../core/paths.js';
 import { toAbsolute, forbidRootTarget, canonicalizeRoot } from './path-guard.js';
@@ -44,8 +39,6 @@ export { resolveDataRoot };
  * ENGINE: `@file-services/node` (createNodeFs(), pinned 11.1.1).
  */
 export class LocalFileStore implements FileStore {
-  static readonly RESERVED_PORT_ERRORS = [StorageUnsupportedError] as const;
-
   private readonly fs: IFileSystem;
   private readonly dataRoot: string;
 

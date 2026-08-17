@@ -8,7 +8,6 @@ import {
   StorageNotFoundError,
   StorageAlreadyExistsError,
   StorageNotEmptyError,
-  StorageUnsupportedError,
 } from '../../types.js';
 
 describe('LocalFileStore contract suite', () => {
@@ -313,12 +312,6 @@ describe('LocalFileStore contract suite', () => {
   });
 
   describe('error-class coverage', () => {
-    it('reserves StorageUnsupportedError (not thrown by LocalFileStore)', async () => {
-      // Every FileStore method is implemented, so the class is intentionally
-      // never thrown; the reservation is made explicit on the adapter.
-      expect(LocalFileStore.RESERVED_PORT_ERRORS).toContain(StorageUnsupportedError);
-    });
-
     it('throws StorageNotFoundError for missing path read', async () => {
       await expect(store.read('nope.txt')).rejects.toBeInstanceOf(StorageNotFoundError);
     });
