@@ -6,9 +6,8 @@ import { MemoryFileStore } from '../memory.js';
  * Factory — builds a FileStore over the data root.
  *
  * Co-located with `LocalFileStore` because it constructs that adapter
- * directly (no adapter-selection logic). If a future adapter (e.g. an
- * in-memory store for tests) needs choosing, this is where the selection
- * would live, and at that point it may move up to `storage/factory.ts`.
+ * directly. Adapter selection logic lives here: string/dataRoot arguments
+ * return LocalFileStore; `{inMemory: true}` returns MemoryFileStore.
  *
  * Kept as an explicit factory (not a module-level singleton/global) so each
  * entry point constructs the store once at startup and threads the returned
