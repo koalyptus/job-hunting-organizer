@@ -41,24 +41,9 @@ export { resolveDataRoot };
 
 /**
  * LocalFileStore — maps the FileStore port over a vendored IFileSystem.
- * ENGINE: `@file-services/node` (createNodeFs(), pinned 11.1.1). The adapter
- * adds the root-confining path guard (src/storage/local/path-guard.ts), the
- * StoragePath → error mapping, temp+rename atomic write, recursive copy, and the
- * proper-lockfile binding. The IFileSystem is injected so the contract suite can
- * run against an in-memory adapter; default is the node-backed engine.
- * Constructor performs no I/O — getDataRoot() is pure resolution.
- *
- * Every `FileStore` method is implemented, so `StorageUnsupportedError` is
- * intentionally never thrown (it is reserved for adapters that cannot honor a
- * given operation — see its doc in types.ts).
+ * ENGINE: `@file-services/node` (createNodeFs(), pinned 11.1.1).
  */
 export class LocalFileStore implements FileStore {
-  /**
-   * Port error classes this adapter reserves but never throws (today every
-   * `FileStore` method is implemented). Exposed so callers and tooling can
-   * distinguish "implemented" from "reserved" without re-reading the docs.
-   * See `StorageUnsupportedError` in types.ts for the rationale.
-   */
   static readonly RESERVED_PORT_ERRORS = [StorageUnsupportedError] as const;
 
   private readonly fs: IFileSystem;
@@ -118,7 +103,10 @@ export class LocalFileStore implements FileStore {
       }
       // ENOENT/other: path is free, or stat itself failed (e.g. symlink→dir
       // whose target is not a directory) — proceed to write; the engine will
-      // surface a clear error if the final target is invalid.
+      // surface a clear error if the final target is invalid. stat follows
+      // symlinks, so a symlink whose target is a directory still rejects here
+      // with StorageAlreadyExistsError instead of letting rename replace the
+      // symlink itself.
     }
 
     const parent = this.fs.dirname(abs);
