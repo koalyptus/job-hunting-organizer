@@ -302,6 +302,16 @@ describe('MemoryFileStore contract suite', () => {
       expect(s.getDataRoot()).toBe('/tmp/jho-data');
     });
 
+    it('returns a LocalFileStore with default root for empty object', async () => {
+      const s = createStore({});
+      expect(s).toBeInstanceOf(LocalFileStore);
+    });
+
+    it('returns a LocalFileStore with default root for { inMemory: false }', async () => {
+      const s = createStore({ inMemory: false });
+      expect(s).toBeInstanceOf(LocalFileStore);
+    });
+
     it('returns a fresh instance per call', async () => {
       const s1 = createStore({ inMemory: true });
       const s2 = createStore({ inMemory: true });
