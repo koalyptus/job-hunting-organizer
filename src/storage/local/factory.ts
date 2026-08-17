@@ -6,7 +6,7 @@ import { MemoryFileStore } from '../memory.js';
  * Factory — builds a FileStore over the data root.
  *
  * Co-located with `LocalFileStore` because it constructs that adapter
- * directly (no adapter-selection logic yet). If a future adapter (e.g. an
+ * directly (no adapter-selection logic). If a future adapter (e.g. an
  * in-memory store for tests) needs choosing, this is where the selection
  * would live, and at that point it may move up to `storage/factory.ts`.
  *
@@ -31,11 +31,10 @@ export function createStore(options?: CreateStoreOptions): FileStore {
     return new LocalFileStore(options);
   }
   // Object argument with inMemory:true → in-memory store for tests.
-  if (options && typeof options !== 'string' && options.inMemory === true) {
+  if (options?.inMemory === true) {
     return new MemoryFileStore();
   }
   // Object argument with optional dataRoot, or no argument → LocalFileStore.
-  const dataRoot =
-    options && typeof options !== 'string' && 'dataRoot' in options ? options.dataRoot : undefined;
+  const dataRoot = options?.dataRoot;
   return new LocalFileStore(dataRoot);
 }

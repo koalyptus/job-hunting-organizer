@@ -34,11 +34,14 @@ const KIND_DIR = 'directory';
  * by `path-guard` (`isAbsolute`/`resolve`/`relative`/`dirname`) is bridged from
  * node's posix `path`. The synthetic volume root is `/`; `getDataRoot()`
  * returns the stable `memory://jho` label instead (see MemoryFileStore).
+ *
+ * The volume starts with an empty `/`, ensure root directory exists so
+ * path-guard's canonicalizeRoot (realpathSync) resolves rather than
+ * falling back to root.
  */
 function createMemoryFileSystem(): IFileSystem {
   const vol = new Volume();
   const volumeFs = createFsFromVolume(vol);
-  // The volume starts with an empty `/`, ensure root directory exists first
   try {
     volumeFs.mkdirSync(MEMORY_ROOT, { recursive: true });
   } catch {
