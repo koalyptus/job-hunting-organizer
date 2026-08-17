@@ -1,8 +1,8 @@
 import type { IFileSystem } from '@file-services/types';
 import type { StoragePath } from '../types.js';
 
-/** Rejects Windows drive letters (`C:`), which `fs.isAbsolute` does not treat as absolute on every platform. */
-const STORAGEPATH_NO_DRIVE = /^[a-zA-Z]:/;
+/** Matches a Windows drive-letter prefix (`C:`), which `fs.isAbsolute` does not treat as absolute on every platform — such paths are rejected. */
+const DRIVE_LETTER_PATTERN = /^[a-zA-Z]:/;
 
 /**
  * Resolve a StoragePath to an absolute path under `root`, rejecting absolute
@@ -14,7 +14,7 @@ const STORAGEPATH_NO_DRIVE = /^[a-zA-Z]:/;
  * @returns the absolute host path.
  */
 export function toAbsolute(fs: IFileSystem, root: string, path: StoragePath): string {
-  if (fs.isAbsolute(path) || path.startsWith('..') || STORAGEPATH_NO_DRIVE.test(path)) {
+  if (fs.isAbsolute(path) || path.startsWith('..') || DRIVE_LETTER_PATTERN.test(path)) {
     throw new Error(
       `Invalid StoragePath: "${path}" — must be relative (host-native), no absolute paths, no '..', no drive letters`,
     );
@@ -66,9 +66,9 @@ function assertWithinRoot(
   let dir = abs;
   for (;;) {
     try {
-      const real = fs.realpathSync(dir);
-      const realRel = fs.relative(canonicalRoot, real);
-      if (realRel.startsWith('..') || fs.isAbsolute(realRel)) {
+      const realPath = fs.realpathSync(dir);
+      const realRelative = fs.relative(canonicalRoot, realPath);
+      if (realRelative.startsWith('..') || fs.isAbsolute(realRelative)) {
         throw new Error(`Path escapes data root via symlink: "${path}"`);
       }
       return;

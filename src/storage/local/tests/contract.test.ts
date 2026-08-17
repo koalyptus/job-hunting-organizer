@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { LocalFileStore, resolveDataRoot } from '../file-store.js';
+import { LocalFileStore, resolveDataRoot } from '../local-file-store.js';
 import { createStore } from '../factory.js';
 import {
   StorageNotFoundError,
@@ -54,6 +54,11 @@ describe('LocalFileStore contract suite', () => {
       await store.write('f.txt', 'v1');
       await store.write('f.txt', 'v2');
       expect(await store.read('f.txt')).toBe('v2');
+    });
+
+    it('throws StorageAlreadyExistsError when target is an existing directory', async () => {
+      await store.mkdir('d');
+      await expect(store.write('d', 'x')).rejects.toBeInstanceOf(StorageAlreadyExistsError);
     });
   });
 
@@ -303,6 +308,12 @@ describe('LocalFileStore contract suite', () => {
   describe('getDataRoot', () => {
     it('returns the configured root', async () => {
       expect(store.getDataRoot()).toBe(root);
+    });
+  });
+
+  describe('error-class coverage', () => {
+    it('throws StorageNotFoundError for missing path read', async () => {
+      await expect(store.read('nope.txt')).rejects.toBeInstanceOf(StorageNotFoundError);
     });
   });
 

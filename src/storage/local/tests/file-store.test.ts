@@ -4,8 +4,8 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createNodeFs } from '@file-services/node';
 import type { IFileSystem } from '@file-services/types';
-import { LocalFileStore } from '../file-store.js';
-import { StorageNotFoundError } from '../../types.js';
+import { LocalFileStore } from '../local-file-store.js';
+import { StorageNotFoundError, StorageAlreadyExistsError } from '../../types.js';
 
 /**
  * LocalFileStore implementation-detail suite — the error branches the
@@ -68,12 +68,11 @@ describe('LocalFileStore unit suite', () => {
       });
     });
 
-    it('cleans up the temp file when the rename fails', async () => {
+    it('rejects writing over an existing directory with StorageAlreadyExistsError', async () => {
       await store.mkdir('d');
-      // POSIX reports EISDIR for rename-onto-directory; Windows reports EPERM.
-      await expect(store.write('d', 'x')).rejects.toMatchObject({
-        code: expect.stringMatching(/^(EISDIR|EPERM)$/),
-      });
+      // The port maps "write over an existing entry" to StorageAlreadyExistsError
+      // before any temp+rename I/O, so no temp file is leaked.
+      await expect(store.write('d', 'x')).rejects.toBeInstanceOf(StorageAlreadyExistsError);
       expect((await readdir(root)).filter((e) => e.endsWith('.tmp'))).toEqual([]);
     });
 
@@ -94,6 +93,25 @@ describe('LocalFileStore unit suite', () => {
       };
       const failingStore = new LocalFileStore(root, failing);
       await expect(failingStore.write('a.txt', 'x')).rejects.toBe(err);
+    });
+
+    it('cleans up temp file and rethrows when rename fails but unlink succeeds', async () => {
+      const base = createNodeFs();
+      const renameErr = Object.assign(new Error('EACCES'), { code: 'EACCES' });
+      const failingFs: IFileSystem = {
+        ...base,
+        promises: {
+          ...base.promises,
+          rename: async () => {
+            throw renameErr;
+          },
+        },
+      };
+      const failingStore = new LocalFileStore(root, failingFs);
+      // rename fails, but unlink succeeds — the temp is cleaned up and the
+      // original rename error is rethrown.
+      await expect(failingStore.write('a.txt', 'x')).rejects.toBe(renameErr);
+      expect((await readdir(root)).filter((e) => e.endsWith('.tmp'))).toEqual([]);
     });
   });
 

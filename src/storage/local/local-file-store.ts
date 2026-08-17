@@ -22,7 +22,6 @@ interface FileSystemWithAppend {
 }
 
 const LOCK_KEY_SANITIZE = /[^a-zA-Z0-9_-]/g;
-/** Rejects Windows drive letters (`C:`), which `fs.isAbsolute` does not treat as absolute on every platform. */
 const LOCK_STALE_MS = 10_000;
 const LOCK_RETRIES = { retries: 5, minTimeout: 50, maxTimeout: 500 };
 const LOCK_DIR = '.locks';
@@ -37,12 +36,7 @@ export { resolveDataRoot };
 
 /**
  * LocalFileStore — maps the FileStore port over a vendored IFileSystem.
- * ENGINE: `@file-services/node` (createNodeFs(), pinned 11.1.1). The adapter
- * adds the root-confining path guard (src/storage/local/path-guard.ts), the
- * StoragePath → error mapping, temp+rename atomic write, recursive copy, and the
- * proper-lockfile binding. The IFileSystem is injected so the contract suite can
- * run against an in-memory adapter; default is the node-backed engine.
- * Constructor performs no I/O — getDataRoot() is pure resolution.
+ * ENGINE: `@file-services/node` (createNodeFs(), pinned 11.1.1).
  */
 export class LocalFileStore implements FileStore {
   private readonly fs: IFileSystem;
@@ -86,6 +80,28 @@ export class LocalFileStore implements FileStore {
   async write(path: StoragePath, content: string | Uint8Array): Promise<void> {
     const abs = toAbsolute(this.fs, this.dataRoot, path);
     forbidRootTarget(path, abs, this.dataRoot, canonicalizeRoot(this.fs, this.dataRoot));
+    // Existing directory at the target path is not a valid write target:
+    // the temp+rename below would fail with EISDIR, but surfacing the
+    // port's StorageAlreadyExistsError is the explicit contract for "write
+    // over an existing entry". (Writing over an existing FILE is a supported
+    // atomic overwrite, covered by other tests, so only directories reject.)
+    try {
+      const existing = await this.fs.promises.stat(abs);
+      if (existing.isDirectory()) {
+        throw new StorageAlreadyExistsError(path);
+      }
+    } catch (err) {
+      if (err instanceof StorageAlreadyExistsError) {
+        throw err;
+      }
+      // ENOENT/other: path is free, or stat itself failed (e.g. symlink→dir
+      // whose target is not a directory) — proceed to write; the engine will
+      // surface a clear error if the final target is invalid. stat follows
+      // symlinks, so a symlink whose target is a directory still rejects here
+      // with StorageAlreadyExistsError instead of letting rename replace the
+      // symlink itself.
+    }
+
     const parent = this.fs.dirname(abs);
 
     // Ensure parent directory exists
