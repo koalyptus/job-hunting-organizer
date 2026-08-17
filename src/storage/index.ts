@@ -15,3 +15,5 @@ export type {
 // not re-implement it.
 export { LocalFileStore, resolveDataRoot } from './local/local-file-store.js';
 export { createStore } from './local/factory.js';
+export type { CreateStoreOptions } from './local/factory.js';
+export { MemoryFileStore } from './memory.js';

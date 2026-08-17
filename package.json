@@ -53,7 +53,8 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.config.integration.ts",
     "eval": "vitest run --config evals/vitest.config.ts",
-    "eval:update": "vitest run --config evals/vitest.config.ts -u"
+    "eval:update": "vitest run --config evals/vitest.config.ts -u",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run test:integration"
   },
   "keywords": [
     "mcp",
@@ -79,6 +80,7 @@
     "ics": "^3.12.0",
     "js-yaml": "^4.2.0",
     "mammoth": "^1.12.0",
+    "memfs": "^4.68.1",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.0",
     "openai": "^6.42.0",
