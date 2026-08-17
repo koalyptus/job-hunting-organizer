@@ -1,4 +1,4 @@
-import nodePath from 'node:path';
+import { posix as posixPath } from 'node:path';
 import { createFsFromVolume, Volume } from 'memfs';
 import type { IFileSystem } from '@file-services/types';
 import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from './types.js';
@@ -45,9 +45,9 @@ function createMemoryFileSystem(): IFileSystem {
     // Root already present.
   }
   return {
-    ...nodePath,
-    sep: nodePath.sep,
-    delimiter: nodePath.delimiter,
+    ...posixPath,
+    sep: posixPath.sep,
+    delimiter: posixPath.delimiter,
     realpathSync: volumeFs.realpathSync.bind(volumeFs),
     promises: volumeFs.promises,
   } as unknown as IFileSystem;

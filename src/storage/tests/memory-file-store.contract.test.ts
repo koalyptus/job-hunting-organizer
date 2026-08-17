@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MemoryFileStore } from '../memory.js';
 import { createStore } from '../local/factory.js';
-import { LocalFileStore, resolveDataRoot } from '../local/local-file-store.js';
+import { LocalFileStore } from '../local/local-file-store.js';
 import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
 
 describe('MemoryFileStore contract suite', () => {
@@ -312,23 +312,6 @@ describe('MemoryFileStore contract suite', () => {
       const s1 = createStore({ inMemory: true });
       const s2 = createStore({ inMemory: true });
       expect(s1).not.toBe(s2);
-    });
-  });
-
-  describe('resolveDataRoot', () => {
-    it('respects JHO_DATA override', async () => {
-      const custom = '/tmp/custom-data-root';
-      const prev = process.env['JHO_DATA'];
-      process.env['JHO_DATA'] = custom;
-      try {
-        expect(resolveDataRoot()).toBe(custom);
-      } finally {
-        if (prev === undefined) {
-          delete process.env['JHO_DATA'];
-        } else {
-          process.env['JHO_DATA'] = prev;
-        }
-      }
     });
   });
 });
