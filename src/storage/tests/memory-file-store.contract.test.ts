@@ -246,12 +246,6 @@ describe('MemoryFileStore contract suite', () => {
       await expect(store.rename('.', 'other')).rejects.toThrow(/must not target the data root/);
       await expect(store.copy('.', 'other')).rejects.toThrow(/must not target the data root/);
     });
-
-    // SKIP: memfs has no realpath symlink-escape surface — the symlink-escape
-    // invariant is meaningless for an in-memory volume.
-    it.skip('rejects a path that escapes the root via symlink', async () => {
-      // No-op: covered by LocalFileStore contract suite on real disk.
-    });
   });
 
   describe('withLock', () => {
