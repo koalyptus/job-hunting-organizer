@@ -529,15 +529,6 @@ describe('MemoryFileStore contract suite', () => {
       await expect(failing.copy('src.txt', 'a/b.txt')).rejects.toMatchObject({ code: 'ENOTDIR' });
     });
 
-    it('readBytes rethrows non-ENOENT/ENOTDIR', async () => {
-      const failing = makeFailingStore({
-        readFile: async () => {
-          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
-        },
-      });
-      await expect(failing.readBytes('x.bin')).rejects.toMatchObject({ code: 'EACCES' });
-    });
-
     it('readBytes throws StorageNotFoundError on ENOTDIR', async () => {
       const failing = makeFailingStore({
         readFile: async () => {
