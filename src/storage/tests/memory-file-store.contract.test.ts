@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryFileStore } from '../memory.js';
+import { log as memoryLog, MemoryFileStore } from '../memory.js';
 import { createStore } from '../local/factory.js';
 import { LocalFileStore } from '../local/local-file-store.js';
 import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
-import type { IFileSystem } from '@file-services/types';
+import type { IFileSystem, IFileSystemStats } from '@file-services/types';
 import { createFsFromVolume, Volume } from 'memfs';
 import { posix as posixPath } from 'node:path';
 
@@ -14,8 +14,9 @@ describe('MemoryFileStore contract suite', () => {
     store = new MemoryFileStore();
   });
 
-  afterEach(async () => {
-    // In-memory only; nothing to clean up on disk.
+  afterEach(() => {
+    // Restore any spies (e.g. the withLock warn spy) to prevent leakage.
+    vi.restoreAllMocks();
   });
 
   describe('write/read', () => {
@@ -334,16 +335,13 @@ describe('MemoryFileStore contract suite', () => {
 
   describe('withLock error handling', () => {
     it('logs unexpected rejection when fn throws', async () => {
-      // Import memory module to access the internal log
-      const memoryModule = await import('../memory.js');
-      const warnSpy = vi.spyOn(memoryModule.log, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(memoryLog, 'warn').mockImplementation(() => {});
       await expect(
         store.withLock('throw-key', async () => {
           throw new Error('deliberate failure');
         }),
       ).rejects.toThrow('deliberate failure');
       expect(warnSpy).toHaveBeenCalledWith({ key: 'throw-key' }, 'withLock.unexpected.rejection');
-      warnSpy.mockRestore();
     });
   });
 
@@ -477,16 +475,17 @@ describe('MemoryFileStore contract suite', () => {
     });
 
     it('rename dest parent mkdir rethrows non-EEXIST', async () => {
+      const sourceStat = {
+        isFile: () => true,
+        isDirectory: () => false,
+        size: 1,
+        mtime: new Date(),
+      } as unknown as IFileSystemStats;
       const failing = makeFailingStore({
         stat: async (path: string) => {
           // source exists
           if (path.endsWith('src.txt')) {
-            return {
-              isFile: () => true,
-              isDirectory: () => false,
-              size: 1,
-              mtime: new Date(),
-            } as any;
+            return sourceStat;
           }
           // dest doesn't exist
           throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
@@ -508,16 +507,17 @@ describe('MemoryFileStore contract suite', () => {
     });
 
     it('copy dest parent mkdir rethrows non-EEXIST', async () => {
+      const sourceStat = {
+        isFile: () => true,
+        isDirectory: () => false,
+        size: 1,
+        mtime: new Date(),
+      } as unknown as IFileSystemStats;
       const failing = makeFailingStore({
         stat: async (path: string) => {
           // source exists
           if (path.endsWith('src.txt')) {
-            return {
-              isFile: () => true,
-              isDirectory: () => false,
-              size: 1,
-              mtime: new Date(),
-            } as any;
+            return sourceStat;
           }
           // dest doesn't exist
           throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
