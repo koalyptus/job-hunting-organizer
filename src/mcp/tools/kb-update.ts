@@ -3,7 +3,6 @@ import type { FileStore } from '../../storage/types.js';
 import { KbUpdateInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { syncKnowledgeBase } from '../../core/campaign/kb-ingest.js';
-import { resolveCampaignRoot } from '../../core/paths.js';
 import { loadCampaignConfig } from '../../core/config/config.js';
 import { mcpLogger } from '../logger.js';
 
@@ -23,9 +22,8 @@ export function registerKbUpdate(server: McpServer, _store: FileStore): void {
     async (args) => {
       try {
         mcpLogger.debug({ campaign: args.campaign }, 'tool.kb_update.start');
-        const campaignRoot = resolveCampaignRoot(args.campaign);
         const sources = loadCampaignConfig(args.campaign).knowledgeBase.sources;
-        const present = await syncKnowledgeBase(campaignRoot, sources ?? []);
+        const present = await syncKnowledgeBase(args.campaign, sources ?? []);
         mcpLogger.debug({ count: present.length }, 'tool.kb_update.done');
         return {
           content: [

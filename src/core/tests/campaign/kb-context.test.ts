@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { loadKnowledgeBaseContext } from '../../campaign/kb-context.js';
 import { CvError } from '../../cv.js';
+import type { FileStore } from '../../../storage/types.js';
+import { createStore } from '../../../storage/index.js';
 
 vi.mock('../../cv.js', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -29,9 +31,12 @@ vi.mock('../../logger/logger.js', async (importOriginal) => {
 
 describe('loadKnowledgeBaseContext', () => {
   let root: string;
+  let store: FileStore;
+  const CUR = 'test-campaign';
 
   beforeEach(async () => {
     root = await mkdtemp(`${tmpdir()}/jho-kb-`);
+    store = createStore(root);
     readCvMock.mockReset();
   });
 
@@ -40,7 +45,7 @@ describe('loadKnowledgeBaseContext', () => {
   });
 
   it('returns empty string when knowledge-base dir is absent', async () => {
-    expect(await loadKnowledgeBaseContext(root)).toBe('');
+    expect(await loadKnowledgeBaseContext(CUR, { store })).toBe('');
     expect(readCvMock).not.toHaveBeenCalled();
   });
 
@@ -51,7 +56,7 @@ describe('loadKnowledgeBaseContext', () => {
     await mkdir(join(kbDir, 'github'), { recursive: true });
     await writeFile(join(kbDir, 'github', 'user.json'), '{"login":"x"}');
 
-    expect(await loadKnowledgeBaseContext(root)).toBe('');
+    expect(await loadKnowledgeBaseContext(CUR, { store })).toBe('');
     expect(readCvMock).not.toHaveBeenCalled();
   });
 
@@ -68,7 +73,7 @@ describe('loadKnowledgeBaseContext', () => {
       fileName: 'x',
     }));
 
-    const result = await loadKnowledgeBaseContext(root);
+    const result = await loadKnowledgeBaseContext(CUR, { store });
 
     expect(result).toContain('## Knowledge base: tips.md');
     expect(result).toContain('TEXT:');
@@ -88,7 +93,7 @@ describe('loadKnowledgeBaseContext', () => {
       fileName: 'x',
     }));
 
-    const result = await loadKnowledgeBaseContext(root);
+    const result = await loadKnowledgeBaseContext(CUR, { store });
     expect(result).toContain('## Knowledge base: sub/deep.md');
   });
 
@@ -100,7 +105,7 @@ describe('loadKnowledgeBaseContext', () => {
 
     readCvMock.mockImplementation(async () => ({ text: 'A', format: 'text', fileName: 'x' }));
 
-    const result = await loadKnowledgeBaseContext(root);
+    const result = await loadKnowledgeBaseContext(CUR, { store });
     expect(result).toContain('a.md');
     expect(readCvMock).toHaveBeenCalledTimes(1);
   });
@@ -112,7 +117,7 @@ describe('loadKnowledgeBaseContext', () => {
 
     readCvMock.mockRejectedValueOnce(new CvError('boom', 'parse_error'));
 
-    const result = await loadKnowledgeBaseContext(root);
+    const result = await loadKnowledgeBaseContext(CUR, { store });
     expect(result).toBe('');
   });
 
@@ -130,7 +135,7 @@ describe('loadKnowledgeBaseContext', () => {
 
     warnSpy.mockClear();
     const tooSmall = 12; // "## Knowledge base: a.md\n\nAAAA\n\n" > 12, so a is truncated
-    const result = await loadKnowledgeBaseContext(root, { maxChars: tooSmall });
+    const result = await loadKnowledgeBaseContext(CUR, { store, maxChars: tooSmall });
     expect(result.length).toBeLessThanOrEqual(tooSmall);
     expect(warnSpy).toHaveBeenCalledWith(
       expect.objectContaining({ maxChars: tooSmall }),
@@ -145,7 +150,7 @@ describe('loadKnowledgeBaseContext', () => {
 
     readCvMock.mockImplementation(async () => ({ text: 'AAAA', format: 'text', fileName: 'x' }));
 
-    const result = await loadKnowledgeBaseContext(root, { maxChars: 10000 });
+    const result = await loadKnowledgeBaseContext(CUR, { store, maxChars: 10000 });
     expect(result).toContain('AAAA');
   });
 });

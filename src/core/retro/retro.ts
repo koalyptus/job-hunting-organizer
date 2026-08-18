@@ -328,7 +328,7 @@ async function generateLearningPlan(
   ];
 
   // Feed user knowledge-base docs into the prompt (always-on; see kb-context).
-  const kb = await loadKbContextForCampaign(campaignRoot, campaign);
+  const kb = await loadKbContextForCampaign(campaign);
   if (kb) {
     messageParts.push('', SECTION_SEPARATOR, '', KNOWLEDGE_BASE_SECTION_HEADER, '', kb);
   }

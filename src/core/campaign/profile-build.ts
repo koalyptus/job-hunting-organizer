@@ -15,6 +15,8 @@ import { chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
 import { SECTION_SEPARATOR, KNOWLEDGE_BASE_SECTION_HEADER } from '../constants.js';
+import { campaignStoreFromRoot } from '../../storage/index.js';
+import type { FileStore } from '../../storage/types.js';
 import type { LlmConfig } from '../types.js';
 
 /**
@@ -91,14 +93,18 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
     log.info({ cvPath, githubUser }, 'profile.build.start');
   }
 
+  const store: FileStore | undefined = campaignRoot
+    ? campaignStoreFromRoot(campaignRoot)
+    : undefined;
+
   // 1. Read CV (cache-first when campaignRoot is provided)
   let cv;
   if (cvPath) {
-    cv = campaignRoot ? await readCachedCv(campaignRoot, log) : undefined;
+    cv = store ? await readCachedCv('', store, log) : undefined;
     if (!cv) {
       cv = await readCv(cvPath, log);
-      if (campaignRoot) {
-        await writeCachedCv(campaignRoot, cv, log);
+      if (store) {
+        await writeCachedCv('', cv, store, log);
       }
     }
   }
@@ -106,8 +112,8 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
   // 2. Fetch GitHub data (cache-first when campaignRoot is provided)
   let user;
   let repos;
-  if (campaignRoot) {
-    const cached = await readCachedGithubProfile(campaignRoot, githubUser, log);
+  if (store) {
+    const cached = await readCachedGithubProfile('', githubUser, store, log);
     if (cached) {
       user = cached.user;
       repos = cached.repos;
@@ -118,8 +124,8 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
       fetchGithubUser(githubUser, githubToken, log),
       fetchGithubRepos(githubUser, githubToken, log),
     ]);
-    if (campaignRoot) {
-      await writeCachedGithubProfile(campaignRoot, githubUser, user, repos, log);
+    if (store) {
+      await writeCachedGithubProfile('', githubUser, user, repos, store, log);
     }
   }
 
@@ -161,7 +167,7 @@ Generate the profile markdown following the template above.`;
 
   // Feed user knowledge-base docs into the prompt (always-on; see kb-context).
   if (campaignRoot) {
-    const kb = await loadKnowledgeBaseContext(campaignRoot, { maxChars });
+    const kb = await loadKnowledgeBaseContext('', { store, maxChars });
     if (kb) {
       userMessage += `\n\n${SECTION_SEPARATOR}\n\n${KNOWLEDGE_BASE_SECTION_HEADER}\n\n${kb}`;
     }

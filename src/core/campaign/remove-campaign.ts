@@ -1,12 +1,12 @@
-import { rm } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignRoot, resolveDataRoot, findCampaignFromCwd, isUnder } from '../paths.js';
-import { pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { clearConfigCache } from '../config/config.js';
 import { moduleLogger } from '../logger/logger.js';
 import { validateName } from '../validate.js';
+import type { FileStore } from '../../storage/types.js';
+import { campaignsStore } from '../../storage/index.js';
 
 const log = moduleLogger(import.meta.url);
 
@@ -114,6 +114,7 @@ async function confirmRemoval(name: string): Promise<void> {
 export async function removeCampaign(
   name: string,
   opts: { skipConfirm?: boolean } = {},
+  store?: FileStore,
 ): Promise<void> {
   const validationError = validateName(name);
   if (validationError) {
@@ -121,6 +122,7 @@ export async function removeCampaign(
   }
 
   const campaignPath = resolveCampaignRoot(name);
+  const st = store ?? campaignsStore(resolveDataRoot());
 
   // Self-foot-gun: refuse if cwd is inside the campaign being removed.
   if (isUnder(process.cwd(), campaignPath)) {
@@ -128,7 +130,7 @@ export async function removeCampaign(
   }
 
   // Pre-flight: campaign must exist (no lock needed).
-  if (!(await pathExists(campaignPath))) {
+  if (!(await st.exists(name))) {
     throw new RemoveCampaignError(`campaign "${name}" not found`);
   }
 
@@ -138,7 +140,7 @@ export async function removeCampaign(
 
   const start = performance.now();
   await acquireLock(campaignPath, async () => {
-    await rm(campaignPath, { recursive: true, force: true });
+    await st.rm(name, { recursive: true });
   });
   clearConfigCache();
 

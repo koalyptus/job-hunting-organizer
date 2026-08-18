@@ -9,7 +9,7 @@ import {
   loadGlobalConfig,
   loadCampaignConfig,
 } from '../config/config.js';
-import { resolveProfilePath, resolveMyVoicePath } from '../paths.js';
+import { resolveProfilePath, resolveMyVoicePath, resolveCampaignRoot } from '../paths.js';
 import { toDateKey } from '../date.js';
 import { createDirectories } from '../campaign/directories.js';
 import { ingestKnowledgeBase as ingestKbDocs } from '../campaign/kb-ingest.js';
@@ -48,10 +48,10 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
   const { campaignRoot, name, log } = opts;
 
   // --- Step 7: Create directory structure ---
-  const { kbDir } = await createDirectories(campaignRoot);
+  const { kbDir } = await createDirectories(name);
 
   // --- Step 8: Ingest optional knowledge-base source ---
-  const kbSources = await ingestKnowledgeBase(campaignRoot, opts.kbPath, kbDir);
+  const kbSources = await ingestKnowledgeBase(name, opts.kbPath, kbDir);
 
   // --- Step 9: Scaffold the personal voice guide (never overwrite) ---
   await scaffoldVoiceGuide(campaignRoot);
@@ -79,7 +79,7 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
 
 /** Ingest the optional knowledge-base source; returns the recorded sources. */
 async function ingestKnowledgeBase(
-  campaignRoot: string,
+  campaign: string,
   kbPath: string | undefined,
   kbDir: string,
 ): Promise<string[]> {
@@ -88,8 +88,8 @@ async function ingestKnowledgeBase(
     return kbSources;
   }
 
-  const kbSourceAbs = resolve(campaignRoot, kbPath);
-  const copied = await ingestKbDocs(campaignRoot, kbSourceAbs);
+  const kbSourceAbs = resolve(resolveCampaignRoot(campaign), kbPath);
+  const copied = await ingestKbDocs(campaign, kbSourceAbs);
   if (copied.length > 0) {
     kbSources.push(kbSourceAbs);
     clackLog.info(`Copied ${copied.length} knowledge-base doc(s) into ${kbDir}`);

@@ -5,15 +5,19 @@ import { tmpdir } from 'node:os';
 import { ingestKnowledgeBase, listKnowledgeBase, syncKnowledgeBase } from './kb-ingest.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
 import { pathExists } from '../fs.js';
+import type { FileStore } from '../../storage/types.js';
+import { createStore } from '../../storage/index.js';
 
 describe('kb-ingest my-voice exclusion', () => {
   let testDir: string;
   let campaignRoot: string;
+  let store: FileStore;
 
   beforeEach(async () => {
     testDir = join(tmpdir(), `jho-kb-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     campaignRoot = join(testDir, 'campaign');
     await mkdir(join(campaignRoot, 'knowledge-base'), { recursive: true });
+    store = createStore(campaignRoot);
   });
 
   afterEach(async () => {
@@ -65,7 +69,7 @@ describe('kb-ingest my-voice exclusion', () => {
     await writeFile(join(kbDir, 'my-voice.md'), 'campaign voice', 'utf8');
     await writeFile(join(kbDir, 'tips.md'), 'some tips', 'utf8');
 
-    const context = await loadKnowledgeBaseContext(campaignRoot);
+    const context = await loadKnowledgeBaseContext('cur', { store });
 
     expect(context).toContain('some tips');
     expect(context).not.toContain('campaign voice');

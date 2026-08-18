@@ -1,9 +1,9 @@
-import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger } from 'pino';
-import { atomicWrite, pathExists } from '../fs.js';
-import { resolveKnowledgeBaseDir } from '../paths.js';
 import type { CvContent, GithubRepo, GithubUser } from '../types.js';
+import type { FileStore } from '../../storage/types.js';
+import { campaignStoreFromRoot } from '../../storage/index.js';
+import { resolveCampaignRoot } from '../paths.js';
 
 /**
  * Cached GitHub user and repo data, written to
@@ -18,28 +18,36 @@ interface CachedGithubData {
   readonly cachedAt: string;
 }
 
+const CV_CACHE_PATH = join('knowledge-base', 'cv.json');
+const GITHUB_CACHE_PATH = (username: string): string =>
+  join('knowledge-base', 'github', `${username}.json`);
+
 /**
- * Read cached CV text from the knowledge base.
- * @param campaignRoot - Absolute path of the campaign root.
+ * Resolve the campaign-scoped store (or use the injected one).
+ */
+function storeFor(campaign: string, store?: FileStore): FileStore {
+  return store ?? campaignStoreFromRoot(resolveCampaignRoot(campaign));
+}
+
+/**
+ * Read cached CV text from the knowledge base through the port.
+ * @param campaign - Campaign folder name.
+ * @param store - Optional campaign-scoped `FileStore` (for testing).
  * @param log - Optional pino logger.
  * @returns The cached CV content, or `null` if no cache exists or it is corrupted.
  */
-export async function readCachedCv(campaignRoot: string, log?: Logger): Promise<CvContent | null> {
-  const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const cachePath = join(kbDir, 'cv.json');
-
-  if (!(await pathExists(cachePath))) {
-    return null;
-  }
-
+export async function readCachedCv(
+  campaign: string,
+  store?: FileStore,
+  log?: Logger,
+): Promise<CvContent | null> {
+  const st = storeFor(campaign, store);
   try {
-    const raw = await readFile(cachePath, 'utf8');
+    const raw = await st.read(CV_CACHE_PATH);
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-
     if (log) {
-      log.info({ cachePath }, 'kb.cv.read');
+      log.info({ path: CV_CACHE_PATH }, 'kb.cv.read');
     }
-
     return {
       text: parsed.text as string,
       format: parsed.format as CvContent['format'],
@@ -51,63 +59,53 @@ export async function readCachedCv(campaignRoot: string, log?: Logger): Promise<
 }
 
 /**
- * Write CV text to the knowledge base cache.
- * @param campaignRoot - Absolute path of the campaign root.
+ * Write CV text to the knowledge base cache through the port.
+ * @param campaign - Campaign folder name.
  * @param cv - The CV content to cache.
+ * @param store - Optional campaign-scoped `FileStore` (for testing).
  * @param log - Optional pino logger.
  */
 export async function writeCachedCv(
-  campaignRoot: string,
+  campaign: string,
   cv: CvContent,
+  store?: FileStore,
   log?: Logger,
 ): Promise<void> {
-  const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const cachePath = join(kbDir, 'cv.json');
-
+  const st = storeFor(campaign, store);
   const data = {
     text: cv.text,
     format: cv.format,
     fileName: cv.fileName,
     cachedAt: new Date().toISOString(),
   };
-
-  const written = await atomicWrite(cachePath, JSON.stringify(data, null, 2) + '\n');
-  if (!written && log) {
-    log.warn({ cachePath }, 'kb.cv.write.failed');
-  }
-
+  await st.write(CV_CACHE_PATH, JSON.stringify(data, null, 2) + '\n');
   if (log) {
-    log.info({ cachePath }, 'kb.cv.write');
+    log.info({ path: CV_CACHE_PATH }, 'kb.cv.write');
   }
 }
 
 /**
- * Read cached GitHub data from the knowledge base.
- * @param campaignRoot - Absolute path of the campaign root.
+ * Read cached GitHub data from the knowledge base through the port.
+ * @param campaign - Campaign folder name.
  * @param username - GitHub username (used as cache key).
+ * @param store - Optional campaign-scoped `FileStore` (for testing).
  * @param log - Optional pino logger.
  * @returns The cached user and repos, or `null` if no cache exists or it is corrupted.
  */
 export async function readCachedGithubProfile(
-  campaignRoot: string,
+  campaign: string,
   username: string,
+  store?: FileStore,
   log?: Logger,
 ): Promise<{ user: GithubUser; repos: GithubRepo[] } | null> {
-  const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const cachePath = join(kbDir, 'github', `${username}.json`);
-
-  if (!(await pathExists(cachePath))) {
-    return null;
-  }
-
+  const st = storeFor(campaign, store);
+  const path = GITHUB_CACHE_PATH(username);
   try {
-    const raw = await readFile(cachePath, 'utf8');
+    const raw = await st.read(path);
     const parsed = JSON.parse(raw) as CachedGithubData;
-
     if (log) {
-      log.info({ cachePath, username }, 'kb.github.read');
+      log.info({ path, username }, 'kb.github.read');
     }
-
     return { user: parsed.user, repos: parsed.repos };
   } catch {
     return null;
@@ -115,35 +113,31 @@ export async function readCachedGithubProfile(
 }
 
 /**
- * Write GitHub user and repo data to the knowledge base cache.
- * @param campaignRoot - Absolute path of the campaign root.
+ * Write GitHub user and repo data to the knowledge base cache through the port.
+ * @param campaign - Campaign folder name.
  * @param username - GitHub username (used as cache key).
  * @param user - The user profile to cache.
  * @param repos - The repos list to cache.
+ * @param store - Optional campaign-scoped `FileStore` (for testing).
  * @param log - Optional pino logger.
  */
 export async function writeCachedGithubProfile(
-  campaignRoot: string,
+  campaign: string,
   username: string,
   user: GithubUser,
   repos: GithubRepo[],
+  store?: FileStore,
   log?: Logger,
 ): Promise<void> {
-  const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const cachePath = join(kbDir, 'github', `${username}.json`);
-
+  const st = storeFor(campaign, store);
+  const path = GITHUB_CACHE_PATH(username);
   const data: CachedGithubData = {
     user,
     repos,
     cachedAt: new Date().toISOString(),
   };
-
-  const written = await atomicWrite(cachePath, JSON.stringify(data, null, 2) + '\n');
-  if (!written && log) {
-    log.warn({ cachePath, username }, 'kb.github.write.failed');
-  }
-
+  await st.write(path, JSON.stringify(data, null, 2) + '\n');
   if (log) {
-    log.info({ cachePath, username }, 'kb.github.write');
+    log.info({ path, username }, 'kb.github.write');
   }
 }

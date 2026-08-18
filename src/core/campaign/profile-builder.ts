@@ -1,8 +1,8 @@
-import { copyFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
 import { resolveProfilePath } from '../paths.js';
-import { pathExists, atomicWrite } from '../fs.js';
+import { pathExists } from '../fs.js';
 import { buildProfile } from './profile-build.js';
 import { extractTargetRoles, replaceTargetRoles } from './target-roles.js';
 import { withSpinner } from '../spinner.js';
@@ -11,6 +11,8 @@ import { reviewRoles } from './roles.js';
 import { generateSkeletonProfile } from '../init/skeleton.js';
 import { InitError } from '../init/errors.js';
 import { moduleLogger } from '../logger/logger.js';
+import type { FileStore } from '../../storage/types.js';
+import { campaignStoreFromRoot } from '../../storage/index.js';
 
 const fallbackLog = moduleLogger(import.meta.url);
 
@@ -35,7 +37,10 @@ export async function handleProfile(opts: {
   /** Optional character cap for knowledge-base context (forwarded to buildProfile). */
   maxChars?: number;
   log?: Logger;
+  /** Optional campaign-scoped `FileStore` (for testing). */
+  store?: FileStore;
 }): Promise<string> {
+  const st = opts.store ?? campaignStoreFromRoot(opts.campaignRoot);
   const profilePath = resolveProfilePath(opts.campaignRoot);
 
   if (opts.profileFlag) {
@@ -46,7 +51,8 @@ export async function handleProfile(opts: {
     }
 
     try {
-      await copyFile(opts.profileFlag, profilePath);
+      const content = await readFile(opts.profileFlag);
+      await st.write('profile.md', content);
     } catch (err) {
       throw new InitError(`Failed to copy profile: ${(err as Error).message}`);
     }
@@ -96,10 +102,7 @@ export async function handleProfile(opts: {
       profileContent = replaceTargetRoles(profileContent, reviewed);
     }
 
-    const written = await atomicWrite(profilePath, profileContent);
-    if (!written) {
-      throw new Error(`failed to write profile to ${profilePath}`);
-    }
+    await st.write('profile.md', profileContent);
     clackLog.success('Profile written');
     log(opts).info({ profilePath }, 'profile.build.completed');
     return profileContent;
@@ -108,10 +111,7 @@ export async function handleProfile(opts: {
   // Skeleton profile
   log(opts).info('profile.skeleton.started');
   const skeleton = generateSkeletonProfile(opts.githubUser ?? '', opts.linkedinUrl ?? '');
-  const skeletonWritten = await atomicWrite(profilePath, skeleton);
-  if (!skeletonWritten) {
-    throw new Error(`failed to write skeleton profile to ${profilePath}`);
-  }
+  await st.write('profile.md', skeleton);
   clackLog.warn('Profile auto-generation skipped (LLM not configured)');
   clackLog.info(`A skeleton profile.md has been created at ${profilePath}`);
   clackLog.info('Edit it with your details, or re-run with an LLM configured to auto-generate.');

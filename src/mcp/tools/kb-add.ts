@@ -30,7 +30,7 @@ export function registerKbAdd(server: McpServer, _store: FileStore): void {
 
         for (const p of args.paths) {
           const resolved = resolve(campaignRoot, p);
-          const copied = await ingestKnowledgeBase(campaignRoot, resolved);
+          const copied = await ingestKnowledgeBase(args.campaign, resolved);
           all.push(...copied);
           newSources.push(resolved);
         }

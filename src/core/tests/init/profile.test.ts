@@ -183,45 +183,6 @@ describe('handleProfile', () => {
     expect(result).toContain('LinkedIn: https://linkedin.com/in/testuser');
   });
 
-  it('throws when atomicWrite fails after profile build', async () => {
-    vi.mocked(atomicWrite).mockResolvedValueOnce(false);
-
-    await expect(
-      handleProfile({
-        campaignRoot,
-        profileFlag: undefined,
-        cvPath: '/path/to/cv.pdf',
-        githubUser: 'testuser',
-        githubToken: 'token',
-        linkedinUrl: undefined,
-        llmConfig: {
-          baseUrl: 'http://localhost:11434/v1',
-          apiKey: 'key',
-          model: 'model',
-          timeoutMs: 300_000,
-        },
-        nonInteractive: false,
-      }),
-    ).rejects.toThrow('failed to write profile');
-  });
-
-  it('throws when atomicWrite fails for skeleton profile', async () => {
-    vi.mocked(atomicWrite).mockResolvedValueOnce(false);
-
-    await expect(
-      handleProfile({
-        campaignRoot,
-        profileFlag: undefined,
-        cvPath: undefined,
-        githubUser: undefined,
-        githubToken: undefined,
-        linkedinUrl: undefined,
-        llmConfig: undefined,
-        nonInteractive: false,
-      }),
-    ).rejects.toThrow('failed to write skeleton profile');
-  });
-
   it('throws when --profile copy fails', async () => {
     const dirPath = join(testDir, 'sourcedir');
     await mkdir(dirPath, { recursive: true });

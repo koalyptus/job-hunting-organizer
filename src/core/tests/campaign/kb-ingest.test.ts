@@ -2,14 +2,19 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rm, writeFile, mkdir, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import type { FileStore } from '../../../storage/types.js';
+import { createStore } from '../../../storage/index.js';
 import {
   ingestKnowledgeBase,
   syncKnowledgeBase,
   listKnowledgeBase,
 } from '../../campaign/kb-ingest.js';
 
+const CUR = 'test-campaign';
+
 describe('kb-ingest', () => {
   let root: string;
+  let store: FileStore;
   let originalHome: string | undefined;
 
   beforeEach(async () => {
@@ -18,6 +23,7 @@ describe('kb-ingest', () => {
     // Set HOME so homedir() returns our test root for path validation.
     process.env['HOME'] = root;
     process.env['USERPROFILE'] = root;
+    store = createStore(root);
   });
 
   afterEach(async () => {
@@ -33,7 +39,7 @@ describe('kb-ingest', () => {
   it('ingests a single md file', async () => {
     const src = join(root, 'notes.md');
     await writeFile(src, '# hello');
-    const copied = await ingestKnowledgeBase(root, src);
+    const copied = await ingestKnowledgeBase(CUR, src, store);
     expect(copied).toEqual(['notes.md']);
     const kbDir = join(root, 'knowledge-base');
     expect(await readFile(join(kbDir, 'notes.md'), 'utf8')).toBe('# hello');
@@ -47,7 +53,7 @@ describe('kb-ingest', () => {
     await writeFile(join(srcDir, 'sub', 'c.txt'), 'c');
     await writeFile(join(srcDir, 'ignore.bin'), 'x');
 
-    const copied = await ingestKnowledgeBase(root, srcDir);
+    const copied = await ingestKnowledgeBase(CUR, srcDir, store);
     expect(copied.sort()).toEqual(['a.md', 'b.pdf', 'sub/c.txt']);
   });
 
@@ -56,7 +62,7 @@ describe('kb-ingest', () => {
     await mkdir(kbDir, { recursive: true });
     await writeFile(join(kbDir, 'manual.md'), 'manual');
 
-    const present = await syncKnowledgeBase(root, []);
+    const present = await syncKnowledgeBase(CUR, [], store);
     expect(present).toEqual(['manual.md']);
     // Manual doc is preserved (not cleared).
     await expect(readFile(join(kbDir, 'manual.md'), 'utf8')).resolves.toBe('manual');
@@ -69,12 +75,12 @@ describe('kb-ingest', () => {
     await writeFile(join(kbDir, 'cache.json'), '{}');
     await writeFile(join(kbDir, 'github', 'user.json'), '{}');
 
-    const listed = await listKnowledgeBase(root);
+    const listed = await listKnowledgeBase(CUR, store);
     expect(listed).toEqual(['a.md']);
   });
 
   it('listKnowledgeBase returns empty when folder absent', async () => {
-    expect(await listKnowledgeBase(root)).toEqual([]);
+    expect(await listKnowledgeBase(CUR, store)).toEqual([]);
   });
 
   it('sync clears previous user docs but keeps github/ and json', async () => {
@@ -87,7 +93,7 @@ describe('kb-ingest', () => {
     const src = join(root, 'new.md');
     await writeFile(src, 'new');
 
-    const copied = await syncKnowledgeBase(root, [src]);
+    const copied = await syncKnowledgeBase(CUR, [src], store);
     expect(copied).toEqual(['new.md']);
 
     const entries = await readdir(kbDir, { withFileTypes: true });
@@ -101,7 +107,7 @@ describe('kb-ingest', () => {
   it('sync skips missing source but continues', async () => {
     const src = join(root, 'present.md');
     await writeFile(src, 'p');
-    const copied = await syncKnowledgeBase(root, [src, join(root, 'missing.md')]);
+    const copied = await syncKnowledgeBase(CUR, [src, join(root, 'missing.md')], store);
     expect(copied).toEqual(['present.md']);
   });
 });

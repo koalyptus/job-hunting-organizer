@@ -4,10 +4,15 @@
  * in the data root. No LLM or other heavy dependencies.
  */
 import { readFile } from 'node:fs/promises';
-import { resolveMyVoicePath, resolveDataRoot, DEFAULT_MY_VOICE_FILENAME } from '../paths.js';
+import { resolveDataRoot, resolveCampaignRoot, DEFAULT_MY_VOICE_FILENAME } from '../paths.js';
 import { join } from 'node:path';
 import { getRootLogger } from '../logger/logger.js';
 import { SECTION_SEPARATOR, VOICE_SECTION_HEADER } from '../constants.js';
+import type { FileStore } from '../../storage/types.js';
+import { campaignStoreFromRoot } from '../../storage/index.js';
+import { StorageNotFoundError } from '../../storage/types.js';
+
+const VOICE_PATH = join('knowledge-base', DEFAULT_MY_VOICE_FILENAME);
 
 /**
  * Append the personal voice guide section to an LLM prompt's message parts
@@ -34,31 +39,36 @@ function isMissingFile(err: unknown): boolean {
 }
 
 /**
- * Read the campaign-specific voice guide from knowledge-base/my-voice.md.
- * Returns an empty string when the file does not exist; real I/O errors
- * (EACCES, EISDIR, ...) propagate — they are not treated as "missing" —
- * so a broken voice file never silently swaps in a different one.
+ * Read the campaign-specific voice guide from knowledge-base/my-voice.md
+ * through the storage port. Returns an empty string when the file does not
+ * exist; real I/O errors (EACCES, EISDIR, ...) propagate — they are not
+ * treated as "missing" — so a broken voice file never silently swaps in a
+ * different one.
  *
- * @param campaignRoot - Absolute path to the campaign root directory.
+ * @param campaign - Campaign folder name.
+ * @param store - Optional campaign-scoped `FileStore` (defaults to one built
+ *   from the resolved campaign root). Injected by callers for testing.
  * @returns The voice markdown content, or an empty string if the file is absent.
  * @throws The underlying fs error when the file exists but cannot be read.
  */
-export async function readCampaignVoiceGuide(campaignRoot: string): Promise<string> {
-  const campaignVoicePath = resolveMyVoicePath(campaignRoot);
+export async function readCampaignVoiceGuide(campaign: string, store?: FileStore): Promise<string> {
+  const st = store ?? campaignStoreFromRoot(resolveCampaignRoot(campaign));
   try {
-    return await readFile(campaignVoicePath, 'utf8');
+    return await st.read(VOICE_PATH);
   } catch (err) {
-    if (!isMissingFile(err)) {
-      getRootLogger().warn({ path: campaignVoicePath, err }, 'voice.read.campaign_error');
-      throw err;
+    if (err instanceof StorageNotFoundError) {
+      getRootLogger().debug({ path: VOICE_PATH }, 'voice.read.campaign_missing');
+      return '';
     }
-    getRootLogger().debug({ path: campaignVoicePath }, 'voice.read.campaign_missing');
-    return '';
+    getRootLogger().warn({ path: VOICE_PATH, err }, 'voice.read.campaign_error');
+    throw err;
   }
 }
 
 /**
  * Read a user-created global voice file in the data root (optional fallback).
+ * The data root is local-only by definition (see the storage plan), so this
+ * reads through direct fs — it is never routed through a campaign store.
  * Returns an empty string when the file does not exist; real I/O errors
  * propagate for the same reason as {@link readCampaignVoiceGuide}.
  *
@@ -85,12 +95,14 @@ export async function readGlobalVoiceGuide(): Promise<string> {
  * my-voice.md in knowledge-base/, fall back to the global my-voice.md in
  * the data root, and return an empty string when neither exists.
  *
- * @param campaignRoot - Absolute path to the campaign root directory.
+ * @param campaign - Campaign folder name.
+ * @param store - Optional campaign-scoped `FileStore` (forwarded to
+ *   {@link readCampaignVoiceGuide}).
  * @returns The voice markdown content, or an empty string if neither file exists.
  * @throws The underlying fs error when a file exists but cannot be read.
  */
-export async function resolveVoiceGuide(campaignRoot: string): Promise<string> {
-  const campaignVoice = await readCampaignVoiceGuide(campaignRoot);
+export async function resolveVoiceGuide(campaign: string, store?: FileStore): Promise<string> {
+  const campaignVoice = await readCampaignVoiceGuide(campaign, store);
   if (campaignVoice !== '') {
     return campaignVoice;
   }

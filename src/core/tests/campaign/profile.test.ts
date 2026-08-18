@@ -244,7 +244,7 @@ describe('buildProfile', () => {
       campaignRoot: '/tmp/campaign',
     });
 
-    expect(mockReadCachedCv).toHaveBeenCalledWith('/tmp/campaign', undefined);
+    expect(mockReadCachedCv).toHaveBeenCalledWith('', expect.any(Object), undefined);
     expect(mockReadCv).not.toHaveBeenCalled();
   });
 
@@ -261,7 +261,12 @@ describe('buildProfile', () => {
       campaignRoot: '/tmp/campaign',
     });
 
-    expect(mockReadCachedGithub).toHaveBeenCalledWith('/tmp/campaign', 'testuser', undefined);
+    expect(mockReadCachedGithub).toHaveBeenCalledWith(
+      '',
+      'testuser',
+      expect.any(Object),
+      undefined,
+    );
     expect(mockFetchGithubUser).not.toHaveBeenCalled();
     expect(mockFetchGithubRepos).not.toHaveBeenCalled();
   });
@@ -289,8 +294,9 @@ describe('buildProfile', () => {
     });
 
     expect(mockWriteCachedCv).toHaveBeenCalledWith(
-      '/tmp/campaign',
+      '',
       { text: 'John Doe\nSoftware Engineer', format: 'text', fileName: 'cv.txt' },
+      expect.any(Object),
       undefined,
     );
   });
@@ -306,10 +312,11 @@ describe('buildProfile', () => {
     });
 
     expect(mockWriteCachedGithub).toHaveBeenCalledWith(
-      '/tmp/campaign',
+      '',
       'testuser',
       mockUser,
       mockRepos,
+      expect.any(Object),
       undefined,
     );
   });

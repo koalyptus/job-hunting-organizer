@@ -2,14 +2,20 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import type { FileStore } from '../../storage/types.js';
+import { createStore } from '../../storage/index.js';
 import { resolveVoiceGuide, readCampaignVoiceGuide, readGlobalVoiceGuide } from './voice-read.js';
+
+const CUR = 'test-campaign';
 
 describe('voice-read', () => {
   let testDir: string;
+  let store: FileStore;
 
   beforeEach(async () => {
     testDir = join(tmpdir(), `jho-voice-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(testDir, { recursive: true });
+    store = createStore(testDir);
   });
 
   afterEach(async () => {
@@ -17,7 +23,7 @@ describe('voice-read', () => {
   });
 
   it('returns empty string when no voice file exists', async () => {
-    const result = await resolveVoiceGuide(testDir);
+    const result = await resolveVoiceGuide(CUR, store);
     expect(result).toBe('');
   });
 
@@ -26,27 +32,24 @@ describe('voice-read', () => {
     await mkdir(kbDir, { recursive: true });
     await writeFile(join(kbDir, 'my-voice.md'), 'My voice content', 'utf8');
 
-    const result = await resolveVoiceGuide(testDir);
+    const result = await resolveVoiceGuide(CUR, store);
     expect(result).toBe('My voice content');
   });
 
   it('prefers campaign-specific over global my-voice.md', async () => {
-    // Create campaign-specific voice file in knowledge-base/
     const kbDir = join(testDir, 'knowledge-base');
     await mkdir(kbDir, { recursive: true });
     await writeFile(join(kbDir, 'my-voice.md'), 'Campaign voice', 'utf8');
 
-    // Create global voice file in data root
     const dataRoot = join(testDir, 'global-data');
     await mkdir(dataRoot, { recursive: true });
     await writeFile(join(dataRoot, 'my-voice.md'), 'Global voice', 'utf8');
 
-    // Set JHO_DATA env var to point to our test data root
     const originalEnv = process.env['JHO_DATA'];
     process.env['JHO_DATA'] = dataRoot;
 
     try {
-      const result = await resolveVoiceGuide(testDir);
+      const result = await resolveVoiceGuide(CUR, store);
       expect(result).toBe('Campaign voice');
     } finally {
       if (originalEnv !== undefined) {
@@ -58,17 +61,15 @@ describe('voice-read', () => {
   });
 
   it('falls back to global my-voice.md when campaign-specific is missing', async () => {
-    // Create global voice file in data root
     const dataRoot = join(testDir, 'global-data');
     await mkdir(dataRoot, { recursive: true });
     await writeFile(join(dataRoot, 'my-voice.md'), 'Global voice', 'utf8');
 
-    // Set JHO_DATA env var to point to our test data root
     const originalEnv = process.env['JHO_DATA'];
     process.env['JHO_DATA'] = dataRoot;
 
     try {
-      const result = await resolveVoiceGuide(testDir);
+      const result = await resolveVoiceGuide(CUR, store);
       expect(result).toBe('Global voice');
     } finally {
       if (originalEnv !== undefined) {
@@ -80,7 +81,6 @@ describe('voice-read', () => {
   });
 
   it('returns empty string when both campaign and global voice files are missing', async () => {
-    // Create data root but no voice file
     const dataRoot = join(testDir, 'global-data');
     await mkdir(dataRoot, { recursive: true });
 
@@ -88,7 +88,7 @@ describe('voice-read', () => {
     process.env['JHO_DATA'] = dataRoot;
 
     try {
-      const result = await resolveVoiceGuide(testDir);
+      const result = await resolveVoiceGuide(CUR, store);
       expect(result).toBe('');
     } finally {
       if (originalEnv !== undefined) {
@@ -100,16 +100,14 @@ describe('voice-read', () => {
   });
 
   it('propagates non-ENOENT read errors instead of falling back', async () => {
-    // A directory named my-voice.md makes readFile throw EISDIR — a real
-    // I/O error that must surface, not silently fall back to the global file.
     const kbDir = join(testDir, 'knowledge-base');
     await mkdir(join(kbDir, 'my-voice.md'), { recursive: true });
 
-    await expect(resolveVoiceGuide(testDir)).rejects.toThrow();
+    await expect(resolveVoiceGuide(CUR, store)).rejects.toThrow();
   });
 
   it('readCampaignVoiceGuide returns empty string when campaign file is absent', async () => {
-    const result = await readCampaignVoiceGuide(testDir);
+    const result = await readCampaignVoiceGuide(CUR, store);
     expect(result).toBe('');
   });
 
@@ -118,7 +116,7 @@ describe('voice-read', () => {
     await mkdir(kbDir, { recursive: true });
     await writeFile(join(kbDir, 'my-voice.md'), 'Campaign voice', 'utf8');
 
-    const result = await readCampaignVoiceGuide(testDir);
+    const result = await readCampaignVoiceGuide(CUR, store);
     expect(result).toBe('Campaign voice');
   });
 

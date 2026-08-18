@@ -1,17 +1,18 @@
-import { readdir } from 'node:fs/promises';
-import { extname, join, relative } from 'node:path';
-import { resolveKnowledgeBaseDir, DEFAULT_MY_VOICE_FILENAME } from '../paths.js';
-import { pathExists } from '../fs.js';
+import { extname, join } from 'node:path';
+import { resolveCampaignRoot, DEFAULT_MY_VOICE_FILENAME } from '../paths.js';
 import { readCv, CvError } from '../cv.js';
 import { KB_GITHUB, CV_EXTENSIONS } from '../constants.js';
 import { moduleLogger } from '../logger/logger.js';
 import { getConfig } from '../config/config.js';
+import type { FileStore } from '../../storage/types.js';
+import { campaignStoreFromRoot } from '../../storage/index.js';
+import { StorageNotFoundError } from '../../storage/types.js';
 
 const log = moduleLogger(import.meta.url);
 
-/** A single knowledge-base document: its absolute path and its posix-relative path. */
+/** A single knowledge-base document: its root-relative path and absolute path. */
 interface KnowledgeBaseDoc {
-  /** Absolute path to the doc on disk. */
+  /** Absolute path to the doc on disk (used for parsing). */
   abs: string;
   /** Path relative to the knowledge-base root, using forward slashes. */
   rel: string;
@@ -19,12 +20,17 @@ interface KnowledgeBaseDoc {
 
 /** Options for {@link loadKnowledgeBaseContext}. */
 interface LoadKbOptions {
+  /** Optional campaign-scoped `FileStore` (for testing). */
+  store?: FileStore;
   /** Optional character cap. When exceeded, content is truncated oldest-first. */
   maxChars?: number | undefined;
 }
 
+const KB_DIR_REL = 'knowledge-base';
+
 /**
- * Load the per-campaign knowledge base as a single markdown string for LLM context.
+ * Load the per-campaign knowledge base as a single markdown string for LLM context,
+ * through the storage port.
  *
  * Walks `knowledge-base/` recursively, skipping the tool-owned `github/` subfolder
  * and `*.json` caches. Each file with a recognised extension (`.md`, `.txt`, `.pdf`,
@@ -32,27 +38,40 @@ interface LoadKbOptions {
  * parse errors are logged and skipped — this function never throws on a bad user doc.
  *
  * Returns an empty string when the folder is absent or contains no readable docs.
- * @param campaignRoot - Absolute path to the campaign root.
+ * @param campaign - Campaign folder name.
+ * @param store - Optional campaign-scoped `FileStore` (for testing).
  * @param opts - Optional `maxChars` cap; truncation logs a `kb.truncated` warning.
  * @returns Concatenated knowledge-base context, or `''` when empty.
  */
 export async function loadKnowledgeBaseContext(
-  campaignRoot: string,
+  campaign: string,
   opts?: LoadKbOptions,
 ): Promise<string> {
-  const kbDir = resolveKnowledgeBaseDir(campaignRoot);
+  const st = opts?.store ?? campaignStoreFromRoot(resolveCampaignRoot(campaign));
 
-  if (!(await pathExists(kbDir))) {
+  // Collect every knowledge-base doc as a root-relative path.
+  const relPaths: string[] = [];
+  try {
+    await collectKbDocs(st, KB_DIR_REL, '', relPaths);
+  } catch (err) {
+    if (err instanceof StorageNotFoundError) {
+      return '';
+    }
+    throw err;
+  }
+
+  if (relPaths.length === 0) {
     return '';
   }
 
-  const entries: KnowledgeBaseDoc[] = [];
-
-  await collectKbDocsWithPaths(kbDir, kbDir, entries);
-
-  if (entries.length === 0) {
-    return '';
-  }
+  // Map each relative path back to its absolute on-disk location for parsing,
+  // derived from the store's data root so the resolution stays backend-agnostic
+  // (and correct when a test injects a store rooted elsewhere).
+  const kbDirAbs = join(st.getDataRoot(), KB_DIR_REL);
+  const entries: KnowledgeBaseDoc[] = relPaths.map((rel) => ({
+    abs: join(kbDirAbs, rel),
+    rel,
+  }));
 
   const parts: string[] = [];
   let total = 0;
@@ -101,55 +120,76 @@ export async function loadKnowledgeBaseContext(
 /**
  * Convenience wrapper: loads the knowledge-base context for a campaign,
  * automatically resolving `maxChars` from the campaign config.
- * @param campaignRoot - Absolute path to the campaign root.
- * @param campaignName - Campaign name (for config lookup).
+ * @param campaign - Campaign folder name.
+ * @param opts - Optional store injection and `maxChars` override.
  * @returns Concatenated knowledge-base context, or `''` when empty.
  */
 export async function loadKbContextForCampaign(
-  campaignRoot: string,
-  campaignName: string = 'default',
+  campaign: string,
+  opts?: LoadKbOptions,
 ): Promise<string> {
-  const { campaign } = getConfig(campaignName);
-  return loadKnowledgeBaseContext(campaignRoot, {
-    maxChars: campaign.knowledgeBase.maxChars,
+  const { campaign: cfg } = getConfig(campaign);
+  return loadKnowledgeBaseContext(campaign, {
+    store: opts?.store,
+    maxChars: opts?.maxChars ?? cfg.knowledgeBase.maxChars,
   });
 }
 
 /**
- * Recursively collect knowledge-base doc files, skipping `github/` and `*.json`.
- * @param root - The knowledge-base root (for skip checks).
- * @param dir - Directory currently being walked.
- * @param out - Accumulator of {@link KnowledgeBaseDoc} entries.
+ * Recursively collect knowledge-base doc relative paths through the store,
+ * skipping `github/` and `*.json` caches and the personal `my-voice.md` guide.
+ * @param store - The campaign-scoped store.
+ * @param relDir - Root-relative directory being walked (e.g. `knowledge-base`
+ *   or `knowledge-base/sub`).
+ * @param kbRel - Knowledge-base-relative directory for output labelling (e.g.
+ *   `` or `sub`); strips the `knowledge-base/` prefix so nested docs surface as
+ *   `sub/deep.md` rather than `knowledge-base/sub/deep.md`.
+ * @param out - Accumulator of knowledge-base-relative doc paths.
  */
-async function collectKbDocsWithPaths(
-  root: string,
-  dir: string,
-  out: KnowledgeBaseDoc[],
+async function collectKbDocs(
+  store: FileStore,
+  relDir: string,
+  kbRel: string,
+  out: string[],
 ): Promise<void> {
-  const items = await readdir(dir, { withFileTypes: true });
-
-  for (const item of items) {
-    const abs = join(dir, item.name);
-
-    if (item.isDirectory()) {
-      if (item.name === KB_GITHUB) {
-        continue;
-      }
-      await collectKbDocsWithPaths(root, abs, out);
+  const entries = await store.readdir(relDir);
+  for (const name of entries) {
+    // `rel` is root-relative and used for store stat/read operations.
+    const rel = relDir === '' ? name : `${relDir}/${name}`;
+    // `kRel` is relative to the knowledge-base root, for the LLM heading and
+    // the absolute-path join used for parsing.
+    const kRel = kbRel === '' ? name : `${kbRel}/${name}`;
+    if (name === KB_GITHUB) {
       continue;
     }
-
-    if (item.isFile()) {
-      if (item.name === DEFAULT_MY_VOICE_FILENAME) {
-        continue;
-      }
-      if (extname(item.name).toLowerCase() === '.json') {
-        continue;
-      }
-      if (!CV_EXTENSIONS.includes(extname(item.name).toLowerCase())) {
-        continue;
-      }
-      out.push({ abs, rel: relative(root, abs).split('\\').join('/') });
+    const isDir = await isDirectory(store, rel);
+    if (isDir) {
+      await collectKbDocs(store, rel, kRel, out);
+      continue;
     }
+    if (name === DEFAULT_MY_VOICE_FILENAME) {
+      continue;
+    }
+    if (extname(name).toLowerCase() === '.json') {
+      continue;
+    }
+    if (!CV_EXTENSIONS.includes(extname(name).toLowerCase())) {
+      continue;
+    }
+    out.push(kRel);
+  }
+}
+
+/**
+ * Whether a store entry is a directory. `readdir` only yields names, so we
+ * stat to discriminate — the contract test's `isDirectory` helper does the
+ * same and keeps the method in one place.
+ */
+async function isDirectory(store: FileStore, rel: string): Promise<boolean> {
+  try {
+    const stat = await store.stat(rel);
+    return stat.kind === 'directory';
+  } catch {
+    return false;
   }
 }

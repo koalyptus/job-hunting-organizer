@@ -1,6 +1,11 @@
 import { join } from 'node:path';
-import { resolveKnowledgeBaseDir, ensureRoot } from '../paths.js';
 import { KB_GITHUB } from '../constants.js';
+import { resolveCampaignRoot } from '../paths.js';
+import type { FileStore } from '../../storage/types.js';
+import { campaignStoreFromRoot } from '../../storage/index.js';
+
+const KB_DIR_REL = 'knowledge-base';
+const KB_GITHUB_REL = join(KB_DIR_REL, KB_GITHUB);
 
 /** Paths created during campaign initialization. */
 interface CampaignDirs {
@@ -8,18 +13,19 @@ interface CampaignDirs {
 }
 
 /**
- * Create the campaign directory structure.
- * Returns the knowledge-base directory path.
- * The `applied/` folder is created lazily by `jho track`.
+ * Create the campaign directory structure through the storage port.
+ * Returns the knowledge-base directory's root-relative path. The `applied/`
+ * folder is created lazily by `jho track`.
+ * @param campaign - Campaign folder name.
+ * @param store - Optional campaign-scoped `FileStore` (for testing).
+ * @returns The knowledge-base directory path info.
  */
-export async function createDirectories(campaignRoot: string): Promise<CampaignDirs> {
-  const kbDir = resolveKnowledgeBaseDir(campaignRoot);
-  const kbGithubDir = join(kbDir, KB_GITHUB);
-
-  // Ensure all directories exist (created recursively if missing).
-  // campaignRoot first (parent), then children in parallel.
-  await ensureRoot(campaignRoot);
-  await ensureRoot(kbGithubDir);
-
-  return { kbDir };
+export async function createDirectories(
+  campaign: string,
+  store?: FileStore,
+): Promise<CampaignDirs> {
+  const st = store ?? campaignStoreFromRoot(resolveCampaignRoot(campaign));
+  await st.mkdir(KB_DIR_REL);
+  await st.mkdir(KB_GITHUB_REL);
+  return { kbDir: KB_DIR_REL };
 }

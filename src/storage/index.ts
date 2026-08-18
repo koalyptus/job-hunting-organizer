@@ -14,6 +14,11 @@ export type {
 // truth for the data root and the `$JHO_DATA` override). The adapter does
 // not re-implement it.
 export { LocalFileStore, resolveDataRoot } from './local/local-file-store.js';
-export { createStore } from './local/factory.js';
+export {
+  createStore,
+  campaignStore,
+  campaignStoreFromRoot,
+  campaignsStore,
+} from './local/factory.js';
 export type { CreateStoreOptions } from './local/factory.js';
 export { MemoryFileStore } from './memory.js';

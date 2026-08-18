@@ -29,7 +29,7 @@ const addCommand = new Command('add')
       const newSources: string[] = [];
       for (const p of paths) {
         const resolved = resolve(campaignRoot, p);
-        const copied = await ingestKnowledgeBase(campaignRoot, resolved);
+        const copied = await ingestKnowledgeBase(campaign, resolved);
         if (copied.length === 0) {
           userError(`No supported docs found at ${p} (expected PDF, DOCX, MD, TXT)`);
           failed.push(p);
@@ -98,9 +98,8 @@ const updateCommand = new Command('update')
     const log = getRootLogger().child({ cmd: 'kb.update', campaign });
 
     try {
-      const campaignRoot = resolveCampaignRoot(campaign);
       const sources = loadCampaignConfig(campaign).knowledgeBase.sources;
-      const present = await syncKnowledgeBase(campaignRoot, sources);
+      const present = await syncKnowledgeBase(campaign, sources);
       if (present.length === 0) {
         userOutput(
           'Knowledge base is empty. Drop docs into knowledge-base/ or run `jho kb add <path>`.',

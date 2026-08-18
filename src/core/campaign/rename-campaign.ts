@@ -1,11 +1,11 @@
-import { rename } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { resolveCampaignRoot, resolveDataRoot, findCampaignFromCwd, isUnder } from '../paths.js';
-import { pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { clearConfigCache } from '../config/config.js';
 import { childLogger } from '../logger/logger.js';
 import { validateName } from '../validate.js';
+import type { FileStore } from '../../storage/types.js';
+import { campaignsStore } from '../../storage/index.js';
 
 const log = childLogger({ cmd: 'rename-campaign' });
 
@@ -70,14 +70,18 @@ export function resolveOldName(fromFlag: string | undefined): string {
  * @throws {SelfRenameError} if cwd is inside the campaign.
  * @throws {RenameError} on other pre-flight failures.
  */
-export async function renameCampaign(oldName: string, newName: string): Promise<void> {
+export async function renameCampaign(
+  oldName: string,
+  newName: string,
+  store?: FileStore,
+): Promise<void> {
   const validationError = validateName(newName);
   if (validationError) {
     throw new InvalidNameError(newName, validationError);
   }
 
   const oldPath = resolveCampaignRoot(oldName);
-  const newPath = resolveCampaignRoot(newName);
+  const st = store ?? campaignsStore();
 
   // Self-foot-gun: refuse if cwd is inside the campaign being renamed
   if (isUnder(process.cwd(), oldPath)) {
@@ -85,17 +89,17 @@ export async function renameCampaign(oldName: string, newName: string): Promise<
   }
 
   // Pre-flight: source must exist (no lock needed)
-  if (!(await pathExists(oldPath))) {
+  if (!(await st.exists(oldName))) {
     throw new RenameError(`campaign "${oldName}" not found`);
   }
 
   const start = performance.now();
   await acquireLock(oldPath, async () => {
     // Destination check must be inside the lock to prevent TOCTOU.
-    if (await pathExists(newPath)) {
+    if (await st.exists(newName)) {
       throw new RenameError(`campaign "${newName}" already exists`);
     }
-    await rename(oldPath, newPath);
+    await st.rename(oldName, newName);
   });
   clearConfigCache();
 
