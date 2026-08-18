@@ -8,16 +8,16 @@ import {
   loadExistingConfig,
   detectLocalBackend,
   buildLlmConfig,
-} from '../../init/llm.js';
+} from '../../../workflow/init/llm.js';
 import { detectAgents } from 'detect-local-agents';
 import { clearConfigCache } from '../../config/config.js';
-import { InitCancelled } from '../../init/errors.js';
+import { InitCancelled } from '../../../workflow/init/errors.js';
 import {
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
   JHO_CONFIG_HOME,
-} from '../../init/constants.js';
+} from '../../../workflow/init/constants.js';
 import type { GlobalConfig } from '../../types.js';
 import type { Logger } from 'pino';
 import type { DetectedAgent } from 'detect-local-agents';

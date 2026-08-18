@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { log as clackLog } from '@clack/prompts';
-import { runLockedInitSteps, printInitSummary } from '../../init/init-write.js';
+import { runLockedInitSteps, printInitSummary } from '../../../workflow/init/init-write.js';
 import { clearConfigCache } from '../../config/config.js';
-import { JHO_CONFIG_HOME, JHO_DATA } from '../../init/constants.js';
+import { JHO_CONFIG_HOME, JHO_DATA } from '../../../workflow/init/constants.js';
 import { childLogger } from '../../logger/logger.js';
 
 vi.mock('@clack/prompts', () => ({

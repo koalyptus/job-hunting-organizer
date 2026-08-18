@@ -1,6 +1,6 @@
 import { text, password, isCancel } from '@clack/prompts';
 import { InitCancelled } from './errors.js';
-import type { GlobalConfig } from '../types.js';
+import type { GlobalConfig } from '../../core/types.js';
 
 /** Result of the GitHub prompts step. */
 interface GithubResult {

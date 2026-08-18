@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { runInit } from '../../../core/init/wizard.js';
+import { runInit } from '../../../workflow/init/wizard.js';
 import { registerInit } from '../../tools/init-tool.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -30,7 +30,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/init/wizard.js', () => ({
+vi.mock('../../../workflow/init/wizard.js', () => ({
   runInit: vi.fn().mockResolvedValue(undefined),
 }));
 

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../core/config/config.js';
-import { JHO_CONFIG_HOME, JHO_DATA } from '../../../core/init/constants.js';
+import { JHO_CONFIG_HOME, JHO_DATA } from '../../../workflow/init/constants.js';
 import { runCommand } from '../helpers.js';
 import { answerCommand } from '../../commands/answer.js';
 import * as applicationQa from '../../../core/applications/application-qa.js';

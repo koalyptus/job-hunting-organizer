@@ -2,18 +2,18 @@ import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
-import { pathExists } from '../fs.js';
+import { pathExists } from '../../core/fs.js';
 import {
   updateGlobalConfig,
   updateCampaignConfig,
   loadGlobalConfig,
   loadCampaignConfig,
-} from '../config/config.js';
-import { resolveProfilePath, resolveMyVoicePath } from '../paths.js';
-import { toDateKey } from '../date.js';
-import { createDirectories } from '../campaign/directories.js';
-import { ingestKnowledgeBase as ingestKbDocs } from '../campaign/kb-ingest.js';
-import { handleProfile } from '../campaign/profile-builder.js';
+} from '../../core/config/config.js';
+import { resolveProfilePath, resolveMyVoicePath } from '../../core/paths.js';
+import { toDateKey } from '../../core/date.js';
+import { createDirectories } from '../../core/campaign/directories.js';
+import { ingestKnowledgeBase as ingestKbDocs } from '../../core/campaign/kb-ingest.js';
+import { handleProfile } from '../../core/campaign/profile-builder.js';
 import { generateVoiceGuideSkeleton } from './skeleton.js';
 import {
   DEFAULT_LOG_LEVEL,
@@ -21,7 +21,7 @@ import {
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_MODEL,
 } from './constants.js';
-import type { LlmConfig } from '../types.js';
+import type { LlmConfig } from '../../core/types.js';
 
 /** Inputs for the locked init write steps (Steps 7-11). */
 interface InitWriteOptions {

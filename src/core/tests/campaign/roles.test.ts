@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { text, select, isCancel } from '@clack/prompts';
 import { reviewRoles, validateRoleSlug, validateRoleTitle } from '../../campaign/roles.js';
-import { InitCancelled } from '../../init/errors.js';
+import { InitCancelled } from '../../../workflow/init/errors.js';
 import type { TargetRole } from '../../types.js';
 
 vi.mock('@clack/prompts', () => ({

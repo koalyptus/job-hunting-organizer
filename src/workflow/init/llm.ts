@@ -1,7 +1,7 @@
 import { text, password, isCancel } from '@clack/prompts';
 import { log as clackLog } from '@clack/prompts';
 import { detectAgents } from 'detect-local-agents';
-import { clearConfigCache, loadGlobalConfig, getConfigValue } from '../config/config.js';
+import { clearConfigCache, loadGlobalConfig, getConfigValue } from '../../core/config/config.js';
 import {
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_API_KEY,
@@ -13,7 +13,7 @@ import {
 } from './constants.js';
 import { InitCancelled } from './errors.js';
 import type { Logger } from 'pino';
-import type { LlmConfig } from '../types.js';
+import type { LlmConfig } from '../../core/types.js';
 
 /** Result of the LLM prompts step. */
 interface LlmPromptResult {

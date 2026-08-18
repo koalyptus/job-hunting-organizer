@@ -14,7 +14,7 @@ import {
   BACKEND_NAME_LMSTUDIO,
   getBackendBaseUrl,
   getBackendModel,
-} from '../../core/init/constants.js';
+} from '../../workflow/init/constants.js';
 
 /**
  * `jho doctor --detect-agents` — detect local OpenAI-compatible backends and display results.
