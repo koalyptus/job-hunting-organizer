@@ -76,7 +76,13 @@
   - [x] 9c — Migrate remaining `core/fs.ts` consumers onto the port
   - [ ] 9d — Complete error-class coverage & contract tests
   - [ ] 9e — In-memory `FileStore` for tests
-  - [ ] 9f — Campaign-scoped store routing
+  - [x] 9f — Campaign-scoped store routing
+  - Commit: `[verified] feat(9f): campaign-scoped FileStore routing`
+- [ ] **Phase 9g** — Move `init` workflow out of `core/` → `src/workflow/init/`
+- [ ] **Phase 9h** — Move `campaign` workflow out of `core/` → `src/workflow/campaign/`
+- [ ] **Phase 9i** — Move `applications` workflow out of `core/` → `src/workflow/applications/`
+- [ ] **Phase 9j** — Extract infrastructure utilities out of `core/` → `src/lib/`
+- [ ] **Phase 9k** — Pure core: validate zero IO imports, remove deprecated barrels
 - [ ] **Phase 10** — Polish & public readiness
 
 ---
@@ -1135,7 +1141,87 @@ The lavish plan's Phase 2 gate includes a "real-data smoke run on a disposable d
 
 **Deliverable**: campaign operations resolve their store through the port rather than ad-hoc path joins.
 
-### Phase 10 — Polish & public readiness
+### Phase 9g — Move `init` workflow out of `core/` → `src/workflow/init/`
+
+Pilot phase — smallest, most self-contained, used by both CLI and MCP.
+
+**Scope**:
+- Move `src/core/init/*` → `src/workflow/init/*` (10 files: wizard, init-write, init-inputs, github, llm, skeleton, types, constants, errors, index)
+- Update all importers:
+  - `src/cli/commands/init.ts` → import from `../../workflow/init/`
+  - `src/mcp/tools/init-tool.ts` → import from `../../workflow/init/`
+  - Any `core/` modules that import from `core/init/` → re-export from `src/workflow/init/` or update import
+- Keep `src/core/init/index.ts` as a **re-export barrel** during transition (deprecation warning in JSDoc) so no external consumer breaks; remove in 9k
+- Verify: `tsc --noEmit`, `eslint .`, `prettier --check .`, unit + integration tests pass
+
+**Deliverable**: `core/init/` is empty (or deprecated barrel); `src/workflow/init/` is the single source of truth for init.
+
+**Commit**: `feat(9g): move init workflow to src/workflow/init/`
+
+### Phase 9h — Move `campaign` workflow out of `core/` → `src/workflow/campaign/`
+
+**Scope**:
+- Move `src/core/campaign/*` → `src/workflow/campaign/` (profile-writer, profile-read, voice-read, kb, kb-context, kb-ingest, directories, profile-builder, profile-build, remove-campaign, rename-campaign)
+- Extract pure domain helpers into `src/core/` or `src/lib/domain/`:
+  - `buildProfileContent` (pure markdown generation) → `src/core/profile.ts`
+  - `formatKbContext` (pure text concatenation) → `src/core/kb.ts`
+  - `validateProfileBody` (pure validation) → `src/core/validate.ts`
+- Update all importers (CLI/MCP/core/applications)
+- Verify gates
+
+**Deliverable**: campaign orchestration lives in `src/workflow/campaign/`; core has zero campaign IO imports.
+
+**Commit**: `feat(9h): move campaign workflow to src/workflow/campaign/`
+
+### Phase 9i — Move `applications` workflow out of `core/` → `src/workflow/applications/`
+
+**Scope**:
+- Move `src/core/applications/*` → `src/workflow/applications/` (applications, cover-letter, application-qa, index-builder, rename, show, counters)
+- Extract pure domain logic into `src/core/`:
+  - `computeStats` → `src/core/stats.ts`
+  - `aggregateRetros` → `src/core/retro.ts`
+  - `validateMeta` → `src/core/meta-schema.ts`
+- Update all importers
+- Verify gates
+
+**Deliverable**: application CRUD lives in `src/workflow/applications/`; core has zero applications IO imports.
+
+**Commit**: `feat(9i): move applications workflow to src/workflow/applications/`
+
+### Phase 9j — Extract infrastructure utilities out of `core/` → `src/lib/`
+
+Move files that are pure infrastructure, not business logic:
+
+- `src/core/paths.ts` → `src/lib/paths.ts` (path resolution, `os.homedir()`)
+- `src/core/config/config.ts` → `src/lib/config.ts` (config read/write/merge)
+- `src/core/cv.ts` → `src/lib/cv.ts` (file reads + PDF/DOCX parsing)
+- `src/core/toolhash.ts` → `src/lib/toolhash.ts` (file hashing)
+- `src/core/fs.ts` → `src/lib/fs.ts` (atomic write, backup)
+- `src/core/locks.ts` → `src/lib/locks.ts` (proper-lockfile wrapper)
+- `src/core/logger/logger.ts` → `src/lib/logger.ts` (pino setup)
+- `src/core/package.ts` → `src/lib/package.ts` (package.json reads)
+- `src/core/parser/frontmatter.ts` → split: pure parser → `src/core/parser/frontmatter.ts`, file IO → `src/lib/frontmatter.ts`
+
+Update all importers. Verify gates.
+
+**Deliverable**: `core/` has zero imports from `src/lib/` for infrastructure; all infrastructure lives in `src/lib/`.
+
+**Commit**: `feat(9j): extract infrastructure utilities to src/lib/`
+
+### Phase 9k — Pure core: validate zero IO imports, remove deprecated barrels
+
+- Remove deprecated re-export barrels (`src/core/init/index.ts`, etc.)
+- Update `src/core/index.ts` to export only pure domain modules
+- Add a lint rule or CI check: grep for forbidden imports in `src/core/**/*.ts`
+- Run full test suite + coverage
+
+**Deliverable**: `core/` contains only pure domain logic. Zero imports from `node:fs`, `node:path`, `node:os`, `core/fs`, `core/locks`, `core/config`, `core/paths`, `src/storage/*`, `src/lib/` (infrastructure).
+
+**Commit**: `feat(9k): validate pure core, remove deprecated barrels`
+
+---
+
+## Phase 10 — Polish & public readiness
 
 **Scope**:
 
