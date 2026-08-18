@@ -1,8 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MemoryFileStore } from '../memory.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { log as memoryLog, MemoryFileStore } from '../memory.js';
 import { createStore } from '../local/factory.js';
 import { LocalFileStore } from '../local/local-file-store.js';
 import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
+import type { IFileSystem, IFileSystemStats } from '@file-services/types';
+import { createFsFromVolume, Volume } from 'memfs';
+import { posix as posixPath } from 'node:path';
 
 describe('MemoryFileStore contract suite', () => {
   let store: MemoryFileStore;
@@ -11,8 +14,9 @@ describe('MemoryFileStore contract suite', () => {
     store = new MemoryFileStore();
   });
 
-  afterEach(async () => {
-    // In-memory only; nothing to clean up on disk.
+  afterEach(() => {
+    // Restore any spies (e.g. the withLock warn spy) to prevent leakage.
+    vi.restoreAllMocks();
   });
 
   describe('write/read', () => {
@@ -306,6 +310,245 @@ describe('MemoryFileStore contract suite', () => {
       const s1 = createStore({ inMemory: true });
       const s2 = createStore({ inMemory: true });
       expect(s1).not.toBe(s2);
+    });
+
+    it('returns a LocalFileStore for { dataRoot: ... }', async () => {
+      const s = createStore({ dataRoot: '/custom/root' });
+      expect(s).toBeInstanceOf(LocalFileStore);
+      expect(s.getDataRoot()).toBe('/custom/root');
+    });
+  });
+
+  describe('readdir includeSpecialEntries', () => {
+    it('passes includeSpecialEntries option to engine (branch exercised)', async () => {
+      await store.mkdir('special');
+      await store.write('special/file.txt', 'x');
+      // memfs doesn't include . and .. even with includeSpecialEntries,
+      // but the code path bypasses the filter when true
+      const entries = await store.readdir('special', { includeSpecialEntries: true });
+      expect(entries).toContain('file.txt');
+      // Default (false) still filters
+      const filtered = await store.readdir('special');
+      expect(filtered).toEqual(['file.txt']);
+    });
+  });
+
+  describe('withLock error handling', () => {
+    it('logs unexpected rejection when fn throws', async () => {
+      const warnSpy = vi.spyOn(memoryLog, 'warn').mockImplementation(() => {});
+      await expect(
+        store.withLock('throw-key', async () => {
+          throw new Error('deliberate failure');
+        }),
+      ).rejects.toThrow('deliberate failure');
+      expect(warnSpy).toHaveBeenCalledWith({ key: 'throw-key' }, 'withLock.unexpected.rejection');
+    });
+  });
+
+  describe('error propagation — non-ENOENT/ENOTDIR rethrow', () => {
+    function makeFailingStore(override: Partial<IFileSystem['promises']>) {
+      const vol = new Volume();
+      const volumeFs = createFsFromVolume(vol);
+      try {
+        volumeFs.mkdirSync('/', { recursive: true });
+      } catch {
+        // Root already present.
+      }
+      const base = {
+        ...posixPath,
+        sep: posixPath.sep,
+        delimiter: posixPath.delimiter,
+        realpathSync: volumeFs.realpathSync.bind(volumeFs),
+        promises: volumeFs.promises,
+      } as unknown as IFileSystem;
+      const failingFs = {
+        ...base,
+        promises: {
+          ...(base.promises as unknown as Record<string, unknown>),
+          ...(override as Record<string, unknown>),
+        },
+      } as unknown as IFileSystem;
+      const store = new MemoryFileStore();
+      // @ts-expect-error - monkey-patch private fs for testing
+      store.fs = failingFs;
+      // @ts-expect-error - monkey-patch private fsp
+      store.fsp = failingFs.promises;
+      return store;
+    }
+
+    it('read rethrows non-ENOENT/ENOTDIR (e.g., EACCES)', async () => {
+      const failing = makeFailingStore({
+        readFile: async () => {
+          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        },
+      });
+      await expect(failing.read('x.txt')).rejects.toMatchObject({ code: 'EACCES' });
+    });
+
+    it('readBytes rethrows non-ENOENT/ENOTDIR', async () => {
+      const failing = makeFailingStore({
+        readFile: async () => {
+          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        },
+      });
+      await expect(failing.readBytes('x.bin')).rejects.toMatchObject({ code: 'EACCES' });
+    });
+
+    it('write parent mkdir rethrows non-EEXIST (ENOTDIR)', async () => {
+      // mkdir parent fails with ENOTDIR when intermediate is a file
+      const failing = makeFailingStore({
+        mkdir: async () => {
+          throw Object.assign(new Error('ENOTDIR'), { code: 'ENOTDIR' });
+        },
+      });
+      await expect(failing.write('a/b.txt', 'x')).rejects.toMatchObject({ code: 'ENOTDIR' });
+    });
+
+    it('write cleanup rethrows on rename failure after temp written', async () => {
+      // write succeeds, rename fails → cleanup runs
+      let writeCalled = false;
+      const failing = makeFailingStore({
+        writeFile: async () => {
+          writeCalled = true;
+        },
+        rename: async () => {
+          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        },
+        unlink: async () => {}, // cleanup succeeds
+      });
+      await expect(failing.write('x.txt', 'x')).rejects.toMatchObject({ code: 'EACCES' });
+      expect(writeCalled).toBe(true);
+    });
+
+    it('append parent mkdir rethrows non-EEXIST', async () => {
+      const failing = makeFailingStore({
+        mkdir: async () => {
+          throw Object.assign(new Error('ENOTDIR'), { code: 'ENOTDIR' });
+        },
+      });
+      await expect(failing.append('a/b.txt', 'x')).rejects.toMatchObject({ code: 'ENOTDIR' });
+    });
+
+    it('exists rethrows non-ENOENT/ENOTDIR', async () => {
+      const failing = makeFailingStore({
+        stat: async () => {
+          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        },
+      });
+      await expect(failing.exists('x.txt')).rejects.toMatchObject({ code: 'EACCES' });
+    });
+
+    it('stat rethrows non-ENOENT/ENOTDIR', async () => {
+      const failing = makeFailingStore({
+        stat: async () => {
+          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        },
+      });
+      await expect(failing.stat('x.txt')).rejects.toMatchObject({ code: 'EACCES' });
+    });
+
+    it('readdir ENOTDIR throws "Not a directory" (not rethrow)', async () => {
+      const failing = makeFailingStore({
+        readdir: async () => {
+          throw Object.assign(new Error('ENOTDIR'), { code: 'ENOTDIR' });
+        },
+      });
+      await expect(failing.readdir('x.txt')).rejects.toThrow(/Not a directory/);
+    });
+
+    it('readdir rethrows other errors', async () => {
+      const failing = makeFailingStore({
+        readdir: async () => {
+          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        },
+      });
+      await expect(failing.readdir('dir')).rejects.toMatchObject({ code: 'EACCES' });
+    });
+
+    it('rename source stat rethrows non-ENOENT/ENOTDIR', async () => {
+      const failing = makeFailingStore({
+        stat: async () => {
+          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        },
+      });
+      await expect(failing.rename('src.txt', 'dst.txt')).rejects.toMatchObject({ code: 'EACCES' });
+    });
+
+    it('rename dest parent mkdir rethrows non-EEXIST', async () => {
+      const sourceStat = {
+        isFile: () => true,
+        isDirectory: () => false,
+        size: 1,
+        mtime: new Date(),
+      } as unknown as IFileSystemStats;
+      const failing = makeFailingStore({
+        stat: async (path: string) => {
+          // source exists
+          if (path.endsWith('src.txt')) {
+            return sourceStat;
+          }
+          // dest doesn't exist
+          throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+        },
+        mkdir: async () => {
+          throw Object.assign(new Error('ENOTDIR'), { code: 'ENOTDIR' });
+        },
+      });
+      await expect(failing.rename('src.txt', 'a/b.txt')).rejects.toMatchObject({ code: 'ENOTDIR' });
+    });
+
+    it('copy source stat rethrows non-ENOENT/ENOTDIR', async () => {
+      const failing = makeFailingStore({
+        stat: async () => {
+          throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+        },
+      });
+      await expect(failing.copy('src.txt', 'dst.txt')).rejects.toMatchObject({ code: 'EACCES' });
+    });
+
+    it('copy dest parent mkdir rethrows non-EEXIST', async () => {
+      const sourceStat = {
+        isFile: () => true,
+        isDirectory: () => false,
+        size: 1,
+        mtime: new Date(),
+      } as unknown as IFileSystemStats;
+      const failing = makeFailingStore({
+        stat: async (path: string) => {
+          // source exists
+          if (path.endsWith('src.txt')) {
+            return sourceStat;
+          }
+          // dest doesn't exist
+          throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+        },
+        mkdir: async () => {
+          throw Object.assign(new Error('ENOTDIR'), { code: 'ENOTDIR' });
+        },
+      });
+      await expect(failing.copy('src.txt', 'a/b.txt')).rejects.toMatchObject({ code: 'ENOTDIR' });
+    });
+
+    it('readBytes throws StorageNotFoundError on ENOTDIR', async () => {
+      const failing = makeFailingStore({
+        readFile: async () => {
+          throw Object.assign(new Error('ENOTDIR'), { code: 'ENOTDIR' });
+        },
+      });
+      await expect(failing.readBytes('x.bin')).rejects.toBeInstanceOf(StorageNotFoundError);
+    });
+
+    it('write swallows cleanup unlink errors and rethrows the original', async () => {
+      const failing = makeFailingStore({
+        writeFile: async () => {},
+        rename: async () => {
+          throw Object.assign(new Error('EISDIR'), { code: 'EISDIR' });
+        },
+        unlink: async () => {
+          throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+        },
+      });
+      await expect(failing.write('x.txt', 'x')).rejects.toMatchObject({ code: 'EISDIR' });
     });
   });
 });

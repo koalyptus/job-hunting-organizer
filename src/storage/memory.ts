@@ -6,27 +6,15 @@ import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError }
 import { moduleLogger } from '../core/logger/logger.js';
 import { toAbsolute, forbidRootTarget, canonicalizeRoot } from './local/path-guard.js';
 
-const log = moduleLogger(import.meta.url);
-
-/**
- * The typed async surface omits `appendFile` even though every vendored
- * engine (node-fs, memfs) exposes it at runtime. Reach it through this
- * minimal typed extension so `append` is a single atomic engine call
- * instead of a composed read+write (which has a TOCTOU lost-update window
- * when two appenders race).
- */
-interface FileSystemWithAppend {
-  promises: IFileSystem['promises'] & {
-    appendFile(path: string, data: string | Uint8Array): Promise<void>;
-  };
-}
-
 const MEMORY_ROOT = '/';
 const MEMORY_DATA_ROOT = 'memory://jho';
 const TEMP_EXT = '.tmp';
 const RANDOM_SUFFIX_LENGTH = 6;
 const KIND_FILE = 'file';
 const KIND_DIR = 'directory';
+
+/** Exported for test spying on internal logging. */
+export const log = moduleLogger(import.meta.url);
 
 /**
  * Build an `IFileSystem`-compatible surface over memfs. memfs's `IFs` exposes
@@ -37,16 +25,14 @@ const KIND_DIR = 'directory';
  *
  * The volume starts with an empty `/`, ensure root directory exists so
  * path-guard's canonicalizeRoot (realpathSync) resolves rather than
- * falling back to root.
+ * falling back to root. memfs's Volume() already creates the root
+ * directory implicitly, so this mkdirSync is a safe no-op on a fresh
+ * volume and succeeds (no throw) on a pre-existing root.
  */
 function createMemoryFileSystem(): IFileSystem {
   const vol = new Volume();
   const volumeFs = createFsFromVolume(vol);
-  try {
-    volumeFs.mkdirSync(MEMORY_ROOT, { recursive: true });
-  } catch {
-    // Root already present.
-  }
+  volumeFs.mkdirSync(MEMORY_ROOT, { recursive: true });
   return {
     ...posixPath,
     sep: posixPath.sep,
@@ -394,4 +380,17 @@ export class MemoryFileStore implements FileStore {
       });
     return owned;
   }
+}
+
+/**
+ * The typed async surface omits `appendFile` even though every vendored
+ * engine (node-fs, memfs) exposes it at runtime. Reach it through this
+ * minimal typed extension so `append` is a single atomic engine call
+ * instead of a composed read+write (which has a TOCTOU lost-update window
+ * when two appenders race).
+ */
+interface FileSystemWithAppend {
+  promises: IFileSystem['promises'] & {
+    appendFile(path: string, data: string | Uint8Array): Promise<void>;
+  };
 }
