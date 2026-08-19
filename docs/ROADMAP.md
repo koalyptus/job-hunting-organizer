@@ -1163,6 +1163,7 @@ Pilot phase — smallest, most self-contained, used by both CLI and MCP.
 **What moves:** wizard, write, inputs, github, llm, skeleton, types, constants, errors, index.
 
 **Importers to update:**
+
 - `src/cli/commands/init.ts` → `../../workflow/init/`
 - `src/mcp/tools/init-tool.ts` → `../../workflow/init/`
 - Any `core/` modules importing from `core/init/` → re-export or update
@@ -1178,6 +1179,7 @@ Pilot phase — smallest, most self-contained, used by both CLI and MCP.
 **What moves:** profile-writer, profile-read, voice-read, kb, kb-context, kb-ingest, directories, profile-builder, profile-build, remove-campaign, rename-campaign.
 
 **Pure helpers to extract into core:**
+
 - `buildProfileContent` (pure markdown generation) → `src/core/profile.ts`
 - `formatKbContext` (pure text concatenation) → `src/core/kb.ts`
 - `validateProfileBody` (pure validation) → `src/core/validate.ts`
@@ -1191,6 +1193,7 @@ Pilot phase — smallest, most self-contained, used by both CLI and MCP.
 **What moves:** applications (CRUD), application-qa, cover-letter, rename, index-builder, meta-schema, types.
 
 **Pure helpers to extract into core:**
+
 - `buildApplicationMeta` (pure meta construction) → `src/core/applications/meta.ts`
 - `extractJdStructure` (pure JD structuring) → `src/core/jobs/jd.ts`
 
