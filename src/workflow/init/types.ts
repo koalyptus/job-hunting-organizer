@@ -18,7 +18,7 @@ export interface InitOptions {
   /** Optional path to a knowledge-base file or folder to ingest at init. */
   readonly kb?: string;
   /** Non-interactive mode: use env vars/defaults, skip all prompts. */
-  readonly nonInteractive?: boolean;
+  readonly yes?: boolean;
   /** Optional pino logger. */
   readonly log?: Logger;
 }

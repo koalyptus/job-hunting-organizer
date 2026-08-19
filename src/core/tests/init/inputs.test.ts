@@ -66,10 +66,7 @@ describe('init-inputs', () => {
     });
 
     it('falls back to existingLinkedinUrl in --yes mode', async () => {
-      const result = await promptLinkedin(
-        { nonInteractive: true },
-        'https://linkedin.com/in/existing',
-      );
+      const result = await promptLinkedin({ yes: true }, 'https://linkedin.com/in/existing');
       expect(result).toBe('https://linkedin.com/in/existing');
       expect(mockText).not.toHaveBeenCalled();
     });
@@ -113,7 +110,7 @@ describe('init-inputs', () => {
     });
 
     it('falls back to existingCvPath in --yes mode', async () => {
-      const result = await promptCvPath({ nonInteractive: true }, '/existing/cv.pdf');
+      const result = await promptCvPath({ yes: true }, '/existing/cv.pdf');
       expect(result).toBe('/existing/cv.pdf');
     });
 

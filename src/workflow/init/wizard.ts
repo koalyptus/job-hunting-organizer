@@ -46,15 +46,15 @@ export async function runInit(opts: InitOptions): Promise<void> {
 
   // Re-init check
   if (await pathExists(campaignRoot)) {
-    if (opts.nonInteractive) {
+    if (opts.yes) {
       clackLog.info(`Campaign "${name}" already exists, reinitializing...`);
     } else {
-      const shouldOverwrite = await confirm({
+      const overwrite = await confirm({
         message: `Campaign "${name}" already exists. Overwrite?`,
         initialValue: false,
       });
 
-      if (isCancel(shouldOverwrite) || !shouldOverwrite) {
+      if (isCancel(overwrite) || !overwrite) {
         throw new InitCancelled();
       }
     }
@@ -63,21 +63,21 @@ export async function runInit(opts: InitOptions): Promise<void> {
   // --- Steps 1-3: collect inputs ---
   // Load existing configs early for pre-filling prompts.
   const existingConfig = loadExistingConfig();
-  const existingValues = await loadExistingCampaignValues(name, log);
+  const existing = await loadExistingCampaignValues(name, log);
 
-  const linkedinUrl = await promptLinkedin(opts, existingValues.linkedinUrl);
-  const cvPath = await promptCvPath(opts, existingValues.cvPath);
+  const linkedinUrl = await promptLinkedin(opts, existing.linkedinUrl);
+  const cvPath = await promptCvPath(opts, existing.cvPath);
   const kbPath = await promptKbPath(opts);
-  const cvPathResolved = await validateCvWithRetry(cvPath, opts.nonInteractive ?? false);
+  const cvPathResolved = await validateCvWithRetry(cvPath, opts.yes ?? false);
 
   // --- Step 4: GitHub ---
-  const github = await promptGithub(opts.github, opts.nonInteractive ?? false, existingConfig);
+  const github = await promptGithub(opts.github, opts.yes ?? false, existingConfig);
 
   // --- Step 5: Detect local OpenAI-compatible backends ---
-  const detectedLlmSuggestion = opts.nonInteractive ? undefined : await detectLocalBackend(log);
+  const detectedLlmSuggestion = opts.yes ? undefined : await detectLocalBackend(log);
 
   // --- Step 6: LLM config ---
-  const llm = await promptLlm(opts.nonInteractive ?? false, existingConfig, detectedLlmSuggestion);
+  const llm = await promptLlm(opts.yes ?? false, existingConfig, detectedLlmSuggestion);
 
   const llmConfig = buildLlmConfig(llm, existingConfig);
 
@@ -98,7 +98,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
         llm,
         llmConfig,
         profileFlag: opts.profile,
-        nonInteractive: opts.nonInteractive ?? false,
+        nonInteractive: opts.yes ?? false,
         log,
       }),
     { retries: 3 },

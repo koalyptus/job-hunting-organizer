@@ -43,7 +43,7 @@ import { registerKbUpdate } from './tools/kb-update.js';
  *
  * Each tool validates input with its pre-defined Zod schema,
  * calls a `core/` function directly, and returns JSON content.
- * Interactive tools (`track_application` and `init`) pass `nonInteractive: true` to skip prompts.
+ * Interactive tools (`track_application`, `init`) pass `yes: true` to skip prompts.
  */
 export function registerTools(server: McpServer, store: FileStore): void {
   registerListApplications(server, store);
