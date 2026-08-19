@@ -14,7 +14,7 @@ import { PrepError } from '../../core/prepare/prepare.js';
 import { ProfileReadError } from '../../core/campaign/profile-read.js';
 import { StatsError } from '../../core/stats/errors.js';
 import { ListError } from '../../core/list/errors.js';
-import { InitError } from '../../core/init/errors.js';
+import { InitError } from '../../workflow/init/errors.js';
 
 function getText(result: CallToolResult): string {
   const block = result.content[0];

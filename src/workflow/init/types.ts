@@ -2,7 +2,7 @@ import type { Logger } from 'pino';
 
 /**
  * Options for the `jho init` wizard. Passed from the CLI layer to
- * {@link runInit} in `core/init.ts`.
+ * {@link runInit} in `workflow/init/wizard.ts`.
  */
 export interface InitOptions {
   /** Campaign name (default: `'default'`). */
@@ -21,4 +21,22 @@ export interface InitOptions {
   readonly yes?: boolean;
   /** Optional pino logger. */
   readonly log?: Logger;
+}
+
+/** GitHub credentials captured during the init wizard. */
+export interface GithubPrefs {
+  /** GitHub username (`undefined` when skipped). */
+  user?: string;
+  /** GitHub personal access token (`undefined` when skipped). */
+  token?: string;
+}
+
+/** LLM endpoint preferences captured during the init wizard. */
+export interface LlmPrefs {
+  /** Base URL of the OpenAI-compatible endpoint. */
+  baseUrl?: string;
+  /** API key (empty string for local LLMs that don't require one). */
+  apiKey?: string;
+  /** Model identifier. */
+  model?: string;
 }

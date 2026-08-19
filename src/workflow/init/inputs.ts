@@ -1,7 +1,7 @@
 import { text, isCancel, log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
-import { loadCampaignConfig } from '../config/config.js';
-import { validateCvPath } from '../cv.js';
+import { loadCampaignConfig } from '../../core/config/config.js';
+import { validateCvPath } from '../../core/cv.js';
 import { JHO_LINKEDIN_URL, JHO_CV_PATH, JHO_KB_PATH } from './constants.js';
 import { InitCancelled } from './errors.js';
 import type { InitOptions } from './types.js';
@@ -144,15 +144,15 @@ export async function validateCvWithRetry(
     }
 
     clackLog.warn(result.error ?? 'Invalid CV path');
-    const retry = await text({
+    const retryInput = await text({
       message: 'Enter a different CV path, or press Enter to skip:',
       defaultValue: '',
     });
 
-    if (isCancel(retry) || retry === '') {
+    if (isCancel(retryInput) || retryInput === '') {
       resolved = undefined;
     } else {
-      resolved = retry.trim();
+      resolved = retryInput.trim();
     }
   }
 

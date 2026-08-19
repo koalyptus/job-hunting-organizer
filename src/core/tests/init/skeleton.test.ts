@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { generateSkeletonProfile, generateVoiceGuideSkeleton } from '../../init/skeleton.js';
+import {
+  generateSkeletonProfile,
+  generateVoiceGuideSkeleton,
+} from '../../../workflow/init/skeleton.js';
 
 describe('generateSkeletonProfile', () => {
   it('includes GitHub user when provided', () => {

@@ -8,8 +8,8 @@ import {
   promptKbPath,
   validateCvWithRetry,
   loadExistingCampaignValues,
-} from '../../../core/init/init-inputs.js';
-import { JHO_LINKEDIN_URL, JHO_CV_PATH, JHO_KB_PATH } from '../../../core/init/constants.js';
+} from '../../../workflow/init/inputs.js';
+import { JHO_LINKEDIN_URL, JHO_CV_PATH, JHO_KB_PATH } from '../../../workflow/init/constants.js';
 import type { CampaignConfig } from '../../../core/types.js';
 import type { Logger } from 'pino';
 

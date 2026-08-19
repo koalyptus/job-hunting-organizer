@@ -8,16 +8,18 @@ import {
   loadExistingConfig,
   detectLocalBackend,
   buildLlmConfig,
-} from '../../init/llm.js';
+  getBackendBaseUrl,
+  getBackendModel,
+} from '../../../workflow/init/llm.js';
 import { detectAgents } from 'detect-local-agents';
 import { clearConfigCache } from '../../config/config.js';
-import { InitCancelled } from '../../init/errors.js';
+import { InitCancelled } from '../../../workflow/init/errors.js';
 import {
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
   JHO_CONFIG_HOME,
-} from '../../init/constants.js';
+} from '../../../workflow/init/constants.js';
 import type { GlobalConfig } from '../../types.js';
 import type { Logger } from 'pino';
 import type { DetectedAgent } from 'detect-local-agents';
@@ -447,5 +449,22 @@ describe('buildLlmConfig', () => {
       null,
     );
     expect(result?.apiKey).toBe('sk-123');
+  });
+});
+
+describe('getBackendBaseUrl / getBackendModel', () => {
+  it('returns Ollama defaults for the ollama backend', () => {
+    expect(getBackendBaseUrl('ollama')).toBe('http://localhost:11434/v1');
+    expect(getBackendModel('ollama')).toBe('llama3.1');
+  });
+
+  it('returns LM Studio defaults for the lmstudio backend', () => {
+    expect(getBackendBaseUrl('lmstudio')).toBe('http://localhost:1234/v1');
+    expect(getBackendModel('lmstudio')).toBe('auto');
+  });
+
+  it('falls back to LM Studio defaults for unknown backends', () => {
+    expect(getBackendBaseUrl('unknown-backend')).toBe('http://localhost:1234/v1');
+    expect(getBackendModel('unknown-backend')).toBe('auto');
   });
 });

@@ -1,6 +1,6 @@
 /**
  * Core orchestrator for the `jho track` workflow. Follows the same
- * pattern as `core/init/wizard.ts`: all business logic lives here,
+ * pattern as `workflow/init/wizard.ts`: all business logic lives here,
  * the CLI is a thin wrapper that parses options and catches errors.
  *
  * This module is reusable from both the CLI and the MCP server.

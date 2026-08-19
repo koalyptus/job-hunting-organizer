@@ -1,12 +1,7 @@
 import { text, password, isCancel } from '@clack/prompts';
 import { InitCancelled } from './errors.js';
-import type { GlobalConfig } from '../types.js';
-
-/** Result of the GitHub prompts step. */
-interface GithubResult {
-  user: string | undefined;
-  token: string | undefined;
-}
+import type { GlobalConfig } from '../../core/types.js';
+import type { GithubPrefs } from './types.js';
 
 /**
  * Prompt for GitHub username and optional token.
@@ -18,7 +13,7 @@ export async function promptGithub(
   defaultUser: string | undefined,
   nonInteractive: boolean,
   existingConfig: GlobalConfig | null,
-): Promise<GithubResult> {
+): Promise<GithubPrefs> {
   const prefill = defaultUser ?? existingConfig?.github?.user;
 
   if (nonInteractive) {

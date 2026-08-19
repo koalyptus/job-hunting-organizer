@@ -8,8 +8,8 @@ import { extractTargetRoles, replaceTargetRoles } from './target-roles.js';
 import { withSpinner } from '../spinner.js';
 import type { LlmConfig } from '../types.js';
 import { reviewRoles } from './roles.js';
-import { generateSkeletonProfile } from '../init/skeleton.js';
-import { InitError } from '../init/errors.js';
+import { generateSkeletonProfile } from '../../workflow/init/skeleton.js';
+import { InitError } from '../../workflow/init/errors.js';
 import { moduleLogger } from '../logger/logger.js';
 
 const fallbackLog = moduleLogger(import.meta.url);

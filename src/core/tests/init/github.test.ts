@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { text, password, isCancel } from '@clack/prompts';
-import { promptGithub } from '../../init/github.js';
-import { InitCancelled } from '../../init/errors.js';
+import { promptGithub } from '../../../workflow/init/github.js';
+import { InitCancelled } from '../../../workflow/init/errors.js';
 import type { GlobalConfig } from '../../types.js';
 
 vi.mock('@clack/prompts', () => ({

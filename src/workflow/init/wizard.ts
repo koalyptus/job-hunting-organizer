@@ -5,24 +5,24 @@ import {
   resolveProfilePath,
   resolveMyVoicePath,
   ensureRoot,
-} from '../paths.js';
-import { pathExists } from '../fs.js';
-import { validateName } from '../validate.js';
-import { acquireLock } from '../locks.js';
+} from '../../core/paths.js';
+import { pathExists } from '../../core/fs.js';
+import { validateName } from '../../core/validate.js';
+import { acquireLock } from '../../core/locks.js';
 import type { InitOptions } from './types.js';
-import { DEFAULT_CAMPAIGN } from './constants.js';
+import { DEFAULT_CAMPAIGN } from '../../core/constants.js';
 import {
   promptLinkedin,
   promptCvPath,
   promptKbPath,
   validateCvWithRetry,
   loadExistingCampaignValues,
-} from './init-inputs.js';
+} from './inputs.js';
 import { promptGithub } from './github.js';
 import { promptLlm, loadExistingConfig, detectLocalBackend, buildLlmConfig } from './llm.js';
-import { runLockedInitSteps, printInitSummary } from './init-write.js';
+import { runLockedInitSteps, printInitSummary } from './write.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
-import { childLogger } from '../logger/logger.js';
+import { childLogger } from '../../core/logger/logger.js';
 
 /**
  * Run the init wizard. Called from the CLI command.

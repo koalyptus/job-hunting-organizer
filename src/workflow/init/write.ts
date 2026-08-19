@@ -2,18 +2,18 @@ import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
-import { pathExists } from '../fs.js';
+import { pathExists } from '../../core/fs.js';
 import {
   updateGlobalConfig,
   updateCampaignConfig,
   loadGlobalConfig,
   loadCampaignConfig,
-} from '../config/config.js';
-import { resolveProfilePath, resolveMyVoicePath } from '../paths.js';
-import { toDateKey } from '../date.js';
-import { createDirectories } from '../campaign/directories.js';
-import { ingestKnowledgeBase as ingestKbDocs } from '../campaign/kb-ingest.js';
-import { handleProfile } from '../campaign/profile-builder.js';
+} from '../../core/config/config.js';
+import { resolveProfilePath, resolveMyVoicePath } from '../../core/paths.js';
+import { toDateKey } from '../../core/date.js';
+import { createDirectories } from '../../core/campaign/directories.js';
+import { ingestKnowledgeBase as ingestKbDocs } from '../../core/campaign/kb-ingest.js';
+import { handleProfile } from '../../core/campaign/profile-builder.js';
 import { generateVoiceGuideSkeleton } from './skeleton.js';
 import {
   DEFAULT_LOG_LEVEL,
@@ -21,7 +21,8 @@ import {
   DEFAULT_LLM_API_KEY,
   DEFAULT_LLM_MODEL,
 } from './constants.js';
-import type { LlmConfig } from '../types.js';
+import type { LlmConfig } from '../../core/types.js';
+import type { GithubPrefs, LlmPrefs } from './types.js';
 
 /** Inputs for the locked init write steps (Steps 7-11). */
 interface InitWriteOptions {
@@ -31,8 +32,8 @@ interface InitWriteOptions {
   kbPath?: string;
   cvPath?: string;
   linkedinUrl?: string;
-  github: { user?: string; token?: string };
-  llm: { baseUrl?: string; apiKey?: string; model?: string };
+  github: GithubPrefs;
+  llm: LlmPrefs;
   llmConfig?: LlmConfig;
   profileFlag?: string;
   nonInteractive: boolean;
@@ -123,11 +124,7 @@ async function scaffoldVoiceGuide(campaignRoot: string): Promise<void> {
  * Write the global config, deep-merging logging to preserve user-customised
  * values on re-init.
  */
-function writeInitGlobalConfig(
-  dataRoot: string,
-  llm: { baseUrl?: string; apiKey?: string; model?: string },
-  github: { user?: string; token?: string },
-): void {
+function writeInitGlobalConfig(dataRoot: string, llm: LlmPrefs, github: GithubPrefs): void {
   const currentConfig = loadGlobalConfig();
   updateGlobalConfig({
     version: 1,

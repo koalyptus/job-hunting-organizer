@@ -47,6 +47,8 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 ├── src/
 │   ├── cli/            # CLI commands
 │   ├── mcp/            # MCP server
+│   ├── workflow/       # workflow orchestration shared by CLI and MCP (no I/O boundaries)
+│   │   └── init/       # init wizard orchestration (moved from core/init in Phase 9g)
 │   └── core/           # shared business logic (no I/O boundaries)
 │       ├── applications/  # application CRUD: create, update, read, list; writes meta.md + jd.md + index
 │       │   ├── application-qa.ts  # Q&A answer generation (LLM-backed, append-only qa.md)
@@ -63,7 +65,6 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       ├── repair/      # auto-repair (frontmatter, indexes, counters)
 │       ├── jobs/        # JD fetch, extraction (single LLM call), target-role suggestion
 │       ├── track/       # track orchestration (create/update/refresh)
-│       ├── init/        # init wizard orchestration
 │       ├── stats/       # campaign snapshot: counts by status/role/site, funnel, this-month delta
 │       ├── list/        # list applications with filters
 │       ├── parser/      # parsing modules: frontmatter, markers, slug, url, sanitize, prompt-parser
@@ -307,7 +308,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 8 — MCP server. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 8a (server scaffold, campaign resolver, error handler), 8b (read-only tools), 8c (write + CRUD tools), 8d (LLM-backed tools), 8e (resources + prompts), 8f (bin/jho-mcp + package config), 8f1 (MCP feature parity with CLI), 8f2 (metadata cleanup + JSDoc), 8g (integration tests), 8h (docs + polish).
+Phase 9g — IO-free core. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 9g (move `init` workflow to `src/workflow/init/`), 9h (move `campaign` workflow), 9i (move `applications` workflow), 9j (extract infrastructure to `src/lib/`), 9k (validate pure core, remove deprecated barrels).
 
 ## Cross-platform conventions
 

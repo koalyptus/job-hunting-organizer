@@ -14,7 +14,7 @@ import {
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_MODEL,
   DEFAULT_LMSTUDIO_BASE_URL,
-} from '../../../core/init/constants.js';
+} from '../../../workflow/init/constants.js';
 
 vi.mock('detect-local-agents', () => ({
   detectAgents: vi.fn(),

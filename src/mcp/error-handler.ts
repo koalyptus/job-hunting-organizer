@@ -16,7 +16,7 @@ import { ProfileReadError } from '../core/campaign/profile-read.js';
 import { ProfileWriteError } from '../core/campaign/profile-writer.js';
 import { StatsError } from '../core/stats/errors.js';
 import { ListError } from '../core/list/errors.js';
-import { InitError } from '../core/init/errors.js';
+import { InitError } from '../workflow/init/errors.js';
 import { ShowError } from '../core/applications/show.js';
 import { RemoveCampaignError, RemoveCancelled } from '../core/campaign/remove-campaign.js';
 import {
