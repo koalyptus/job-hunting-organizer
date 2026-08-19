@@ -16,6 +16,7 @@ import type { PrepPlan } from '../prepare/types.js';
 import type * as FsModule from '../fs.js';
 import type * as AppModule from '../applications/applications.js';
 import { aggregateRetros } from '../retro/aggregate.js';
+import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
 
 vi.mock('../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -553,7 +554,7 @@ describe('generatePrep', () => {
     const slug = '2026-Jun-01-SE-Test-Corp';
     await setupApp(slug);
 
-    const profileMod = await import('../../workflow/campaign/profile-read.js');
+    const profileMod = ProfileReadModule;
     const spy = vi.spyOn(profileMod, 'readProfile').mockRejectedValueOnce(42);
 
     await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
@@ -644,7 +645,7 @@ describe('generatePrepFromText', () => {
   });
 
   it('wraps non-Error profile read failures in PrepError', async () => {
-    const profileMod = await import('../../workflow/campaign/profile-read.js');
+    const profileMod = ProfileReadModule;
     const spy = vi.spyOn(profileMod, 'readProfile').mockRejectedValueOnce('string error');
 
     await expect(
