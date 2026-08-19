@@ -17,9 +17,6 @@ import type { LlmConfig } from '../../core/types.js';
 import { DEFAULT_LLM_TIMEOUT_MS } from '../../core/llm.js';
 import type { LlmPrefs } from './types.js';
 
-/** Result of the LLM prompts step. */
-type LlmPromptResult = LlmPrefs;
-
 /** Optional suggestion from agent detection. */
 export interface DetectedLlmSuggestion {
   baseUrl: string;
@@ -66,7 +63,7 @@ export async function promptLlm(
   nonInteractive: boolean,
   existingConfig: ReturnType<typeof loadGlobalConfig> | null,
   detectedSuggestion?: DetectedLlmSuggestion,
-): Promise<LlmPromptResult> {
+): Promise<LlmPrefs> {
   const defaultBaseUrl = getConfigValue(
     existingConfig?.llm?.baseUrl,
     'LLM_BASE_URL',

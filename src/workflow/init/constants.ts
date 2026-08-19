@@ -1,6 +1,3 @@
-// Re-export generic constants from core/constants.ts
-export { DEFAULT_CAMPAIGN, CV_EXTENSIONS, KB_GITHUB } from '../../core/constants.js';
-
 /** Default LLM base URL (Ollama local). */
 export const DEFAULT_LLM_BASE_URL = 'http://localhost:11434/v1';
 

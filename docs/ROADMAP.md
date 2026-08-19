@@ -1156,6 +1156,56 @@ The lavish plan's Phase 2 gate includes a "real-data smoke run on a disposable d
 
 **Deliverable**: campaign operations resolve their store through the port rather than ad-hoc path joins.
 
+#### 9g — Move `init` workflow to `src/workflow/init/`
+
+Pilot phase — smallest, most self-contained, used by both CLI and MCP.
+
+**What moves:** wizard, write, inputs, github, llm, skeleton, types, constants, errors, index.
+
+**Importers to update:**
+- `src/cli/commands/init.ts` → `../../workflow/init/`
+- `src/mcp/tools/init-tool.ts` → `../../workflow/init/`
+- Any `core/` modules importing from `core/init/` → re-export or update
+
+**Transition:** Keep `src/core/init/index.ts` as re-export barrel with deprecation JSDoc during 9g–9j. Remove in 9k.
+
+**Verification:** `tsc --noEmit`, `eslint .`, `prettier --check .`, unit + integration tests.
+
+**Deliverable:** init wizard lives under `src/workflow/init/`; zero behavioural change.
+
+#### 9h — Move `campaign` workflow to `src/workflow/campaign/`
+
+**What moves:** profile-writer, profile-read, voice-read, kb, kb-context, kb-ingest, directories, profile-builder, profile-build, remove-campaign, rename-campaign.
+
+**Pure helpers to extract into core:**
+- `buildProfileContent` (pure markdown generation) → `src/core/profile.ts`
+- `formatKbContext` (pure text concatenation) → `src/core/kb.ts`
+- `validateProfileBody` (pure validation) → `src/core/validate.ts`
+
+**Importers:** CLI (profile, campaign, kb, remove-campaign, rename-campaign), MCP (profile, campaign, kb, remove, rename), core (init-write, applications).
+
+**Deliverable:** campaign workflow lives under `src/workflow/campaign/`; pure helpers extracted to `core/`.
+
+#### 9i — Move `applications` workflow to `src/workflow/applications/`
+
+**What moves:** applications (CRUD), application-qa, cover-letter, rename, index-builder, meta-schema, types.
+
+**Pure helpers to extract into core:**
+- `buildApplicationMeta` (pure meta construction) → `src/core/applications/meta.ts`
+- `extractJdStructure` (pure JD structuring) → `src/core/jobs/jd.ts`
+
+**Importers:** CLI (track, list, show, answer, cover-letter, rename-application), MCP (track_application, list_applications, show_application, answer_question, cover_letter, rename_application, remove_application).
+
+**Deliverable:** application workflow lives under `src/workflow/applications/`.
+
+#### 9j — Extract infrastructure utilities to `src/lib/`
+
+**What moves:** fs.ts (atomicWrite, backup), locks.ts (proper-lockfile wrapper), paths.ts, config/config.ts (global/campaign config read/write), logger/logger.ts, package.ts (package.json reads), date.ts, validate.ts.
+
+**New layer:** `src/lib/` holds infrastructure that is pure (no domain logic) but touches the filesystem/environment. `core/` consumes `src/lib/` through imports.
+
+**Deliverable:** infrastructure is isolated in `src/lib/`; `core/` imports it but never implements I/O directly.
+
 #### 9k — Validate pure core, remove deprecated barrels
 
 The 9g–9j moves made `src/workflow/*` the only I/O-touching layer. 9k closes the loop:

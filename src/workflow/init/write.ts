@@ -52,7 +52,7 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
   const { kbDir } = await createDirectories(campaignRoot);
 
   // --- Step 8: Ingest optional knowledge-base source ---
-  const kbSources = await copyAndRecordKbSources(campaignRoot, opts.kbPath, kbDir);
+  const kbSources = await ingestKnowledgeBase(campaignRoot, opts.kbPath, kbDir);
 
   // --- Step 9: Scaffold the personal voice guide (never overwrite) ---
   await scaffoldVoiceGuide(campaignRoot);
@@ -79,7 +79,7 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
 }
 
 /** Ingest the optional knowledge-base source; returns the recorded sources. */
-async function copyAndRecordKbSources(
+async function ingestKnowledgeBase(
   campaignRoot: string,
   kbPath: string | undefined,
   kbDir: string,

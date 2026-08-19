@@ -10,7 +10,7 @@ import { pathExists } from '../../core/fs.js';
 import { validateName } from '../../core/validate.js';
 import { acquireLock } from '../../core/locks.js';
 import type { InitOptions } from './types.js';
-import { DEFAULT_CAMPAIGN } from './constants.js';
+import { DEFAULT_CAMPAIGN } from '../../core/constants.js';
 import {
   promptLinkedin,
   promptCvPath,
