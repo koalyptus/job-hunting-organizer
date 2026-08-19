@@ -50,7 +50,7 @@ describe('init tool', () => {
       cv: undefined,
       github: undefined,
       linkedin: undefined,
-      yes: true,
+      nonInteractive: true,
     });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.status).toBe('ok');
@@ -75,7 +75,7 @@ describe('init tool', () => {
       cv: '/path/to/cv.pdf',
       github: 'maxgu',
       linkedin: 'https://linkedin.com/in/maxgu',
-      yes: true,
+      nonInteractive: true,
     });
     const parsed = JSON.parse(getTextContent(result));
     expect(parsed.status).toBe('ok');

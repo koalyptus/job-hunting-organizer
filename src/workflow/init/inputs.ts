@@ -44,7 +44,7 @@ export async function promptLinkedin(
   const envLinkedinUrl = process.env[JHO_LINKEDIN_URL];
   let linkedinUrl = (opts.linkedin ?? envLinkedinUrl)?.trim() || undefined;
 
-  if (!linkedinUrl && !opts.yes) {
+  if (!linkedinUrl && !opts.nonInteractive) {
     const input = await text({
       message: 'LinkedIn profile URL? (optional, press Enter to skip)',
       initialValue: existingLinkedinUrl || undefined,
@@ -74,7 +74,7 @@ export async function promptCvPath(
   const envCvPath = process.env[JHO_CV_PATH];
   let cvPath = (opts.cv ?? envCvPath)?.trim() || undefined;
 
-  if (!cvPath && !opts.yes) {
+  if (!cvPath && !opts.nonInteractive) {
     const input = await text({
       message: 'Path to your CV file (PDF, DOCX, MD, TXT)? (optional, press Enter to skip)',
       initialValue: existingCvPath || undefined,
@@ -102,7 +102,7 @@ export async function promptKbPath(opts: InitOptions): Promise<string | undefine
   const envKbPath = process.env[JHO_KB_PATH];
   let kbPath = (opts.kb ?? envKbPath)?.trim() || undefined;
 
-  if (!kbPath && !opts.yes) {
+  if (!kbPath && !opts.nonInteractive) {
     const input = await text({
       message:
         'Path to a knowledge-base file or folder (PDF, DOCX, MD, TXT)? (optional, press Enter to skip)',
@@ -144,15 +144,15 @@ export async function validateCvWithRetry(
     }
 
     clackLog.warn(result.error ?? 'Invalid CV path');
-    const retry = await text({
+    const retryInput = await text({
       message: 'Enter a different CV path, or press Enter to skip:',
       defaultValue: '',
     });
 
-    if (isCancel(retry) || retry === '') {
+    if (isCancel(retryInput) || retryInput === '') {
       resolved = undefined;
     } else {
-      resolved = retry.trim();
+      resolved = retryInput.trim();
     }
   }
 

@@ -42,19 +42,26 @@ export const LMSTUDIO_DEFAULT_PORT = 1234;
 /** Default LM Studio base URL. */
 export const DEFAULT_LMSTUDIO_BASE_URL = `http://localhost:${LMSTUDIO_DEFAULT_PORT}/v1`;
 
+/** Alias for DEFAULT_LMSTUDIO_BASE_URL (consistent with DEFAULT_LLM_BASE_URL naming). */
+export const LMSTUDIO_DEFAULT_BASE_URL = DEFAULT_LMSTUDIO_BASE_URL;
+
 /** Default LM Studio model (auto-selects). */
 export const LMSTUDIO_DEFAULT_MODEL = 'auto';
 
 /**
  * Get the default base URL for a detected backend.
+ * @deprecated Moved to `llm.ts`. Import from there instead.
+ * @param backendName - The detected backend name (e.g., 'ollama' or 'lmstudio').
  */
-export function getBackendBaseUrl(name: string): string {
-  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
+export function getBackendBaseUrl(backendName: string): string {
+  return backendName === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
 }
 
 /**
  * Get the default model for a detected backend.
+ * @deprecated Moved to `llm.ts`. Import from there instead.
+ * @param backendName - The detected backend name (e.g., 'ollama' or 'lmstudio').
  */
-export function getBackendModel(name: string): string {
-  return name === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_MODEL : LMSTUDIO_DEFAULT_MODEL;
+export function getBackendModel(backendName: string): string {
+  return backendName === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_MODEL : LMSTUDIO_DEFAULT_MODEL;
 }

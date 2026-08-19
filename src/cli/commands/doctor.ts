@@ -9,12 +9,8 @@ import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';
 import { detectAgents } from 'detect-local-agents';
-import {
-  BACKEND_NAME_OLLAMA,
-  BACKEND_NAME_LMSTUDIO,
-  getBackendBaseUrl,
-  getBackendModel,
-} from '../../workflow/init/constants.js';
+import { BACKEND_NAME_OLLAMA, BACKEND_NAME_LMSTUDIO } from '../../workflow/init/constants.js';
+import { getBackendBaseUrl, getBackendModel } from '../../workflow/init/llm.js';
 
 /**
  * `jho doctor --detect-agents` — detect local OpenAI-compatible backends and display results.

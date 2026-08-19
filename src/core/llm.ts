@@ -7,7 +7,7 @@ import { createLlmFetch } from './fetch.js';
 import type { GlobalConfig, LlmConfig, ChatCompleteOptions, ChatCompleteResult } from './types.js';
 
 /** Default timeout for LLM requests (20 minutes). */
-const DEFAULT_LLM_TIMEOUT_MS = 1_200_000;
+export const DEFAULT_LLM_TIMEOUT_MS = 1_200_000;
 
 /** Default temperature for LLM requests. */
 const DEFAULT_TEMPERATURE = 0.6;

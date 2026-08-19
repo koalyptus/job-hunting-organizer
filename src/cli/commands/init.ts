@@ -31,7 +31,7 @@ export const initCommand = new Command('init')
         github: opts.github as string | undefined,
         profile: opts.profile as string | undefined,
         kb: opts.kb as string | undefined,
-        yes: opts.yes as boolean | undefined,
+        nonInteractive: opts.yes as boolean | undefined,
         log,
       });
       log.info({ campaign: resolvedName }, 'init.completed');

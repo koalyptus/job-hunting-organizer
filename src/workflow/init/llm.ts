@@ -14,13 +14,11 @@ import {
 import { InitCancelled } from './errors.js';
 import type { Logger } from 'pino';
 import type { LlmConfig } from '../../core/types.js';
+import { DEFAULT_LLM_TIMEOUT_MS } from '../../core/llm.js';
+import type { LlmPrefs } from './types.js';
 
 /** Result of the LLM prompts step. */
-interface LlmPromptResult {
-  baseUrl: string | undefined;
-  apiKey: string | undefined;
-  model: string | undefined;
-}
+type LlmPromptResult = LlmPrefs;
 
 /** Optional suggestion from agent detection. */
 export interface DetectedLlmSuggestion {
@@ -189,12 +187,28 @@ export async function detectLocalBackend(log: Logger): Promise<DetectedLlmSugges
 }
 
 /**
+ * Get the default base URL for a detected backend.
+ * @param backendName - The detected backend name (e.g., 'ollama' or 'lmstudio').
+ */
+export function getBackendBaseUrl(backendName: string): string {
+  return backendName === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
+}
+
+/**
+ * Get the default model for a detected backend.
+ * @param backendName - The detected backend name (e.g., 'ollama' or 'lmstudio').
+ */
+export function getBackendModel(backendName: string): string {
+  return backendName === BACKEND_NAME_OLLAMA ? DEFAULT_LLM_MODEL : LMSTUDIO_DEFAULT_MODEL;
+}
+
+/**
  * Build the LLM config written to global config. apiKey is optional for local
  * LLMs; falls back to the default ('no-key') when empty. Returns undefined
  * when no baseUrl/model is configured.
  */
 export function buildLlmConfig(
-  llm: { baseUrl?: string; apiKey?: string; model?: string },
+  llm: LlmPrefs,
   existingConfig: ReturnType<typeof loadGlobalConfig> | null,
 ): LlmConfig | undefined {
   const hasLlm = Boolean(llm.baseUrl && llm.model);
@@ -206,6 +220,6 @@ export function buildLlmConfig(
     baseUrl: llm.baseUrl!,
     apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
     model: llm.model!,
-    timeoutMs: existingConfig?.llm.timeoutMs ?? 1_200_000,
+    timeoutMs: existingConfig?.llm.timeoutMs ?? DEFAULT_LLM_TIMEOUT_MS,
   };
 }

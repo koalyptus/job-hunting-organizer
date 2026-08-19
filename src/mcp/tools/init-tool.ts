@@ -26,7 +26,7 @@ export function registerInit(server: McpServer, _store: FileStore): void {
           cv: args.cvPath,
           github: args.githubUser,
           linkedin: args.linkedinUrl,
-          yes: true,
+          nonInteractive: true,
         });
         mcpLogger.debug({ campaign: args.campaign }, 'tool.init.done');
         return {

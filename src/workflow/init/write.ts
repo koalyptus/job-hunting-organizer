@@ -22,6 +22,7 @@ import {
   DEFAULT_LLM_MODEL,
 } from './constants.js';
 import type { LlmConfig } from '../../core/types.js';
+import type { GithubPrefs, LlmPrefs } from './types.js';
 
 /** Inputs for the locked init write steps (Steps 7-11). */
 interface InitWriteOptions {
@@ -31,8 +32,8 @@ interface InitWriteOptions {
   kbPath?: string;
   cvPath?: string;
   linkedinUrl?: string;
-  github: { user?: string; token?: string };
-  llm: { baseUrl?: string; apiKey?: string; model?: string };
+  github: GithubPrefs;
+  llm: LlmPrefs;
   llmConfig?: LlmConfig;
   profileFlag?: string;
   nonInteractive: boolean;
@@ -51,7 +52,7 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
   const { kbDir } = await createDirectories(campaignRoot);
 
   // --- Step 8: Ingest optional knowledge-base source ---
-  const kbSources = await ingestKnowledgeBase(campaignRoot, opts.kbPath, kbDir);
+  const kbSources = await copyAndRecordKbSources(campaignRoot, opts.kbPath, kbDir);
 
   // --- Step 9: Scaffold the personal voice guide (never overwrite) ---
   await scaffoldVoiceGuide(campaignRoot);
@@ -78,7 +79,7 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
 }
 
 /** Ingest the optional knowledge-base source; returns the recorded sources. */
-async function ingestKnowledgeBase(
+async function copyAndRecordKbSources(
   campaignRoot: string,
   kbPath: string | undefined,
   kbDir: string,
@@ -123,11 +124,7 @@ async function scaffoldVoiceGuide(campaignRoot: string): Promise<void> {
  * Write the global config, deep-merging logging to preserve user-customised
  * values on re-init.
  */
-function writeInitGlobalConfig(
-  dataRoot: string,
-  llm: { baseUrl?: string; apiKey?: string; model?: string },
-  github: { user?: string; token?: string },
-): void {
+function writeInitGlobalConfig(dataRoot: string, llm: LlmPrefs, github: GithubPrefs): void {
   const currentConfig = loadGlobalConfig();
   updateGlobalConfig({
     version: 1,

@@ -8,6 +8,8 @@ import {
   loadExistingConfig,
   detectLocalBackend,
   buildLlmConfig,
+  getBackendBaseUrl,
+  getBackendModel,
 } from '../../../workflow/init/llm.js';
 import { detectAgents } from 'detect-local-agents';
 import { clearConfigCache } from '../../config/config.js';
@@ -447,5 +449,22 @@ describe('buildLlmConfig', () => {
       null,
     );
     expect(result?.apiKey).toBe('sk-123');
+  });
+});
+
+describe('getBackendBaseUrl / getBackendModel', () => {
+  it('returns Ollama defaults for the ollama backend', () => {
+    expect(getBackendBaseUrl('ollama')).toBe('http://localhost:11434/v1');
+    expect(getBackendModel('ollama')).toBe('llama3.1');
+  });
+
+  it('returns LM Studio defaults for the lmstudio backend', () => {
+    expect(getBackendBaseUrl('lmstudio')).toBe('http://localhost:1234/v1');
+    expect(getBackendModel('lmstudio')).toBe('auto');
+  });
+
+  it('falls back to LM Studio defaults for unknown backends', () => {
+    expect(getBackendBaseUrl('unknown-backend')).toBe('http://localhost:1234/v1');
+    expect(getBackendModel('unknown-backend')).toBe('auto');
   });
 });
