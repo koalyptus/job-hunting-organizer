@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { GithubUser, GithubRepo } from '../../types.js';
-import { buildProfile } from '../../campaign/profile-build.js';
+import { buildProfileMarkdown } from '../../../workflow/campaign/profile-build.js';
 
 vi.mock('../../cv.js', () => ({
   readCv: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('../../package.js', () => ({
   getPackageVersion: vi.fn(() => '0.0.0'),
 }));
 
-vi.mock('../../campaign/kb.js', () => ({
+vi.mock('../../../workflow/campaign/kb.js', () => ({
   readCachedCv: vi.fn(),
   writeCachedCv: vi.fn(),
   readCachedGithubProfile: vi.fn(),
@@ -44,7 +44,7 @@ import {
   writeCachedCv,
   readCachedGithubProfile,
   writeCachedGithubProfile,
-} from '../../campaign/kb.js';
+} from '../../../workflow/campaign/kb.js';
 
 const mockReadCv = vi.mocked(readCv);
 const mockFetchGithubUser = vi.mocked(fetchGithubUser);
@@ -118,7 +118,7 @@ You are a career-profile assistant.
 
 Return the markdown body.`;
 
-describe('buildProfile', () => {
+describe('buildProfileMarkdown', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReadCv.mockResolvedValue({
@@ -139,7 +139,7 @@ describe('buildProfile', () => {
   });
 
   it('returns generated profile content', async () => {
-    const result = await buildProfile({
+    const result = await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -151,7 +151,7 @@ describe('buildProfile', () => {
   });
 
   it('reads the CV file', async () => {
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -161,7 +161,7 @@ describe('buildProfile', () => {
   });
 
   it('fetches GitHub user and repos in parallel', async () => {
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       githubToken: 'ghp_token',
@@ -173,7 +173,7 @@ describe('buildProfile', () => {
   });
 
   it('filters out forked and archived repos', async () => {
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -186,7 +186,7 @@ describe('buildProfile', () => {
   });
 
   it('passes the prompt template as system message', async () => {
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -199,7 +199,7 @@ describe('buildProfile', () => {
 
   it('passes signal to chatComplete', async () => {
     const signal = new AbortController().signal;
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -212,7 +212,7 @@ describe('buildProfile', () => {
 
   it('passes logger to all sub-calls', async () => {
     const log = { info: vi.fn() } as never;
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -237,7 +237,7 @@ describe('buildProfile', () => {
       fileName: 'cv.txt',
     });
 
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -254,7 +254,7 @@ describe('buildProfile', () => {
       repos: mockRepos as GithubRepo[],
     });
 
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -267,7 +267,7 @@ describe('buildProfile', () => {
   });
 
   it('skips CV reading when cvPath is undefined', async () => {
-    await buildProfile({
+    await buildProfileMarkdown({
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
     });
@@ -281,7 +281,7 @@ describe('buildProfile', () => {
   it('writes cache after fresh CV fetch', async () => {
     mockReadCachedCv.mockResolvedValue(null);
 
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -298,7 +298,7 @@ describe('buildProfile', () => {
   it('writes cache after fresh GitHub fetch', async () => {
     mockReadCachedGithub.mockResolvedValue(null);
 
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -315,7 +315,7 @@ describe('buildProfile', () => {
   });
 
   it('skips cache entirely when campaignRoot is omitted', async () => {
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -328,7 +328,7 @@ describe('buildProfile', () => {
   });
 
   it('includes LinkedIn URL in user message when provided', async () => {
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       linkedinUrl: 'https://linkedin.com/in/testuser',
@@ -341,7 +341,7 @@ describe('buildProfile', () => {
   });
 
   it('omits LinkedIn line from user message when not provided', async () => {
-    await buildProfile({
+    await buildProfileMarkdown({
       cvPath: '/tmp/cv.txt',
       githubUser: 'testuser',
       llmConfig: testLlmConfig,
@@ -356,7 +356,7 @@ describe('buildProfile', () => {
     mockChatComplete.mockRejectedValue(new Error('LLM returned empty or unexpected response'));
 
     await expect(
-      buildProfile({
+      buildProfileMarkdown({
         cvPath: '/tmp/cv.txt',
         githubUser: 'testuser',
         llmConfig: testLlmConfig,
@@ -371,7 +371,7 @@ describe('buildProfile', () => {
         name: undefined,
       } as never);
 
-      await buildProfile({
+      await buildProfileMarkdown({
         cvPath: '/tmp/cv.txt',
         githubUser: 'testuser',
         llmConfig: testLlmConfig,
@@ -390,7 +390,7 @@ describe('buildProfile', () => {
         company: undefined,
       } as never);
 
-      await buildProfile({
+      await buildProfileMarkdown({
         cvPath: '/tmp/cv.txt',
         githubUser: 'testuser',
         llmConfig: testLlmConfig,
@@ -419,7 +419,7 @@ describe('buildProfile', () => {
         },
       ] as never);
 
-      await buildProfile({
+      await buildProfileMarkdown({
         cvPath: '/tmp/cv.txt',
         githubUser: 'testuser',
         llmConfig: testLlmConfig,
@@ -439,7 +439,7 @@ describe('buildProfile', () => {
         },
       ] as never);
 
-      await buildProfile({
+      await buildProfileMarkdown({
         cvPath: '/tmp/cv.txt',
         githubUser: 'testuser',
         llmConfig: testLlmConfig,

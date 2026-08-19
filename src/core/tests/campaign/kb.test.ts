@@ -10,7 +10,7 @@ import {
   writeCachedCv,
   readCachedGithubProfile,
   writeCachedGithubProfile,
-} from '../../campaign/kb.js';
+} from '../../../workflow/campaign/kb.js';
 
 const mockUser = {
   login: 'testuser',

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { registerRenameCampaign } from '../../tools/rename-campaign.js';
 import { createStore } from '../../../storage/index.js';
-import { renameCampaign } from '../../../core/campaign/rename-campaign.js';
+import { renameCampaign } from '../../../workflow/campaign/rename-campaign.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -28,7 +28,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/campaign/rename-campaign.js', () => ({
+vi.mock('../../../workflow/campaign/rename-campaign.js', () => ({
   renameCampaign: vi.fn().mockResolvedValue(undefined),
   RenameError: class extends Error {
     constructor(msg: string) {

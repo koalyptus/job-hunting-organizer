@@ -5,7 +5,7 @@ import {
   invokeResourceRead,
   resourceText,
 } from './helpers.js';
-import { readProfile } from '../../../core/campaign/profile-read.js';
+import { readProfile } from '../../../workflow/campaign/profile-read.js';
 import { registerProfile } from '../../resources/profile.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -21,7 +21,7 @@ vi.mock('../../../core/paths.js', () => ({
   resolveCampaignRoot: vi.fn().mockReturnValue('/mock/campaign'),
 }));
 
-vi.mock('../../../core/campaign/profile-read.js', () => ({
+vi.mock('../../../workflow/campaign/profile-read.js', () => ({
   readProfile: vi.fn(),
 }));
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { writeProfile } from '../../../core/campaign/profile-writer.js';
+import { writeProfile } from '../../../workflow/campaign/profile-writer.js';
 import { registerUpdateProfile } from '../../tools/update-profile.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -31,7 +31,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/campaign/profile-writer.js', () => ({
+vi.mock('../../../workflow/campaign/profile-writer.js', () => ({
   writeProfile: vi.fn().mockResolvedValue(true),
 }));
 

@@ -3,7 +3,11 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile, readdir } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../config/config.js';
-import { resolveOldName, renameCampaign, RenameError } from '../../campaign/rename-campaign.js';
+import {
+  resolveOldName,
+  renameCampaign,
+  RenameError,
+} from '../../../workflow/campaign/rename-campaign.js';
 
 describe('resolveOldName', () => {
   let testHome: string;

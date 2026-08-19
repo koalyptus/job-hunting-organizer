@@ -8,7 +8,7 @@ import {
   removeCampaign,
   RemoveCampaignError,
   RemoveCancelled,
-} from '../../campaign/remove-campaign.js';
+} from '../../../workflow/campaign/remove-campaign.js';
 import type * as ClackPrompts from '@clack/prompts';
 import { confirm } from '@clack/prompts';
 

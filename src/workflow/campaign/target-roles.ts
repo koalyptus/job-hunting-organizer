@@ -1,4 +1,4 @@
-import type { TargetRole } from '../types.js';
+import type { TargetRole } from '../../core/types.js';
 
 /**
  * Regex for the H3 heading of a target role.

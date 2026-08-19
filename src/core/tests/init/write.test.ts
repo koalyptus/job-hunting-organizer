@@ -17,11 +17,11 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-vi.mock('../../campaign/profile-builder.js', () => ({
+vi.mock('../../../workflow/campaign/profile-builder.js', () => ({
   handleProfile: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../campaign/kb-ingest.js', () => ({
+vi.mock('../../../workflow/campaign/kb-ingest.js', () => ({
   ingestKnowledgeBase: vi.fn().mockResolvedValue(['doc.md']),
 }));
 
@@ -117,7 +117,7 @@ describe('runLockedInitSteps', () => {
     });
 
     // KB ingest should not have been called with a path
-    const { ingestKnowledgeBase } = await import('../../campaign/kb-ingest.js');
+    const { ingestKnowledgeBase } = await import('../../../workflow/campaign/kb-ingest.js');
     expect(ingestKnowledgeBase).not.toHaveBeenCalled();
   });
 

@@ -1,6 +1,6 @@
 import { log as clackLog } from '@clack/prompts';
 import type { GlobalOpts } from './options.js';
-import { resolveCampaignInteractive, CampaignPickerCancelled } from '../core/campaign/index.js';
+import { resolveCampaignInteractive, CampaignPickerCancelled } from '../workflow/campaign/index.js';
 
 export { CampaignPickerCancelled };
 

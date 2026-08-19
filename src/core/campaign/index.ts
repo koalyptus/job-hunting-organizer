@@ -1,22 +1,7 @@
-export * from './campaign.js';
-export * from './directories.js';
-export * from './kb.js';
-export * from './kb-context.js';
-export * from './ownership.js';
-export * from './profile-builder.js';
-export * from './profile-read.js';
-export * from './profile-build.js';
-export * from './profile-writer.js';
-export * from './voice-read.js';
-export {
-  RemoveCampaignError,
-  InferCampaignError as RemoveCampaignInferError,
-  InvalidNameError as RemoveCampaignInvalidNameError,
-} from './remove-campaign.js';
-export {
-  RenameError,
-  InferCampaignError as RenameCampaignInferError,
-  InvalidNameError as RenameCampaignInvalidNameError,
-} from './rename-campaign.js';
-export * from './roles.js';
-export * from './target-roles.js';
+/**
+ * @deprecated The campaign workflow has moved to `src/workflow/campaign/`. Import from
+ * `../../workflow/campaign/index.js` (CLI) or `../../workflow/campaign/index.js` (MCP) instead.
+ * This barrel is retained only during the Phase 9g–9k transition and will be removed in
+ * Phase 9k.
+ */
+export * from '../../workflow/campaign/index.js';

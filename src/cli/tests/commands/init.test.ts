@@ -6,7 +6,7 @@ import { text, confirm, password, isCancel } from '@clack/prompts';
 import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
-import * as profileModule from '../../../core/campaign/profile-build.js';
+import * as profileModule from '../../../workflow/campaign/profile-build.js';
 
 vi.mock('detect-local-agents', () => ({
   detectAgents: vi.fn(() => Promise.resolve([])),
@@ -26,8 +26,8 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-vi.mock('../../../core/campaign/profile-build.js', () => ({
-  buildProfile: vi.fn(() =>
+vi.mock('../../../workflow/campaign/profile-build.js', () => ({
+  buildProfileMarkdown: vi.fn(() =>
     Promise.resolve({
       content:
         '# Profile — Test User\n\n## Target roles\n\n### senior-backend — Senior Backend [primary]\n\n- Level: Senior\n- Domain: Backend\n- Stack: TypeScript\n- Work style: Remote\n- Compensation: 150k\n- Notes: test\n',
@@ -345,7 +345,7 @@ describe('init command', () => {
 
   it('saves CV path when profile build fails', async () => {
     let callCount = 0;
-    vi.mocked(profileModule.buildProfile).mockImplementation(() => {
+    vi.mocked(profileModule.buildProfileMarkdown).mockImplementation(() => {
       callCount++;
       if (callCount === 1) {
         return Promise.reject(new Error('LLM API error: 401'));

@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runCommand } from '../helpers.js';
 import { kbCommand } from '../../commands/kb.js';
-import * as kbIngest from '../../../core/campaign/kb-ingest.js';
+import * as kbIngest from '../../../workflow/campaign/kb-ingest.js';
 import { updateCampaignConfig, clearConfigCache } from '../../../core/config/config.js';
 
 describe('kb command', () => {

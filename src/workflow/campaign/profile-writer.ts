@@ -1,8 +1,8 @@
-import { atomicWrite } from '../fs.js';
-import { resolveCampaignRoot, resolveProfilePath } from '../paths.js';
-import { computeHash, writeToolhash } from '../toolhash.js';
-import { acquireLock } from '../locks.js';
-import { getRootLogger } from '../logger/logger.js';
+import { atomicWrite } from '../../core/fs.js';
+import { resolveCampaignRoot, resolveProfilePath } from '../../core/paths.js';
+import { computeHash, writeToolhash } from '../../core/toolhash.js';
+import { acquireLock } from '../../core/locks.js';
+import { getRootLogger } from '../../core/logger/logger.js';
 
 export class ProfileWriteError extends Error {
   constructor(message: string) {

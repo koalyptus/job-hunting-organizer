@@ -3,29 +3,29 @@
  * that pulls in CV parsing, GitHub API, and LLM dependencies.
  */
 import type { Logger } from 'pino';
-import { readCv } from '../cv.js';
-import { fetchGithubUser, fetchGithubRepos } from '../github.js';
+import { readCv } from '../../core/cv.js';
+import { fetchGithubUser, fetchGithubRepos } from '../../core/github.js';
 import {
   readCachedCv,
   readCachedGithubProfile,
   writeCachedCv,
   writeCachedGithubProfile,
 } from './kb.js';
-import { chatComplete } from '../llm.js';
-import { loadPromptTemplate } from '../prompts.js';
+import { chatComplete } from '../../core/llm.js';
+import { loadPromptTemplate } from '../../core/prompts.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
-import { SECTION_SEPARATOR, KNOWLEDGE_BASE_SECTION_HEADER } from '../constants.js';
-import type { LlmConfig } from '../types.js';
+import { SECTION_SEPARATOR, KNOWLEDGE_BASE_SECTION_HEADER } from '../../core/constants.js';
+import type { LlmConfig } from '../../core/types.js';
 
 /**
  * Maximum number of GitHub repositories to include in the profile build prompt.
  */
-const MAX_REPOS_FOR_PROFILE = 20;
+const DEFAULT_MAX_GITHUB_REPOS_FOR_PROFILE_BUILD = 20;
 
 /**
- * Options for {@link buildProfile}.
+ * Options for {@link buildProfileMarkdown}.
  */
-interface BuildProfileOptions {
+interface BuildProfileMarkdownOptions {
   /** Absolute path to the CV file (PDF, DOCX, TXT, or MD). Optional — profile can be built from GitHub alone. */
   cvPath?: string;
   /** GitHub username. */
@@ -54,9 +54,9 @@ interface BuildProfileOptions {
 }
 
 /**
- * Result of a successful {@link buildProfile} call.
+ * Result of a successful {@link buildProfileMarkdown} call.
  */
-interface BuildProfileResult {
+interface BuildProfileMarkdownResult {
   /** The generated profile markdown content (no frontmatter). */
   content: string;
   /** The model identifier that produced the response. */
@@ -74,7 +74,9 @@ interface BuildProfileResult {
  * @param options - Build configuration.
  * @returns The generated profile content, model, and duration.
  */
-export async function buildProfile(options: BuildProfileOptions): Promise<BuildProfileResult> {
+export async function buildProfileMarkdown(
+  options: BuildProfileMarkdownOptions,
+): Promise<BuildProfileMarkdownResult> {
   const {
     cvPath,
     githubUser,
@@ -129,7 +131,7 @@ export async function buildProfile(options: BuildProfileOptions): Promise<BuildP
   // 4. Build context for the LLM
   const repoSummary = repos
     .filter((r) => !r.fork && !r.archived)
-    .slice(0, MAX_REPOS_FOR_PROFILE)
+    .slice(0, DEFAULT_MAX_GITHUB_REPOS_FOR_PROFILE_BUILD)
     .map(
       (r) =>
         `- ${r.name}: ${r.description ?? '(no description)'} [${r.language ?? 'unknown'}] ★${r.stargazers_count} — ${r.html_url}`,

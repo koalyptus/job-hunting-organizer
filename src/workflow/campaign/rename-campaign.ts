@@ -1,11 +1,16 @@
 import { rename } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
-import { resolveCampaignRoot, resolveDataRoot, findCampaignFromCwd, isUnder } from '../paths.js';
-import { pathExists } from '../fs.js';
-import { acquireLock } from '../locks.js';
-import { clearConfigCache } from '../config/config.js';
-import { childLogger } from '../logger/logger.js';
-import { validateName } from '../validate.js';
+import {
+  resolveCampaignRoot,
+  resolveDataRoot,
+  findCampaignFromCwd,
+  isUnder,
+} from '../../core/paths.js';
+import { pathExists } from '../../core/fs.js';
+import { acquireLock } from '../../core/locks.js';
+import { clearConfigCache } from '../../core/config/config.js';
+import { childLogger } from '../../core/logger/logger.js';
+import { validateName } from '../../core/validate.js';
 
 const log = childLogger({ cmd: 'rename-campaign' });
 

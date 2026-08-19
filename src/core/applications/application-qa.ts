@@ -13,7 +13,7 @@ import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplateWithVoice } from '../prompts.js';
 import { humanize } from '../humanize.js';
-import { readProfile } from '../campaign/profile-read.js';
+import { readProfile } from '../../workflow/campaign/profile-read.js';
 import {
   JOB_DESCRIPTION_SECTION_HEADER,
   CANDIDATE_PROFILE_SECTION_HEADER,
@@ -22,9 +22,9 @@ import {
   ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
   SECTION_SEPARATOR,
 } from '../constants.js';
-import { resolveVoiceGuide, appendVoiceSection } from '../campaign/voice-read.js';
+import { resolveVoiceGuide, appendVoiceSection } from '../../workflow/campaign/voice-read.js';
 import { readApplication } from './applications.js';
-import { loadKbContextForCampaign } from '../campaign/kb-context.js';
+import { loadKbContextForCampaign } from '../../workflow/campaign/kb-context.js';
 import { atomicWrite } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';

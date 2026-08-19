@@ -9,8 +9,8 @@ import { doctorCommand } from '../commands/doctor.js';
 import * as doctorCore from '../../core/doctor/index.js';
 import * as pathsModule from '../../core/paths.js';
 import { resolveCampaign } from '../campaign.js';
-import * as campaignCore from '../../core/campaign/index.js';
-import { CampaignPickerCancelled } from '../../core/campaign/index.js';
+import * as campaignCore from '../../workflow/campaign/index.js';
+import { CampaignPickerCancelled } from '../../workflow/campaign/index.js';
 
 vi.mock('@clack/prompts', () => ({
   select: vi.fn(),

@@ -1,30 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { atomicWrite } from '../fs.js';
-import { writeToolhash } from '../toolhash.js';
-import { resolveCampaignRoot, resolveProfilePath } from '../paths.js';
+import { atomicWrite } from '../../core/fs.js';
+import { writeToolhash } from '../../core/toolhash.js';
+import { resolveCampaignRoot, resolveProfilePath } from '../../core/paths.js';
 import { ProfileWriteError, writeProfile } from './profile-writer.js';
 
-vi.mock('../fs.js', () => ({
+vi.mock('../../core/fs.js', () => ({
   atomicWrite: vi.fn(),
 }));
 
-vi.mock('../toolhash.js', () => ({
+vi.mock('../../core/toolhash.js', () => ({
   computeHash: vi.fn((s: string) => `hash-${s}`),
   writeToolhash: vi.fn(),
 }));
 
-vi.mock('../paths.js', () => ({
+vi.mock('../../core/paths.js', () => ({
   resolveCampaignRoot: vi.fn((name: string) => `/campaigns/${name}`),
   resolveProfilePath: vi.fn((root: string) => `${root}/profile.md`),
 }));
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../core/logger/logger.js', () => ({
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
-vi.mock('../locks.js', async () => {
-  const actual = await vi.importActual('../locks.js');
+vi.mock('../../core/locks.js', async () => {
+  const actual = await vi.importActual('../../core/locks.js');
   return {
     ...actual,
     acquireLock: vi.fn((_: string, fn: () => unknown) => fn()),

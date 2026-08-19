@@ -4,10 +4,14 @@
  * in the data root. No LLM or other heavy dependencies.
  */
 import { readFile } from 'node:fs/promises';
-import { resolveMyVoicePath, resolveDataRoot, DEFAULT_MY_VOICE_FILENAME } from '../paths.js';
+import {
+  resolveMyVoicePath,
+  resolveDataRoot,
+  DEFAULT_MY_VOICE_FILENAME,
+} from '../../core/paths.js';
 import { join } from 'node:path';
-import { getRootLogger } from '../logger/logger.js';
-import { SECTION_SEPARATOR, VOICE_SECTION_HEADER } from '../constants.js';
+import { getRootLogger } from '../../core/logger/logger.js';
+import { SECTION_SEPARATOR, VOICE_SECTION_HEADER } from '../../core/constants.js';
 
 /**
  * Append the personal voice guide section to an LLM prompt's message parts

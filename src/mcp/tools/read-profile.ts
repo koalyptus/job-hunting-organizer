@@ -3,7 +3,7 @@ import type { FileStore } from '../../storage/types.js';
 import { ReadProfileInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot } from '../../core/paths.js';
-import { readProfile } from '../../core/campaign/profile-read.js';
+import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { mcpLogger } from '../logger.js';
 
 /**

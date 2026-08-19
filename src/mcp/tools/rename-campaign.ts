@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { RenameCampaignInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { renameCampaign } from '../../core/campaign/rename-campaign.js';
+import { renameCampaign } from '../../workflow/campaign/rename-campaign.js';
 import { mcpLogger } from '../logger.js';
 
 /**

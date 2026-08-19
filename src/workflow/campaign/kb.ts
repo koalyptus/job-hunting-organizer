@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger } from 'pino';
-import { atomicWrite, pathExists } from '../fs.js';
-import { resolveKnowledgeBaseDir } from '../paths.js';
-import type { CvContent, GithubRepo, GithubUser } from '../types.js';
+import { atomicWrite, pathExists } from '../../core/fs.js';
+import { resolveKnowledgeBaseDir } from '../../core/paths.js';
+import type { CvContent, GithubRepo, GithubUser } from '../../core/types.js';
 
 /**
  * Cached GitHub user and repo data, written to

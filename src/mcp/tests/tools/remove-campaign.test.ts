@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { registerRemoveCampaign } from '../../tools/remove-campaign.js';
 import { createStore } from '../../../storage/index.js';
-import { removeCampaign } from '../../../core/campaign/remove-campaign.js';
+import { removeCampaign } from '../../../workflow/campaign/remove-campaign.js';
 import { mcpLogger } from '../../logger.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -29,7 +29,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/campaign/remove-campaign.js', () => ({
+vi.mock('../../../workflow/campaign/remove-campaign.js', () => ({
   removeCampaign: vi.fn().mockResolvedValue(undefined),
   RemoveCampaignError: class extends Error {
     constructor(msg: string) {
