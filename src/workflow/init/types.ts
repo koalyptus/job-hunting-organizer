@@ -25,9 +25,9 @@ export interface InitOptions {
 
 /** GitHub credentials captured during the init wizard. */
 export interface GithubPrefs {
-  /** GitHub username (empty string when skipped). */
+  /** GitHub username (`undefined` when skipped). */
   user?: string;
-  /** GitHub personal access token (empty string when skipped). */
+  /** GitHub personal access token (`undefined` when skipped). */
   token?: string;
 }
 
