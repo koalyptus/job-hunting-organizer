@@ -1,6 +1,6 @@
 # Roadmap
 
-8 phases. Each phase ends with the user committing manually.
+11 phases (0–10+). Each phase ends with the user committing manually.
 
 ## Status
 
@@ -13,6 +13,27 @@
   - [x] 3c — Target roles
   - [x] 3d — Profile builder
   - [x] 3e — Knowledge base caching & evals
+- [x] **Phase 4** — CLI scaffolding & `init` wizard
+- [ ] **Phase 5** — JD extraction & `track`
+- [x] **Phase 6** — Cover letter & Q&A
+- [x] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
+- [x] **Phase 8** — MCP server
+- [ ] **Phase 9** — Storage port & adapter
+  - [x] 9a — Storage port, adapter, bootstrap & guards
+  - [x] 9b — Storage module JSDoc & comment hygiene
+  - [x] 9b1 — Disposable real-data smoke-run gate
+  - [x] 9c — Migrate remaining `core/fs.ts` consumers onto the port
+  - [x] 9d — Complete error-class coverage & contract tests
+  - [x] 9e — In-memory `FileStore` for tests
+  - [ ] 9f — Campaign-scoped store routing (abandoned)
+- [ ] **Phase 9g–9k** — IO-free core (move workflow modules out of `core/` into `src/workflow/`)
+  - [ ] 9g — Move `init` workflow to `src/workflow/init/`
+  - [ ] 9h — Move `campaign` workflow to `src/workflow/campaign/`
+  - [ ] 9i — Move `applications` workflow to `src/workflow/applications/`
+  - [ ] 9j — Extract infrastructure utilities to `src/lib/`
+  - [ ] 9k — Validate pure core, remove deprecated barrels
+- [ ] **Phase 10** — Polish & public readiness
+
 - [x] **Phase 4** — CLI scaffolding & `init` wizard
   - [x] 4a — CLI framework & command module structure
   - [x] 4b — Real commands (rename-campaign, campaign inference)
@@ -1129,11 +1150,25 @@ The lavish plan's Phase 2 gate includes a "real-data smoke run on a disposable d
 
 **Deliverable**: tool-level unit tests run against `MemoryFileStore`; no disk I/O in the unit tier.
 
-#### 9f — Campaign-scoped store routing
+#### 9f — Campaign-scoped store routing (abandoned)
 
 `createStore()` resolves a single global data root. Campaign-scoped operations in `core/campaign/*` still compute roots via `resolveDataRoot()` + path joins directly. Expose a campaign-aware store accessor (campaign name → `FileStore` rooted at that campaign) so campaign logic routes through the port consistently.
 
 **Deliverable**: campaign operations resolve their store through the port rather than ad-hoc path joins.
+
+#### 9k — Validate pure core, remove deprecated barrels
+
+The 9g–9j moves made `src/workflow/*` the only I/O-touching layer. 9k closes the loop:
+
+- Remove deprecated re-export barrels (`src/core/init/index.ts`, etc.)
+- Update `src/core/index.ts` to export only pure domain modules
+- Add CI check: grep for forbidden imports in `src/core/**/*.ts`
+- Update `AGENTS.md` — new `src/workflow/` layer, init path, repo structure
+- Run full test suite + coverage
+
+**Forbidden imports in core:** `node:fs`, `node:path`, `node:os`, `core/fs`, `core/locks`, `core/config`, `core/paths`, `src/storage/*`, `src/lib/*` (infrastructure).
+
+**Deliverable**: core is pure; CI enforces it.
 
 ### Phase 10 — Polish & public readiness
 
