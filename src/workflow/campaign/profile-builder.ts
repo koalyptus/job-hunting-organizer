@@ -1,16 +1,16 @@
 import { copyFile } from 'node:fs/promises';
 import { log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
-import { resolveProfilePath } from '../paths.js';
-import { pathExists, atomicWrite } from '../fs.js';
-import { buildProfile } from './profile-build.js';
+import { resolveProfilePath } from '../../core/paths.js';
+import { pathExists, atomicWrite } from '../../core/fs.js';
+import { buildProfileMarkdown } from './profile-build.js';
 import { extractTargetRoles, replaceTargetRoles } from './target-roles.js';
-import { withSpinner } from '../spinner.js';
-import type { LlmConfig } from '../types.js';
+import { withSpinner } from '../../core/spinner.js';
+import type { LlmConfig } from '../../core/types.js';
 import { reviewRoles } from './roles.js';
 import { generateSkeletonProfile } from '../../workflow/init/skeleton.js';
 import { InitError } from '../../workflow/init/errors.js';
-import { moduleLogger } from '../logger/logger.js';
+import { moduleLogger } from '../../core/logger/logger.js';
 
 const fallbackLog = moduleLogger(import.meta.url);
 
@@ -32,7 +32,7 @@ export async function handleProfile(opts: {
   linkedinUrl: string | undefined;
   llmConfig: LlmConfig | undefined;
   nonInteractive: boolean;
-  /** Optional character cap for knowledge-base context (forwarded to buildProfile). */
+  /** Optional character cap for knowledge-base context (forwarded to buildProfileMarkdown). */
   maxChars?: number;
   log?: Logger;
 }): Promise<string> {
@@ -65,7 +65,7 @@ export async function handleProfile(opts: {
         'Building profile...',
         'Profile built',
         () =>
-          buildProfile({
+          buildProfileMarkdown({
             cvPath: opts.cvPath,
             githubUser: opts.githubUser ?? '',
             githubToken: opts.githubToken,

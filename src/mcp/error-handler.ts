@@ -12,23 +12,23 @@ import { RepairError } from '../core/repair/repair.js';
 import { DoctorError } from '../core/doctor/doctor.js';
 import { RetroError, RetroNotFoundError } from '../core/retro/retro-errors.js';
 import { PrepError, PrepReadError } from '../core/prepare/prepare-errors.js';
-import { ProfileReadError } from '../core/campaign/profile-read.js';
-import { ProfileWriteError } from '../core/campaign/profile-writer.js';
+import { ProfileReadError } from '../workflow/campaign/profile-read.js';
+import { ProfileWriteError } from '../workflow/campaign/profile-writer.js';
 import { StatsError } from '../core/stats/errors.js';
 import { ListError } from '../core/list/errors.js';
 import { InitError } from '../workflow/init/errors.js';
 import { ShowError } from '../core/applications/show.js';
-import { RemoveCampaignError, RemoveCancelled } from '../core/campaign/remove-campaign.js';
+import { RemoveCampaignError, RemoveCancelled } from '../workflow/campaign/remove-campaign.js';
 import {
   RenameError,
   InvalidNameError as RenameInvalidNameError,
-} from '../core/campaign/rename-campaign.js';
+} from '../workflow/campaign/rename-campaign.js';
 import {
   RenameApplicationError,
   InvalidSlugError,
   SelfRenameError,
 } from '../core/applications/rename.js';
-import { KbError } from '../core/campaign/kb-ingest.js';
+import { KbError } from '../workflow/campaign/kb-ingest.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ErrorConstructor = new (...args: any[]) => Error;

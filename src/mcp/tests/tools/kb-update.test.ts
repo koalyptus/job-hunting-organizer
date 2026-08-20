@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { registerKbUpdate } from '../../tools/kb-update.js';
 import { createStore } from '../../../storage/index.js';
-import { syncKnowledgeBase } from '../../../core/campaign/kb-ingest.js';
+import { syncKnowledgeBase } from '../../../workflow/campaign/kb-ingest.js';
 import { loadCampaignConfig } from '../../../core/config/config.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -28,7 +28,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/campaign/kb-ingest.js', () => ({
+vi.mock('../../../workflow/campaign/kb-ingest.js', () => ({
   syncKnowledgeBase: vi.fn().mockResolvedValue(['doc1.md', 'doc2.md']),
   KbError: class extends Error {
     constructor(msg: string) {

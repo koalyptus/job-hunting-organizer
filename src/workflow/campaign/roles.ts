@@ -1,6 +1,6 @@
 import { text, select, isCancel, log as clackLog } from '@clack/prompts';
 import Table from 'cli-table3';
-import type { TargetRole, RoleAction } from '../types.js';
+import type { TargetRole, RoleAction } from '../../core/types.js';
 import { InitCancelled } from '../../workflow/init/errors.js';
 
 /**

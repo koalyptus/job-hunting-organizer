@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot } from '../../../core/paths.js';
-import { readProfile } from '../../../core/campaign/profile-read.js';
+import { readProfile } from '../../../workflow/campaign/profile-read.js';
 import { registerReadProfile } from '../../tools/read-profile.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -33,7 +33,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/campaign/profile-read.js', () => ({
+vi.mock('../../../workflow/campaign/profile-read.js', () => ({
   readProfile: vi.fn(),
 }));
 

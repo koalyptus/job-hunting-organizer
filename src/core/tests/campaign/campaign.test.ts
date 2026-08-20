@@ -18,7 +18,10 @@ vi.mock('../../paths.js', async (importOriginal) => {
   };
 });
 
-import { resolveCampaignInteractive, CampaignPickerCancelled } from '../../campaign/index.js';
+import {
+  resolveCampaignInteractive,
+  CampaignPickerCancelled,
+} from '../../../workflow/campaign/index.js';
 
 describe('resolveCampaignInteractive', () => {
   beforeEach(() => {

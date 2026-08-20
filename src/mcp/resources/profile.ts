@@ -1,7 +1,7 @@
 import { ResourceTemplate } from '@modelcontextprotocol/server';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { resolveCampaignRoot } from '../../core/paths.js';
-import { readProfile } from '../../core/campaign/profile-read.js';
+import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { mcpLogger } from '../logger.js';
 
 export function registerProfile(server: McpServer): void {

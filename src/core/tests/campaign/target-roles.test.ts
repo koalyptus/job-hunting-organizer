@@ -4,7 +4,7 @@ import {
   findTargetRole,
   replaceTargetRoles,
   isValidRoleSlug,
-} from '../../campaign/target-roles.js';
+} from '../../../workflow/campaign/target-roles.js';
 
 const PROFILE_BODY = `## Summary
 

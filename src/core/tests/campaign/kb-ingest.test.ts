@@ -6,7 +6,7 @@ import {
   ingestKnowledgeBase,
   syncKnowledgeBase,
   listKnowledgeBase,
-} from '../../campaign/kb-ingest.js';
+} from '../../../workflow/campaign/kb-ingest.js';
 
 describe('kb-ingest', () => {
   let root: string;

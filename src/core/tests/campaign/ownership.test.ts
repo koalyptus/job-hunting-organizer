@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OWNERSHIP_ROWS, renderOwnership } from '../../campaign/ownership.js';
+import { OWNERSHIP_ROWS, renderOwnership } from '../../../workflow/campaign/ownership.js';
 
 const ESC = '\u001b';
 

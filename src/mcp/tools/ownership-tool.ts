@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { OwnershipInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { renderOwnership } from '../../core/campaign/ownership.js';
+import { renderOwnership } from '../../workflow/campaign/ownership.js';
 import { mcpLogger } from '../logger.js';
 
 /**

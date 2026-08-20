@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { UpdateProfileInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { writeProfile } from '../../core/campaign/profile-writer.js';
+import { writeProfile } from '../../workflow/campaign/profile-writer.js';
 import { mcpLogger } from '../logger.js';
 
 /**

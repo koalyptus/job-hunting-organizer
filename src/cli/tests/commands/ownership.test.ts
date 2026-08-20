@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderOwnership } from '../../../core/campaign/ownership.js';
+import { renderOwnership } from '../../../workflow/campaign/ownership.js';
 import { runCommand } from '../helpers.js';
 import { ownershipCommand } from '../../commands/ownership.js';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { renderOwnership } from '../../../core/campaign/ownership.js';
+import { renderOwnership } from '../../../workflow/campaign/ownership.js';
 import { registerOwnership } from '../../tools/ownership-tool.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -25,7 +25,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/campaign/ownership.js', () => ({
+vi.mock('../../../workflow/campaign/ownership.js', () => ({
   renderOwnership: vi.fn(),
   OWNERSHIP_ROWS: [],
 }));

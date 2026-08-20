@@ -3,8 +3,8 @@ import { runTrack, runTrackRefresh, prepareTrack, confirmAndCreate } from '../..
 import { TrackError, TrackCancelled, NoLinkStoredError } from '../../track/errors.js';
 import { extractJdFromUrl, extractJdFromText } from '../../jobs/extract.js';
 import { suggestTargetRole } from '../../jobs/suggest.js';
-import { readProfile } from '../../campaign/profile-read.js';
-import { extractTargetRoles } from '../../campaign/target-roles.js';
+import { readProfile } from '../../../workflow/campaign/profile-read.js';
+import { extractTargetRoles } from '../../../workflow/campaign/target-roles.js';
 import {
   createApplication,
   updateApplication,
@@ -26,11 +26,11 @@ vi.mock('../../llm.js', () => ({
   defaultLlmConfig: vi.fn(() => ({ baseUrl: 'http://test', apiKey: 'key', model: 'model' })),
 }));
 
-vi.mock('../../campaign/profile-read.js', () => ({
+vi.mock('../../../workflow/campaign/profile-read.js', () => ({
   readProfile: vi.fn(),
 }));
 
-vi.mock('../../campaign/target-roles.js', () => ({
+vi.mock('../../../workflow/campaign/target-roles.js', () => ({
   extractTargetRoles: vi.fn(() => []),
 }));
 

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createTestServer, getTextContent } from './helpers.js';
 import { registerKbAdd } from '../../tools/kb-add.js';
 import { createStore } from '../../../storage/index.js';
-import { ingestKnowledgeBase } from '../../../core/campaign/kb-ingest.js';
+import { ingestKnowledgeBase } from '../../../workflow/campaign/kb-ingest.js';
 import { loadCampaignConfig } from '../../../core/config/config.js';
 
 const { KbError } = vi.hoisted(() => {
@@ -39,7 +39,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/campaign/kb-ingest.js', () => ({
+vi.mock('../../../workflow/campaign/kb-ingest.js', () => ({
   ingestKnowledgeBase: vi.fn().mockResolvedValue(['doc1.md', 'doc2.md']),
   KbError,
 }));

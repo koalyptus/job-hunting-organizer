@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { ingestKnowledgeBase, listKnowledgeBase, syncKnowledgeBase } from './kb-ingest.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
-import { pathExists } from '../fs.js';
+import { pathExists } from '../../core/fs.js';
 
 describe('kb-ingest my-voice exclusion', () => {
   let testDir: string;

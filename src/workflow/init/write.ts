@@ -11,9 +11,9 @@ import {
 } from '../../core/config/config.js';
 import { resolveProfilePath, resolveMyVoicePath } from '../../core/paths.js';
 import { toDateKey } from '../../core/date.js';
-import { createDirectories } from '../../core/campaign/directories.js';
-import { ingestKnowledgeBase as ingestKbDocs } from '../../core/campaign/kb-ingest.js';
-import { handleProfile } from '../../core/campaign/profile-builder.js';
+import { createDirectories } from '../../workflow/campaign/directories.js';
+import { ingestKnowledgeBase as ingestKbDocs } from '../../workflow/campaign/kb-ingest.js';
+import { handleProfile } from '../../workflow/campaign/profile-builder.js';
 import { generateVoiceGuideSkeleton } from './skeleton.js';
 import {
   DEFAULT_LOG_LEVEL,

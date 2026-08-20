@@ -42,7 +42,7 @@ vi.mock('../../src/core/locks.js', () => ({
   acquireLock: vi.fn(async (_target: string, fn: () => Promise<unknown>) => fn()),
 }));
 
-vi.mock('../../src/core/campaign/profile-builder.js', async () => {
+vi.mock('../../src/workflow/campaign/profile-builder.js', async () => {
   const { resolveProfilePath } = await import('../../src/core/paths.js');
   const { atomicWrite } = await import('../../src/core/fs.js');
   return {

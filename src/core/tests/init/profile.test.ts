@@ -3,11 +3,11 @@ import { join } from 'node:path';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { select } from '@clack/prompts';
-import { buildProfile } from '../../campaign/profile-build.js';
-import { handleProfile } from '../../campaign/profile-builder.js';
+import { buildProfileMarkdown } from '../../../workflow/campaign/profile-build.js';
+import { handleProfile } from '../../../workflow/campaign/profile-builder.js';
 import type * as FsModule from '../../fs.js';
 import { atomicWrite } from '../../fs.js';
-import { extractTargetRoles } from '../../campaign/target-roles.js';
+import { extractTargetRoles } from '../../../workflow/campaign/target-roles.js';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),
@@ -21,8 +21,8 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-vi.mock('../../campaign/profile-build.js', () => ({
-  buildProfile: vi.fn(() =>
+vi.mock('../../../workflow/campaign/profile-build.js', () => ({
+  buildProfileMarkdown: vi.fn(() =>
     Promise.resolve({
       content:
         '# Profile — Test User\n\n## Target roles\n\n### senior-backend — Senior Backend [primary]\n\n- Level: Senior',
@@ -32,7 +32,7 @@ vi.mock('../../campaign/profile-build.js', () => ({
   ),
 }));
 
-vi.mock('../../campaign/target-roles.js', () => ({
+vi.mock('../../../workflow/campaign/target-roles.js', () => ({
   extractTargetRoles: vi.fn(() => []),
   replaceTargetRoles: vi.fn((content: string) => content),
 }));
@@ -315,7 +315,7 @@ describe('handleProfile', () => {
   });
 
   it('adds timeout hint when profile build times out', async () => {
-    vi.mocked(buildProfile).mockRejectedValueOnce(new Error('The LLM request timed out'));
+    vi.mocked(buildProfileMarkdown).mockRejectedValueOnce(new Error('The LLM request timed out'));
 
     await expect(
       handleProfile({

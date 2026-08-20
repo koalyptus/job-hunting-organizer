@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { KbAddInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { ingestKnowledgeBase } from '../../core/campaign/kb-ingest.js';
+import { ingestKnowledgeBase } from '../../workflow/campaign/kb-ingest.js';
 import { resolveCampaignRoot } from '../../core/paths.js';
 import { resolve } from 'node:path';
 import { loadCampaignConfig, updateCampaignConfig } from '../../core/config/config.js';

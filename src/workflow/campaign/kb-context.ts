@@ -1,11 +1,11 @@
 import { readdir } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
-import { resolveKnowledgeBaseDir, DEFAULT_MY_VOICE_FILENAME } from '../paths.js';
-import { pathExists } from '../fs.js';
-import { readCv, CvError } from '../cv.js';
-import { KB_GITHUB, CV_EXTENSIONS } from '../constants.js';
-import { moduleLogger } from '../logger/logger.js';
-import { getConfig } from '../config/config.js';
+import { resolveKnowledgeBaseDir, DEFAULT_MY_VOICE_FILENAME } from '../../core/paths.js';
+import { pathExists } from '../../core/fs.js';
+import { readCv, CvError } from '../../core/cv.js';
+import { KB_GITHUB, CV_EXTENSIONS } from '../../core/constants.js';
+import { moduleLogger } from '../../core/logger/logger.js';
+import { getConfig } from '../../core/config/config.js';
 
 const log = moduleLogger(import.meta.url);
 

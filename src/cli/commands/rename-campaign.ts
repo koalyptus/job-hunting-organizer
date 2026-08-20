@@ -6,7 +6,7 @@ import {
   InferCampaignError,
   InvalidNameError,
   SelfRenameError,
-} from '../../core/campaign/rename-campaign.js';
+} from '../../workflow/campaign/rename-campaign.js';
 import { getRootLogger } from '../../core/logger/logger.js';
 import { userError, userSuccess } from '../output.js';
 import { bold, cyan } from '../colors.js';
