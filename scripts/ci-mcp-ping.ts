@@ -38,16 +38,17 @@ proc.on('exit', (code) => {
   }
 });
 
-const initialize = JSON.stringify({
-  jsonrpc: '2.0',
-  id: 1,
-  method: 'initialize',
-  params: {
-    protocolVersion: '2025-03-26',
-    capabilities: {},
-    clientInfo: { name: 'ci-ping', version: '0.0.0' },
-  },
-}) + '\n';
+const initialize =
+  JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: {
+      protocolVersion: '2025-03-26',
+      capabilities: {},
+      clientInfo: { name: 'ci-ping', version: '0.0.0' },
+    },
+  }) + '\n';
 
 proc.stdin.write(initialize);
 proc.stdin.end();
