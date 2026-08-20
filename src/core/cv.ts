@@ -1,7 +1,5 @@
 import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
-import { PDFParse } from 'pdf-parse';
-import mammoth from 'mammoth';
 import type { Logger } from 'pino';
 import { pathExists } from './fs.js';
 import { CV_EXTENSIONS } from './constants.js';
@@ -74,6 +72,13 @@ function detectFormat(filePath: string): CvFormat {
 }
 
 async function parsePdf(buffer: Buffer): Promise<string> {
+  // Dynamic import is intentional. `pdf-parse` pulls in heavy, native-binding
+  // dependent modules (e.g. `@napi-rs/canvas`, `pdfjs-dist`) that throw at load
+  // time on platforms without their native bindings, which crashes `jho-mcp`
+  // startup. Lazy-loading keeps CV parsing out of the server's import graph so
+  // the MCP server boots cleanly even when no PDF is ever read. Do not convert
+  // this to a top-level import.
+  const { PDFParse } = await import('pdf-parse');
   const parser = new PDFParse({ data: buffer });
   try {
     const result = await parser.getText();
@@ -84,7 +89,11 @@ async function parsePdf(buffer: Buffer): Promise<string> {
 }
 
 async function parseDocx(buffer: Buffer): Promise<string> {
-  const result = await mammoth.extractRawText({ buffer });
+  // Same rationale as {@link parsePdf}: load `mammoth` only when a DOCX is
+  // actually parsed so it stays out of the MCP server's startup path. Do not
+  // convert this to a top-level import.
+  const { default: mammothDefault } = await import('mammoth');
+  const result = await mammothDefault.extractRawText({ buffer });
   return result.value;
 }
 
