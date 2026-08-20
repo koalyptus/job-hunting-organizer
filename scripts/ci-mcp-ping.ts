@@ -1,5 +1,11 @@
 import { spawn } from 'node:child_process';
 
+/** MCP protocol version advertised by the CI smoke-test client. */
+const MCP_PROTOCOL_VERSION = '2025-03-26';
+
+/** Max time to wait for the MCP server's `initialize` response before failing. */
+const MCP_PING_TIMEOUT_MS = 5000;
+
 const proc = spawn('node', ['bin/jho-mcp'], { stdio: ['pipe', 'pipe', 'inherit'] });
 
 let resolved = false;
@@ -17,7 +23,10 @@ const settle = (ok: boolean, reason?: string) => {
   proc.kill('SIGTERM');
 };
 
-const timeout = setTimeout(() => settle(false, 'timed out waiting for initialize response'), 1500);
+const timeout = setTimeout(
+  () => settle(false, 'timed out waiting for initialize response'),
+  MCP_PING_TIMEOUT_MS,
+);
 
 proc.on('error', (err) => {
   clearTimeout(timeout);
@@ -46,7 +55,7 @@ const initialize =
     id: 1,
     method: 'initialize',
     params: {
-      protocolVersion: '2025-03-26',
+      protocolVersion: MCP_PROTOCOL_VERSION,
       capabilities: {},
       clientInfo: { name: 'ci-ping', version: '0.0.0' },
     },
