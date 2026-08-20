@@ -1,5 +1,4 @@
 import type { Logger } from 'pino';
-import { convert } from 'html-to-text';
 import { chatComplete, parseJsonResult } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { fetchWithFallback, type FetchResult } from '../fetch.js';
@@ -42,7 +41,8 @@ export function extractSiteFromUrl(url: string): string | undefined {
  * that bloat the text without adding JD content. Returns clean plain
  * text suitable for LLM consumption.
  */
-export function stripHtml(html: string): string {
+export async function stripHtml(html: string): Promise<string> {
+  const { convert } = await import('html-to-text');
   return convert(html, {
     selectors: [
       { selector: 'script', format: 'skip' },
@@ -150,7 +150,7 @@ export async function extractJdFromUrl(
     const msg = error instanceof Error ? error.message : String(error);
     throw new Error(msg);
   }
-  const plainText = stripHtml(fetchResult.body);
+  const plainText = await stripHtml(fetchResult.body);
   const jd = await extractJdFromText(plainText, llmConfig, log);
   // Prefer LLM-extracted site; fall back to hostname-based extraction so
   // stats can show LinkedIn/Seek/Indeed/etc. even when the text doesn't

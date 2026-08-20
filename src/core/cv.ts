@@ -1,7 +1,5 @@
 import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
-import { PDFParse } from 'pdf-parse';
-import mammoth from 'mammoth';
 import type { Logger } from 'pino';
 import { pathExists } from './fs.js';
 import { CV_EXTENSIONS } from './constants.js';
@@ -74,6 +72,7 @@ function detectFormat(filePath: string): CvFormat {
 }
 
 async function parsePdf(buffer: Buffer): Promise<string> {
+  const { PDFParse } = await import('pdf-parse');
   const parser = new PDFParse({ data: buffer });
   try {
     const result = await parser.getText();
@@ -84,7 +83,8 @@ async function parsePdf(buffer: Buffer): Promise<string> {
 }
 
 async function parseDocx(buffer: Buffer): Promise<string> {
-  const result = await mammoth.extractRawText({ buffer });
+  const { default: mammothDefault } = await import('mammoth');
+  const result = await mammothDefault.extractRawText({ buffer });
   return result.value;
 }
 
