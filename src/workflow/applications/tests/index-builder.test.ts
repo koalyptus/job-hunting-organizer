@@ -165,6 +165,15 @@ describe('buildIndex', () => {
     const result = await buildIndex(appliedDir);
     expect(result).toHaveLength(0);
   });
+
+  it('skips folders where readFrontmatter throws', async () => {
+    const folder = join(appliedDir, '2026-Jun-03-SE-Foo-123');
+    await mkdir(folder, { recursive: true });
+    // Write valid frontmatter markers but invalid YAML that causes js-yaml load() to throw
+    await writeFile(join(folder, 'meta.md'), '---\n: : : invalid: [[[\n---\n', 'utf8');
+    const result = await buildIndex(appliedDir);
+    expect(result).toHaveLength(0);
+  });
 });
 
 describe('rebuildIndex', () => {

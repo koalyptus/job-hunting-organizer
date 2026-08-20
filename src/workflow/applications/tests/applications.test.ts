@@ -51,6 +51,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
+  vi.restoreAllMocks();
 });
 
 describe('createApplication', () => {
@@ -130,6 +131,30 @@ describe('createApplication', () => {
     expect(entries).toHaveLength(1);
     expect(entries[0]!.slug).toBe(slug);
     expect(entries[0]!.title).toBe('Engineer');
+  });
+
+  it('throws if writeFrontmatter fails when writing meta.md during create', async () => {
+    vi.spyOn(fsModule, 'atomicWrite').mockResolvedValueOnce(false);
+
+    await expect(createApplication({ appliedDir, title: 'Eng', company: 'X' })).rejects.toThrow(
+      'failed to write meta.md',
+    );
+  });
+
+  it('throws if atomicWrite fails when writing jd.md during create', async () => {
+    // Only mock atomicWrite to return false for the jd.md file; everything
+    // else uses the real implementation so meta.md gets written properly.
+    const original = fsModule.atomicWrite;
+    vi.spyOn(fsModule, 'atomicWrite').mockImplementation(async (path, ...rest) => {
+      if (path.endsWith('jd.md')) {
+        return false;
+      }
+      return original(path, ...rest);
+    });
+
+    await expect(createApplication({ appliedDir, title: 'Eng', company: 'X' })).rejects.toThrow(
+      'failed to write jd.md',
+    );
   });
 
   it('appends -N suffix on slug collision', async () => {
@@ -343,6 +368,15 @@ describe('updateApplication', () => {
     await updateApplication(appliedDir, slug, { status: 'interview' });
     const { frontmatter } = await readApplication(appliedDir, slug);
     expect(frontmatter.status).toBe('interview');
+  });
+
+  it('throws when writeFrontmatter fails during update', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    vi.spyOn(fsModule, 'atomicWrite').mockResolvedValueOnce(false);
+
+    await expect(updateApplication(appliedDir, slug, { status: 'interview' })).rejects.toThrow(
+      'failed to write meta.md',
+    );
   });
 });
 

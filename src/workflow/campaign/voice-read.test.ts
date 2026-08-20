@@ -160,4 +160,46 @@ describe('voice-read', () => {
       }
     }
   });
+
+  it('readGlobalVoiceGuide propagates non-ENOENT read errors', async () => {
+    const dataRoot = join(testDir, 'global-data');
+    await mkdir(dataRoot, { recursive: true });
+
+    const originalEnv = process.env['JHO_DATA'];
+    process.env['JHO_DATA'] = dataRoot;
+
+    // Create a directory named my-voice.md so readFile throws EISDIR — a real
+    // I/O error that must surface, not silently return empty.
+    await mkdir(join(dataRoot, 'my-voice.md'));
+
+    try {
+      await expect(readGlobalVoiceGuide()).rejects.toThrow();
+    } finally {
+      if (originalEnv !== undefined) {
+        process.env['JHO_DATA'] = originalEnv;
+      } else {
+        delete process.env['JHO_DATA'];
+      }
+    }
+  });
+
+  it('appendVoiceSection appends voice section to message parts', async () => {
+    // appendVoiceSection is exported from voice-read
+    const { appendVoiceSection } = await import('./voice-read.js');
+    const parts: string[] = ['hello'];
+
+    appendVoiceSection(parts, 'My personal voice guide');
+
+    expect(parts).toContain('## Personal voice guide');
+    expect(parts).toContain('My personal voice guide');
+  });
+
+  it('appendVoiceSection does nothing when voice is empty', async () => {
+    const { appendVoiceSection } = await import('./voice-read.js');
+    const parts: string[] = ['hello'];
+
+    appendVoiceSection(parts, '');
+
+    expect(parts).toEqual(['hello']);
+  });
 });

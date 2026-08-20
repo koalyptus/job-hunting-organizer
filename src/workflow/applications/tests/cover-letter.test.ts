@@ -448,6 +448,39 @@ describe('generateCoverLetter', () => {
     );
   });
 
+  it('includes knowledge base context in the prompt when KB docs exist', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // Create a knowledge-base doc so loadKbContextForCampaign returns non-empty
+    await mkdir(join(campaignRoot, 'knowledge-base'), { recursive: true });
+    await writeFile(
+      join(campaignRoot, 'knowledge-base', 'notes.md'),
+      '# Project Notes\n\nThis is important background knowledge.',
+    );
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Cover letter content here.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+    });
+
+    // Verify the LLM was called with KB content in the user message
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user')?.content ?? '';
+    expect(userMessage).toContain('## Knowledge base:');
+    expect(userMessage).toContain('Project Notes');
+  });
+
   it('handles cover letter with no existing file', async () => {
     await setupApp('2026-Jun-01-SE-Test-Corp');
 

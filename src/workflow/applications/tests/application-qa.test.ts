@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { answerQuestion, readQa, AnswerError, QaReadError } from '../application-qa.js';
 import { EM_DASH } from '../../../core/humanize.js';
+import * as fsModule from '../../../core/fs.js';
 import { JHO_DATA } from '../../../workflow/init/constants.js';
 
 const mockChatComplete = vi.fn();
@@ -98,6 +99,7 @@ describe('answerQuestion', () => {
       delete process.env[JHO_DATA];
     }
     await rm(workDir, { recursive: true, force: true });
+    vi.restoreAllMocks();
   });
 
   async function setupApp(slug: string) {
@@ -471,6 +473,90 @@ describe('answerQuestion', () => {
           | undefined;
         expect(imagePart?.image_url.url).toContain(mime);
       }
+    }
+  });
+
+  it('throws AnswerError when JD file is missing', async () => {
+    const slug = '2026-Jun-01-SE-Test-Corp';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+
+    await writeFile(
+      join(appDir, 'meta.md'),
+      '---\nslug: ' +
+        slug +
+        '\ntitle: Software Engineer\ncompany: Test Corp\nstatus: applied\n---\n',
+    );
+    // No jd.md
+
+    await expect(
+      answerQuestion({
+        slug,
+        campaign: 'test-campaign',
+        question: 'Test?',
+      }),
+    ).rejects.toThrow(AnswerError);
+  });
+
+  it('throws AnswerError when atomicWrite fails for qa.md', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'This is my answer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    vi.spyOn(fsModule, 'atomicWrite').mockResolvedValueOnce(false);
+
+    await expect(
+      answerQuestion({
+        slug: '2026-Jun-01-SE-Test-Corp',
+        campaign: 'test-campaign',
+        question: 'Test?',
+      }),
+    ).rejects.toThrow(AnswerError);
+  });
+
+  it('includes knowledge base context in the LLM message when KB docs exist', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // Create a knowledge-base doc so loadKbContextForCampaign returns non-empty
+    await mkdir(join(campaignRoot, 'knowledge-base'), { recursive: true });
+    await writeFile(
+      join(campaignRoot, 'knowledge-base', 'notes.md'),
+      '# Project Notes\n\nThis is important background knowledge.',
+    );
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'I have extensive experience with TypeScript and React.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Test?',
+    });
+
+    // Verify the LLM was called with KB content in the message
+    const callArgs = mockChatComplete.mock.calls[0];
+    expect(callArgs).toBeDefined();
+    const messages = callArgs![0] as Array<{ role: string; content: unknown }>;
+    const userMsg = messages.find((m) => m.role === 'user');
+    expect(userMsg).toBeDefined();
+    if (userMsg && Array.isArray(userMsg.content)) {
+      const textPart = userMsg.content.find((p: { type: string }) => p.type === 'text');
+      expect(textPart?.text).toContain('## Knowledge base:');
+      expect(textPart?.text).toContain('Project Notes');
+    } else if (userMsg && typeof userMsg.content === 'string') {
+      expect(userMsg.content).toContain('## Knowledge base:');
+      expect(userMsg.content).toContain('Project Notes');
     }
   });
 
