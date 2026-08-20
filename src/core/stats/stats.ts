@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
-import { listApplications, readApplication } from '../applications/applications.js';
-import { APPLICATION_STATUSES } from '../applications/types.js';
-import type { ApplicationStatus } from '../applications/types.js';
+import { listApplications, readApplication } from '../../workflow/applications/applications.js';
+import { APPLICATION_STATUSES } from '../../workflow/applications/types.js';
+import type { ApplicationStatus } from '../../workflow/applications/types.js';
 import { listInterviews } from '../interviews/interviews.js';
 import type { CampaignStats, StatsOptions } from '../types.js';
 import { parseSince, toDateKey } from '../date.js';

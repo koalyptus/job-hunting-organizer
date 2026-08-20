@@ -1,12 +1,16 @@
 import { mkdir, rm, readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { uniqueSlug, SLUG_PATTERN } from '../parser/slug.js';
-import { writeFrontmatter, readFrontmatter, mergeFrontmatter } from '../parser/frontmatter.js';
-import { atomicWrite } from '../fs.js';
-import { acquireLock } from '../locks.js';
-import { getRootLogger, moduleLogger } from '../logger/logger.js';
-import { computeHash, writeToolhash } from '../toolhash.js';
+import { uniqueSlug, SLUG_PATTERN } from '../../core/parser/slug.js';
+import {
+  writeFrontmatter,
+  readFrontmatter,
+  mergeFrontmatter,
+} from '../../core/parser/frontmatter.js';
+import { atomicWrite } from '../../core/fs.js';
+import { acquireLock } from '../../core/locks.js';
+import { getRootLogger, moduleLogger } from '../../core/logger/logger.js';
+import { computeHash, writeToolhash } from '../../core/toolhash.js';
 import { ApplicationFrontmatterSchema } from './meta-schema.js';
 import {
   upsertIndexEntry,
@@ -16,8 +20,8 @@ import {
   rebuildIndex,
 } from './index-builder.js';
 import { removeCounterEntry } from './counters.js';
-import { replaceRegion } from '../parser/markers.js';
-import { toDateKey, todayDateKey } from '../date.js';
+import { replaceRegion } from '../../core/parser/markers.js';
+import { toDateKey, todayDateKey } from '../../core/date.js';
 import type {
   ApplicationEntry,
   ApplicationStatus,
@@ -27,7 +31,7 @@ import type {
   ApplicationFrontmatter,
   EmploymentType,
 } from './types.js';
-import type { Frontmatter } from '../types.js';
+import type { Frontmatter } from '../../core/types.js';
 
 /**
  * Thrown when an application folder or its `meta.md` is not found.

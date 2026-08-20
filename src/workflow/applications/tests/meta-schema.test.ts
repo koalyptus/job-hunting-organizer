@@ -4,7 +4,7 @@ import {
   ApplicationFrontmatterSchema,
   validateApplicationFrontmatter,
   safeValidateApplicationFrontmatter,
-} from '../../applications/index.js';
+} from '../index.js';
 
 describe('ApplicationStatusSchema', () => {
   it('accepts all valid statuses', () => {

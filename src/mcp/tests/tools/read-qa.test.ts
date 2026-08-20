@@ -25,11 +25,11 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/applications/application-qa.js', () => ({
+vi.mock('../../../workflow/applications/application-qa.js', () => ({
   readQa: vi.fn(),
 }));
 
-import { readQa } from '../../../core/applications/application-qa.js';
+import { readQa } from '../../../workflow/applications/application-qa.js';
 import { registerReadQa } from '../../tools/read-qa.js';
 import { createStore } from '../../../storage/index.js';
 

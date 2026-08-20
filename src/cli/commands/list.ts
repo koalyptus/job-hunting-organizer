@@ -7,8 +7,8 @@ import {
   InvalidListStatusError,
 } from '../../core/list/index.js';
 import { findCampaignFromCwd, resolveDataRoot } from '../../core/paths.js';
-import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../core/applications/types.js';
-import type { EmploymentType } from '../../core/applications/types.js';
+import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../workflow/applications/types.js';
+import type { EmploymentType } from '../../workflow/applications/types.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { bold, cyan, dim, statusColor } from '../colors.js';

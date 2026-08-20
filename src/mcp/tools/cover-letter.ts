@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { CoverLetterInput, ReadCoverLetterInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { generateCoverLetter, readCoverLetter } from '../../core/applications/cover-letter.js';
+import { generateCoverLetter, readCoverLetter } from '../../workflow/applications/cover-letter.js';
 import { mcpLogger } from '../logger.js';
 
 /**

@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Command } from 'commander';
 import { runCommand } from '../../src/cli/tests/helpers.js';
 import { listCommand } from '../../src/cli/commands/list.js';
-import { createApplication, updateApplication } from '../../src/core/applications/applications.js';
+import {
+  createApplication,
+  updateApplication,
+} from '../../src/workflow/applications/applications.js';
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 

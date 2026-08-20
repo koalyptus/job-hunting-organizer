@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createApplication } from '../../src/core/applications/applications.js';
+import { createApplication } from '../../src/workflow/applications/applications.js';
 import { runCommand } from '../../src/cli/tests/helpers.js';
 import { repairCommand } from '../../src/cli/commands/repair.js';
 import type { TestEnv } from '../helpers.js';

@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { answerQuestion } from '../../core/applications/application-qa.js';
+import { answerQuestion } from '../../workflow/applications/application-qa.js';
 import { mcpLogger } from '../logger.js';
 
 export function registerAnswerPrompt(server: McpServer): void {

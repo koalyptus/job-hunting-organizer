@@ -1,12 +1,12 @@
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { mcpLogger } from './logger.js';
-import { ApplicationNotFoundError } from '../core/applications/applications.js';
+import { ApplicationNotFoundError } from '../workflow/applications/applications.js';
 import { InterviewNotFoundError } from '../core/interviews/interviews.js';
 import {
   CoverLetterError,
   CoverLetterReadError,
-} from '../core/applications/cover-letter-errors.js';
-import { AnswerError, QaReadError } from '../core/applications/application-qa-errors.js';
+} from '../workflow/applications/cover-letter-errors.js';
+import { AnswerError, QaReadError } from '../workflow/applications/application-qa-errors.js';
 import { TrackError } from '../core/track/errors.js';
 import { RepairError } from '../core/repair/repair.js';
 import { DoctorError } from '../core/doctor/doctor.js';
@@ -17,7 +17,7 @@ import { ProfileWriteError } from '../workflow/campaign/profile-writer.js';
 import { StatsError } from '../core/stats/errors.js';
 import { ListError } from '../core/list/errors.js';
 import { InitError } from '../workflow/init/errors.js';
-import { ShowError } from '../core/applications/show.js';
+import { ShowError } from '../workflow/applications/show.js';
 import { RemoveCampaignError, RemoveCancelled } from '../workflow/campaign/remove-campaign.js';
 import {
   RenameError,
@@ -27,7 +27,7 @@ import {
   RenameApplicationError,
   InvalidSlugError,
   SelfRenameError,
-} from '../core/applications/rename.js';
+} from '../workflow/applications/rename.js';
 import { KbError } from '../workflow/campaign/kb-ingest.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
