@@ -46,8 +46,12 @@ jobs:
         run: npm run build
 
   mcp-ping:
-    name: MCP ping
-    runs-on: ubuntu-latest
+    name: MCP ping (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-14]
     steps:
       - uses: actions/checkout@v6
 
