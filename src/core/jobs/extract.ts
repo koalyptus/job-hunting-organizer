@@ -1,4 +1,5 @@
 import type { Logger } from 'pino';
+import { convert } from 'html-to-text';
 import { chatComplete, parseJsonResult } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { fetchWithFallback, type FetchResult } from '../fetch.js';
@@ -35,14 +36,8 @@ export function extractSiteFromUrl(url: string): string | undefined {
   }
 }
 
-/**
- * Strip HTML tags and decode entities using `html-to-text`. Skips
- * boilerplate elements (scripts, styles, nav, footer, header, etc.)
- * that bloat the text without adding JD content. Returns clean plain
- * text suitable for LLM consumption.
- */
-export async function stripHtml(html: string): Promise<string> {
-  const { convert } = await import('html-to-text');
+/** Strip HTML tags and decode entities using `html-to-text`. */
+export function stripHtml(html: string): string {
   return convert(html, {
     selectors: [
       { selector: 'script', format: 'skip' },
@@ -59,25 +54,15 @@ export async function stripHtml(html: string): Promise<string> {
   });
 }
 
-/**
- * Load the jd-extract prompt template. Returns the system prompt
- * and the recommended temperature.
- * @returns The system prompt and the recommended temperature.
- */
+/** Load the jd-extract prompt template. */
 async function loadPrompt(): Promise<{ systemPrompt: string; temperature: number }> {
   const { body, temperature } = await loadPromptTemplate(PROMPT_NAME, JD_EXTRACT_TEMPERATURE);
   return { systemPrompt: body, temperature };
 }
 
 /**
- * Send raw text to the LLM for structured JD extraction. Uses the
- * `jd-extract.md` prompt template with `jsonMode: true` and the
- * temperature from the prompt's `recommendedTemperature` frontmatter.
- * Retries up to {@link MAX_RETRIES} times when the LLM output fails
- * Zod validation. The returned `ExtractedJd` always includes `rawText`
- * set to the input text.
- *
- * @throws after {@link MAX_RETRIES} + 1 attempts with the last validation error.
+ * Send raw text to the LLM for structured JD extraction.
+ * Retries up to {@link MAX_RETRIES} times when validation fails.
  */
 export async function extractJdFromText(
   text: string,
@@ -134,8 +119,7 @@ export async function extractJdFromText(
 
 /**
  * Fetch a job posting from a URL, strip HTML, and extract structured
- * fields via the LLM. Combines {@link fetchWithFallback},
- * {@link stripHtml}, and {@link extractJdFromText}.
+ * fields via the LLM.
  */
 export async function extractJdFromUrl(
   url: string,
@@ -150,11 +134,8 @@ export async function extractJdFromUrl(
     const msg = error instanceof Error ? error.message : String(error);
     throw new Error(msg);
   }
-  const plainText = await stripHtml(fetchResult.body);
+  const plainText = stripHtml(fetchResult.body);
   const jd = await extractJdFromText(plainText, llmConfig, log);
-  // Prefer LLM-extracted site; fall back to hostname-based extraction so
-  // stats can show LinkedIn/Seek/Indeed/etc. even when the text doesn't
-  // mention the board.
   if (!jd.site) {
     const site = extractSiteFromUrl(url);
     if (site) {
