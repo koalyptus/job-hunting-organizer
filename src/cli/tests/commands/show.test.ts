@@ -5,10 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { showCommand } from '../../commands/show.js';
-import * as showCore from '../../../core/applications/show.js';
-import type { ApplicationFrontmatter } from '../../../core/applications/types.js';
+import * as showCore from '../../../workflow/applications/show.js';
+import type { ApplicationFrontmatter } from '../../../workflow/applications/types.js';
 
-vi.mock('../../../core/applications/show.js', async (importOriginal) => {
+vi.mock('../../../workflow/applications/show.js', async (importOriginal) => {
   const actual = await importOriginal<typeof showCore>();
   return {
     ...actual,

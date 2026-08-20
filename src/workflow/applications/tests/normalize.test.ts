@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseEmploymentType } from '../../applications/normalize.js';
+import { parseEmploymentType } from '../normalize.js';
 
 describe('parseEmploymentType', () => {
   describe('permanent variants', () => {

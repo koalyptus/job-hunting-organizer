@@ -11,11 +11,11 @@ import {
   resolveAppliedDir,
   listCampaigns,
 } from '../paths.js';
-import { listApplications } from '../applications/applications.js';
-import { APPLICATION_STATUSES } from '../applications/types.js';
-import type { ApplicationStatus, EmploymentType } from '../applications/types.js';
+import { listApplications } from '../../workflow/applications/applications.js';
+import { APPLICATION_STATUSES } from '../../workflow/applications/types.js';
+import type { ApplicationStatus, EmploymentType } from '../../workflow/applications/types.js';
 import type { CampaignListing } from '../types.js';
-import type { ApplicationEntry } from '../applications/types.js';
+import type { ApplicationEntry } from '../../workflow/applications/types.js';
 import { InvalidListStatusError } from './errors.js';
 
 /**

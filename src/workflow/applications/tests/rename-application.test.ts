@@ -8,10 +8,10 @@ import {
   RenameApplicationError,
   InvalidSlugError,
   SelfRenameError,
-} from '../../applications/rename.js';
-import { createApplication, readApplication, readIndex } from '../../applications/index.js';
-import { writeFrontmatter } from '../../parser/frontmatter.js';
-import type { Frontmatter } from '../../types.js';
+} from '../rename.js';
+import { createApplication, readApplication, readIndex } from '../index.js';
+import { writeFrontmatter } from '../../../core/parser/frontmatter.js';
+import type { Frontmatter } from '../../../core/types.js';
 
 const mockRootLogger = vi.hoisted(() => ({
   debug: vi.fn(),
@@ -27,7 +27,7 @@ const mockRootLogger = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('../../logger/logger.js', () => ({
+vi.mock('../../../core/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => mockRootLogger),
   childLogger: vi.fn(() => mockRootLogger),
   moduleLogger: vi.fn(() => mockRootLogger),

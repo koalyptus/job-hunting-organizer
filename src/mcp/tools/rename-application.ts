@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { RenameApplicationInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { renameApplication } from '../../core/applications/rename.js';
+import { renameApplication } from '../../workflow/applications/rename.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { mcpLogger } from '../logger.js';
 

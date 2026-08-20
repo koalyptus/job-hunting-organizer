@@ -7,7 +7,7 @@ import {
   readCoverLetter,
   CoverLetterError,
   CoverLetterReadError,
-} from '../../core/applications/cover-letter.js';
+} from '../../workflow/applications/cover-letter.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';

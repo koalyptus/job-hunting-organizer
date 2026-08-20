@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { runCommand } from '../../src/cli/tests/helpers.js';
 import { interviewCommand } from '../../src/cli/commands/interview.js';
-import { createApplication } from '../../src/core/applications/applications.js';
+import { createApplication } from '../../src/workflow/applications/applications.js';
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
+import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../../workflow/applications/types.js';
 import { runTrack } from '../../../core/track/track.js';
 import { registerTrackApplication } from '../../tools/track-application.js';
 import { createStore } from '../../../storage/index.js';

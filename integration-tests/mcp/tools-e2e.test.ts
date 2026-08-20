@@ -43,7 +43,7 @@ import {
   readApplication,
   listApplications,
   updateApplication,
-} from '../../src/core/applications/applications.js';
+} from '../../src/workflow/applications/applications.js';
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 

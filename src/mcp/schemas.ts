@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../core/applications/types.js';
+import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../workflow/applications/types.js';
 import { INTERVIEW_TYPES, INTERVIEW_STATUSES } from '../core/interviews/types.js';
 
 /** Zod schema for the `campaign` parameter (used by most tools). */

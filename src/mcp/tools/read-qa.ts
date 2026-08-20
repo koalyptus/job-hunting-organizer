@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { ReadQaInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { readQa } from '../../core/applications/application-qa.js';
+import { readQa } from '../../workflow/applications/application-qa.js';
 import { mcpLogger } from '../logger.js';
 
 /**

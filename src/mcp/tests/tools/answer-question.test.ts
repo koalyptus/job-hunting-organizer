@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { answerQuestion } from '../../../core/applications/application-qa.js';
+import { answerQuestion } from '../../../workflow/applications/application-qa.js';
 import { registerAnswerQuestion } from '../../tools/answer-question.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -36,7 +36,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/applications/application-qa.js', () => ({
+vi.mock('../../../workflow/applications/application-qa.js', () => ({
   answerQuestion: vi.fn().mockResolvedValue({
     answer: 'The candidate has 5 years of experience in React.',
     wordCount: 12,

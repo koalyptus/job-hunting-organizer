@@ -7,7 +7,7 @@ import {
   StatsError,
   InvalidSinceError,
 } from '../../core/stats/index.js';
-import { EMPLOYMENT_TYPES, type EmploymentType } from '../../core/applications/types.js';
+import { EMPLOYMENT_TYPES, type EmploymentType } from '../../workflow/applications/types.js';
 import type { CampaignStats } from '../../core/types.js';
 import {
   resolveCampaignRoot,

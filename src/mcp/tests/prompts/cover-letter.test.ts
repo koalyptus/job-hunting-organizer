@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, promptText } from './helpers.js';
-import { generateCoverLetter } from '../../../core/applications/cover-letter.js';
+import { generateCoverLetter } from '../../../workflow/applications/cover-letter.js';
 import { registerCoverLetterPrompt } from '../../prompts/cover-letter.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -12,7 +12,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/applications/cover-letter.js', () => ({
+vi.mock('../../../workflow/applications/cover-letter.js', () => ({
   generateCoverLetter: vi.fn().mockResolvedValue({ content: 'test cover letter' }),
 }));
 

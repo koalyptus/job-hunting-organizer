@@ -8,7 +8,7 @@ import {
   readCountersAsync,
   writeCountersAsync,
   removeCounterEntry,
-} from '../../applications/index.js';
+} from '../index.js';
 
 let workDir: string;
 
