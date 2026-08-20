@@ -4,13 +4,15 @@ const proc = spawn('node', ['bin/jho-mcp'], { stdio: ['pipe', 'pipe', 'inherit']
 
 let resolved = false;
 const settle = (ok: boolean, reason?: string) => {
-  if (resolved) return;
+  if (resolved) {
+    return;
+  }
   resolved = true;
   if (!ok) {
     console.error(`mcp ping failed: ${reason}`);
     process.exitCode = 1;
   } else {
-    console.log('mcp ping ok');
+    console.warn('mcp ping ok');
   }
   proc.kill('SIGTERM');
 };
