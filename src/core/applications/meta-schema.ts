@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { toDateKey, todayDateKey } from '../../core/date.js';
+import { toDateKey, todayDateKey } from '../date.js';
 
 /**
  * Zod schema for the `meta.md` frontmatter in each application folder.

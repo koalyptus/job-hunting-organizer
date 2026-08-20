@@ -1,6 +1,6 @@
 import type { paths } from '@octokit/openapi-types';
 import type { Logger } from 'pino';
-import type { ApplicationStatus, EmploymentType } from '../workflow/applications/types.js';
+import type { ApplicationStatus, EmploymentType } from './applications/types.js';
 
 /**
  * Options for {@link atomicWrite}. All fields are optional; defaults are

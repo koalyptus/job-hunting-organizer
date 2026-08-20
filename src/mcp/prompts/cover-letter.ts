@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { generateCoverLetter } from '../../workflow/applications/cover-letter.js';
+import { generateCoverLetter } from '../../core/applications/cover-letter.js';
 import { mcpLogger } from '../logger.js';
 
 export function registerCoverLetterPrompt(server: McpServer): void {

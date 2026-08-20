@@ -6,12 +6,12 @@ import { clearConfigCache } from '../../../core/config/config.js';
 import { JHO_CONFIG_HOME, JHO_DATA } from '../../../workflow/init/constants.js';
 import { runCommand } from '../helpers.js';
 import { answerCommand } from '../../commands/answer.js';
-import * as applicationQa from '../../../workflow/applications/application-qa.js';
+import * as applicationQa from '../../../core/applications/application-qa.js';
 import * as stdinModule from '../../stdin.js';
-import { AnswerError } from '../../../workflow/applications/application-qa.js';
+import { AnswerError } from '../../../core/applications/application-qa.js';
 import { SlugMissingError } from '../../slug.js';
 
-vi.mock('../../../workflow/applications/application-qa.js', async (importOriginal) => {
+vi.mock('../../../core/applications/application-qa.js', async (importOriginal) => {
   const actual = await importOriginal<typeof applicationQa>();
   return {
     ...actual,

@@ -22,13 +22,13 @@ import {
   updateApplication,
   readApplication,
   appendNote,
-} from '../../workflow/applications/applications.js';
-import { parseEmploymentType } from '../../workflow/applications/normalize.js';
+} from '../applications/applications.js';
+import { parseEmploymentType } from '../applications/normalize.js';
 import { TrackError, TrackCancelled, NoLinkStoredError, InvalidStatusError } from './errors.js';
 import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
 import type { ExtractedJd, RoleSuggestion } from '../jobs/types.js';
-import { APPLICATION_STATUSES } from '../../workflow/applications/types.js';
-import type { ApplicationStatus, EmploymentType } from '../../workflow/applications/types.js';
+import { APPLICATION_STATUSES } from '../applications/types.js';
+import type { ApplicationStatus, EmploymentType } from '../applications/types.js';
 import type { TargetRole } from '../types.js';
 import { replaceRegion, replaceSteer } from '../parser/markers.js';
 import { atomicWrite } from '../fs.js';

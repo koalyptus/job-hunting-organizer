@@ -3,7 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerRemoveApplication } from '../../tools/remove-application.js';
 import { createStore } from '../../../storage/index.js';
-import { deleteApplication } from '../../../workflow/applications/applications.js';
+import { deleteApplication } from '../../../core/applications/applications.js';
 import { mcpLogger } from '../../logger.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -34,7 +34,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../workflow/applications/applications.js', () => ({
+vi.mock('../../../core/applications/applications.js', () => ({
   deleteApplication: vi.fn().mockResolvedValue(true),
   ApplicationNotFoundError: class extends Error {
     constructor(slug: string) {

@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { MONTH_ABBR, formatDate, parseDateOrNow } from '../date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
-import { readCountersAsync, writeCountersAsync } from '../../workflow/applications/counters.js';
+import { readCountersAsync, writeCountersAsync } from '../applications/counters.js';
 import { getRootLogger } from '../logger/logger.js';
 import type { SlugBuildInput, SlugOptions } from '../types.js';
 

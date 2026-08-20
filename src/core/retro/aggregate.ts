@@ -5,7 +5,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathExists } from '../fs.js';
-import { listApplications } from '../../workflow/applications/applications.js';
+import { listApplications } from '../applications/applications.js';
 import { parseRetroFile } from './retro.js';
 import { moduleLogger } from '../logger/logger.js';
 import type { AggregatedTopic, AggregateOptions } from './types.js';

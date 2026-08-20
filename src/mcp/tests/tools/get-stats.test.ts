@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { EMPLOYMENT_TYPES } from '../../../workflow/applications/types.js';
+import { EMPLOYMENT_TYPES } from '../../../core/applications/types.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
 import { computeStats } from '../../../core/stats/stats.js';
 import { registerGetStats } from '../../tools/get-stats.js';

@@ -4,8 +4,8 @@ import {
   readApplication,
   updateApplication,
   ApplicationNotFoundError,
-} from '../../workflow/applications/applications.js';
-import { APPLICATION_STATUS } from '../../workflow/applications/types.js';
+} from '../applications/applications.js';
+import { APPLICATION_STATUS } from '../applications/types.js';
 import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';
 import { moduleLogger } from '../logger/logger.js';

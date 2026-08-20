@@ -7,11 +7,11 @@
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
-import { getConfig } from '../../core/config/config.js';
-import { defaultLlmConfig, chatComplete } from '../../core/llm.js';
-import { loadPromptTemplateWithVoice } from '../../core/prompts.js';
-import { humanize } from '../../core/humanize.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
+import { getConfig } from '../config/config.js';
+import { defaultLlmConfig, chatComplete } from '../llm.js';
+import { loadPromptTemplateWithVoice } from '../prompts.js';
+import { humanize } from '../humanize.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import {
   JOB_DESCRIPTION_SECTION_HEADER,
@@ -20,17 +20,17 @@ import {
   KNOWLEDGE_BASE_SECTION_HEADER,
   ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
   SECTION_SEPARATOR,
-} from '../../core/constants.js';
+} from '../constants.js';
 import { resolveVoiceGuide, appendVoiceSection } from '../../workflow/campaign/voice-read.js';
 import { extractTargetRoles } from '../../workflow/campaign/target-roles.js';
 import { readApplication } from './applications.js';
-import { replaceRegion, extractSteer, replaceSteer } from '../../core/parser/markers.js';
+import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';
 import { loadKbContextForCampaign } from '../../workflow/campaign/kb-context.js';
-import { atomicWrite } from '../../core/fs.js';
-import { acquireLock } from '../../core/locks.js';
-import { extractJdContent, isRefusal, countWords } from '../../core/generation-utils.js';
-import { computeHash, writeToolhash } from '../../core/toolhash.js';
-import type { CoverLetterOptions, CoverLetterResult } from '../../core/types.js';
+import { atomicWrite } from '../fs.js';
+import { acquireLock } from '../locks.js';
+import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
+import { computeHash, writeToolhash } from '../toolhash.js';
+import type { CoverLetterOptions, CoverLetterResult } from '../types.js';
 
 /** Prompt template name (without `.md`). */
 const PROMPT_NAME = 'cover-letter';

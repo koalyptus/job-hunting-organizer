@@ -2,9 +2,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { readApplication } from '../../workflow/applications/applications.js';
+import { readApplication } from '../applications/applications.js';
 import type * as FsModule from '../fs.js';
-import type * as AppModule from '../../workflow/applications/applications.js';
+import type * as AppModule from '../applications/applications.js';
 import {
   startRetro,
   appendRetro,
@@ -84,10 +84,8 @@ vi.mock('../fs.js', async () => {
 });
 
 // Wrap readApplication for error injection
-vi.mock('../../workflow/applications/applications.js', async () => {
-  const actual = await vi.importActual<typeof AppModule>(
-    '../../workflow/applications/applications.js',
-  );
+vi.mock('../applications/applications.js', async () => {
+  const actual = await vi.importActual<typeof AppModule>('../applications/applications.js');
   return {
     ...actual,
     readApplication: vi.fn(actual.readApplication),

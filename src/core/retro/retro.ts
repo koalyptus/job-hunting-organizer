@@ -11,7 +11,7 @@ import { getConfig } from '../config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
-import { readApplication } from '../../workflow/applications/applications.js';
+import { readApplication } from '../applications/applications.js';
 import { listInterviews } from '../interviews/interviews.js';
 import { atomicWrite, pathExists } from '../fs.js';
 import { acquireLock } from '../locks.js';

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { computeHash, readToolhash } from '../toolhash.js';
-import { createApplication, updateApplication } from '../../workflow/applications/applications.js';
+import { createApplication, updateApplication } from '../applications/applications.js';
 import { chatComplete } from '../llm.js';
 import { startRetro, appendRetro } from '../retro/index.js';
 import {
@@ -11,7 +11,7 @@ import {
   markInterviewStatus,
   appendInterviewNotes,
 } from '../interviews/interviews.js';
-import { generateCoverLetter } from '../../workflow/applications/cover-letter.js';
+import { generateCoverLetter } from '../applications/cover-letter.js';
 import { generatePrep, appendTopic } from '../prepare/prepare.js';
 
 vi.mock('../config.js', () => ({

@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { handleToolError } from '../error-handler.js';
-import { ApplicationNotFoundError } from '../../workflow/applications/applications.js';
+import { ApplicationNotFoundError } from '../../core/applications/applications.js';
 import { InterviewNotFoundError } from '../../core/interviews/interviews.js';
-import { CoverLetterError } from '../../workflow/applications/cover-letter.js';
-import { CoverLetterReadError } from '../../workflow/applications/cover-letter-errors.js';
-import { AnswerError } from '../../workflow/applications/application-qa.js';
+import { CoverLetterError } from '../../core/applications/cover-letter.js';
+import { CoverLetterReadError } from '../../core/applications/cover-letter-errors.js';
+import { AnswerError } from '../../core/applications/application-qa.js';
 import { TrackError } from '../../core/track/errors.js';
 import { RepairError } from '../../core/repair/repair.js';
 import { DoctorError } from '../../core/doctor/doctor.js';

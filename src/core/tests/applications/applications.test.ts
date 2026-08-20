@@ -13,12 +13,12 @@ import {
   appendNote,
   readIndex,
   ApplicationNotFoundError,
-} from '../index.js';
-import { todayDateKey } from '../../../core/date.js';
-import * as fsModule from '../../../core/fs.js';
-import { writeFrontmatter } from '../../../core/parser/frontmatter.js';
-import { writeToolhash, computeHash } from '../../../core/toolhash.js';
-import { writeCountersAsync, readCountersAsync } from '../counters.js';
+} from '../../applications/index.js';
+import { todayDateKey } from '../../date.js';
+import * as fsModule from '../../fs.js';
+import { writeFrontmatter } from '../../parser/frontmatter.js';
+import { writeToolhash, computeHash } from '../../toolhash.js';
+import { writeCountersAsync, readCountersAsync } from '../../applications/counters.js';
 
 const mockRootLogger = vi.hoisted(() => ({
   debug: vi.fn(),
@@ -34,7 +34,7 @@ const mockRootLogger = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => mockRootLogger),
   childLogger: vi.fn(() => mockRootLogger),
   moduleLogger: vi.fn(() => mockRootLogger),

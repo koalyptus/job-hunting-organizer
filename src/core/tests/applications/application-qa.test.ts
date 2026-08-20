@@ -2,13 +2,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { answerQuestion, readQa, AnswerError, QaReadError } from '../application-qa.js';
-import { EM_DASH } from '../../../core/humanize.js';
+import {
+  answerQuestion,
+  readQa,
+  AnswerError,
+  QaReadError,
+} from '../../applications/application-qa.js';
+import { EM_DASH } from '../../humanize.js';
 import { JHO_DATA } from '../../../workflow/init/constants.js';
 
 const mockChatComplete = vi.fn();
 
-vi.mock('../../../core/llm.js', async (importOriginal) => {
+vi.mock('../../llm.js', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
@@ -22,26 +27,19 @@ vi.mock('../../../core/llm.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../config.js', () => ({
   getConfig: vi.fn(() => ({
     global: {
       version: 1,
       dataRoot: '/tmp',
-      llm: { baseUrl: 'https://config.com/v1', apiKey: 'test', model: 'gpt-4' },
+      llm: { baseUrl: 'https://config.com/v1', apiKey: 'sk-config', model: 'gpt-4' },
       github: { user: '', token: '', repos: [] },
       logging: { level: 'info', file: '', redactPaths: [] },
-    },
-    campaign: {
-      version: 1,
-      profilePath: '/tmp/profile.md',
-      cvPath: '',
-      knowledgeBase: { maxChars: 50000 },
-      linkedinUrl: '',
     },
   })),
 }));
 
-vi.mock('../../../core/prompts.js', () => ({
+vi.mock('../../prompts.js', () => ({
   loadPromptTemplate: vi.fn(async () => ({
     body: 'You are a Q&A assistant.',
     temperature: 0.6,
@@ -52,7 +50,7 @@ vi.mock('../../../core/prompts.js', () => ({
   })),
 }));
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

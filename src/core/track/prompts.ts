@@ -1,7 +1,7 @@
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
 import type { ExtractedJd, RoleSuggestion } from '../jobs/types.js';
 import type { TargetRole } from '../types.js';
-import type { ApplicationStatus } from '../../workflow/applications/types.js';
+import type { ApplicationStatus } from '../applications/types.js';
 
 /**
  * Format and display a summary of the extracted JD and suggested role,

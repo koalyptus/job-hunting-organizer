@@ -10,8 +10,8 @@ import {
   rebuildIndex,
   upsertIndexEntry,
   removeIndexEntry,
-} from '../index.js';
-import type { ApplicationEntry } from '../types.js';
+} from '../../applications/index.js';
+import type { ApplicationEntry } from '../../applications/types.js';
 
 let workDir: string;
 let appliedDir: string;
@@ -190,7 +190,7 @@ describe('rebuildIndex', () => {
   });
 
   it('still returns entries when index write fails', async () => {
-    const fsMod = await import('../../../core/fs.js');
+    const fsMod = await import('../../fs.js');
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValue(false);
 
     const folder = join(appliedDir, '2026-Jun-03-SE-Foo-123');

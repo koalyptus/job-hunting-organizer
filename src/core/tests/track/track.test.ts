@@ -10,11 +10,11 @@ import {
   updateApplication,
   readApplication,
   appendNote,
-} from '../../../workflow/applications/applications.js';
+} from '../../applications/applications.js';
 import { confirmTrackSummary, confirmTrackUpdate } from '../../track/prompts.js';
 import { replaceRegion, replaceSteer } from '../../parser/markers.js';
 import { atomicWrite } from '../../fs.js';
-import type { ApplicationFrontmatter } from '../../../workflow/applications/types.js';
+import type { ApplicationFrontmatter } from '../../applications/types.js';
 
 vi.mock('../../config.js', () => ({
   getConfig: vi.fn(() => ({
@@ -43,7 +43,7 @@ vi.mock('../../jobs/suggest.js', () => ({
   suggestTargetRole: vi.fn(),
 }));
 
-vi.mock('../../../workflow/applications/applications.js', () => ({
+vi.mock('../../applications/applications.js', () => ({
   createApplication: vi.fn(() => Promise.resolve('2026-Jun-21-SE-test-co')),
   updateApplication: vi.fn(),
   readApplication: vi.fn(() =>

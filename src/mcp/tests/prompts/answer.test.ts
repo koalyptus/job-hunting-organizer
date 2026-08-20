@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, promptText } from './helpers.js';
-import { answerQuestion } from '../../../workflow/applications/application-qa.js';
+import { answerQuestion } from '../../../core/applications/application-qa.js';
 import { registerAnswerPrompt } from '../../prompts/answer.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -12,7 +12,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../workflow/applications/application-qa.js', () => ({
+vi.mock('../../../core/applications/application-qa.js', () => ({
   answerQuestion: vi.fn().mockResolvedValue({ answer: 'test answer' }),
 }));
 

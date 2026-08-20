@@ -2,11 +2,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { readShowData, readShowFile, ShowError, SHOWABLE_FILES } from '../show.js';
-import { writeFrontmatter } from '../../../core/parser/frontmatter.js';
-import { replaceRegion } from '../../../core/parser/markers.js';
+import { readShowData, readShowFile, ShowError, SHOWABLE_FILES } from '../../applications/show.js';
+import { writeFrontmatter } from '../../parser/frontmatter.js';
+import { replaceRegion } from '../../parser/markers.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

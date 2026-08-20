@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import {
-  generateCoverLetter,
-  readCoverLetter,
-} from '../../../workflow/applications/cover-letter.js';
+import { generateCoverLetter, readCoverLetter } from '../../../core/applications/cover-letter.js';
 import { registerCoverLetter, registerReadCoverLetter } from '../../tools/cover-letter.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -41,7 +38,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../workflow/applications/cover-letter.js', () => ({
+vi.mock('../../../core/applications/cover-letter.js', () => ({
   generateCoverLetter: vi.fn().mockResolvedValue({
     content: '# Cover Letter\nDear Hiring Manager...',
     wordCount: 42,

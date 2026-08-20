@@ -19,9 +19,9 @@ import {
   NoLinkStoredError,
   InvalidStatusError,
 } from '../../core/track/index.js';
-import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../workflow/applications/types.js';
-import type { EmploymentType } from '../../workflow/applications/types.js';
-import { ApplicationNotFoundError } from '../../workflow/applications/index.js';
+import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../core/applications/types.js';
+import type { EmploymentType } from '../../core/applications/types.js';
+import { ApplicationNotFoundError } from '../../core/applications/index.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError } from '../output.js';
 import { UserInputError } from '../errors.js';

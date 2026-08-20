@@ -11,7 +11,7 @@ import * as stdinModule from '../../stdin.js';
 import { TrackError, TrackCancelled, NoLinkStoredError } from '../../../core/track/errors.js';
 import { UserInputError } from '../../errors.js';
 import { SlugMissingError } from '../../slug.js';
-import { ApplicationNotFoundError } from '../../../workflow/applications/index.js';
+import { ApplicationNotFoundError } from '../../../core/applications/index.js';
 import type { TrackSummary } from '../../../core/track/track.js';
 import type * as TrackCoreModule from '../../../core/track/track.js';
 

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runCommand } from '../helpers.js';
 import { listCommand } from '../../commands/list.js';
 import * as listCoreModule from '../../../core/list/index.js';
-import type { ApplicationEntry } from '../../../workflow/applications/types.js';
+import type { ApplicationEntry } from '../../../core/applications/types.js';
 
 function parentSetup(parent: Command): void {
   parent.addOption(new Option('--campaign <name>', 'campaign to operate on'));

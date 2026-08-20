@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { runListApplications, InvalidListStatusError } from '../../list/index.js';
-import * as applicationsModule from '../../../workflow/applications/applications.js';
-import type { ApplicationEntry } from '../../../workflow/applications/types.js';
+import * as applicationsModule from '../../applications/applications.js';
+import type { ApplicationEntry } from '../../applications/types.js';
 
-vi.mock('../../../workflow/applications/applications.js', async (importOriginal) => {
+vi.mock('../../applications/applications.js', async (importOriginal) => {
   const actual = await importOriginal<typeof applicationsModule>();
   return {
     ...actual,

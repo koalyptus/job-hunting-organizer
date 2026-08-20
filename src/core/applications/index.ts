@@ -1,4 +1,3 @@
-/** @deprecated Re-exports from `src/workflow/applications/` during Phase 9i-9k migration. */
 export {
   createApplication,
   updateApplication,
@@ -8,7 +7,7 @@ export {
   getEntryFromSlug,
   appendNote,
   ApplicationNotFoundError,
-} from '../../workflow/applications/applications.js';
+} from './applications.js';
 export {
   indexPath,
   readIndex,
@@ -17,30 +16,25 @@ export {
   rebuildIndex,
   upsertIndexEntry,
   removeIndexEntry,
-} from '../../workflow/applications/index-builder.js';
+} from './index-builder.js';
 export {
   readCounters,
   readCountersAsync,
   writeCountersAsync,
   readCollisionSuffix,
   removeCounterEntry,
-} from '../../workflow/applications/counters.js';
+} from './counters.js';
 export {
   ApplicationFrontmatterSchema,
   ApplicationStatusSchema,
   validateApplicationFrontmatter,
   safeValidateApplicationFrontmatter,
-} from '../../workflow/applications/meta-schema.js';
-export { generateCoverLetter, CoverLetterError } from '../../workflow/applications/cover-letter.js';
-export { answerQuestion, AnswerError } from '../../workflow/applications/application-qa.js';
-export {
-  readShowData,
-  readShowFile,
-  ShowError,
-  SHOWABLE_FILES,
-} from '../../workflow/applications/show.js';
-export { parseEmploymentType } from '../../workflow/applications/normalize.js';
-export type { ApplicationFile, ShowResult } from '../../workflow/applications/show.js';
+} from './meta-schema.js';
+export { generateCoverLetter, CoverLetterError } from './cover-letter.js';
+export { answerQuestion, AnswerError } from './application-qa.js';
+export { readShowData, readShowFile, ShowError, SHOWABLE_FILES } from './show.js';
+export { parseEmploymentType } from './normalize.js';
+export type { ApplicationFile, ShowResult } from './show.js';
 export type {
   ApplicationEntry,
   ApplicationStatus,
@@ -49,4 +43,4 @@ export type {
   UpdateApplicationInput,
   ApplicationFrontmatter,
   Counters,
-} from '../../workflow/applications/types.js';
+} from './types.js';

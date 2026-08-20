@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
-import { readShowData, readShowFile, ShowError } from '../../../workflow/applications/show.js';
+import { readShowData, readShowFile, ShowError } from '../../../core/applications/show.js';
 import { registerShowApplication } from '../../tools/show-application.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -33,7 +33,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../workflow/applications/show.js', async (importOriginal) => {
+vi.mock('../../../core/applications/show.js', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return { ...actual, readShowData: vi.fn(), readShowFile: vi.fn() };
 });
