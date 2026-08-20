@@ -1,6 +1,6 @@
 /**
  * Core orchestrator for the `jho retro` workflow. Follows the same
- * read→LLM→write append pattern as `core/applications/application-qa.ts`.
+ * read→LLM→write append pattern as `workflow/applications/application-qa.ts`.
  *
  * This module is reusable from both the CLI and the MCP server.
  */

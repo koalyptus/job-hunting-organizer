@@ -1,6 +1,6 @@
 /**
  * Core orchestrator for the `jho prepare` workflow. Follows the same
- * read→LLM→write pattern as `core/applications/cover-letter.ts`.
+ * read→LLM→write pattern as `workflow/applications/cover-letter.ts`.
  *
  * This module is reusable from both the CLI and the MCP server.
  */
