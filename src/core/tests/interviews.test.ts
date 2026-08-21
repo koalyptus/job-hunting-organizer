@@ -14,6 +14,8 @@ import {
   INTERVIEW_TYPES,
   INTERVIEW_STATUSES,
 } from '../interviews/index.js';
+import type * as fsModule from '../fs.js';
+import type * as appModule from '../../workflow/applications/applications.js';
 
 vi.mock('../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -38,24 +40,20 @@ vi.mock('../logger/logger.js', () => ({
   })),
 }));
 
-import type * as fsModule from '../fs.js';
-
 // Wrap atomicWrite in a spy so per-test mockResolvedValue works for write-failure tests.
 vi.mock('../fs.js', async () => {
-  const actual = (await vi.importActual('../fs.js')) as typeof fsModule;
+  const actual = await vi.importActual<typeof fsModule>('../fs.js');
   return {
     ...actual,
     atomicWrite: vi.fn(actual.atomicWrite),
   };
 });
 
-import type * as appModule from '../../workflow/applications/applications.js';
-
 // Wrap readApplication and updateApplication so per-test mock values work.
 vi.mock('../../workflow/applications/applications.js', async () => {
-  const actual = (await vi.importActual(
+  const actual = await vi.importActual<typeof appModule>(
     '../../workflow/applications/applications.js',
-  )) as typeof appModule;
+  );
   return {
     ...actual,
     readApplication: vi.fn(actual.readApplication),
