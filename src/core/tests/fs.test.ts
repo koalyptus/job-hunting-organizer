@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtemp, readFile, rm, writeFile, readdir } from 'node:fs/promises';
-import { atomicWrite, pathExists, withBackup } from '../fs.js';
+import { atomicWrite, pathExists, withBackup } from '../../lib/fs.js';
 
 describe('pathExists', () => {
   let workDir: string;

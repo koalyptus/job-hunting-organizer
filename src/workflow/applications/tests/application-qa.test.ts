@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { answerQuestion, readQa, AnswerError, QaReadError } from '../application-qa.js';
 import { EM_DASH } from '../../../core/humanize.js';
-import * as fsModule from '../../../core/fs.js';
+import * as fsModule from '../../../lib/fs.js';
 import { JHO_DATA } from '../../../workflow/init/constants.js';
 
 const mockChatComplete = vi.fn();
@@ -23,7 +23,7 @@ vi.mock('../../../core/llm.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   getConfig: vi.fn(() => ({
     global: {
       version: 1,
@@ -53,7 +53,7 @@ vi.mock('../../../core/prompts.js', () => ({
   })),
 }));
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

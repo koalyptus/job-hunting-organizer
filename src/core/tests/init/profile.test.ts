@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { select } from '@clack/prompts';
 import { buildProfileMarkdown } from '../../../workflow/campaign/profile-build.js';
 import { handleProfile } from '../../../workflow/campaign/profile-builder.js';
-import type * as FsModule from '../../fs.js';
-import { atomicWrite } from '../../fs.js';
+import type * as FsModule from '../../../lib/fs.js';
+import { atomicWrite } from '../../../lib/fs.js';
 import { extractTargetRoles } from '../../../workflow/campaign/target-roles.js';
 
 vi.mock('@clack/prompts', () => ({
@@ -41,7 +41,7 @@ vi.mock('../../spinner.js', () => ({
   withSpinner: vi.fn((_msg: string, _success: string, fn: () => Promise<unknown>) => fn()),
 }));
 
-vi.mock('../../fs.js', async (importOriginal) => {
+vi.mock('../../../lib/fs.js', async (importOriginal) => {
   const actual = await importOriginal<typeof FsModule>();
   return {
     ...actual,

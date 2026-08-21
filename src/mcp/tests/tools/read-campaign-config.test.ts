@@ -4,7 +4,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { registerReadCampaignConfig } from '../../tools/read-campaign-config.js';
 import { createStore } from '../../../storage/index.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -26,9 +26,9 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-import { loadCampaignConfig } from '../../../core/config/config.js';
+import { loadCampaignConfig } from '../../../lib/config/config.js';
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   loadCampaignConfig: vi.fn().mockReturnValue({ name: 'default', someKey: 'value' }),
 }));
 

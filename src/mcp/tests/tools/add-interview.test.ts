@@ -6,7 +6,7 @@ import { addInterview } from '../../../core/interviews/interviews.js';
 import { registerAddInterview } from '../../tools/add-interview.js';
 import { createStore } from '../../../storage/index.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -43,7 +43,7 @@ vi.mock('../../../core/interviews/interviews.js', () => ({
   addInterview: vi.fn().mockResolvedValue({ index: 1 }),
 }));
 
-vi.mock('../../../core/paths.js', () => ({
+vi.mock('../../../lib/paths.js', () => ({
   resolveDataRoot: vi.fn(),
   resolveCampaignRoot: vi.fn((name: string) => `/campaigns/${name}`),
   resolveAppliedDir: vi.fn((root: string) => `${root}/applied`),

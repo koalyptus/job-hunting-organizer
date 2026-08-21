@@ -7,10 +7,9 @@ import {
   getFrontmatterNumber,
   mergeFrontmatter,
   parseFrontmatter,
-  readFrontmatter,
   serializeFrontmatter,
-  writeFrontmatter,
 } from '../../parser/frontmatter.js';
+import { readFrontmatter, writeFrontmatter } from '../../../lib/frontmatter.js';
 
 let workDir: string;
 

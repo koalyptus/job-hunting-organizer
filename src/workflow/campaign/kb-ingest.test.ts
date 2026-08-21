@@ -4,9 +4,9 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { ingestKnowledgeBase, listKnowledgeBase, syncKnowledgeBase } from './kb-ingest.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
-import { pathExists } from '../../core/fs.js';
-import { CV_EXTENSIONS, KB_GITHUB } from '../../core/constants.js';
-import { DEFAULT_MY_VOICE_FILENAME } from '../../core/paths.js';
+import { pathExists } from '../../lib/fs.js';
+import { CV_EXTENSIONS, KB_GITHUB } from '../../lib/constants.js';
+import { DEFAULT_MY_VOICE_FILENAME } from '../../lib/paths.js';
 
 describe('kb-ingest my-voice exclusion', () => {
   let testDir: string;

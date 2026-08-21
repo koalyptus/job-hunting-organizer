@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runCommand } from '../helpers.js';
 import { kbCommand } from '../../commands/kb.js';
 import * as kbIngest from '../../../workflow/campaign/kb-ingest.js';
-import { updateCampaignConfig, clearConfigCache } from '../../../core/config/config.js';
+import { updateCampaignConfig, clearConfigCache } from '../../../lib/config/config.js';
 
 describe('kb command', () => {
   let dataRoot: string;

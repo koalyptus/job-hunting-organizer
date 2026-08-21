@@ -1,8 +1,8 @@
 import { Command } from 'commander';
-import { resolveCampaignRoot } from '../../core/paths.js';
+import { resolveCampaignRoot } from '../../lib/paths.js';
 import { readProfile, ProfileReadError } from '../../workflow/campaign/profile-read.js';
 import type { GlobalOpts } from '../options.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userWarn, userOutput } from '../output.js';
 import { resolveCampaign } from '../campaign.js';
 import { renderMarkdown } from '../markdown.js';

@@ -2,8 +2,8 @@ import type { IFileSystem } from '@file-services/types';
 import { createNodeFs } from '@file-services/node';
 import type { FileStore, StoragePath, StorageStat, ReadDirOptions } from '../types.js';
 import { StorageNotFoundError, StorageAlreadyExistsError, StorageNotEmptyError } from '../types.js';
-import { moduleLogger } from '../../core/logger/logger.js';
-import { resolveDataRoot } from '../../core/paths.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
+import { resolveDataRoot } from '../../lib/paths.js';
 import { toAbsolute, forbidRootTarget, canonicalizeRoot } from './path-guard.js';
 
 const log = moduleLogger(import.meta.url);

@@ -1,10 +1,10 @@
 import { Command } from 'commander';
 import { join } from 'node:path';
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { deleteApplication, ApplicationNotFoundError } from '../../workflow/applications/index.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userSuccess, userInfo } from '../output.js';
 import { bold, cyan } from '../colors.js';
 import { createStore } from '../../storage/index.js';

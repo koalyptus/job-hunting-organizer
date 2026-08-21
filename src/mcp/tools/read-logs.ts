@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { ReadLogsInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { resolveConfigHome } from '../../core/paths.js';
+import { resolveConfigHome } from '../../lib/paths.js';
 import { DEFAULT_LOG_FILENAME } from '../../core/types.js';
 import { mcpLogger } from '../logger.js';
 import { readFileSync, existsSync } from 'node:fs';

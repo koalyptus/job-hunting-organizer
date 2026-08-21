@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, resourceText } from './helpers.js';
-import { loadGlobalConfig } from '../../../core/config/config.js';
-import { redactSecrets } from '../../../core/config/config.view.js';
+import { loadGlobalConfig } from '../../../lib/config/config.js';
+import { redactSecrets } from '../../../lib/config/config.view.js';
 import { registerConfig } from '../../resources/config.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -13,11 +13,11 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   loadGlobalConfig: vi.fn().mockReturnValue({ llm: { apiKey: 'sk-abc123', provider: 'openai' } }),
 }));
 
-vi.mock('../../../core/config/config.view.js', () => ({
+vi.mock('../../../lib/config/config.view.js', () => ({
   redactSecrets: vi.fn().mockImplementation((config) => ({
     ...config,
     llm: { ...config.llm, apiKey: '***' },

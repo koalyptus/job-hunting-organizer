@@ -2,8 +2,8 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { GetCampaignInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { loadCampaignConfig } from '../../core/config/config.js';
-import { redactSecrets } from '../../core/config/config.view.js';
+import { loadCampaignConfig } from '../../lib/config/config.js';
+import { redactSecrets } from '../../lib/config/config.view.js';
 import { mcpLogger } from '../logger.js';
 
 /**

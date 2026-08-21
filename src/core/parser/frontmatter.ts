@@ -1,6 +1,9 @@
-import { readFile } from 'node:fs/promises';
+/**
+ * Pure frontmatter parsing/serialization (no file I/O).
+ * Stays in core/parser/ — domain logic only.
+ */
+
 import { dump, load, YAMLException } from 'js-yaml';
-import { atomicWrite } from '../fs.js';
 import type { Frontmatter, ParsedFile } from '../types.js';
 
 /**
@@ -85,37 +88,6 @@ export function serializeFrontmatter(frontmatter: Frontmatter, body: string): st
   });
   const trimmedBody = body.replace(/^\n+/, '');
   return `---\n${yaml}---\n${trimmedBody}`;
-}
-
-/**
- * Read a file and parse its frontmatter.
- * @param path - The absolute path to the file.
- * @returns The parsed frontmatter and body.
- * @throws {FrontmatterParseError} If the file has invalid YAML frontmatter.
- * @throws {NodeJS.ErrnoException} If the file cannot be read.
- */
-export async function readFrontmatter(path: string): Promise<ParsedFile> {
-  const content = await readFile(path, 'utf8');
-  return parseFrontmatter(content);
-}
-
-/**
- * Write a frontmatter + body to a file atomically (via
- * {@link atomicWrite}). Safe to call on files the user may have edited
- * concurrently — the tool-managed region is bounded by markers and
- * the body's user edits are preserved.
- * @param path - The absolute path to write to.
- * @param frontmatter - The frontmatter mapping to write.
- * @param body - The body text to write.
- * @returns `true` on success.
- */
-export async function writeFrontmatter(
-  path: string,
-  frontmatter: Frontmatter,
-  body: string,
-): Promise<boolean> {
-  const content = serializeFrontmatter(frontmatter, body);
-  return atomicWrite(path, content, { encoding: 'utf8' });
 }
 
 /**

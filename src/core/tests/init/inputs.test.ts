@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { text, isCancel } from '@clack/prompts';
-import { validateCvPath } from '../../../core/cv.js';
-import { loadCampaignConfig } from '../../../core/config/config.js';
+import { validateCvPath } from '../../../lib/cv.js';
+import { loadCampaignConfig } from '../../../lib/config/config.js';
 import {
   promptLinkedin,
   promptCvPath,
@@ -19,11 +19,11 @@ vi.mock('@clack/prompts', () => ({
   log: { warn: vi.fn(), info: vi.fn() },
 }));
 
-vi.mock('../../../core/cv.js', () => ({
+vi.mock('../../../lib/cv.js', () => ({
   validateCvPath: vi.fn(),
 }));
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   loadCampaignConfig: vi.fn(),
 }));
 

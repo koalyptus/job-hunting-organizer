@@ -2,8 +2,8 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { ReadConfigInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { loadGlobalConfig } from '../../core/config/config.js';
-import { redactSecrets } from '../../core/config/config.view.js';
+import { loadGlobalConfig } from '../../lib/config/config.js';
+import { redactSecrets } from '../../lib/config/config.view.js';
 import { mcpLogger } from '../logger.js';
 
 /**

@@ -7,7 +7,7 @@ import {
   InvalidNameError,
   SelfRenameError,
 } from '../../workflow/campaign/rename-campaign.js';
-import { getRootLogger } from '../../core/logger/logger.js';
+import { getRootLogger } from '../../lib/logger/logger.js';
 import { userError, userSuccess } from '../output.js';
 import { bold, cyan } from '../colors.js';
 import type { Logger } from 'pino';

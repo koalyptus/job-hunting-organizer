@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { loadCampaignConfig } from '../../../core/config/config.js';
+import { loadCampaignConfig } from '../../../lib/config/config.js';
 import { registerGetCampaign } from '../../tools/get-campaign.js';
 import { createStore } from '../../../storage/index.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -25,11 +25,11 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   loadCampaignConfig: vi.fn(),
 }));
 
-vi.mock('../../../core/config/config.view.js', () => ({
+vi.mock('../../../lib/config/config.view.js', () => ({
   redactSecrets: vi.fn((c: unknown) => c),
 }));
 

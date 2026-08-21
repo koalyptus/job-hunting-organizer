@@ -6,7 +6,7 @@ import { runListApplications } from '../../../core/list/list.js';
 import { registerListApplications } from '../../tools/list-applications.js';
 import { createStore } from '../../../storage/index.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));

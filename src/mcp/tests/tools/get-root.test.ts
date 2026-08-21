@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
-import { resolveCampaignRoot } from '../../../core/paths.js';
+import { resolveCampaignRoot } from '../../../lib/paths.js';
 import { registerGetRoot } from '../../tools/get-root.js';
 import { createStore } from '../../../storage/index.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
-vi.mock('../../../core/paths.js', () => ({
+vi.mock('../../../lib/paths.js', () => ({
   resolveCampaignRoot: vi.fn(),
   resolveAppliedDir: vi.fn(),
   resolveDataRoot: vi.fn(),

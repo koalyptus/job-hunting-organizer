@@ -2,14 +2,14 @@ import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
-import { pathExists } from '../../core/fs.js';
+import { pathExists } from '../../lib/fs.js';
 import {
   updateGlobalConfig,
   updateCampaignConfig,
   loadGlobalConfig,
   loadCampaignConfig,
-} from '../../core/config/config.js';
-import { resolveProfilePath, resolveMyVoicePath } from '../../core/paths.js';
+} from '../../lib/config/config.js';
+import { resolveProfilePath, resolveMyVoicePath } from '../../lib/paths.js';
 import { toDateKey } from '../../core/date.js';
 import { createDirectories } from '../../workflow/campaign/directories.js';
 import { ingestKnowledgeBase as ingestKbDocs } from '../../workflow/campaign/kb-ingest.js';

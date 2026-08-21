@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger } from 'pino';
-import { atomicWrite, pathExists } from '../../core/fs.js';
-import { resolveKnowledgeBaseDir } from '../../core/paths.js';
+import { atomicWrite, pathExists } from '../../lib/fs.js';
+import { resolveKnowledgeBaseDir } from '../../lib/paths.js';
 import type { CvContent, GithubRepo, GithubUser } from '../../core/types.js';
 
 /**

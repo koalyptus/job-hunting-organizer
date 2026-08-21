@@ -1,11 +1,11 @@
 import { Command } from 'commander';
 import { join } from 'node:path';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { isUrl } from '../../core/parser/url.js';
 import { extractJdFromUrl } from '../../core/jobs/extract.js';
 import { defaultLlmConfig } from '../../core/llm.js';
-import { getConfig } from '../../core/config/config.js';
+import { getConfig } from '../../lib/config/config.js';
 import {
   generatePrep,
   generatePrepFromText,
@@ -15,7 +15,7 @@ import {
   PrepNotFoundError,
   PrepReadError,
 } from '../../core/prepare/index.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import { stripAndRender } from '../markdown.js';

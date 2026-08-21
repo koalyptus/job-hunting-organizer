@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { ReadCampaignConfigInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { loadCampaignConfig } from '../../core/config/config.js';
+import { loadCampaignConfig } from '../../lib/config/config.js';
 import { mcpLogger } from '../logger.js';
 
 /**

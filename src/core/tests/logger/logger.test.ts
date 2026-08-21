@@ -14,8 +14,8 @@ import {
   logError,
   moduleLogger,
   setRootLogger,
-} from '../../logger/logger.js';
-import { resolveConfigHome } from '../../paths.js';
+} from '../../../lib/logger/logger.js';
+import { resolveConfigHome } from '../../../lib/paths.js';
 import { cleanupTempDir } from '../cleanup.js';
 
 function silentWritable(): Writable {

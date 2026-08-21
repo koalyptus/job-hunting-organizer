@@ -3,7 +3,7 @@ import type { FileStore } from '../../storage/types.js';
 import { MarkInterviewInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { markInterviewStatus, appendInterviewNotes } from '../../core/interviews/interviews.js';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { mcpLogger } from '../logger.js';
 
 /**

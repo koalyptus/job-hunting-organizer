@@ -1,5 +1,5 @@
 import lockfile, { type LockOptions } from 'proper-lockfile';
-import type { AcquireLockOptions } from './types.js';
+import type { AcquireLockOptions } from '../core/types.js';
 import { moduleLogger } from './logger/logger.js';
 
 const log = moduleLogger(import.meta.url);
@@ -122,7 +122,7 @@ export async function tryAcquireLock(
 
 /**
  * Re-export of `proper-lockfile` so consumers can do
- * `import { lockfile } from '../core/locks.js'` without depending on
+ * `import { lockfile } from '../lib/locks.js'` without depending on
  * the upstream package directly. Avoids version drift in transitive
  * imports.
  */

@@ -4,7 +4,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { registerKbAdd } from '../../tools/kb-add.js';
 import { createStore } from '../../../storage/index.js';
 import { ingestKnowledgeBase } from '../../../workflow/campaign/kb-ingest.js';
-import { loadCampaignConfig } from '../../../core/config/config.js';
+import { loadCampaignConfig } from '../../../lib/config/config.js';
 
 const { KbError } = vi.hoisted(() => {
   class KbError extends Error {
@@ -16,7 +16,7 @@ const { KbError } = vi.hoisted(() => {
   return { KbError };
 });
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -44,7 +44,7 @@ vi.mock('../../../workflow/campaign/kb-ingest.js', () => ({
   KbError,
 }));
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   loadCampaignConfig: vi.fn().mockReturnValue({ knowledgeBase: { sources: [] } }),
   updateCampaignConfig: vi.fn(),
 }));

@@ -8,7 +8,7 @@ import {
   SelfRemoveError,
   RemoveCancelled,
 } from '../../workflow/campaign/remove-campaign.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userSuccess, userInfo } from '../output.js';
 import { bold, cyan } from '../colors.js';
 import type { GlobalOpts } from '../options.js';

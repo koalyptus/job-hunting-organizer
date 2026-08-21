@@ -3,8 +3,8 @@
  * and the simple file-read helper — no LLM, CV, or GitHub imports.
  */
 import { readFile } from 'node:fs/promises';
-import { resolveProfilePath } from '../../core/paths.js';
-import { getRootLogger } from '../../core/logger/logger.js';
+import { resolveProfilePath } from '../../lib/paths.js';
+import { getRootLogger } from '../../lib/logger/logger.js';
 
 /**
  * Error thrown when the profile file cannot be read.

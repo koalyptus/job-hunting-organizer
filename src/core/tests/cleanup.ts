@@ -1,6 +1,6 @@
 import { rm } from 'node:fs/promises';
 import type { Logger } from 'pino';
-import { closeLogger } from '../logger/logger.js';
+import { closeLogger } from '../../lib/logger/logger.js';
 
 /**
  * Remove a temp directory, closing any pino loggers first.

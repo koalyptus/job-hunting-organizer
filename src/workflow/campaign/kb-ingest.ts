@@ -1,9 +1,9 @@
 import { copyFile, readdir, stat, mkdir, rm } from 'node:fs/promises';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
-import { resolveKnowledgeBaseDir, DEFAULT_MY_VOICE_FILENAME } from '../../core/paths.js';
-import { pathExists } from '../../core/fs.js';
-import { CV_EXTENSIONS, KB_GITHUB } from '../../core/constants.js';
-import { moduleLogger } from '../../core/logger/logger.js';
+import { resolveKnowledgeBaseDir, DEFAULT_MY_VOICE_FILENAME } from '../../lib/paths.js';
+import { pathExists } from '../../lib/fs.js';
+import { CV_EXTENSIONS, KB_GITHUB } from '../../lib/constants.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 
 const log = moduleLogger(import.meta.url);
 

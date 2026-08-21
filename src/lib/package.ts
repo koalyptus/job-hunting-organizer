@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { PackageJson } from './types.js';
+import type { PackageJson } from '../core/types.js';
 
 /** Absolute path of the currently executing source file. */
 const __filename = fileURLToPath(import.meta.url);

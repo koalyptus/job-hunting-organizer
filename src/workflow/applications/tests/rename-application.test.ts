@@ -10,7 +10,7 @@ import {
   SelfRenameError,
 } from '../rename.js';
 import { createApplication, readApplication, readIndex } from '../index.js';
-import { writeFrontmatter } from '../../../core/parser/frontmatter.js';
+import { writeFrontmatter } from '../../../lib/frontmatter.js';
 import type { Frontmatter } from '../../../core/types.js';
 
 const mockRootLogger = vi.hoisted(() => ({
@@ -27,7 +27,7 @@ const mockRootLogger = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => mockRootLogger),
   childLogger: vi.fn(() => mockRootLogger),
   moduleLogger: vi.fn(() => mockRootLogger),

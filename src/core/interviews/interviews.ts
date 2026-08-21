@@ -6,10 +6,10 @@ import {
   ApplicationNotFoundError,
 } from '../../workflow/applications/applications.js';
 import { APPLICATION_STATUS } from '../../workflow/applications/types.js';
-import { atomicWrite, pathExists } from '../fs.js';
-import { acquireLock } from '../locks.js';
-import { moduleLogger } from '../logger/logger.js';
-import { computeHash, writeToolhash } from '../toolhash.js';
+import { atomicWrite, pathExists } from '../../lib/fs.js';
+import { acquireLock } from '../../lib/locks.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
+import { computeHash, writeToolhash } from '../../lib/toolhash.js';
 import type { Logger } from 'pino';
 import type {
   InterviewType,

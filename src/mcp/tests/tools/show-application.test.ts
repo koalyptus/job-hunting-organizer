@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../../lib/paths.js';
 import { readShowData, readShowFile, ShowError } from '../../../workflow/applications/show.js';
 import { registerShowApplication } from '../../tools/show-application.js';
 import { createStore } from '../../../storage/index.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
 
-vi.mock('../../../core/paths.js', () => ({
+vi.mock('../../../lib/paths.js', () => ({
   resolveCampaignRoot: vi.fn(),
   resolveAppliedDir: vi.fn(),
   resolveDataRoot: vi.fn(),

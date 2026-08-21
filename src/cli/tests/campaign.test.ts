@@ -7,7 +7,7 @@ import * as clack from '@clack/prompts';
 import { runCommand } from './helpers.js';
 import { doctorCommand } from '../commands/doctor.js';
 import * as doctorCore from '../../core/doctor/index.js';
-import * as pathsModule from '../../core/paths.js';
+import * as pathsModule from '../../lib/paths.js';
 import { resolveCampaign } from '../campaign.js';
 import * as campaignCore from '../../workflow/campaign/index.js';
 import { CampaignPickerCancelled } from '../../workflow/campaign/index.js';
@@ -26,7 +26,7 @@ vi.mock('../../core/doctor/index.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../../core/paths.js', async (importOriginal) => {
+vi.mock('../../lib/paths.js', async (importOriginal) => {
   const actual = await importOriginal<typeof pathsModule>();
   return {
     ...actual,

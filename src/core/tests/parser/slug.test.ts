@@ -13,7 +13,7 @@ import {
 } from '../../parser/slug.js';
 import { validateSlug } from '../../validate.js';
 
-vi.mock('../../logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

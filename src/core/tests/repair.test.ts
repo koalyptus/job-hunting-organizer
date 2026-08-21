@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { repairApp, repairAll, RepairError } from '../repair/index.js';
-import { computeHash, readToolhash, writeToolhash } from '../toolhash.js';
+import { computeHash, readToolhash, writeToolhash } from '../../lib/toolhash.js';
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

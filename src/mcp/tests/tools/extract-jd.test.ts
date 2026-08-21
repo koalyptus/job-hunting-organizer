@@ -5,7 +5,7 @@ import { extractJdFromUrl, extractJdFromText } from '../../../core/jobs/extract.
 import { registerExtractJd } from '../../tools/extract-jd.js';
 import { createStore } from '../../../storage/index.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -32,7 +32,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   getConfig: vi.fn(() => ({
     global: {
       llm: { baseUrl: 'http://localhost:11434', apiKey: 'key', model: 'gpt-4', timeoutMs: 120000 },

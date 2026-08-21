@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { AggregateRetrosInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { aggregateRetros } from '../../core/retro/aggregate.js';
 import { mcpLogger } from '../logger.js';
 

@@ -1,12 +1,12 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { readFrontmatter } from '../parser/frontmatter.js';
+import { readFrontmatter } from '../../lib/frontmatter.js';
 import { safeValidateApplicationFrontmatter } from '../../workflow/applications/meta-schema.js';
 import { SLUG_PATTERN } from '../parser/slug.js';
-import { readToolhash, computeHash, TOOL_MANAGED_FILES } from '../toolhash.js';
+import { readToolhash, computeHash, TOOL_MANAGED_FILES } from '../../lib/toolhash.js';
 import { readIndex, indexPath } from '../../workflow/applications/index-builder.js';
-import { moduleLogger } from '../logger/logger.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 import type { DoctorIssue } from './types.js';
 
 const log = moduleLogger(import.meta.url);

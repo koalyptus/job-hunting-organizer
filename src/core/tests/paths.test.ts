@@ -23,7 +23,7 @@ import {
   resolveConfigHome,
   resolveConfigPath,
   resolveDataRoot,
-} from '../paths.js';
+} from '../../lib/paths.js';
 import { SLUG_PATTERN } from '../parser/slug.js';
 
 describe('isWindows', () => {

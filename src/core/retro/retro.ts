@@ -6,20 +6,20 @@
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
-import { getConfig } from '../config/config.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
+import { getConfig } from '../../lib/config/config.js';
 import { defaultLlmConfig, chatComplete } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { readApplication } from '../../workflow/applications/applications.js';
 import { listInterviews } from '../interviews/interviews.js';
-import { atomicWrite, pathExists } from '../fs.js';
-import { acquireLock } from '../locks.js';
+import { atomicWrite, pathExists } from '../../lib/fs.js';
+import { acquireLock } from '../../lib/locks.js';
 import { extractSteer, replaceSteer } from '../parser/markers.js';
 import { loadKbContextForCampaign } from '../../workflow/campaign/kb-context.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
-import { computeHash, writeToolhash } from '../toolhash.js';
-import { moduleLogger } from '../logger/logger.js';
+import { computeHash, writeToolhash } from '../../lib/toolhash.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 import {
   SECTION_SEPARATOR,
   JOB_DESCRIPTION_SECTION_HEADER,
@@ -27,7 +27,7 @@ import {
   WEAK_TOPICS_SECTION_HEADER,
   KNOWLEDGE_BASE_SECTION_HEADER,
   ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
-} from '../constants.js';
+} from '../../lib/constants.js';
 import type { Logger } from 'pino';
 import type {
   RetroSection,

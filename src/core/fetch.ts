@@ -1,8 +1,8 @@
 import http from 'node:http';
 import https from 'node:https';
 import type { Logger } from 'pino';
-import { getPackageVersion } from './package.js';
-import { FETCH_TIMEOUT_MS } from './constants.js';
+import { getPackageVersion } from '../lib/package.js';
+import { FETCH_TIMEOUT_MS } from '../lib/constants.js';
 
 const JHO_UA = `jho/${getPackageVersion()}`;
 

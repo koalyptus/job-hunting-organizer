@@ -1,13 +1,13 @@
 import { Command } from 'commander';
-import { resolveCampaignRoot } from '../../core/paths.js';
+import { resolveCampaignRoot } from '../../lib/paths.js';
 import { resolve } from 'node:path';
-import { loadCampaignConfig, updateCampaignConfig } from '../../core/config/config.js';
+import { loadCampaignConfig, updateCampaignConfig } from '../../lib/config/config.js';
 import {
   ingestKnowledgeBase,
   syncKnowledgeBase,
   KbError,
 } from '../../workflow/campaign/kb-ingest.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userOutput, userSuccess } from '../output.js';
 import type { GlobalOpts } from '../options.js';
 import { resolveCampaign } from '../campaign.js';

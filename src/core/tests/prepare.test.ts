@@ -13,12 +13,12 @@ import {
   PrepReadError,
 } from '../prepare/index.js';
 import type { PrepPlan } from '../prepare/types.js';
-import type * as FsModule from '../fs.js';
+import type * as FsModule from '../../lib/fs.js';
 import type * as AppModule from '../../workflow/applications/applications.js';
 import { aggregateRetros } from '../retro/aggregate.js';
 import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -76,8 +76,8 @@ vi.mock('../prompts.js', () => ({
   })),
 }));
 
-vi.mock('../fs.js', async () => {
-  const actual = await vi.importActual<typeof FsModule>('../fs.js');
+vi.mock('../../lib/fs.js', async () => {
+  const actual = await vi.importActual<typeof FsModule>('../../lib/fs.js');
   return {
     ...actual,
     atomicWrite: vi.fn(actual.atomicWrite),
@@ -528,7 +528,7 @@ describe('generatePrep', () => {
       durationMs: 500,
     });
 
-    const fsMod = await import('../fs.js');
+    const fsMod = await import('../../lib/fs.js');
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
 
     await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
@@ -1069,7 +1069,7 @@ describe('appendTopic — error paths', () => {
     await mkdir(join(appliedDir, slug), { recursive: true });
     await writeFile(join(appliedDir, slug, 'prepare.md'), '<!-- jho:prepare -->\nexisting\n');
 
-    const fsMod = await import('../fs.js');
+    const fsMod = await import('../../lib/fs.js');
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
 
     await expect(appendTopic('test-campaign', slug, 'new topic')).rejects.toThrow(
@@ -1084,7 +1084,7 @@ describe('appendTopic — error paths', () => {
     await mkdir(join(appliedDir, slug), { recursive: true });
     await writeFile(join(appliedDir, slug, 'prepare.md'), '<!-- jho:prepare -->\nexisting\n');
 
-    const fsMod = await import('../fs.js');
+    const fsMod = await import('../../lib/fs.js');
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockRejectedValueOnce(new Error('disk full'));
 
     await expect(appendTopic('test-campaign', slug, 'new topic')).rejects.toThrow(

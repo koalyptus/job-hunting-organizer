@@ -29,7 +29,7 @@ vi.mock('../../prompts.js', () => ({
   loadPromptTemplate: (...args: unknown[]) => loadPromptTemplateMock(...args),
 }));
 
-vi.mock('../../logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   getRootLogger: () => ({
     child: () => ({
       debug: vi.fn(),

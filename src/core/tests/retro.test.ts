@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readApplication } from '../../workflow/applications/applications.js';
-import type * as FsModule from '../fs.js';
+import type * as FsModule from '../../lib/fs.js';
 import type * as AppModule from '../../workflow/applications/applications.js';
 import {
   startRetro,
@@ -16,7 +16,7 @@ import {
 } from '../retro/index.js';
 import type { AggregateOptions } from '../retro/types.js';
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -75,8 +75,8 @@ vi.mock('../prompts.js', () => ({
 }));
 
 // Wrap atomicWrite in a spy for write-failure tests
-vi.mock('../fs.js', async () => {
-  const actual = await vi.importActual<typeof FsModule>('../fs.js');
+vi.mock('../../lib/fs.js', async () => {
+  const actual = await vi.importActual<typeof FsModule>('../../lib/fs.js');
   return {
     ...actual,
     atomicWrite: vi.fn(actual.atomicWrite),
@@ -90,6 +90,7 @@ vi.mock('../../workflow/applications/applications.js', async () => {
   );
   return {
     ...actual,
+    listApplications: actual.listApplications,
     readApplication: vi.fn(actual.readApplication),
   };
 });
@@ -704,7 +705,7 @@ describe('startRetro', () => {
     });
 
     // Re-import the mocked atomicWrite for this test
-    const { atomicWrite } = await import('../fs.js');
+    const { atomicWrite } = await import('../../lib/fs.js');
     vi.mocked(atomicWrite).mockResolvedValueOnce(false);
 
     await expect(
@@ -1470,7 +1471,7 @@ describe('appendRetro', () => {
       durationMs: 500,
     });
 
-    const { atomicWrite } = await import('../fs.js');
+    const { atomicWrite } = await import('../../lib/fs.js');
     vi.mocked(atomicWrite).mockResolvedValueOnce(false);
 
     await expect(

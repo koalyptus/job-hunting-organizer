@@ -3,7 +3,7 @@ import { basename, extname } from 'node:path';
 import type { Logger } from 'pino';
 import { pathExists } from './fs.js';
 import { CV_EXTENSIONS } from './constants.js';
-import type { CvContent, CvFormat } from './types.js';
+import type { CvContent, CvFormat } from '../core/types.js';
 
 /** Result of CV path validation. */
 interface CvValidationResult {

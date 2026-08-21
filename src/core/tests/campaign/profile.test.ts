@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { GithubUser, GithubRepo } from '../../types.js';
 import { buildProfileMarkdown } from '../../../workflow/campaign/profile-build.js';
 
-vi.mock('../../cv.js', () => ({
+vi.mock('../../../lib/cv.js', () => ({
   readCv: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ vi.mock('../../llm.js', () => ({
   chatComplete: vi.fn(),
 }));
 
-vi.mock('../../package.js', () => ({
+vi.mock('../../../lib/package.js', () => ({
   getPackageRoot: vi.fn(() => '/mock/package/root'),
   getPackageVersion: vi.fn(() => '0.0.0'),
 }));
@@ -36,7 +36,7 @@ vi.mock('node:fs/promises', async () => {
   };
 });
 
-import { readCv } from '../../cv.js';
+import { readCv } from '../../../lib/cv.js';
 import { fetchGithubUser, fetchGithubRepos } from '../../github.js';
 import { chatComplete } from '../../llm.js';
 import {

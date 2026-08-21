@@ -5,8 +5,8 @@ import * as path from 'node:path';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { pathExists } from './fs.js';
 import { getRootLogger } from './logger/logger.js';
-import { SLUG_PATTERN } from './parser/slug.js';
-import type { CampaignListing } from './types.js';
+import { SLUG_PATTERN } from '../core/parser/slug.js';
+import type { CampaignListing } from '../core/types.js';
 
 /**
  * Default name of the campaign data root folder under the user's home

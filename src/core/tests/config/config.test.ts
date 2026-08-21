@@ -5,11 +5,11 @@ import {
   getConfig,
   updateCampaignConfig,
   clearConfigCache,
-} from '../../config/config.js';
+} from '../../../lib/config/config.js';
 import { resolve } from 'node:path';
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { DEFAULT_CONFIG_FILENAME } from '../../paths.js';
+import { DEFAULT_CONFIG_FILENAME } from '../../../lib/paths.js';
 
 describe('config', () => {
   let testHome: string;

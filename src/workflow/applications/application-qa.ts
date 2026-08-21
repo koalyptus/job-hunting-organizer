@@ -8,8 +8,8 @@
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, basename } from 'node:path';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
-import { getConfig } from '../../core/config/config.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
+import { getConfig } from '../../lib/config/config.js';
 import { defaultLlmConfig, chatComplete } from '../../core/llm.js';
 import { loadPromptTemplateWithVoice } from '../../core/prompts.js';
 import { humanize } from '../../core/humanize.js';
@@ -21,12 +21,12 @@ import {
   KNOWLEDGE_BASE_SECTION_HEADER,
   ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
   SECTION_SEPARATOR,
-} from '../../core/constants.js';
+} from '../../lib/constants.js';
 import { resolveVoiceGuide, appendVoiceSection } from '../../workflow/campaign/voice-read.js';
 import { readApplication } from './applications.js';
 import { loadKbContextForCampaign } from '../../workflow/campaign/kb-context.js';
-import { atomicWrite } from '../../core/fs.js';
-import { acquireLock } from '../../core/locks.js';
+import { atomicWrite } from '../../lib/fs.js';
+import { acquireLock } from '../../lib/locks.js';
 import { extractJdContent, isRefusal, countWords } from '../../core/generation-utils.js';
 import type { AnswerOptions, AnswerResult } from '../../core/types.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';

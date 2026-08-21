@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { atomicWrite } from '../../core/fs.js';
-import { getRootLogger } from '../../core/logger/logger.js';
+import { atomicWrite } from '../../lib/fs.js';
+import { getRootLogger } from '../../lib/logger/logger.js';
 import type { Counters } from './types.js';
 
 /**

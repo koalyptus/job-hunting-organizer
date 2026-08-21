@@ -6,11 +6,11 @@ import {
   resolveDataRoot,
   findCampaignFromCwd,
   isUnder,
-} from '../../core/paths.js';
-import { pathExists } from '../../core/fs.js';
-import { acquireLock } from '../../core/locks.js';
-import { clearConfigCache } from '../../core/config/config.js';
-import { moduleLogger } from '../../core/logger/logger.js';
+} from '../../lib/paths.js';
+import { pathExists } from '../../lib/fs.js';
+import { acquireLock } from '../../lib/locks.js';
+import { clearConfigCache } from '../../lib/config/config.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 import { validateName } from '../../core/validate.js';
 
 const log = moduleLogger(import.meta.url);
