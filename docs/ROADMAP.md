@@ -1213,9 +1213,11 @@ Pilot phase — smallest, most self-contained, used by both CLI and MCP.
 
 The 9g–9j moves made `src/workflow/*` the only I/O-touching layer. 9k closes the loop:
 
-- Remove deprecated re-export barrels (`src/core/init/index.ts`, etc.)
+- Remove deprecated re-export barrels (`src/core/init/index.ts`, `core/logger/index.ts`, etc.)
 - Update `src/core/index.ts` to export only pure domain modules
 - Add CI check: grep for forbidden imports in `src/core/**/*.ts`
+- Resolve **lib → core runtime value imports** (deferred from Phase 9j): `SLUG_PATTERN` (lib/paths.ts), `ALL_LOG_LEVELS` (lib/config/config.schema.ts), `DEFAULT_LOG_FILENAME` (lib/logger/logger.ts) are imported by `src/lib/*` from `core/parser/slug.js` and `core/types.js`. Move these shared constants to a neutral home (e.g. `src/lib/constants.ts` or a new `src/lib/shared.ts`) so the CI check can forbid `src/lib/*` in `core/` without breaking the build.
+- Colocate lib tests: move `src/core/tests/{fs,locks,paths,toolhash,package,constants,cv}.test.ts` and subfolders (`config/`, `logger/`) to `src/lib/tests/` (or `src/lib/**/<module>.test.ts`) so tests mirror the new src layout.
 - Update `AGENTS.md` — new `src/workflow/` layer, init path, repo structure
 - Run full test suite + coverage
 
