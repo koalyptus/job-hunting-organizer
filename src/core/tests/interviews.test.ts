@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { atomicWrite } from '../fs.js';
-import { readApplication, updateApplication } from '../applications/applications.js';
+import { readApplication, updateApplication } from '../../workflow/applications/applications.js';
 import {
   addInterview,
   listInterviews,
@@ -14,6 +14,8 @@ import {
   INTERVIEW_TYPES,
   INTERVIEW_STATUSES,
 } from '../interviews/index.js';
+import type * as fsModule from '../fs.js';
+import type * as appModule from '../../workflow/applications/applications.js';
 
 vi.mock('../logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -40,8 +42,7 @@ vi.mock('../logger/logger.js', () => ({
 
 // Wrap atomicWrite in a spy so per-test mockResolvedValue works for write-failure tests.
 vi.mock('../fs.js', async () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  const actual = await vi.importActual<typeof import('../fs.js')>('../fs.js');
+  const actual = await vi.importActual<typeof fsModule>('../fs.js');
   return {
     ...actual,
     atomicWrite: vi.fn(actual.atomicWrite),
@@ -49,10 +50,9 @@ vi.mock('../fs.js', async () => {
 });
 
 // Wrap readApplication and updateApplication so per-test mock values work.
-vi.mock('../applications/applications.js', async () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  const actual = await vi.importActual<typeof import('../applications/applications.js')>(
-    '../applications/applications.js',
+vi.mock('../../workflow/applications/applications.js', async () => {
+  const actual = await vi.importActual<typeof appModule>(
+    '../../workflow/applications/applications.js',
   );
   return {
     ...actual,

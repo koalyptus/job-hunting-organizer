@@ -14,7 +14,7 @@ import {
 } from '../prepare/index.js';
 import type { PrepPlan } from '../prepare/types.js';
 import type * as FsModule from '../fs.js';
-import type * as AppModule from '../applications/applications.js';
+import type * as AppModule from '../../workflow/applications/applications.js';
 import { aggregateRetros } from '../retro/aggregate.js';
 import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
 
@@ -84,8 +84,10 @@ vi.mock('../fs.js', async () => {
   };
 });
 
-vi.mock('../applications/applications.js', async () => {
-  const actual = await vi.importActual<typeof AppModule>('../applications/applications.js');
+vi.mock('../../workflow/applications/applications.js', async () => {
+  const actual = await vi.importActual<typeof AppModule>(
+    '../../workflow/applications/applications.js',
+  );
   return {
     ...actual,
     readApplication: vi.fn(actual.readApplication),

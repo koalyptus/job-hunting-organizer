@@ -7,7 +7,7 @@ import {
   readQa,
   AnswerError,
   QaReadError,
-} from '../../core/applications/application-qa.js';
+} from '../../workflow/applications/application-qa.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';

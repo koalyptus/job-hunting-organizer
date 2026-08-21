@@ -1,11 +1,11 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { SLUG_PATTERN, extractDateFromSlug } from '../parser/slug.js';
-import { readFrontmatter } from '../parser/frontmatter.js';
+import { SLUG_PATTERN, extractDateFromSlug } from '../../core/parser/slug.js';
+import { readFrontmatter } from '../../core/parser/frontmatter.js';
 import { safeValidateApplicationFrontmatter } from './meta-schema.js';
-import { debug } from '../debug.js';
-import { atomicWrite } from '../fs.js';
+import { debug } from '../../core/debug.js';
+import { atomicWrite } from '../../core/fs.js';
 import type { ApplicationEntry, ApplicationStatus } from './types.js';
 
 const log = debug('index-builder');

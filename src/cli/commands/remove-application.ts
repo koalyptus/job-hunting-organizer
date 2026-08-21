@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { confirm, isCancel, log as clackLog } from '@clack/prompts';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
-import { deleteApplication, ApplicationNotFoundError } from '../../core/applications/index.js';
+import { deleteApplication, ApplicationNotFoundError } from '../../workflow/applications/index.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userError, userSuccess, userInfo } from '../output.js';
 import { bold, cyan } from '../colors.js';

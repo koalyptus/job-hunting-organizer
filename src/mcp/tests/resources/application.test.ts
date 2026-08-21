@@ -5,7 +5,7 @@ import {
   invokeResourceRead,
   resourceText,
 } from './helpers.js';
-import { readShowData, readShowFile, ShowError } from '../../../core/applications/show.js';
+import { readShowData, readShowFile, ShowError } from '../../../workflow/applications/show.js';
 import { registerApplication } from '../../resources/application.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
@@ -22,7 +22,7 @@ vi.mock('../../../core/paths.js', () => ({
   resolveAppliedDir: vi.fn().mockReturnValue('/mock/applied'),
 }));
 
-vi.mock('../../../core/applications/show.js', () => ({
+vi.mock('../../../workflow/applications/show.js', () => ({
   readShowData: vi.fn(),
   readShowFile: vi.fn(),
   ShowError: class MockShowError extends Error {

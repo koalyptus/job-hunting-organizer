@@ -3,7 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { registerRenameApplication } from '../../tools/rename-application.js';
 import { createStore } from '../../../storage/index.js';
-import { renameApplication } from '../../../core/applications/rename.js';
+import { renameApplication } from '../../../workflow/applications/rename.js';
 
 vi.mock('../../../core/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -33,7 +33,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/applications/rename.js', () => ({
+vi.mock('../../../workflow/applications/rename.js', () => ({
   renameApplication: vi.fn().mockResolvedValue(undefined),
   RenameApplicationError: class extends Error {
     constructor(msg: string) {

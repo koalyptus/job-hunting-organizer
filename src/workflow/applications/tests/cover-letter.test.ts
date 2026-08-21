@@ -7,13 +7,13 @@ import {
   readCoverLetter,
   CoverLetterError,
   CoverLetterReadError,
-} from '../../applications/cover-letter.js';
-import { EM_DASH } from '../../humanize.js';
-import * as fsModule from '../../fs.js';
+} from '../cover-letter.js';
+import { EM_DASH } from '../../../core/humanize.js';
+import * as fsModule from '../../../core/fs.js';
 
 const mockChatComplete = vi.fn();
 
-vi.mock('../../llm.js', async (importOriginal) => {
+vi.mock('../../../core/llm.js', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
@@ -27,19 +27,26 @@ vi.mock('../../llm.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../../config.js', () => ({
+vi.mock('../../../core/config/config.js', () => ({
   getConfig: vi.fn(() => ({
     global: {
       version: 1,
       dataRoot: '/tmp',
-      llm: { baseUrl: 'https://config.com/v1', apiKey: 'sk-config', model: 'gpt-4' },
+      llm: { baseUrl: 'https://config.com/v1', apiKey: 'test', model: 'gpt-4' },
       github: { user: '', token: '', repos: [] },
       logging: { level: 'info', file: '', redactPaths: [] },
+    },
+    campaign: {
+      version: 1,
+      profilePath: '/tmp/profile.md',
+      cvPath: '',
+      knowledgeBase: { maxChars: 50000 },
+      linkedinUrl: '',
     },
   })),
 }));
 
-vi.mock('../../prompts.js', () => ({
+vi.mock('../../../core/prompts.js', () => ({
   loadPromptTemplate: vi.fn(async () => ({
     body: 'You are a cover letter writer.',
     temperature: 0.6,
@@ -50,7 +57,7 @@ vi.mock('../../prompts.js', () => ({
   })),
 }));
 
-vi.mock('../../logger/logger.js', () => ({
+vi.mock('../../../core/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -439,6 +446,39 @@ describe('generateCoverLetter', () => {
     expect(userMessage).toContain(
       'We are looking for a senior engineer with TypeScript and React experience.',
     );
+  });
+
+  it('includes knowledge base context in the prompt when KB docs exist', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    // Create a knowledge-base doc so loadKbContextForCampaign returns non-empty
+    await mkdir(join(campaignRoot, 'knowledge-base'), { recursive: true });
+    await writeFile(
+      join(campaignRoot, 'knowledge-base', 'notes.md'),
+      '# Project Notes\n\nThis is important background knowledge.',
+    );
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Cover letter content here.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+    });
+
+    // Verify the LLM was called with KB content in the user message
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user')?.content ?? '';
+    expect(userMessage).toContain('## Knowledge base:');
+    expect(userMessage).toContain('Project Notes');
   });
 
   it('handles cover letter with no existing file', async () => {

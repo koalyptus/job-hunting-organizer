@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import Table from 'cli-table3';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
-import { readShowData, readShowFile, ShowError } from '../../core/applications/index.js';
+import { readShowData, readShowFile, ShowError } from '../../workflow/applications/index.js';
 import { getRootLogger, logError } from '../../core/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { dim, cyan, statusColor, green } from '../colors.js';

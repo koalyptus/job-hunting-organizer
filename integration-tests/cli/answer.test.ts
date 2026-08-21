@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runCommand } from '../../src/cli/tests/helpers.js';
 import { answerCommand } from '../../src/cli/commands/answer.js';
-import { createApplication } from '../../src/core/applications/applications.js';
+import { createApplication } from '../../src/workflow/applications/applications.js';
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 

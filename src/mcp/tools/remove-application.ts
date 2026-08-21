@@ -5,7 +5,7 @@ import { handleToolError } from '../error-handler.js';
 import {
   deleteApplication,
   ApplicationNotFoundError,
-} from '../../core/applications/applications.js';
+} from '../../workflow/applications/applications.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
 import { mcpLogger } from '../logger.js';
 

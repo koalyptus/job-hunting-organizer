@@ -10,8 +10,8 @@ import {
   rebuildIndex,
   upsertIndexEntry,
   removeIndexEntry,
-} from '../../applications/index.js';
-import type { ApplicationEntry } from '../../applications/types.js';
+} from '../index.js';
+import type { ApplicationEntry } from '../types.js';
 
 let workDir: string;
 let appliedDir: string;
@@ -165,6 +165,15 @@ describe('buildIndex', () => {
     const result = await buildIndex(appliedDir);
     expect(result).toHaveLength(0);
   });
+
+  it('skips folders where readFrontmatter throws', async () => {
+    const folder = join(appliedDir, '2026-Jun-03-SE-Foo-123');
+    await mkdir(folder, { recursive: true });
+    // Write valid frontmatter markers but invalid YAML that causes js-yaml load() to throw
+    await writeFile(join(folder, 'meta.md'), '---\n: : : invalid: [[[\n---\n', 'utf8');
+    const result = await buildIndex(appliedDir);
+    expect(result).toHaveLength(0);
+  });
 });
 
 describe('rebuildIndex', () => {
@@ -190,7 +199,7 @@ describe('rebuildIndex', () => {
   });
 
   it('still returns entries when index write fails', async () => {
-    const fsMod = await import('../../fs.js');
+    const fsMod = await import('../../../core/fs.js');
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValue(false);
 
     const folder = join(appliedDir, '2026-Jun-03-SE-Foo-123');

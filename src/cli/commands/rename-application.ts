@@ -6,7 +6,7 @@ import {
   RenameApplicationError,
   InvalidSlugError,
   SelfRenameError,
-} from '../../core/applications/rename.js';
+} from '../../workflow/applications/rename.js';
 import { getRootLogger } from '../../core/logger/logger.js';
 import { userError, userSuccess } from '../output.js';
 import { bold, cyan } from '../colors.js';

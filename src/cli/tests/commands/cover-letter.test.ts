@@ -5,10 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../core/config/config.js';
 import { runCommand } from '../helpers.js';
 import { coverLetterCommand } from '../../commands/cover-letter.js';
-import * as coverLetterCore from '../../../core/applications/cover-letter.js';
-import { CoverLetterError } from '../../../core/applications/cover-letter.js';
+import * as coverLetterCore from '../../../workflow/applications/cover-letter.js';
+import { CoverLetterError } from '../../../workflow/applications/cover-letter.js';
 
-vi.mock('../../../core/applications/cover-letter.js', async (importOriginal) => {
+vi.mock('../../../workflow/applications/cover-letter.js', async (importOriginal) => {
   const actual = await importOriginal<typeof coverLetterCore>();
   return {
     ...actual,

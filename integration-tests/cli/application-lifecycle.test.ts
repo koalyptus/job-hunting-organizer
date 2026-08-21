@@ -8,8 +8,8 @@ import {
   deleteApplication,
   listApplications,
   updateApplication,
-} from '../../src/core/applications/applications.js';
-import { renameApplication } from '../../src/core/applications/rename.js';
+} from '../../src/workflow/applications/applications.js';
+import { renameApplication } from '../../src/workflow/applications/rename.js';
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 
