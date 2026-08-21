@@ -67,12 +67,22 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       ├── track/       # track orchestration (create/update/refresh)
 │       ├── stats/       # campaign snapshot: counts by status/role/site, funnel, this-month delta
 │       ├── list/        # list applications with filters
-│       ├── parser/      # parsing modules: frontmatter, markers, slug, url, sanitize, prompt-parser
-│       ├── campaign/    # campaign management: profile, KB context/ingest, roles, directories
-│       ├── config/      # config schema (Zod) and read/write/update
-│       ├── logger/      # pino logger factory and utilities
+│       ├── parser/      # parsing modules: frontmatter (pure), markers, slug, url, sanitize, prompt-parser
+│       ├── campaign/    # campaign management: profile, KB context/ingest, roles, directories (deprecated barrels)
 │       ├── types.ts     # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
 │       └── tests/       # colocated vitest suite
+├── lib/                 # infrastructure utilities (pure I/O, no domain logic)
+│   ├── paths.ts         # path resolution + os.homedir()
+│   ├── config.ts        # global/campaign config read/write/merge
+│   ├── config/          # config schema (Zod), view (redaction), migrations
+│   ├── logger/          # pino logger factory (logger.ts, root-logger.ts)
+│   ├── fs.ts            # atomic write, backup, pathExists
+│   ├── locks.ts         # proper-lockfile wrapper
+│   ├── toolhash.ts      # file hashing for .toolhash sidecars
+│   ├── package.ts       # package.json reads (version)
+│   ├── cv.ts            # CV parsing (PDF/DOCX/TXT/MD)
+│   ├── constants.ts     # shared constants (CV_EXTENSIONS, KB_GITHUB, section headers)
+│   └── frontmatter.ts   # frontmatter I/O (read/write files)
 ├── prompts/            # versioned LLM prompt templates
 ├── evals/              # lightweight eval suite (not in CI)
 ├── docs/
@@ -343,8 +353,8 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 ### File operations
 
-- All writes go through `core/fs.ts` `atomicWrite` (write to a sibling `*.tmp` with a unique suffix, then `fs.rename` over the target). The same code path runs on all OSes; no platform branching. `rename` is atomic on POSIX and on modern Windows (Node ≥ 14).
-- Concurrent writers are prevented by `core/locks.ts` (`proper-lockfile`) on the application folder / profile / campaign root as appropriate.
+- All writes go through `lib/fs.ts` `atomicWrite` (write to a sibling `*.tmp` with a unique suffix, then `fs.rename` over the target). The same code path runs on all OSes; no platform branching. `rename` is atomic on POSIX and on modern Windows (Node ≥ 14).
+- Concurrent writers are prevented by `lib/locks.ts` (`proper-lockfile`) on the application folder / profile / campaign root as appropriate.
 - `chmod` is a no-op on Windows. Attempt it and ignore `ENOSYS` / `EPERM`.
 - Use `fs.promises`. Never shell out to `cp`, `mv`, `rm`, `mkdir`.
 
@@ -369,7 +379,7 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 One item is added in v1 specifically to keep a future local web client cheap to build. It is **unused by the CLI and MCP server** today but exists now so adding `jho web` later is a fill-in, not a schema migration.
 
-- **File locks** — `core/locks.ts` wraps `proper-lockfile` and is called implicitly by every write in `core/fs.ts`. Lock granularity: the application folder (`applied/<slug>/`) for per-app ops, `profile.md` for rebuilds, the campaign root for global ops. Defaults: 5 retries, 50–500ms backoff, stale-lock detection. The `.toolhash` sidecar still handles user-induced conflicts; locks handle process-induced races.
+- **File locks** — `lib/locks.ts` wraps `proper-lockfile` and is called implicitly by every write in `lib/fs.ts`. Lock granularity: the application folder (`applied/<slug>/`) for per-app ops, `profile.md` for rebuilds, the campaign root for global ops. Defaults: 5 retries, 50–500ms backoff, stale-lock detection. The `.toolhash` sidecar still handles user-induced conflicts; locks handle process-induced races.
 
 > The `webServer.{port, host}` placeholder in `config.json` was removed: the schema is now minimal, and a web server can add its own port/host config when it lands. See `docs/PLAN.md` §20 for the full rationale and `docs/ROADMAP.md` Phase 11+ for the sketch.
 
