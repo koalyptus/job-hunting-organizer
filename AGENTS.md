@@ -73,8 +73,7 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       └── tests/       # colocated vitest suite
 ├── lib/                 # infrastructure utilities (pure I/O, no domain logic)
 │   ├── paths.ts         # path resolution + os.homedir()
-│   ├── config.ts        # global/campaign config read/write/merge
-│   ├── config/          # config schema (Zod), view (redaction), migrations
+│   ├── config/          # global/campaign config read/write/merge (config.ts, config.schema.ts, config.view.ts, migrations.ts)
 │   ├── logger/          # pino logger factory (logger.ts, root-logger.ts)
 │   ├── fs.ts            # atomic write, backup, pathExists
 │   ├── locks.ts         # proper-lockfile wrapper
