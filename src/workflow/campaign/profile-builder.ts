@@ -1,8 +1,8 @@
 import { copyFile } from 'node:fs/promises';
 import { log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
-import { resolveProfilePath } from '../../core/paths.js';
-import { pathExists, atomicWrite } from '../../core/fs.js';
+import { resolveProfilePath } from '../../lib/paths.js';
+import { pathExists, atomicWrite } from '../../lib/fs.js';
 import { buildProfileMarkdown } from './profile-build.js';
 import { extractTargetRoles, replaceTargetRoles } from './target-roles.js';
 import { withSpinner } from '../../core/spinner.js';
@@ -10,7 +10,7 @@ import type { LlmConfig } from '../../core/types.js';
 import { reviewRoles } from './roles.js';
 import { generateSkeletonProfile } from '../../workflow/init/skeleton.js';
 import { InitError } from '../../workflow/init/errors.js';
-import { moduleLogger } from '../../core/logger/logger.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 
 const fallbackLog = moduleLogger(import.meta.url);
 

@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import pino from 'pino';
 import { DEFAULT_LOG_FILENAME } from '../../../core/types.js';
 import { cleanupTempDir } from '../../../core/tests/cleanup.js';
-import { getRootLogger, setRootLogger } from '../../../core/logger/logger.js';
+import { getRootLogger, setRootLogger } from '../../../lib/logger/logger.js';
 import { logsCommand } from '../../commands/logs.js';
 import { runCommand } from '../helpers.js';
 

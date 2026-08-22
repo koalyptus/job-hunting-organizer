@@ -1,5 +1,5 @@
 import Table from 'cli-table3';
-import { resolveConfigHome, DEFAULT_CONFIG_FILENAME } from '../../core/paths.js';
+import { resolveConfigHome, DEFAULT_CONFIG_FILENAME } from '../../lib/paths.js';
 import type { OwnershipRow, RenderOwnershipOptions } from '../../core/types.js';
 import { resolveStyle } from '../../core/types.js';
 

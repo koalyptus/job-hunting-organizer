@@ -3,7 +3,7 @@ import { createTestServer, promptText } from './helpers.js';
 import { extractJdFromUrl } from '../../../core/jobs/extract.js';
 import { registerExtractJdPrompt } from '../../prompts/extract-jd.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -12,7 +12,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   getConfig: vi.fn().mockReturnValue({ global: { llm: { provider: 'openai' } } }),
 }));
 

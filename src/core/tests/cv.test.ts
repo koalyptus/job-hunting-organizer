@@ -20,7 +20,7 @@ vi.mock('mammoth', () => ({
 }));
 
 import mammoth from 'mammoth';
-import { validateCvPath, readCv, CvError } from '../cv.js';
+import { validateCvPath, readCv, CvError } from '../../lib/cv.js';
 
 describe('CvError', () => {
   it('sets name, message, and code for unsupported_format', () => {

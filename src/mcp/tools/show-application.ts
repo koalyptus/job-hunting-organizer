@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { ShowApplicationInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { readShowData, readShowFile, ShowError } from '../../workflow/applications/show.js';
 import { mcpLogger } from '../logger.js';
 

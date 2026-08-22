@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { ExtractJdInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { getConfig } from '../../core/config/config.js';
+import { getConfig } from '../../lib/config/config.js';
 import { defaultLlmConfig } from '../../core/llm.js';
 import { extractJdFromUrl, extractJdFromText } from '../../core/jobs/extract.js';
 import { mcpLogger } from '../logger.js';

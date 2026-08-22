@@ -14,8 +14,8 @@ import {
   resolveAppliedDir,
   resolveDataRoot,
   listCampaigns,
-} from '../../core/paths.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+} from '../../lib/paths.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { cliColorize } from '../colors.js';
 

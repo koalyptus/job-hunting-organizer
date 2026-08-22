@@ -4,9 +4,9 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { log as clackLog } from '@clack/prompts';
 import { runLockedInitSteps, printInitSummary } from '../../../workflow/init/write.js';
-import { clearConfigCache } from '../../config/config.js';
+import { clearConfigCache } from '../../../lib/config/config.js';
 import { JHO_CONFIG_HOME, JHO_DATA } from '../../../workflow/init/constants.js';
-import { childLogger } from '../../logger/logger.js';
+import { childLogger } from '../../../lib/logger/logger.js';
 
 vi.mock('@clack/prompts', () => ({
   log: {
@@ -174,7 +174,7 @@ describe('runLockedInitSteps', () => {
 
     // No backups dir should exist
     const backupsDir = join(campaignRoot, 'backups');
-    const { pathExists } = await import('../../fs.js');
+    const { pathExists } = await import('../../../lib/fs.js');
     expect(await pathExists(backupsDir)).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
-import { loadGlobalConfig } from '../../core/config/config.js';
-import { redactSecrets } from '../../core/config/config.view.js';
+import { loadGlobalConfig } from '../../lib/config/config.js';
+import { redactSecrets } from '../../lib/config/config.view.js';
 import { mcpLogger } from '../logger.js';
 
 export function registerConfig(server: McpServer): void {

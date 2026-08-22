@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { getConfig } from '../../core/config/config.js';
+import { getConfig } from '../../lib/config/config.js';
 import { defaultLlmConfig } from '../../core/llm.js';
 import { extractJdFromUrl, extractJdFromText } from '../../core/jobs/extract.js';
 import { mcpLogger } from '../logger.js';

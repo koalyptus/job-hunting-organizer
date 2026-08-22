@@ -5,7 +5,7 @@ import { aggregateRetros } from '../../../core/retro/aggregate.js';
 import { registerAggregateRetros } from '../../tools/aggregate-retros.js';
 import { createStore } from '../../../storage/index.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -32,7 +32,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/paths.js', () => ({
+vi.mock('../../../lib/paths.js', () => ({
   resolveDataRoot: vi.fn(),
   resolveCampaignRoot: vi.fn(() => '/data/campaigns/default'),
   resolveAppliedDir: vi.fn(() => '/data/campaigns/default/applied'),

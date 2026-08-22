@@ -10,7 +10,7 @@ import {
   resolveCampaignRoot,
   resolveAppliedDir,
   listCampaigns,
-} from '../paths.js';
+} from '../../lib/paths.js';
 import { listApplications } from '../../workflow/applications/applications.js';
 import { APPLICATION_STATUSES } from '../../workflow/applications/types.js';
 import type { ApplicationStatus, EmploymentType } from '../../workflow/applications/types.js';

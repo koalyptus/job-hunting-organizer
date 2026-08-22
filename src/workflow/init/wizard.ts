@@ -5,12 +5,12 @@ import {
   resolveProfilePath,
   resolveMyVoicePath,
   ensureRoot,
-} from '../../core/paths.js';
-import { pathExists } from '../../core/fs.js';
+} from '../../lib/paths.js';
+import { pathExists } from '../../lib/fs.js';
 import { validateName } from '../../core/validate.js';
-import { acquireLock } from '../../core/locks.js';
+import { acquireLock } from '../../lib/locks.js';
 import type { InitOptions } from './types.js';
-import { DEFAULT_CAMPAIGN } from '../../core/constants.js';
+import { DEFAULT_CAMPAIGN } from '../../lib/constants.js';
 import {
   promptLinkedin,
   promptCvPath,
@@ -22,7 +22,7 @@ import { promptGithub } from './github.js';
 import { promptLlm, loadExistingConfig, detectLocalBackend, buildLlmConfig } from './llm.js';
 import { runLockedInitSteps, printInitSummary } from './write.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
-import { childLogger } from '../../core/logger/logger.js';
+import { childLogger } from '../../lib/logger/logger.js';
 
 /**
  * Run the init wizard. Called from the CLI command.

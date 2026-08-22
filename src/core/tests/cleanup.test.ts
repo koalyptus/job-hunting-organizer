@@ -13,7 +13,7 @@ vi.mock('node:fs/promises', async () => {
   return { ...actual, rm: mockRm };
 });
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../lib/logger/logger.js', () => ({
   closeLogger: mockCloseLogger,
 }));
 

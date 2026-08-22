@@ -9,7 +9,7 @@ import {
   CoverLetterReadError,
 } from '../cover-letter.js';
 import { EM_DASH } from '../../../core/humanize.js';
-import * as fsModule from '../../../core/fs.js';
+import * as fsModule from '../../../lib/fs.js';
 
 const mockChatComplete = vi.fn();
 
@@ -27,7 +27,7 @@ vi.mock('../../../core/llm.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   getConfig: vi.fn(() => ({
     global: {
       version: 1,
@@ -57,7 +57,7 @@ vi.mock('../../../core/prompts.js', () => ({
   })),
 }));
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

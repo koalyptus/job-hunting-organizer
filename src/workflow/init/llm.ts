@@ -1,7 +1,7 @@
 import { text, password, isCancel } from '@clack/prompts';
 import { log as clackLog } from '@clack/prompts';
 import { detectAgents } from 'detect-local-agents';
-import { clearConfigCache, loadGlobalConfig, getConfigValue } from '../../core/config/config.js';
+import { clearConfigCache, loadGlobalConfig, getConfigValue } from '../../lib/config/config.js';
 import {
   DEFAULT_LLM_BASE_URL,
   DEFAULT_LLM_API_KEY,

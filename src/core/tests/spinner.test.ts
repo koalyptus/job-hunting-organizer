@@ -17,7 +17,7 @@ vi.mock('ora', () => ({
   })),
 }));
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../lib/logger/logger.js', () => ({
   isInteractive: vi.fn(() => true),
 }));
 

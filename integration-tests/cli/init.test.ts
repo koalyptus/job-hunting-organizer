@@ -4,7 +4,7 @@ import { initCommand } from '../../src/cli/commands/init.js';
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 
-vi.mock('../../src/core/logger/logger.js', async (importOriginal) => {
+vi.mock('../../src/lib/logger/logger.js', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
@@ -38,13 +38,13 @@ vi.mock('../../src/core/logger/logger.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../../src/core/locks.js', () => ({
+vi.mock('../../src/lib/locks.js', () => ({
   acquireLock: vi.fn(async (_target: string, fn: () => Promise<unknown>) => fn()),
 }));
 
 vi.mock('../../src/workflow/campaign/profile-builder.js', async () => {
-  const { resolveProfilePath } = await import('../../src/core/paths.js');
-  const { atomicWrite } = await import('../../src/core/fs.js');
+  const { resolveProfilePath } = await import('../../src/lib/paths.js');
+  const { atomicWrite } = await import('../../src/lib/fs.js');
   return {
     handleProfile: vi.fn(async (opts: { campaignRoot: string }) => {
       const skeleton = `# Profile\n\nGenerated skeleton.\n`;

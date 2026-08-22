@@ -8,7 +8,7 @@ import {
 import { computeStats } from '../../../core/stats/stats.js';
 import { registerStats } from '../../resources/stats.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -17,7 +17,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/paths.js', () => ({
+vi.mock('../../../lib/paths.js', () => ({
   resolveCampaignRoot: vi.fn().mockReturnValue('/mock/campaign'),
   resolveAppliedDir: vi.fn().mockReturnValue('/mock/applied'),
 }));

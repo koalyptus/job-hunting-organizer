@@ -2,7 +2,7 @@ import { copyFile, mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { getRootLogger, moduleLogger } from './logger/logger.js';
-import type { AtomicWriteOptions, WithBackupOptions } from './types.js';
+import type { AtomicWriteOptions, WithBackupOptions } from '../core/types.js';
 
 /**
  * Build a unique sibling temp path for {@link atomicWrite}. The

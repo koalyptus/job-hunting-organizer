@@ -1,4 +1,4 @@
-import { resolveCampaignRoot, resolveAppliedDir, findSlugFromCwd } from '../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir, findSlugFromCwd } from '../lib/paths.js';
 
 /**
  * Thrown when no slug can be resolved — the caller should print an

@@ -6,7 +6,7 @@ import {
   resolveConfigPath,
   getDefaultCampaignName,
 } from '../paths.js';
-import type { GlobalConfig, CampaignConfig } from '../types.js';
+import type { GlobalConfig, CampaignConfig } from '../../core/types.js';
 import { moduleLogger } from '../logger/logger.js';
 import {
   GlobalConfigSchema,

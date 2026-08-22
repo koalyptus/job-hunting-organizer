@@ -10,7 +10,7 @@ export type {
   StorageUnsupportedError,
 } from './types.js';
 
-// `resolveDataRoot` is re-exported from `core/paths.js` (single source of
+// `resolveDataRoot` is re-exported from `lib/paths.js` (single source of
 // truth for the data root and the `$JHO_DATA` override). The adapter does
 // not re-implement it.
 export { LocalFileStore, resolveDataRoot } from './local/local-file-store.js';

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { getPackageVersion } from '../core/package.js';
+import { getPackageVersion } from '../lib/package.js';
 import { globalOptions } from './options.js';
 import { configCommand } from './commands/config.js';
 import { campaignCommand } from './commands/campaign.js';
@@ -26,9 +26,9 @@ import { statsCommand } from './commands/stats.js';
 import { logsCommand } from './commands/logs.js';
 import { helpCommand } from './commands/help.js';
 import { mcpCommand } from './commands/mcp.js';
-import { initRootLogger } from '../core/logger/root-logger.js';
-import { getRootLogger, logError } from '../core/logger/logger.js';
-import { loadGlobalConfig } from '../core/config/config.js';
+import { initRootLogger } from '../lib/logger/root-logger.js';
+import { getRootLogger, logError } from '../lib/logger/logger.js';
+import { loadGlobalConfig } from '../lib/config/config.js';
 import { initColors } from './colors.js';
 import { withSpinner } from '../core/spinner.js';
 import {

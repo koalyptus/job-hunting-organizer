@@ -4,7 +4,7 @@ import {
   listCampaigns,
   resolveCampaignName,
   resolveDataRoot,
-} from '../../core/paths.js';
+} from '../../lib/paths.js';
 import type { CampaignListing } from '../../core/types.js';
 
 /**

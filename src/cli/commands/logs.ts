@@ -1,8 +1,8 @@
 import { Command } from 'commander';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { resolveConfigHome } from '../../core/paths.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { resolveConfigHome } from '../../lib/paths.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { DEFAULT_LOG_FILENAME, FILTERABLE_LOG_LEVELS } from '../../core/types.js';
 import { validateLevelOption, validateTailOption } from '../validate.js';
 import { userError, userWarn, userOutput } from '../output.js';

@@ -6,7 +6,7 @@ import {
   deleteApplication,
   ApplicationNotFoundError,
 } from '../../workflow/applications/applications.js';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { mcpLogger } from '../logger.js';
 
 /**

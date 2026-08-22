@@ -5,7 +5,7 @@ import { registerRenameCampaign } from '../../tools/rename-campaign.js';
 import { createStore } from '../../../storage/index.js';
 import { renameCampaign } from '../../../workflow/campaign/rename-campaign.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));

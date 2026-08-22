@@ -76,7 +76,7 @@ vi.mock('../../src/core/prompts.js', () => ({
   })),
 }));
 
-vi.mock('../../src/core/logger/logger.js', async (importOriginal) => {
+vi.mock('../../src/lib/logger/logger.js', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,

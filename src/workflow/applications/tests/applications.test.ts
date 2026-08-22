@@ -15,9 +15,9 @@ import {
   ApplicationNotFoundError,
 } from '../index.js';
 import { todayDateKey } from '../../../core/date.js';
-import * as fsModule from '../../../core/fs.js';
-import { writeFrontmatter } from '../../../core/parser/frontmatter.js';
-import { writeToolhash, computeHash } from '../../../core/toolhash.js';
+import * as fsModule from '../../../lib/fs.js';
+import { writeFrontmatter } from '../../../lib/frontmatter.js';
+import { writeToolhash, computeHash } from '../../../lib/toolhash.js';
 import { writeCountersAsync, readCountersAsync } from '../counters.js';
 
 const mockRootLogger = vi.hoisted(() => ({
@@ -34,7 +34,7 @@ const mockRootLogger = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => mockRootLogger),
   childLogger: vi.fn(() => mockRootLogger),
   moduleLogger: vi.fn(() => mockRootLogger),

@@ -1,9 +1,9 @@
 import { Command } from 'commander';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { resolveSlug } from '../slug.js';
 import { diagnoseCampaign, diagnoseApp, DoctorError } from '../../core/doctor/index.js';
 import type { DoctorIssue } from '../../core/doctor/types.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import type { GlobalOpts } from '../options.js';

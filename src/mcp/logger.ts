@@ -1,7 +1,7 @@
 import pino from 'pino';
-import { defaultLoggerConfig, DEFAULT_REDACT_PATHS } from '../core/logger/logger.js';
-import { getPackageVersion } from '../core/package.js';
-import { resolveConfigHome } from '../core/paths.js';
+import { defaultLoggerConfig, DEFAULT_REDACT_PATHS } from '../lib/logger/logger.js';
+import { getPackageVersion } from '../lib/package.js';
+import { resolveConfigHome } from '../lib/paths.js';
 import { resolve } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
 

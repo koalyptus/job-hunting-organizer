@@ -2,16 +2,13 @@ import { rename } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { isUnder } from '../../core/paths.js';
+import { isUnder } from '../../lib/paths.js';
 import { SLUG_PATTERN } from '../../core/parser/slug.js';
-import { acquireLock } from '../../core/locks.js';
-import {
-  readFrontmatter,
-  mergeFrontmatter,
-  writeFrontmatter,
-} from '../../core/parser/frontmatter.js';
+import { acquireLock } from '../../lib/locks.js';
+import { mergeFrontmatter } from '../../core/parser/frontmatter.js';
+import { readFrontmatter, writeFrontmatter } from '../../lib/frontmatter.js';
 import { rebuildIndex } from './index-builder.js';
-import { childLogger } from '../../core/logger/logger.js';
+import { childLogger } from '../../lib/logger/logger.js';
 
 const log = childLogger({ cmd: 'rename-application' });
 

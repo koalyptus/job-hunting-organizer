@@ -4,7 +4,7 @@ import { log as clackLog } from '@clack/prompts';
 import { collectTags, type GlobalOpts } from '../options.js';
 import { readClipboard } from '../clipboard.js';
 import { readStdin } from '../stdin.js';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { isUrl } from '../../core/parser/url.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
@@ -22,7 +22,7 @@ import {
 import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../workflow/applications/types.js';
 import type { EmploymentType } from '../../workflow/applications/types.js';
 import { ApplicationNotFoundError } from '../../workflow/applications/index.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError } from '../output.js';
 import { UserInputError } from '../errors.js';
 import { withSpinner } from '../../core/spinner.js';

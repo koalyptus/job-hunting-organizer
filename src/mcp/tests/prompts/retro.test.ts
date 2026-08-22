@@ -3,7 +3,7 @@ import { createTestServer, promptText } from './helpers.js';
 import { startRetro } from '../../../core/retro/retro.js';
 import { registerRetroPrompt } from '../../prompts/retro.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));

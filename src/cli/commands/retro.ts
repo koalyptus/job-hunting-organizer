@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { join } from 'node:path';
 import { text, isCancel, log as clackLog } from '@clack/prompts';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
   startRetro,
@@ -11,7 +11,7 @@ import {
   RetroError,
   RetroNotFoundError,
 } from '../../core/retro/index.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';
 import { stripAndRender } from '../markdown.js';

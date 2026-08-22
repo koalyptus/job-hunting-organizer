@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { diagnoseCampaign, diagnoseApp, DoctorError } from '../doctor/index.js';
-import * as toolhashModule from '../toolhash.js';
+import * as toolhashModule from '../../lib/toolhash.js';
 const { computeHash, writeToolhash } = toolhashModule;
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

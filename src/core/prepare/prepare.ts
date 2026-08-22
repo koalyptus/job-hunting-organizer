@@ -7,18 +7,18 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
-import { getConfig } from '../config/config.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
+import { getConfig } from '../../lib/config/config.js';
 import { defaultLlmConfig, chatComplete, extractJson } from '../llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { readApplication } from '../../workflow/applications/applications.js';
 import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';
 import { loadKbContextForCampaign } from '../../workflow/campaign/kb-context.js';
-import { atomicWrite } from '../fs.js';
-import { acquireLock } from '../locks.js';
+import { atomicWrite } from '../../lib/fs.js';
+import { acquireLock } from '../../lib/locks.js';
 import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
-import { computeHash, writeToolhash } from '../toolhash.js';
+import { computeHash, writeToolhash } from '../../lib/toolhash.js';
 import { aggregateRetros } from '../retro/aggregate.js';
 import {
   SECTION_SEPARATOR,
@@ -28,8 +28,8 @@ import {
   KNOWLEDGE_BASE_SECTION_HEADER,
   ADDITIONAL_INSTRUCTIONS_SECTION_HEADER,
   RETRO_CROSS_REFERENCE_SECTION_HEADER,
-} from '../constants.js';
-import { moduleLogger } from '../logger/logger.js';
+} from '../../lib/constants.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 import type { Logger } from 'pino';
 import type {
   PrepDepth,

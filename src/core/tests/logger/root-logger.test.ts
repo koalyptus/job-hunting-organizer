@@ -1,13 +1,13 @@
 import { describe, expect, it, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import * as loggerModule from '../../logger/logger.js';
+import * as loggerModule from '../../../lib/logger/logger.js';
 import type { Logger } from 'pino';
-import { initRootLogger } from '../../logger/root-logger.js';
+import { initRootLogger } from '../../../lib/logger/root-logger.js';
 
 const { mockLoadGlobalConfig } = vi.hoisted(() => ({
   mockLoadGlobalConfig: vi.fn(),
 }));
 
-vi.mock('../../config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   loadGlobalConfig: mockLoadGlobalConfig,
 }));
 

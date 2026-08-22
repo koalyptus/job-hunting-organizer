@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { runCommand } from '../../src/cli/tests/helpers.js';
 import { configCommand } from '../../src/cli/commands/config.js';
-import { loadGlobalConfig, loadCampaignConfig } from '../../src/core/config/config.js';
+import { loadGlobalConfig, loadCampaignConfig } from '../../src/lib/config/config.js';
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 

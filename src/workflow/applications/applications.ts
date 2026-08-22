@@ -2,15 +2,12 @@ import { mkdir, rm, readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { uniqueSlug, SLUG_PATTERN } from '../../core/parser/slug.js';
-import {
-  writeFrontmatter,
-  readFrontmatter,
-  mergeFrontmatter,
-} from '../../core/parser/frontmatter.js';
-import { atomicWrite } from '../../core/fs.js';
-import { acquireLock } from '../../core/locks.js';
-import { getRootLogger, moduleLogger } from '../../core/logger/logger.js';
-import { computeHash, writeToolhash } from '../../core/toolhash.js';
+import { mergeFrontmatter } from '../../core/parser/frontmatter.js';
+import { writeFrontmatter, readFrontmatter } from '../../lib/frontmatter.js';
+import { atomicWrite } from '../../lib/fs.js';
+import { acquireLock } from '../../lib/locks.js';
+import { getRootLogger, moduleLogger } from '../../lib/logger/logger.js';
+import { computeHash, writeToolhash } from '../../lib/toolhash.js';
 import { ApplicationFrontmatterSchema } from './meta-schema.js';
 import {
   upsertIndexEntry,

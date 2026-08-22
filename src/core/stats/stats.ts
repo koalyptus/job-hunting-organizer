@@ -6,7 +6,7 @@ import { listInterviews } from '../interviews/interviews.js';
 import type { CampaignStats, StatsOptions } from '../types.js';
 import { parseSince, toDateKey } from '../date.js';
 import { InvalidSinceError } from './errors.js';
-import { moduleLogger } from '../logger/logger.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 
 const log = moduleLogger(import.meta.url);
 

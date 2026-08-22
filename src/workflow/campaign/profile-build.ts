@@ -3,7 +3,7 @@
  * that pulls in CV parsing, GitHub API, and LLM dependencies.
  */
 import type { Logger } from 'pino';
-import { readCv } from '../../core/cv.js';
+import { readCv } from '../../lib/cv.js';
 import { fetchGithubUser, fetchGithubRepos } from '../../core/github.js';
 import {
   readCachedCv,
@@ -14,7 +14,7 @@ import {
 import { chatComplete } from '../../core/llm.js';
 import { loadPromptTemplate } from '../../core/prompts.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
-import { SECTION_SEPARATOR, KNOWLEDGE_BASE_SECTION_HEADER } from '../../core/constants.js';
+import { SECTION_SEPARATOR, KNOWLEDGE_BASE_SECTION_HEADER } from '../../lib/constants.js';
 import type { LlmConfig } from '../../core/types.js';
 
 /**

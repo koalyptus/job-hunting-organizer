@@ -12,7 +12,7 @@ import {
   getBackendModel,
 } from '../../../workflow/init/llm.js';
 import { detectAgents } from 'detect-local-agents';
-import { clearConfigCache } from '../../config/config.js';
+import { clearConfigCache } from '../../../lib/config/config.js';
 import { InitCancelled } from '../../../workflow/init/errors.js';
 import {
   DEFAULT_LLM_API_KEY,

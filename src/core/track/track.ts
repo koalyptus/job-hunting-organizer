@@ -8,11 +8,11 @@
 import type { Logger } from 'pino';
 import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { resolveCampaignRoot, resolveAppliedDir } from '../paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { isUrl } from '../parser/url.js';
-import { getConfig } from '../config/config.js';
+import { getConfig } from '../../lib/config/config.js';
 import { defaultLlmConfig } from '../llm.js';
-import { moduleLogger } from '../logger/logger.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { extractTargetRoles } from '../../workflow/campaign/target-roles.js';
 import { extractJdFromUrl, extractJdFromText } from '../jobs/extract.js';
@@ -31,9 +31,9 @@ import { APPLICATION_STATUSES } from '../../workflow/applications/types.js';
 import type { ApplicationStatus, EmploymentType } from '../../workflow/applications/types.js';
 import type { TargetRole } from '../types.js';
 import { replaceRegion, replaceSteer } from '../parser/markers.js';
-import { atomicWrite } from '../fs.js';
-import { acquireLock } from '../locks.js';
-import { computeHash, writeToolhash } from '../toolhash.js';
+import { atomicWrite } from '../../lib/fs.js';
+import { acquireLock } from '../../lib/locks.js';
+import { computeHash, writeToolhash } from '../../lib/toolhash.js';
 
 const log = moduleLogger(import.meta.url);
 

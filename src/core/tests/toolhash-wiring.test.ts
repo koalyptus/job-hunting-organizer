@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { computeHash, readToolhash } from '../toolhash.js';
+import { computeHash, readToolhash } from '../../lib/toolhash.js';
 import { createApplication, updateApplication } from '../../workflow/applications/applications.js';
 import { chatComplete } from '../llm.js';
 import { startRetro, appendRetro } from '../retro/index.js';
@@ -20,7 +20,7 @@ vi.mock('../config.js', () => ({
   })),
 }));
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),

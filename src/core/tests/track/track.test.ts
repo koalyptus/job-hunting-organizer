@@ -13,7 +13,7 @@ import {
 } from '../../../workflow/applications/applications.js';
 import { confirmTrackSummary, confirmTrackUpdate } from '../../track/prompts.js';
 import { replaceRegion, replaceSteer } from '../../parser/markers.js';
-import { atomicWrite } from '../../fs.js';
+import { atomicWrite } from '../../../lib/fs.js';
 import type { ApplicationFrontmatter } from '../../../workflow/applications/types.js';
 
 vi.mock('../../config.js', () => ({
@@ -68,15 +68,15 @@ vi.mock('../../parser/markers.js', () => ({
   replaceSteer: vi.fn((_content, steer) => (steer ? `<!-- jho:steer: ${steer} -->` : '')),
 }));
 
-vi.mock('../../fs.js', () => ({
+vi.mock('../../../lib/fs.js', () => ({
   atomicWrite: vi.fn(() => Promise.resolve(true)),
 }));
 
-vi.mock('../../locks.js', () => ({
+vi.mock('../../../lib/locks.js', () => ({
   acquireLock: vi.fn(async (_target, fn) => fn()),
 }));
 
-vi.mock('../../toolhash.js', () => ({
+vi.mock('../../../lib/toolhash.js', () => ({
   computeHash: vi.fn(() => 'mock-hash'),
   writeToolhash: vi.fn(async () => {}),
 }));

@@ -2,8 +2,8 @@ import { Command } from 'commander';
 import { log as clackLog } from '@clack/prompts';
 import { runInit } from '../../workflow/init/index.js';
 import { InitCancelled, InitError, InitInvalidNameError } from '../../workflow/init/errors.js';
-import { resolveCampaignName } from '../../core/paths.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { resolveCampaignName } from '../../lib/paths.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError } from '../output.js';
 
 /**

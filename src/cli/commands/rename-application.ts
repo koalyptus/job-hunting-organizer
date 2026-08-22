@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { resolveCampaignRoot, resolveAppliedDir } from '../../core/paths.js';
+import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import {
   renameApplication,
@@ -7,7 +7,7 @@ import {
   InvalidSlugError,
   SelfRenameError,
 } from '../../workflow/applications/rename.js';
-import { getRootLogger } from '../../core/logger/logger.js';
+import { getRootLogger } from '../../lib/logger/logger.js';
 import { userError, userSuccess } from '../output.js';
 import { bold, cyan } from '../colors.js';
 import type { GlobalOpts } from '../options.js';

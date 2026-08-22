@@ -4,9 +4,9 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { registerKbUpdate } from '../../tools/kb-update.js';
 import { createStore } from '../../../storage/index.js';
 import { syncKnowledgeBase } from '../../../workflow/campaign/kb-ingest.js';
-import { loadCampaignConfig } from '../../../core/config/config.js';
+import { loadCampaignConfig } from '../../../lib/config/config.js';
 
-vi.mock('../../../core/logger/logger.js', () => ({
+vi.mock('../../../lib/logger/logger.js', () => ({
   moduleLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   getRootLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
@@ -38,7 +38,7 @@ vi.mock('../../../workflow/campaign/kb-ingest.js', () => ({
   },
 }));
 
-vi.mock('../../../core/config/config.js', () => ({
+vi.mock('../../../lib/config/config.js', () => ({
   loadCampaignConfig: vi.fn().mockReturnValue({ knowledgeBase: { sources: ['/path/to/docs'] } }),
 }));
 

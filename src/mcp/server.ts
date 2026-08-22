@@ -1,7 +1,7 @@
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 import { McpServer } from '@modelcontextprotocol/server';
 import { appendFileSync } from 'node:fs';
-import { getPackageVersion } from '../core/package.js';
+import { getPackageVersion } from '../lib/package.js';
 import { mcpLogger, getMcpLogPath } from './logger.js';
 import { registerTools } from './tools.js';
 import { registerResources } from './resources/index.js';

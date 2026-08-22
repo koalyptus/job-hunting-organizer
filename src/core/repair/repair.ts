@@ -1,14 +1,14 @@
 import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { computeHash, writeToolhash, TOOL_MANAGED_FILES } from '../toolhash.js';
+import { computeHash, writeToolhash, TOOL_MANAGED_FILES } from '../../lib/toolhash.js';
 import { rebuildIndex } from '../../workflow/applications/index-builder.js';
 import { updateApplication } from '../../workflow/applications/applications.js';
 import { APPLICATION_STATUS } from '../../workflow/applications/types.js';
 import { listInterviews } from '../interviews/interviews.js';
 import { readCounters, writeCountersAsync } from '../../workflow/applications/counters.js';
-import { acquireLock } from '../locks.js';
-import { moduleLogger } from '../logger/logger.js';
+import { acquireLock } from '../../lib/locks.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 import { SLUG_PATTERN } from '../parser/slug.js';
 import type { RepairAction, RepairResult, RepairOptions } from './types.js';
 

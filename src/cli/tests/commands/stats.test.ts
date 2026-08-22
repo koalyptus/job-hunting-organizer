@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runCommand } from '../helpers.js';
 import { statsCommand } from '../../commands/stats.js';
 import * as statsCoreModule from '../../../core/stats/index.js';
-import * as pathsModule from '../../../core/paths.js';
+import * as pathsModule from '../../../lib/paths.js';
 import type { CampaignStats } from '../../../core/types.js';
 
 function parentSetup(parent: Command): void {
@@ -21,7 +21,7 @@ vi.mock('../../../core/stats/index.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../../../core/paths.js', async (importOriginal) => {
+vi.mock('../../../lib/paths.js', async (importOriginal) => {
   const actual = await importOriginal<typeof pathsModule>();
   return {
     ...actual,

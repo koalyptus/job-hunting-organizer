@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { atomicWrite } from '../fs.js';
+import { atomicWrite } from '../../lib/fs.js';
 import { readApplication, updateApplication } from '../../workflow/applications/applications.js';
 import {
   addInterview,
@@ -14,10 +14,10 @@ import {
   INTERVIEW_TYPES,
   INTERVIEW_STATUSES,
 } from '../interviews/index.js';
-import type * as fsModule from '../fs.js';
+import type * as fsModule from '../../lib/fs.js';
 import type * as appModule from '../../workflow/applications/applications.js';
 
-vi.mock('../logger/logger.js', () => ({
+vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -41,8 +41,8 @@ vi.mock('../logger/logger.js', () => ({
 }));
 
 // Wrap atomicWrite in a spy so per-test mockResolvedValue works for write-failure tests.
-vi.mock('../fs.js', async () => {
-  const actual = await vi.importActual<typeof fsModule>('../fs.js');
+vi.mock('../../lib/fs.js', async () => {
+  const actual = await vi.importActual<typeof fsModule>('../../lib/fs.js');
   return {
     ...actual,
     atomicWrite: vi.fn(actual.atomicWrite),

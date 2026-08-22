@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
-import { clearConfigCache } from '../src/core/config/config.js';
+import { clearConfigCache } from '../src/lib/config/config.js';
 
 export interface TestEnv {
   testHome: string;

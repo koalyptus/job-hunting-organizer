@@ -1,7 +1,7 @@
 import { text, isCancel, log as clackLog } from '@clack/prompts';
 import type { Logger } from 'pino';
-import { loadCampaignConfig } from '../../core/config/config.js';
-import { validateCvPath } from '../../core/cv.js';
+import { loadCampaignConfig } from '../../lib/config/config.js';
+import { validateCvPath } from '../../lib/cv.js';
 import { JHO_LINKEDIN_URL, JHO_CV_PATH, JHO_KB_PATH } from './constants.js';
 import { InitCancelled } from './errors.js';
 import type { InitOptions } from './types.js';

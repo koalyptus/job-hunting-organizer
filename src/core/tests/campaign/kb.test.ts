@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { GithubUser, GithubRepo } from '../../types.js';
-import * as fsMod from '../../fs.js';
+import * as fsMod from '../../../lib/fs.js';
 import {
   readCachedCv,
   writeCachedCv,

@@ -6,10 +6,10 @@ import {
   ListError,
   InvalidListStatusError,
 } from '../../core/list/index.js';
-import { findCampaignFromCwd, resolveDataRoot } from '../../core/paths.js';
+import { findCampaignFromCwd, resolveDataRoot } from '../../lib/paths.js';
 import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../workflow/applications/types.js';
 import type { EmploymentType } from '../../workflow/applications/types.js';
-import { getRootLogger, logError } from '../../core/logger/logger.js';
+import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userOutput, userError } from '../output.js';
 import { bold, cyan, dim, statusColor } from '../colors.js';
 

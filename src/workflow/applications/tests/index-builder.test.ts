@@ -199,7 +199,7 @@ describe('rebuildIndex', () => {
   });
 
   it('still returns entries when index write fails', async () => {
-    const fsMod = await import('../../../core/fs.js');
+    const fsMod = await import('../../../lib/fs.js');
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValue(false);
 
     const folder = join(appliedDir, '2026-Jun-03-SE-Foo-123');

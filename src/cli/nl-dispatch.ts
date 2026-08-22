@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import type { GlobalOpts } from './options.js';
 import { PromptParseError, deriveKnownCommands } from '../core/parser/prompt-parser.js';
 import type { ParsedCommand } from '../core/parser/prompt-parser.js';
-import { getRootLogger } from '../core/logger/logger.js';
+import { getRootLogger } from '../lib/logger/logger.js';
 import { resolveCampaign } from './campaign.js';
 import type { Logger } from 'pino';
 

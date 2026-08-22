@@ -4,10 +4,10 @@
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { pathExists } from '../fs.js';
+import { pathExists } from '../../lib/fs.js';
 import { listApplications } from '../../workflow/applications/applications.js';
 import { parseRetroFile } from './retro.js';
-import { moduleLogger } from '../logger/logger.js';
+import { moduleLogger } from '../../lib/logger/logger.js';
 import type { AggregatedTopic, AggregateOptions } from './types.js';
 
 const log = moduleLogger(import.meta.url);
