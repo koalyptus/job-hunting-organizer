@@ -29,7 +29,7 @@
 - [ ] **Phase 9g–9k** — IO-free core (move workflow modules out of `core/` into `src/workflow/`)
   - [ ] 9g — Move `init` workflow to `src/workflow/init/`
   - [ ] 9h — Move `campaign` workflow to `src/workflow/campaign/`
-  - [ ] 9i — Move `applications` workflow to `src/workflow/applications/`
+  - [x] 9i — Move `applications` workflow to `src/workflow/applications/`
   - [x] 9j — Extract infrastructure utilities to `src/lib/`
   - [ ] 9k — Validate pure core, remove deprecated barrels
 - [ ] **Phase 10** — Polish & public readiness
