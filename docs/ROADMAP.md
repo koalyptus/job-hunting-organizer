@@ -7,39 +7,18 @@
 - [x] **Phase 0** — Planning artifacts
 - [x] **Phase 1** — Skeleton & toolchain
 - [x] **Phase 2** — Core infra (paths, config, logger, slug, frontmatter, markers)
-- [ ] **Phase 3** — LLM client & profile building
+- [x] **Phase 3** — LLM client & profile building
   - [x] 3a — LLM client
   - [x] 3b — CV parser + GitHub client
   - [x] 3c — Target roles
   - [x] 3d — Profile builder
   - [x] 3e — Knowledge base caching & evals
 - [x] **Phase 4** — CLI scaffolding & `init` wizard
-- [ ] **Phase 5** — JD extraction & `track`
-- [x] **Phase 6** — Cover letter & Q&A
-- [x] **Phase 7** — Tracker depth (interviews, doctor, repair, ownership, retro, show)
-- [x] **Phase 8** — MCP server
-- [ ] **Phase 9** — Storage port & adapter
-  - [x] 9a — Storage port, adapter, bootstrap & guards
-  - [x] 9b — Storage module JSDoc & comment hygiene
-  - [x] 9b1 — Disposable real-data smoke-run gate
-  - [x] 9c — Migrate remaining `core/fs.ts` consumers onto the port
-  - [x] 9d — Complete error-class coverage & contract tests
-  - [x] 9e — In-memory `FileStore` for tests
-  - [ ] 9f — Campaign-scoped store routing (abandoned)
-- [ ] **Phase 9g–9k** — IO-free core (move workflow modules out of `core/` into `src/workflow/`)
-  - [x] 9g — Move `init` workflow to `src/workflow/init/`
-  - [x] 9h — Move `campaign` workflow to `src/workflow/campaign/`
-  - [x] 9i — Move `applications` workflow to `src/workflow/applications/`
-  - [x] 9j — Extract infrastructure utilities to `src/lib/`
-  - [ ] 9k — Validate pure core, remove deprecated barrels
-- [ ] **Phase 10** — Polish & public readiness
-
-- [x] **Phase 4** — CLI scaffolding & `init` wizard
   - [x] 4a — CLI framework & command module structure
   - [x] 4b — Real commands (rename-campaign, campaign inference)
   - [x] 4c — Init wizard
   - [x] 4d — Tests & polish
-- [ ] **Phase 5** — JD extraction & `track`
+- [x] **Phase 5** — JD extraction & `track`
   - [x] 5a — Data schemas & applications core
   - [x] 5b — JD fetch & extraction
   - [x] 5c — Target role suggestion
@@ -95,9 +74,14 @@
   - [x] 9b — Storage module JSDoc & comment hygiene
   - [x] 9b1 — Disposable real-data smoke-run gate
   - [x] 9c — Migrate remaining `core/fs.ts` consumers onto the port
-  - [ ] 9d — Complete error-class coverage & contract tests
-  - [ ] 9e — In-memory `FileStore` for tests
-  - [ ] 9f — Campaign-scoped store routing
+  - [x] 9d — Complete error-class coverage & contract tests
+  - [x] 9e — In-memory `FileStore` for tests
+  - [ ] 9f — Campaign-scoped store routing (abandoned)
+  - [x] 9g — Move `init` workflow to `src/workflow/init/`
+  - [x] 9h — Move `campaign` workflow to `src/workflow/campaign/`
+  - [x] 9i — Move `applications` workflow to `src/workflow/applications/`
+  - [x] 9j — Extract infrastructure utilities to `src/lib/`
+  - [ ] 9k — Validate pure core, remove deprecated barrels
 - [ ] **Phase 10** — Polish & public readiness
 
 ---
