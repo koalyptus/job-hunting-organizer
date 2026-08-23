@@ -86,17 +86,17 @@ export const listCommand = new Command('list')
         // near the cursor, saving the user from scrolling up.
         entries.reverse();
 
-        for (let i = 0; i < entries.length; i++) {
-          const e = entries[i]!;
+        const maxSlugLen = Math.max(...entries.map((e) => e.slug.length));
+        for (const e of entries) {
           const statusCell = statusColor(e.status ?? 'applied');
           const role = e.targetRole && e.targetRole !== 'unknown' ? dim(` → ${e.targetRole}`) : '';
           userOutput(
-            `${statusCell}  ${bold(e.slug.padEnd(STATUS_COL_WIDTH))}  ${e.title}${role}  ${e.company}  ${dim(e.appliedOn)}`,
+            `${statusCell}  ${bold(e.slug.padEnd(maxSlugLen))}  ${e.title}${role}  ${e.company}  ${dim(e.appliedOn)}`,
           );
         }
       }
     } catch (err) {
-      logError(log, err);
+      logError(log, err, 'list command failed');
       if (err instanceof ListError) {
         userError(err.message);
       } else {
