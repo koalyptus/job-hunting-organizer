@@ -166,7 +166,8 @@ List campaigns, or applications within a campaign
 Options:
   --status <status>         filter by status (requires --campaign or campaign
                             folder)
-  --tags <tag>              filter by tag (repeatable) (default: [])
+  --tags <tag>              filter by tag, repeatable (requires --campaign or
+                            campaign folder) (default: [])
   --role <role>             filter by target role (requires --campaign or
                             campaign folder)
   --employment-type <type>  filter by employment type
