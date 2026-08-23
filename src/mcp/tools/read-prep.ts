@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { ReadPrepInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { readPrep } from '../../core/prepare/index.js';
+import { readPrep } from '../../workflow/prepare/index.js';
 import { mcpLogger } from '../logger.js';
 
 /**

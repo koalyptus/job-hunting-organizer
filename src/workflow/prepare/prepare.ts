@@ -9,15 +9,15 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { getConfig } from '../../lib/config/config.js';
-import { defaultLlmConfig, chatComplete, extractJson } from '../llm.js';
+import { defaultLlmConfig, chatComplete, extractJson } from '../../core/llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { readApplication } from '../../workflow/applications/applications.js';
-import { replaceRegion, extractSteer, replaceSteer } from '../parser/markers.js';
+import { replaceRegion, extractSteer, replaceSteer } from '../../core/parser/markers.js';
 import { loadKbContextForCampaign } from '../../workflow/campaign/kb-context.js';
 import { atomicWrite } from '../../lib/fs.js';
 import { acquireLock } from '../../lib/locks.js';
-import { extractJdContent, isRefusal, countWords } from '../generation-utils.js';
+import { extractJdContent, isRefusal, countWords } from '../../core/generation-utils.js';
 import { computeHash, writeToolhash } from '../../lib/toolhash.js';
 import { aggregateRetros } from '../retro/aggregate.js';
 import {

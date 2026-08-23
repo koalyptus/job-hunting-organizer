@@ -12,7 +12,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { BANNED_PHRASES } from '../shared.js';
-import { loadPromptTemplate } from '../../src/core/prompts.js';
+import { loadPromptTemplate } from '../../src/workflow/prompts.js';
 import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';
 import { extractTargetRoles } from '../../src/workflow/campaign/target-roles.js';

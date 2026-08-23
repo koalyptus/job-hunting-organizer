@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../lib/paths.js';
-import { repairApp, repairAll } from '../../../core/repair/repair.js';
+import { repairApp, repairAll } from '../../../workflow/repair/repair.js';
 import { registerRepair } from '../../tools/repair-tool.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -33,7 +33,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/repair/repair.js', () => ({
+vi.mock('../../../workflow/repair/repair.js', () => ({
   repairApp: vi.fn(),
   repairAll: vi.fn(),
   RepairError: class RepairError extends Error {},

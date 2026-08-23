@@ -1,5 +1,5 @@
-import type { CampaignStats, Colorize } from '../types.js';
-import { resolveStyle } from '../types.js';
+import type { CampaignStats, Colorize } from '../../core/types.js';
+import { resolveStyle } from '../../core/types.js';
 
 /**
  * Render a full campaign stats block as a string.

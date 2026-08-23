@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { confirmTrackSummary, confirmTrackUpdate } from '../../track/prompts.js';
+import { confirmTrackSummary, confirmTrackUpdate } from '../../../workflow/track/prompts.js';
 import { confirm, isCancel } from '@clack/prompts';
 import type { ExtractedJd, RoleSuggestion } from '../../jobs/types.js';
 import type { TargetRole } from '../../types.js';

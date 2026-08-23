@@ -9,7 +9,7 @@ import { listInterviews } from '../interviews/interviews.js';
 import { readCounters, writeCountersAsync } from '../../workflow/applications/counters.js';
 import { acquireLock } from '../../lib/locks.js';
 import { moduleLogger } from '../../lib/logger/logger.js';
-import { SLUG_PATTERN } from '../parser/slug.js';
+import { SLUG_PATTERN } from '../../core/parser/slug.js';
 import type { RepairAction, RepairResult, RepairOptions } from './types.js';
 
 const log = moduleLogger(import.meta.url);

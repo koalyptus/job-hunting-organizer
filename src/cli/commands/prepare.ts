@@ -14,7 +14,7 @@ import {
   PrepError,
   PrepNotFoundError,
   PrepReadError,
-} from '../../core/prepare/index.js';
+} from '../../workflow/prepare/index.js';
 import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';

@@ -23,8 +23,8 @@ import {
   resolveConfigHome,
   resolveConfigPath,
   resolveDataRoot,
-} from '../../lib/paths.js';
-import { SLUG_PATTERN } from '../parser/slug.js';
+} from '../paths.js';
+import { SLUG_PATTERN } from '../../core/parser/slug.js';
 
 describe('isWindows', () => {
   it('returns a boolean consistent with process.platform', () => {

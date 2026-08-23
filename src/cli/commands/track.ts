@@ -18,7 +18,7 @@ import {
   TrackCancelled,
   NoLinkStoredError,
   InvalidStatusError,
-} from '../../core/track/index.js';
+} from '../../workflow/track/index.js';
 import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../workflow/applications/types.js';
 import type { EmploymentType } from '../../workflow/applications/types.js';
 import { ApplicationNotFoundError } from '../../workflow/applications/index.js';

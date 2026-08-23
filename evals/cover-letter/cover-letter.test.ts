@@ -12,7 +12,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { loadCases } from './cases.js';
-import { loadPromptTemplateWithVoice } from '../../src/core/prompts.js';
+import { loadPromptTemplateWithVoice } from '../../src/workflow/prompts.js';
 import { humanize } from '../../src/core/humanize.js';
 import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';

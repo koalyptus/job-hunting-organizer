@@ -6,7 +6,7 @@ import {
   renderCompactStats,
   StatsError,
   InvalidSinceError,
-} from '../../core/stats/index.js';
+} from '../../workflow/stats/index.js';
 import { EMPLOYMENT_TYPES, type EmploymentType } from '../../workflow/applications/types.js';
 import type { CampaignStats } from '../../core/types.js';
 import {

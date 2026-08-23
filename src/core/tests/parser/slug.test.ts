@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, existsSync } from 'node:fs';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import {
   buildSlug,
@@ -178,6 +178,7 @@ describe('uniqueSlug', () => {
     const result = await uniqueSlug(
       { title: 'Engineer', company: 'Foo', appliedOn: '2026-06-03T00:00:00Z' },
       join(testDir, 'applied'),
+      existsSync,
     );
     expect(result).toBe('2026-Jun-03-engineer-foo');
   });
@@ -190,6 +191,7 @@ describe('uniqueSlug', () => {
     const result = await uniqueSlug(
       { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
       appliedDir,
+      existsSync,
     );
     expect(result).toBe(`${baseSlug}-1`);
   });
@@ -201,6 +203,7 @@ describe('uniqueSlug', () => {
     const result1 = await uniqueSlug(
       { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
       appliedDir,
+      existsSync,
     );
     expect(result1).toBe(baseSlug);
 
@@ -209,12 +212,14 @@ describe('uniqueSlug', () => {
     const result2 = await uniqueSlug(
       { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
       appliedDir,
+      existsSync,
     );
     expect(result2).toBe(`${baseSlug}-1`);
 
     const result3 = await uniqueSlug(
       { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
       appliedDir,
+      existsSync,
     );
     expect(result3).toBe(`${baseSlug}-2`);
   });

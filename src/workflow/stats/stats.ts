@@ -3,8 +3,8 @@ import { listApplications, readApplication } from '../../workflow/applications/a
 import { APPLICATION_STATUSES } from '../../workflow/applications/types.js';
 import type { ApplicationStatus } from '../../workflow/applications/types.js';
 import { listInterviews } from '../interviews/interviews.js';
-import type { CampaignStats, StatsOptions } from '../types.js';
-import { parseSince, toDateKey } from '../date.js';
+import type { CampaignStats, StatsOptions } from '../../core/types.js';
+import { parseSince, toDateKey } from '../../core/date.js';
 import { InvalidSinceError } from './errors.js';
 import { moduleLogger } from '../../lib/logger/logger.js';
 

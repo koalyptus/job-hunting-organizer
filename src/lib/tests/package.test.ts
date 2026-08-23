@@ -9,7 +9,7 @@ import {
   getPackageJson,
   getPackageRoot,
   getPackageVersion,
-} from '../../lib/package.js';
+} from '../package.js';
 
 describe('getPackageRoot', () => {
   it('returns an absolute path', () => {

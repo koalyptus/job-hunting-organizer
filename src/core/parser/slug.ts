@@ -8,8 +8,6 @@
 //   jobId        : optional, extracted from the URL (LinkedIn, Seek, Indeed, generic)
 //   -N           : optional, integer suffix on collision (see core/counters.ts)
 
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { MONTH_ABBR, formatDate, parseDateOrNow } from '../date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
@@ -131,6 +129,7 @@ export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): st
 export async function uniqueSlug(
   input: { title?: string; company?: string; url?: string; appliedOn?: string | Date },
   appliedDir: string,
+  fileExists: (path: string) => boolean,
 ): Promise<string> {
   const base = buildSlug({
     title: input.title,
@@ -142,7 +141,7 @@ export async function uniqueSlug(
   const counters = await readCountersAsync(appliedDir);
   const current = counters[base] ?? 0;
 
-  if (current === 0 && !existsSync(join(appliedDir, base))) {
+  if (current === 0 && !fileExists(`${appliedDir}/${base}`)) {
     return base;
   }
 

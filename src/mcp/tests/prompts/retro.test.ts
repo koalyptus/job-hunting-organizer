@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, promptText } from './helpers.js';
-import { startRetro } from '../../../core/retro/retro.js';
+import { startRetro } from '../../../workflow/retro/retro.js';
 import { registerRetroPrompt } from '../../prompts/retro.js';
 
 vi.mock('../../../lib/logger/logger.js', () => ({
@@ -12,7 +12,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/retro/retro.js', () => ({
+vi.mock('../../../workflow/retro/retro.js', () => ({
   startRetro: vi.fn().mockResolvedValue({ learningPlan: 'test learning plan' }),
 }));
 

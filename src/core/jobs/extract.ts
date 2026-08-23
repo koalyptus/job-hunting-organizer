@@ -1,7 +1,7 @@
 import type { Logger } from 'pino';
 import { convert } from 'html-to-text';
 import { chatComplete, parseJsonResult } from '../llm.js';
-import { loadPromptTemplate } from '../prompts.js';
+import { loadPromptTemplate } from '../../workflow/prompts.js';
 import { fetchWithFallback, type FetchResult } from '../fetch.js';
 import { ExtractedJdSchema } from './jd-schema.js';
 import type { ExtractedJd } from './types.js';

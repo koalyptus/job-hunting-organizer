@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as clack from '@clack/prompts';
 import { runCommand } from './helpers.js';
 import { doctorCommand } from '../commands/doctor.js';
-import * as doctorCore from '../../core/doctor/index.js';
+import * as doctorCore from '../../workflow/doctor/index.js';
 import * as pathsModule from '../../lib/paths.js';
 import { resolveCampaign } from '../campaign.js';
 import * as campaignCore from '../../workflow/campaign/index.js';
@@ -18,7 +18,7 @@ vi.mock('@clack/prompts', () => ({
   log: { info: vi.fn(), success: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../core/doctor/index.js', async (importOriginal) => {
+vi.mock('../../workflow/doctor/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof doctorCore>();
   return {
     ...actual,

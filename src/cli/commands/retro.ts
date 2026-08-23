@@ -10,7 +10,7 @@ import {
   aggregateRetros,
   RetroError,
   RetroNotFoundError,
-} from '../../core/retro/index.js';
+} from '../../workflow/retro/index.js';
 import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userOutput } from '../output.js';
 import { withSpinner } from '../../core/spinner.js';

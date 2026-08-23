@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CAMPAIGN, CV_EXTENSIONS, KB_GITHUB } from '../../lib/constants.js';
+import { DEFAULT_CAMPAIGN, CV_EXTENSIONS, KB_GITHUB } from '../constants.js';
 
 describe('core constants', () => {
   it('DEFAULT_CAMPAIGN is "default"', () => {

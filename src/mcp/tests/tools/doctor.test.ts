@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../lib/paths.js';
-import { diagnoseCampaign, diagnoseApp } from '../../../core/doctor/doctor.js';
+import { diagnoseCampaign, diagnoseApp } from '../../../workflow/doctor/doctor.js';
 import { registerDoctor } from '../../tools/doctor-tool.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -33,7 +33,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/doctor/doctor.js', () => ({
+vi.mock('../../../workflow/doctor/doctor.js', () => ({
   diagnoseCampaign: vi.fn(),
   diagnoseApp: vi.fn(),
   DoctorError: class DoctorError extends Error {},

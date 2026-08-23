@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { interviewCommand } from '../../commands/interview.js';
-import * as interviewsCore from '../../../core/interviews/index.js';
-import { InterviewError, InterviewNotFoundError } from '../../../core/interviews/index.js';
+import * as interviewsCore from '../../../workflow/interviews/index.js';
+import { InterviewError, InterviewNotFoundError } from '../../../workflow/interviews/index.js';
 import * as icsModule from '../../interview-ics.js';
 import { text, select, isCancel } from '@clack/prompts';
 import { initColors } from '../../colors.js';
@@ -17,7 +17,7 @@ function stripAnsi(text: string): string {
   return text.replace(new RegExp(`${ESC}\\[[0-9;]*m`, 'g'), '');
 }
 
-vi.mock('../../../core/interviews/index.js', async (importOriginal) => {
+vi.mock('../../../workflow/interviews/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof interviewsCore>();
   return {
     ...actual,

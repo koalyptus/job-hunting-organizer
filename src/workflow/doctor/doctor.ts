@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readFrontmatter } from '../../lib/frontmatter.js';
 import { safeValidateApplicationFrontmatter } from '../../workflow/applications/meta-schema.js';
-import { SLUG_PATTERN } from '../parser/slug.js';
+import { SLUG_PATTERN } from '../../core/parser/slug.js';
 import { readToolhash, computeHash, TOOL_MANAGED_FILES } from '../../lib/toolhash.js';
 import { readIndex, indexPath } from '../../workflow/applications/index-builder.js';
 import { moduleLogger } from '../../lib/logger/logger.js';

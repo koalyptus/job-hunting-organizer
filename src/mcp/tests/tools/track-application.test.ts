@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../../../workflow/applications/types.js';
-import { runTrack } from '../../../core/track/track.js';
+import { runTrack } from '../../../workflow/track/track.js';
 import { registerTrackApplication } from '../../tools/track-application.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -42,7 +42,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/track/track.js', () => ({
+vi.mock('../../../workflow/track/track.js', () => ({
   runTrack: vi.fn().mockResolvedValue({ slug: 'test-app', changed: true }),
 }));
 

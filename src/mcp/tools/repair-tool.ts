@@ -3,7 +3,7 @@ import type { FileStore } from '../../storage/types.js';
 import { RepairInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
-import { repairApp, repairAll } from '../../core/repair/repair.js';
+import { repairApp, repairAll } from '../../workflow/repair/repair.js';
 import { mcpLogger } from '../logger.js';
 
 /**

@@ -9,14 +9,14 @@ import type { Logger } from 'pino';
 import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
-import { isUrl } from '../parser/url.js';
+import { isUrl } from '../../core/parser/url.js';
 import { getConfig } from '../../lib/config/config.js';
-import { defaultLlmConfig } from '../llm.js';
+import { defaultLlmConfig } from '../../core/llm.js';
 import { moduleLogger } from '../../lib/logger/logger.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { extractTargetRoles } from '../../workflow/campaign/target-roles.js';
-import { extractJdFromUrl, extractJdFromText } from '../jobs/extract.js';
-import { suggestTargetRole } from '../jobs/suggest.js';
+import { extractJdFromUrl, extractJdFromText } from '../../core/jobs/extract.js';
+import { suggestTargetRole } from '../../core/jobs/suggest.js';
 import {
   createApplication,
   updateApplication,
@@ -26,11 +26,11 @@ import {
 import { parseEmploymentType } from '../../workflow/applications/normalize.js';
 import { TrackError, TrackCancelled, NoLinkStoredError, InvalidStatusError } from './errors.js';
 import { confirmTrackSummary, confirmTrackUpdate } from './prompts.js';
-import type { ExtractedJd, RoleSuggestion } from '../jobs/types.js';
+import type { ExtractedJd, RoleSuggestion } from '../../core/jobs/types.js';
 import { APPLICATION_STATUSES } from '../../workflow/applications/types.js';
 import type { ApplicationStatus, EmploymentType } from '../../workflow/applications/types.js';
-import type { TargetRole } from '../types.js';
-import { replaceRegion, replaceSteer } from '../parser/markers.js';
+import type { TargetRole } from '../../core/types.js';
+import { replaceRegion, replaceSteer } from '../../core/parser/markers.js';
 import { atomicWrite } from '../../lib/fs.js';
 import { acquireLock } from '../../lib/locks.js';
 import { computeHash, writeToolhash } from '../../lib/toolhash.js';

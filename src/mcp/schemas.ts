@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { APPLICATION_STATUSES, EMPLOYMENT_TYPES } from '../workflow/applications/types.js';
-import { INTERVIEW_TYPES, INTERVIEW_STATUSES } from '../core/interviews/types.js';
+import { INTERVIEW_TYPES, INTERVIEW_STATUSES } from '../workflow/interviews/types.js';
 
 /** Zod schema for the `campaign` parameter (used by most tools). */
 export const CampaignParam = z.string().describe('Campaign name (e.g. "default")');

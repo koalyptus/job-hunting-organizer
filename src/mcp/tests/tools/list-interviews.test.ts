@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../lib/paths.js';
-import { listInterviews } from '../../../core/interviews/interviews.js';
+import { listInterviews } from '../../../workflow/interviews/interviews.js';
 import { registerListInterviews } from '../../tools/list-interviews.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -33,7 +33,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/interviews/interviews.js', () => ({
+vi.mock('../../../workflow/interviews/interviews.js', () => ({
   listInterviews: vi.fn(),
   addInterview: vi.fn(),
   markInterviewStatus: vi.fn(),

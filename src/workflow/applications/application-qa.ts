@@ -11,7 +11,7 @@ import { join, basename } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { getConfig } from '../../lib/config/config.js';
 import { defaultLlmConfig, chatComplete } from '../../core/llm.js';
-import { loadPromptTemplateWithVoice } from '../../core/prompts.js';
+import { loadPromptTemplateWithVoice } from '../../workflow/prompts.js';
 import { humanize } from '../../core/humanize.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import {

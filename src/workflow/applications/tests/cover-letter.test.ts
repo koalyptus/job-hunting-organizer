@@ -46,7 +46,7 @@ vi.mock('../../../lib/config/config.js', () => ({
   })),
 }));
 
-vi.mock('../../../core/prompts.js', () => ({
+vi.mock('../../../workflow/prompts.js', () => ({
   loadPromptTemplate: vi.fn(async () => ({
     body: 'You are a cover letter writer.',
     temperature: 0.6,

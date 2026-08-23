@@ -12,7 +12,7 @@ import {
   writeCachedGithubProfile,
 } from './kb.js';
 import { chatComplete } from '../../core/llm.js';
-import { loadPromptTemplate } from '../../core/prompts.js';
+import { loadPromptTemplate } from '../../workflow/prompts.js';
 import { loadKnowledgeBaseContext } from './kb-context.js';
 import { SECTION_SEPARATOR, KNOWLEDGE_BASE_SECTION_HEADER } from '../../lib/constants.js';
 import type { LlmConfig } from '../../core/types.js';

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type * as FsPromisesModule from 'node:fs/promises';
 import { chmod, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { computeHash, readToolhash, writeToolhash, toolhashPath } from '../../lib/toolhash.js';
+import { computeHash, readToolhash, writeToolhash, toolhashPath } from '../toolhash.js';
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof FsPromisesModule>();

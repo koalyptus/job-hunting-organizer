@@ -140,6 +140,7 @@ export async function createApplication(input: CreateApplicationInput): Promise<
         appliedOn: input.appliedOn,
       },
       appliedDir,
+      existsSync,
     );
 
     const folder = join(appliedDir, slug);

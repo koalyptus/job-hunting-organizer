@@ -11,11 +11,11 @@ import {
   PrepError,
   PrepNotFoundError,
   PrepReadError,
-} from '../prepare/index.js';
-import type { PrepPlan } from '../prepare/types.js';
+} from '../../workflow/prepare/index.js';
+import type { PrepPlan } from '../../workflow/prepare/types.js';
 import type * as FsModule from '../../lib/fs.js';
 import type * as AppModule from '../../workflow/applications/applications.js';
-import { aggregateRetros } from '../retro/aggregate.js';
+import { aggregateRetros } from '../../workflow/retro/aggregate.js';
 import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
 
 vi.mock('../../lib/logger/logger.js', () => ({
@@ -94,7 +94,7 @@ vi.mock('../../workflow/applications/applications.js', async () => {
   };
 });
 
-vi.mock('../retro/aggregate.js', () => ({
+vi.mock('../../workflow/retro/aggregate.js', () => ({
   aggregateRetros: vi.fn(async () => []),
 }));
 

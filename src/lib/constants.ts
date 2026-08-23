@@ -24,3 +24,10 @@ export const DAYS_UNTIL_INTERVIEW_SECTION_HEADER = '## Days until interview';
 export const WEAK_TOPICS_SECTION_HEADER = '## Weak topics';
 export const RETRO_CROSS_REFERENCE_SECTION_HEADER = '## Retro cross-reference';
 export const VOICE_SECTION_HEADER = '## Personal voice guide';
+
+/** Regex matching a well-formed application slug. Re-exported from core/parser/slug.ts. */
+export { SLUG_PATTERN } from '../core/parser/slug.js';
+
+/** Log levels and default filename. Re-exported from core/types.ts. */
+export { ALL_LOG_LEVELS, DEFAULT_LOG_FILENAME } from '../core/types.js';
+export type { LogLevel, LoggerConfig } from '../core/types.js';

@@ -4,7 +4,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import type { Logger } from 'pino';
-import { DEFAULT_LOG_FILENAME } from '../../types.js';
+import { DEFAULT_LOG_FILENAME } from '../../../core/types.js';
 import {
   childLogger,
   createLogger,
@@ -14,9 +14,9 @@ import {
   logError,
   moduleLogger,
   setRootLogger,
-} from '../../../lib/logger/logger.js';
-import { resolveConfigHome } from '../../../lib/paths.js';
-import { cleanupTempDir } from '../cleanup.js';
+} from '../../logger/logger.js';
+import { resolveConfigHome } from '../../paths.js';
+import { cleanupTempDir } from '../../../core/tests/cleanup.js';
 
 function silentWritable(): Writable {
   const w = new Writable({

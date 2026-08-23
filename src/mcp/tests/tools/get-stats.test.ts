@@ -3,7 +3,7 @@ import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
 import { EMPLOYMENT_TYPES } from '../../../workflow/applications/types.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../../lib/paths.js';
-import { computeStats } from '../../../core/stats/stats.js';
+import { computeStats } from '../../../workflow/stats/stats.js';
 import { registerGetStats } from '../../tools/get-stats.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -39,7 +39,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/stats/stats.js', () => ({
+vi.mock('../../../workflow/stats/stats.js', () => ({
   computeStats: vi.fn(),
 }));
 
