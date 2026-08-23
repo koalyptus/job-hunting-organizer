@@ -1,10 +1,6 @@
 import { Command } from 'commander';
 import { collectTags, type GlobalOpts } from '../options.js';
-import {
-  runListCampaigns,
-  runListApplications,
-  ListError,
-} from '../../core/list/index.js';
+import { runListCampaigns, runListApplications, ListError } from '../../core/list/index.js';
 import { findCampaignFromCwd, resolveDataRoot } from '../../lib/paths.js';
 import { EMPLOYMENT_TYPES } from '../../workflow/applications/types.js';
 import type { EmploymentType } from '../../workflow/applications/types.js';
