@@ -179,6 +179,8 @@ describe('uniqueSlug', () => {
       { title: 'Engineer', company: 'Foo', appliedOn: '2026-06-03T00:00:00Z' },
       join(testDir, 'applied'),
       existsSync,
+      async () => ({}),
+      async () => true,
     );
     expect(result).toBe('2026-Jun-03-engineer-foo');
   });
@@ -192,6 +194,8 @@ describe('uniqueSlug', () => {
       { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
       appliedDir,
       existsSync,
+      async () => ({}),
+      async () => true,
     );
     expect(result).toBe(`${baseSlug}-1`);
   });
@@ -200,10 +204,20 @@ describe('uniqueSlug', () => {
     const appliedDir = join(testDir, 'applied');
     const baseSlug = '2026-Jun-03-engineer-foo';
 
+    // Shared mutable counters to simulate persistence between calls
+    const counters: Record<string, number> = {};
+    const readCounters = async () => counters;
+    const writeCounters = async (_dir: string, c: Record<string, number>) => {
+      Object.assign(counters, c);
+      return true;
+    };
+
     const result1 = await uniqueSlug(
       { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
       appliedDir,
       existsSync,
+      readCounters,
+      writeCounters,
     );
     expect(result1).toBe(baseSlug);
 
@@ -213,6 +227,8 @@ describe('uniqueSlug', () => {
       { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
       appliedDir,
       existsSync,
+      readCounters,
+      writeCounters,
     );
     expect(result2).toBe(`${baseSlug}-1`);
 
@@ -220,6 +236,8 @@ describe('uniqueSlug', () => {
       { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
       appliedDir,
       existsSync,
+      readCounters,
+      writeCounters,
     );
     expect(result3).toBe(`${baseSlug}-2`);
   });

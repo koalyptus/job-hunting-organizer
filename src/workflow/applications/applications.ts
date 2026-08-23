@@ -1,5 +1,6 @@
 import { mkdir, rm, readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { readCountersAsync, writeCountersAsync } from './counters.js';
 import { join } from 'node:path';
 import { uniqueSlug, SLUG_PATTERN } from '../../core/parser/slug.js';
 import { mergeFrontmatter } from '../../core/parser/frontmatter.js';
@@ -141,6 +142,8 @@ export async function createApplication(input: CreateApplicationInput): Promise<
       },
       appliedDir,
       existsSync,
+      readCountersAsync,
+      writeCountersAsync,
     );
 
     const folder = join(appliedDir, slug);

@@ -11,7 +11,6 @@
 import { MONTH_ABBR, formatDate, parseDateOrNow } from '../date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
-import { readCountersAsync, writeCountersAsync } from '../../workflow/applications/counters.js';
 import { getRootLogger } from '../../lib/logger/logger.js';
 import type { SlugBuildInput, SlugOptions } from '../types.js';
 
@@ -126,10 +125,14 @@ export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): st
  * @param appliedDir - The applied directory (for counter lookups).
  * @returns A unique slug string.
  */
+export type Counters = Record<string, number>;
+
 export async function uniqueSlug(
   input: { title?: string; company?: string; url?: string; appliedOn?: string | Date },
   appliedDir: string,
   fileExists: (path: string) => boolean,
+  readCounters?: (appliedDir: string) => Promise<Counters>,
+  writeCounters?: (appliedDir: string, counters: Counters) => Promise<boolean>,
 ): Promise<string> {
   const base = buildSlug({
     title: input.title,
@@ -138,7 +141,7 @@ export async function uniqueSlug(
     appliedOn: input.appliedOn,
   });
 
-  const counters = await readCountersAsync(appliedDir);
+  const counters = readCounters ? await readCounters(appliedDir) : {};
   const current = counters[base] ?? 0;
 
   if (current === 0 && !fileExists(`${appliedDir}/${base}`)) {
@@ -148,9 +151,11 @@ export async function uniqueSlug(
   const next = current + 1;
   counters[base] = next;
   getRootLogger().debug({ base, suffix: next }, 'slug.collision');
-  const written = await writeCountersAsync(appliedDir, counters);
-  if (!written) {
-    getRootLogger().debug({ slug: `${base}-${next}` }, 'failed to persist collision counter');
+  if (writeCounters) {
+    const written = await writeCounters(appliedDir, counters);
+    if (!written) {
+      getRootLogger().debug({ slug: `${base}-${next}` }, 'failed to persist collision counter');
+    }
   }
   return `${base}-${next}`;
 }
