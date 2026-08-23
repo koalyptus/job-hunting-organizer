@@ -166,8 +166,7 @@ List campaigns, or applications within a campaign
 Options:
   --status <status>         filter by status (requires --campaign or campaign
                             folder)
-  --tag <tag>               filter by tag, repeatable (requires --campaign or
-                            campaign folder) (default: [])
+  --tags <tag>              filter by tag (repeatable) (default: [])
   --role <role>             filter by target role (requires --campaign or
                             campaign folder)
   --employment-type <type>  filter by employment type
@@ -369,7 +368,7 @@ Options:
   --status <status>         initial status (one of: applied, interview, offer,
                             rejected, withdrawn, abandoned, ghosted, accepted)
   --salary <range>          salary or pay range
-  --tag <tag>               add a tag (repeatable) (default: [])
+  --tags <tag>              add a tag (repeatable) (default: [])
   --note <text>             add a note
   --target-role <role>      target role for the application
   --employment-type <type>  employment type

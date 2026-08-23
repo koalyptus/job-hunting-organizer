@@ -100,7 +100,7 @@ export function validateTrackStatus(status: string | undefined): ApplicationStat
 export function hasTrackUpdateFlags(opts: {
   status?: unknown;
   salary?: unknown;
-  tag?: string[] | undefined;
+  tags?: string[] | undefined;
   note?: unknown;
   targetRole?: unknown;
   steer?: unknown;
@@ -109,7 +109,7 @@ export function hasTrackUpdateFlags(opts: {
   return (
     opts.status !== undefined ||
     opts.salary !== undefined ||
-    (opts.tag !== undefined && opts.tag.length > 0) ||
+    (opts.tags !== undefined && opts.tags.length > 0) ||
     opts.note !== undefined ||
     opts.targetRole !== undefined ||
     opts.steer !== undefined ||
@@ -505,7 +505,7 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
 /**
  * Run the track-update workflow: read → diff → confirm → update.
  *
- * If no patch fields are provided (no --status, --salary, --tag, --note,
+ * If no patch fields are provided (no --status, --salary, --tags, --note,
  * or --target-role), no prompt is shown and no files are written — the
  * function returns `{ slug, changed: false }` so the CLI can report
  * "no changes to apply".

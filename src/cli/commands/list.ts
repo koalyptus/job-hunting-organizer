@@ -20,7 +20,7 @@ export const listCommand = new Command('list')
   .description('List campaigns, or applications within a campaign')
   .option('--status <status>', 'filter by status (requires --campaign or campaign folder)')
   .option(
-    '--tag <tag>',
+    '--tags <tag>',
     'filter by tag, repeatable (requires --campaign or campaign folder)',
     collectTags,
     [],
@@ -71,7 +71,7 @@ export const listCommand = new Command('list')
       } else {
         const { entries } = await runListApplications(inferredCampaign, {
           status: opts.status as string | undefined,
-          tags: opts.tag as string[] | undefined,
+          tags: opts.tags as string[] | undefined,
           targetRole: opts.role as string | undefined,
           employmentType: opts.employmentType as EmploymentType | undefined,
           filter: opts.filter as string | undefined,
@@ -92,56 +92,20 @@ export const listCommand = new Command('list')
         entries.reverse();
 
         for (let i = 0; i < entries.length; i++) {
-          if (i > 0) {
-            userOutput('');
-          }
-          const entry = entries[i]!;
-          userOutput(`${cyan(entry.slug)}`);
-          userOutput(`  ${dim('Title:')} ${entry.title ?? ''}`);
-          userOutput(`  ${dim('Company:')} ${entry.company ?? ''}`);
-          userOutput(`  ${dim('Location:')} ${entry.location ?? ''}`);
-          userOutput(`  ${dim('Status:')} ${statusColor(entry.status ?? '')}`);
-          if (entry.employmentType) {
-            userOutput(`  ${dim('Type:')} ${entry.employmentType}`);
-          }
-          userOutput(`  ${dim('Applied on:')} ${entry.appliedOn ?? ''}`);
+          const e = entries[i]!;
+          const statusCell = statusColor(e.status ?? 'applied');
+          const role = e.targetRole && e.targetRole !== 'unknown' ? dim(` → ${e.targetRole}`) : '';
+          userOutput(
+            `${statusCell}  ${bold(e.slug.padEnd(STATUS_COL_WIDTH))}  ${e.title}${role}  ${e.company}  ${dim(e.appliedOn)}`,
+          );
         }
-        const apps = entries.length === 1 ? 'application' : 'applications';
-        userOutput(`${entries.length} ${apps}`);
       }
     } catch (err) {
-      if (err instanceof InvalidListStatusError) {
-        logError(log, err, 'list.invalid-status');
-        log.flush();
-        userError(`${err.message}\nhint: use one of: ${APPLICATION_STATUSES.join(', ')}`);
-        process.exit(1);
-      }
+      logError(log, err);
       if (err instanceof ListError) {
-        logError(log, err, 'list.failed');
-        log.flush();
         userError(err.message);
-        process.exit(1);
+      } else {
+        throw err;
       }
-      throw err;
     }
   });
-
-listCommand.addHelpText(
-  'after',
-  `
-Without --campaign, lists all campaigns. When run from inside a campaign
-folder, lists applications within that campaign. Add --campaign <name>
-to target a specific campaign explicitly.
-
-Examples:
-  $ jho list                                    # list campaigns (outside campaign folder)
-  $ jho list --json                             # list campaigns as JSON
-  $ cd campaigns/default && jho list            # list applications (cwd inference)
-  $ jho list --campaign default                 # list all applications
-  $ jho list --campaign default --status interview  # filter by status
-  $ jho list --campaign default --tag remote        # filter by tag
-  $ jho list --campaign default --filter "Acme"     # search by company
-  $ jho list --campaign default --filter "remote"   # search across fields
-  $ jho list --campaign default --json              # applications as JSON
-`,
-);

@@ -134,9 +134,9 @@ describe('CLI: track command', () => {
     const { exitCode } = await runCommand(trackCommand, [
       'track',
       slug,
-      '--tag',
+      '--tags',
       'urgent',
-      '--tag',
+      '--tags',
       'remote',
       '--yes',
     ]);

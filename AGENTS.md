@@ -151,11 +151,11 @@ jho profile show|rebuild
 jho track <url>         # record a new application (or update by slug); suggests target role
 jho track <url> --paste # paste JD from clipboard, extract, create application
 jho track <url> --stdin # read JD from stdin pipe, extract, create application
-jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X] [--steer X] [--employment-type X]
+jho track <slug> [--status X] [--salary X] [--tags X] [--note X] [--target-role X] [--steer X] [--employment-type X]
   # update existing application by slug (or cwd-inferred)
   # --steer: custom LLM instructions for JD extraction (stored in jd.md)
   # --employment-type: set employment type (permanent|temp|contract|casual|part-time)
-jho list [--status s] [--tag t] [--role <slug>] [--employment-type <type>] [--json]
+jho list [--status s] [--tags t] [--role <slug>] [--employment-type <type>] [--json]
   # list all applications; filters are AND-combined
 jho show [<slug>]       # slug is optional; inferred from cwd if omitted
 jho cover-letter [<slug>] [--no-save] [--steer <text>]

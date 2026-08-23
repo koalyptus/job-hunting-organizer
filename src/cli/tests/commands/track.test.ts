@@ -146,9 +146,9 @@ describe('track command', () => {
         '--yes',
         '--status',
         'interview',
-        '--tag',
+        '--tags',
         'urgent',
-        '--tag',
+        '--tags',
         'remote',
         '--salary',
         '120k',
@@ -295,7 +295,7 @@ describe('track command', () => {
     it('handles TrackError during update', async () => {
       vi.mocked(trackCore.runTrack).mockRejectedValue(
         new TrackError(
-          'no changes specified\nhint: use --status, --salary, --tag, or --target-role',
+          'no changes specified\nhint: use --status, --salary, --tags, or --target-role',
         ),
       );
 

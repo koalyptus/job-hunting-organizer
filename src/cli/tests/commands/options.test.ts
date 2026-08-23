@@ -18,14 +18,14 @@ describe('command option definitions match documentation', () => {
     expect(optionLongs(initCommand)).toEqual(expect.arrayContaining(['--cv', '--github']));
   });
 
-  it('track has --paste, --stdin, --status, --salary, --tag, --note, --target-role, --yes', () => {
+  it('track has --paste, --stdin, --status, --salary, --tags, --note, --target-role, --yes', () => {
     expect(optionLongs(trackCommand)).toEqual(
       expect.arrayContaining([
         '--paste',
         '--stdin',
         '--status',
         '--salary',
-        '--tag',
+        '--tags',
         '--note',
         '--target-role',
         '--yes',

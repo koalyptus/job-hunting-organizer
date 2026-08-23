@@ -638,7 +638,7 @@ jho track <url> [flags]
 jho track <slug> [flags]
 jho track --paste                    # read JD from clipboard (via clipboardy)
 jho track --stdin                   # read JD from stdin pipe
-  flags: --status s --salary r --tag t,t --note text
+  flags: --status s --salary r --tags t,t --note text
          --target-role <slug>          # set the target role slug (from profile ## Target roles)
          --steer <text>                # custom LLM instructions for JD extraction (stored in jd.md)
          --employment-type <type>      # employment type: permanent|temp|contract|casual|part-time
@@ -650,7 +650,7 @@ jho track --stdin                   # read JD from stdin pipe
   #   to supply one manually (optional — skip to proceed without). Skipped in
   #   --yes, --paste, --stdin modes.
 
-jho list [--status s] [--tag t] [--role <slug>] [--employment-type <type>] [--json]
+jho list [--status s] [--tags t] [--role <slug>] [--employment-type <type>] [--json]
 jho show [<slug>]         # slug is optional; inferred from cwd if omitted
 
 jho cover-letter [<slug>] [--no-save] [--steer <text>]

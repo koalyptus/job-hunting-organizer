@@ -38,7 +38,7 @@ export const trackCommand = new Command('track')
   .option('--stdin', 'read job description from stdin')
   .option('--status <status>', `initial status (one of: ${APPLICATION_STATUSES.join(', ')})`)
   .option('--salary <range>', 'salary or pay range')
-  .option('--tag <tag>', 'add a tag (repeatable)', collectTags, [])
+  .option('--tags <tag>', 'add a tag (repeatable)', collectTags, [])
   .option('--note <text>', 'add a note')
   .option('--target-role <role>', 'target role for the application')
   .option('--employment-type <type>', 'employment type (permanent|temp|contract|casual|part-time)')
@@ -125,7 +125,7 @@ Next steps:
           url: urlOrSlug,
           status,
           salary: opts.salary as string | undefined,
-          tags: (opts.tag as string[] | undefined) ?? [],
+          tags: opts.tags as string[] | undefined,
           note: opts.note as string | undefined,
           targetRole: opts.targetRole as string | undefined,
           employmentType: opts.employmentType as EmploymentType | undefined,
@@ -166,7 +166,7 @@ Next steps:
               slug,
               status,
               salary: opts.salary as string | undefined,
-              tags: (opts.tag as string[] | undefined) ?? [],
+              tags: opts.tags as string[] | undefined,
               note: opts.note as string | undefined,
               targetRole: opts.targetRole as string | undefined,
               employmentType: opts.employmentType as EmploymentType | undefined,
@@ -262,7 +262,7 @@ Tracking creates a folder in your campaign's applied/ directory with:
 Examples:
   $ jho track https://example.com/job/123
   $ jho track https://example.com/job/123 --salary "80k-100k"
-  $ jho track https://example.com/job/123 --tag urgent --tag remote
+  $ jho track https://example.com/job/123 --tags urgent --tags remote
   $ jho track https://example.com/job/123 --note "Referred by Alice"
   $ jho track https://example.com/job/123 --target-role "frontend-dev"
   $ jho track --paste                                      # paste JD from clipboard

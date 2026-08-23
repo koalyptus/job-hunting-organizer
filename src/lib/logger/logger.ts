@@ -37,7 +37,7 @@ export const DEFAULT_REDACT_PATHS: readonly string[] = [
   '*.clientSecret',
   '*.password',
   '*.secret',
-  ...SECRET_PATHS.map((s) => s.path.join('.')),
+  ...SECRET_PATHS.map((s) => s.keyPath.join('.')),
 ];
 
 /**

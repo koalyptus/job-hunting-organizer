@@ -92,7 +92,7 @@ export async function dispatchNaturalLanguage(
     parsed.command === 'list' &&
     !mergedGlobals.campaign &&
     (parsed.options.status !== undefined ||
-      parsed.options.tag !== undefined ||
+      parsed.options.tags !== undefined ||
       parsed.options.role !== undefined ||
       parsed.options.employmentType !== undefined);
   if (shouldPromptForCampaign) {

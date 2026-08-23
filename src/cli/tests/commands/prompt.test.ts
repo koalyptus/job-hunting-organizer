@@ -159,21 +159,21 @@ describe('dispatchNaturalLanguage', () => {
     const action = vi.fn();
     const program = makeProgram();
     const collect = (val: string, prev: string[] = []) => prev.concat(val);
-    program.addCommand(new Command('list').option('--tag <t>', 'tag', collect, []).action(action));
+    program.addCommand(new Command('list').option('--tags <t>', 'tag', collect, []).action(action));
 
     await dispatchNaturalLanguage(
       {
         command: 'list',
         args: [],
-        options: { tag: ['remote', 'contract'] },
+        options: { tags: ['remote', 'contract'] },
         confidence: 0.9,
       },
       {},
       program,
     );
 
-    const opts = action.mock.calls[0]?.[0] as { tag?: string[] };
-    expect(opts.tag).toEqual(['remote', 'contract']);
+    const opts = action.mock.calls[0]?.[0] as { tags?: string[] };
+    expect(opts.tags).toEqual(['remote', 'contract']);
   });
 
   it('merges LLM-parsed campaign into globals for dispatch', async () => {
