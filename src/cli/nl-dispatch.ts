@@ -73,13 +73,21 @@ export async function dispatchNaturalLanguage(
 ): Promise<void> {
   const logger = log ?? getRootLogger().child({ cmd: parsed.command, module: 'nl-dispatch' });
 
+  // Backwards-compat: the LLM may still emit legacy `tag` (pre-rename to `tags`);
+  // normalize it so downstream code only has to check `tags`.
+  const normalizedOptions: ParsedCommand['options'] = { ...parsed.options };
+  if ('tag' in normalizedOptions && !('tags' in normalizedOptions)) {
+    normalizedOptions.tags = normalizedOptions.tag;
+    delete normalizedOptions.tag;
+  }
+
   // Merge global options from the LLM's parsed output into the globals object.
   // The LLM may extract campaign, verbose, yes, etc. from the NL input — these
   // were never CLI flags, so they live in parsed.options, not in globals.
   const mergedGlobals = { ...globals };
-  for (const key of Object.keys(parsed.options)) {
+  for (const key of Object.keys(normalizedOptions)) {
     if (isGlobalOption(key) && key in mergedGlobals === false) {
-      const val = parsed.options[key];
+      const val = normalizedOptions[key];
       if (val !== undefined && val !== null) {
         (mergedGlobals as Record<string, unknown>)[key] = val;
       }
@@ -91,10 +99,10 @@ export async function dispatchNaturalLanguage(
   const shouldPromptForCampaign =
     parsed.command === 'list' &&
     !mergedGlobals.campaign &&
-    (parsed.options.status !== undefined ||
-      parsed.options.tags !== undefined ||
-      parsed.options.role !== undefined ||
-      parsed.options.employmentType !== undefined);
+    (normalizedOptions.status !== undefined ||
+      normalizedOptions.tags !== undefined ||
+      normalizedOptions.role !== undefined ||
+      normalizedOptions.employmentType !== undefined);
   if (shouldPromptForCampaign) {
     // Pass only the CLI-provided `yes` flag (not an LLM-inferred one) so the
     // campaign picker still prompts when the user didn't explicitly skip it.
@@ -170,7 +178,14 @@ function buildArgv(parsed: ParsedCommand, globals: GlobalOpts): string[] {
   }
 
   // Command options
-  for (const [key, value] of Object.entries(parsed.options)) {
+  // Backwards-compat: normalize legacy `tag` (pre-rename to `tags`) so the
+  // CLI doesn't error on older LLM output schemas.
+  const opts = { ...parsed.options };
+  if ('tag' in opts && !('tags' in opts)) {
+    opts.tags = opts.tag;
+    delete opts.tag;
+  }
+  for (const [key, value] of Object.entries(opts)) {
     // Skip options already handled as globals
     if (isGlobalOption(key)) {
       continue;

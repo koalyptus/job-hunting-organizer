@@ -50,14 +50,6 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │   ├── workflow/       # workflow orchestration shared by CLI and MCP (no I/O boundaries)
 │   │   └── init/       # init wizard orchestration (moved from core/init in Phase 9g)
 │   └── core/           # shared business logic (no I/O boundaries)
-│       ├── applications/  # application CRUD: create, update, read, list; writes meta.md + jd.md + index
-│       │   ├── application-qa.ts  # Q&A answer generation (LLM-backed, append-only qa.md)
-│       │   ├── applications.ts    # core CRUD operations
-│       │   ├── cover-letter.ts    # cover letter generation (LLM-backed, marker-aware write)
-│       │   ├── index-builder.ts   # build/update applied/.index.json from folder listing
-│       │   ├── meta-schema.ts     # Zod schema for meta.md frontmatter
-│       │   ├── rename.ts          # rename application folder (atomic rename + meta.md update + index rebuild)
-│       │   └── types.ts           # application-specific types
 │       ├── interviews/  # interview pipeline management (no LLM, H2-based append-only)
 │       ├── retro/       # reflection retros (any stage) with LLM-backed learning plans + cross-app aggregation
 │       ├── prepare/     # pre-interview prep plans (LLM-backed, toolhash sidecar)
@@ -68,7 +60,6 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 │       ├── stats/       # campaign snapshot: counts by status/role/site, funnel, this-month delta
 │       ├── list/        # list applications with filters
 │       ├── parser/      # parsing modules: frontmatter (pure), markers, slug, url, sanitize, prompt-parser
-│       ├── campaign/    # campaign management: profile, KB context/ingest, roles, directories (deprecated barrels)
 │       ├── types.ts     # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
 │       └── tests/       # colocated vitest suite
 ├── lib/                 # infrastructure utilities (pure I/O, no domain logic)
@@ -342,7 +333,7 @@ The tool runs unchanged on Linux, macOS, and Windows. These rules are mandatory 
 
 ### Barrel files
 
-- Barrel `index.ts` files re-export only their own module's public API. Never re-export unrelated modules (e.g. `core/track/index.ts` must not re-export from `core/applications/`). Callers import directly from the source module they need.
+- Barrel `index.ts` files re-export only their own module's public API. Never re-export unrelated modules. Callers import directly from the source module they need.
 
 ### JSDoc
 
