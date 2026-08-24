@@ -12,7 +12,7 @@ import { loadCases } from './cases.js';
 import { loadPromptTemplate } from '../../src/workflow/prompts.js';
 import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';
-import { ExtractedJdSchema } from '../../src/core/jobs/index.js';
+import { ExtractedJdSchema } from '../../src/core/jobs/jd-schema.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 installEvalMatchers();
