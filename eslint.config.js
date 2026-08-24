@@ -44,6 +44,13 @@ export default tseslint.config(
           ],
         },
       ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ImportExpression',
+          message: 'Dynamic imports bypass static analysis. Use static imports only in src/core/.',
+        },
+      ],
     },
   },
 );
