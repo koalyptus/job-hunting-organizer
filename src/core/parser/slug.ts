@@ -98,8 +98,8 @@ export function companySlug(company: string, maxLen = 32): string {
 /**
  * Compose a full application slug from the standard components. Missing
  * inputs are filled with `'unknown'` so the output is always a valid
- * slug. The collision suffix `-N` is intentionally NOT added here — the
- * caller checks {@link readCurrentCollisionCount} and appends the suffix.
+ * slug. The collision suffix `-N` is intentionally NOT added here —
+ * {@link uniqueSlug} handles collisions via injected counters.
  * @param input - The slug inputs. All fields are optional.
  * @param _options - Reserved for future use. Ignored for now.
  * @returns A slug like `2026-Jun-03-senior-engineer-nuage-92448554`.
