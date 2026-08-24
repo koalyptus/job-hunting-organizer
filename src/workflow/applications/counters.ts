@@ -53,28 +53,6 @@ export function readCounters(appliedDir: string): Counters {
     return {};
   }
 }
-
-/**
- * Read the stored collision suffix for `baseSlug`. Returns the highest
- * suffix value that has been recorded (0 if no collision has been
- * recorded yet). The caller adds 1 to compute the next suffix to use.
- *
- * Pure read — does not modify the file. The caller is responsible for
- * writing the new counter back (see `core/fs.ts` + `core/locks.ts` for
- * the atomic write + lock dance).
- *
- * Named `readCurrentCollisionCount` (not `nextCollisionCount`) because it
- * reads the *current* value, not the next one — the offset-by-one is
- * the caller's job.
- * @param baseSlug - The base slug (without any `-N` suffix).
- * @param appliedDir - The absolute path to the campaign's `applied/` folder.
- * @returns The highest stored suffix, or `0` if no collision yet.
- */
-export function readCurrentCollisionCount(baseSlug: string, appliedDir: string): number {
-  const counters = readCounters(appliedDir);
-  return counters[baseSlug] ?? 0;
-}
-
 /**
  * Read the counters file asynchronously. Returns an empty record if the
  * file is missing, unreadable, or not a valid JSON object.

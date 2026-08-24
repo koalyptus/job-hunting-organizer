@@ -21,7 +21,6 @@ export {
   readCounters,
   readCountersAsync,
   writeCountersAsync,
-  readCurrentCollisionCount,
   removeCounterEntry,
 } from './counters.js';
 export {

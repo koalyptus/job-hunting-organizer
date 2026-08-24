@@ -1,9 +1,8 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import {
-  readCurrentCollisionCount,
   readCounters,
   readCountersAsync,
   writeCountersAsync,
@@ -108,29 +107,6 @@ describe('writeCountersAsync', () => {
     await writeFile(blocker, 'x');
     const result = await writeCountersAsync(join(blocker, 'child'), { a: 1 });
     expect(result).toBe(false);
-  });
-});
-
-describe('readCurrentCollisionCount', () => {
-  it('returns 0 for an unseen base slug', () => {
-    expect(readCurrentCollisionCount('2026-Jun-03-engineer-foo', workDir)).toBe(0);
-  });
-
-  it('returns the stored suffix for a seen base slug', async () => {
-    await writeFile(
-      join(workDir, '.counters.json'),
-      JSON.stringify({ '2026-Jun-03-engineer-foo': 3 }),
-      'utf8',
-    );
-    expect(readCurrentCollisionCount('2026-Jun-03-engineer-foo', workDir)).toBe(3);
-  });
-
-  it('does not modify the file on disk (pure read)', async () => {
-    await writeFile(join(workDir, '.counters.json'), JSON.stringify({ a: 1 }), 'utf8');
-    const before = readFile(join(workDir, '.counters.json'), 'utf8');
-    readCurrentCollisionCount('a', workDir);
-    const after = readFile(join(workDir, '.counters.json'), 'utf8');
-    expect(await before).toEqual(await after);
   });
 });
 

@@ -113,7 +113,7 @@ export async function dispatchNaturalLanguage(
     } as GlobalOpts);
   }
 
-  const argv = buildArgv(parsed, mergedGlobals);
+  const argv = buildArgv(parsed, mergedGlobals, normalizedOptions);
   logger.info({ argv }, 'nl-dispatch.argv');
 
   // Reset any prior parse state and parse the synthetic argv.
@@ -141,7 +141,11 @@ export async function dispatchNaturalLanguage(
  * @param globals - Global CLI options
  * @returns argv array (excluding `node` and script path)
  */
-function buildArgv(parsed: ParsedCommand, globals: GlobalOpts): string[] {
+function buildArgv(
+  parsed: ParsedCommand,
+  globals: GlobalOpts,
+  normalizedOptions: ParsedCommand['options'],
+): string[] {
   const argv: string[] = [];
 
   // Global options first
@@ -177,15 +181,8 @@ function buildArgv(parsed: ParsedCommand, globals: GlobalOpts): string[] {
     argv.push(arg);
   }
 
-  // Command options
-  // Backwards-compat: normalize legacy `tag` (pre-rename to `tags`) so the
-  // CLI doesn't error on older LLM output schemas.
-  const opts = { ...parsed.options };
-  if ('tag' in opts && !('tags' in opts)) {
-    opts.tags = opts.tag;
-    delete opts.tag;
-  }
-  for (const [key, value] of Object.entries(opts)) {
+  // Command options (already normalized by caller)
+  for (const [key, value] of Object.entries(normalizedOptions)) {
     // Skip options already handled as globals
     if (isGlobalOption(key)) {
       continue;
