@@ -118,6 +118,9 @@ export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): st
   return base;
 }
 
+/** Collision counters keyed by base slug. */
+export type Counters = Record<string, number>;
+
 /**
  * Build a unique slug for a new application. Handles collision suffixes
  * by reading the counter and appending `-N` when needed.
@@ -128,8 +131,6 @@ export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): st
  * @param writeCounters - Function to persist collision counters (injected for I/O-free core).
  * @returns A unique slug string.
  */
-export type Counters = Record<string, number>;
-
 export async function uniqueSlug(
   input: { title?: string; company?: string; url?: string; appliedOn?: string | Date },
   appliedDir: string,

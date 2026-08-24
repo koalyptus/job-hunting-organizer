@@ -1207,6 +1207,8 @@ The 9g–9j moves made `src/workflow/*` the only I/O-touching layer. 9k closes t
 
 **Forbidden imports in core:** `node:fs`, `node:path`, `node:os`, `core/fs`, `core/locks`, `core/config`, `core/paths`, `src/storage/*`, `src/lib/*` (infrastructure).
 
+**Purity scope (v1):** no direct `node:fs`/`node:path`/`node:os` builtins, enforced by ESLint `no-restricted-imports` on `src/core/**` (tests exempt). Network, env, console, and transitive workflow/lib access remain in core by design until Phase 11+.
+
 **Deliverable**: core is pure; CI enforces it.
 
 ### Phase 10 — Polish & public readiness

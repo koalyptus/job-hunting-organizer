@@ -311,7 +311,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 9k — pure core delivered. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase. All I/O-tainted orchestrators have moved to `src/workflow/`; `src/core/` is now I/O-free (enforced by ESLint `no-restricted-imports` in CI).
+Phase 9k — pure core delivered. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase. All I/O-tainted orchestrators have moved to `src/workflow/`; `src/core/` is now I/O-free: no `node:fs`/`node:path`/`node:os` builtins (enforced by ESLint `no-restricted-imports` in CI).
 
 ## Cross-platform conventions
 
