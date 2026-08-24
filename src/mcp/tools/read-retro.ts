@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/server';
 import type { FileStore } from '../../storage/types.js';
 import { ReadRetroInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
-import { showRetro } from '../../core/retro/index.js';
+import { showRetro } from '../../workflow/retro/index.js';
 import { mcpLogger } from '../logger.js';
 
 /**

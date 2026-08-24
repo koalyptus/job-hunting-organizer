@@ -20,7 +20,7 @@ export const listCommand = new Command('list')
   .description('List campaigns, or applications within a campaign')
   .option('--status <status>', 'filter by status (requires --campaign or campaign folder)')
   .option(
-    '--tag <tag>',
+    '--tags <tag>',
     'filter by tag, repeatable (requires --campaign or campaign folder)',
     collectTags,
     [],
@@ -71,7 +71,7 @@ export const listCommand = new Command('list')
       } else {
         const { entries } = await runListApplications(inferredCampaign, {
           status: opts.status as string | undefined,
-          tags: opts.tag as string[] | undefined,
+          tags: opts.tags as string[] | undefined,
           targetRole: opts.role as string | undefined,
           employmentType: opts.employmentType as EmploymentType | undefined,
           filter: opts.filter as string | undefined,
@@ -139,7 +139,7 @@ Examples:
   $ cd campaigns/default && jho list            # list applications (cwd inference)
   $ jho list --campaign default                 # list all applications
   $ jho list --campaign default --status interview  # filter by status
-  $ jho list --campaign default --tag remote        # filter by tag
+  $ jho list --campaign default --tags remote       # filter by tag
   $ jho list --campaign default --filter "Acme"     # search by company
   $ jho list --campaign default --filter "remote"   # search across fields
   $ jho list --campaign default --json              # applications as JSON

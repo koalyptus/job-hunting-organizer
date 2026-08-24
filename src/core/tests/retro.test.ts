@@ -13,8 +13,8 @@ import {
   aggregateRetros,
   RetroError,
   RetroNotFoundError,
-} from '../retro/index.js';
-import type { AggregateOptions } from '../retro/types.js';
+} from '../../workflow/retro/index.js';
+import type { AggregateOptions } from '../../workflow/retro/types.js';
 
 vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({

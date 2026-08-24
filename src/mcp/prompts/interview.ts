@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { generatePrep } from '../../core/prepare/prepare.js';
+import { generatePrep } from '../../workflow/prepare/prepare.js';
 import { mcpLogger } from '../logger.js';
 
 export function registerInterviewPrompt(server: McpServer): void {

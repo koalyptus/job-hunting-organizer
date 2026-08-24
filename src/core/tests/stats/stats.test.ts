@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { computeStats } from '../../stats/stats.js';
+import { computeStats } from '../../../workflow/stats/stats.js';
 
 describe('computeStats', () => {
   let testDir: string;

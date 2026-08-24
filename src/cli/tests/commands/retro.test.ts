@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { retroCommand } from '../../commands/retro.js';
-import * as retroCore from '../../../core/retro/index.js';
-import { RetroError, RetroNotFoundError } from '../../../core/retro/index.js';
+import * as retroCore from '../../../workflow/retro/index.js';
+import { RetroError, RetroNotFoundError } from '../../../workflow/retro/index.js';
 import * as clack from '@clack/prompts';
 
-vi.mock('../../../core/retro/index.js', async (importOriginal) => {
+vi.mock('../../../workflow/retro/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof retroCore>();
   return {
     ...actual,

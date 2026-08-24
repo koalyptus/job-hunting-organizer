@@ -28,4 +28,29 @@ export default tseslint.config(
       curly: ['error', 'all'],
     },
   },
+  {
+    files: ['src/core/**/*.ts'],
+    ignores: ['src/core/tests/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['node:fs', 'node:fs/promises', 'node:path', 'node:os'],
+              message:
+                'src/core/ must have no direct I/O imports. Use dependency injection or move to src/workflow/.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ImportExpression',
+          message: 'Dynamic imports bypass static analysis. Use static imports only in src/core/.',
+        },
+      ],
+    },
+  },
 );

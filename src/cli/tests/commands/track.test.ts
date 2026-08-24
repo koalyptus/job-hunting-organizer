@@ -5,17 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { trackCommand } from '../../commands/track.js';
-import * as trackCore from '../../../core/track/track.js';
+import * as trackCore from '../../../workflow/track/track.js';
 import * as clipboardModule from '../../clipboard.js';
 import * as stdinModule from '../../stdin.js';
-import { TrackError, TrackCancelled, NoLinkStoredError } from '../../../core/track/errors.js';
+import { TrackError, TrackCancelled, NoLinkStoredError } from '../../../workflow/track/errors.js';
 import { UserInputError } from '../../errors.js';
 import { SlugMissingError } from '../../slug.js';
 import { ApplicationNotFoundError } from '../../../workflow/applications/index.js';
-import type { TrackSummary } from '../../../core/track/track.js';
-import type * as TrackCoreModule from '../../../core/track/track.js';
+import type { TrackSummary } from '../../../workflow/track/track.js';
+import type * as TrackCoreModule from '../../../workflow/track/track.js';
 
-vi.mock('../../../core/track/track.js', async (importOriginal) => {
+vi.mock('../../../workflow/track/track.js', async (importOriginal) => {
   const actual = await importOriginal<typeof TrackCoreModule>();
   return {
     ...actual,
@@ -146,9 +146,9 @@ describe('track command', () => {
         '--yes',
         '--status',
         'interview',
-        '--tag',
+        '--tags',
         'urgent',
-        '--tag',
+        '--tags',
         'remote',
         '--salary',
         '120k',
@@ -295,7 +295,7 @@ describe('track command', () => {
     it('handles TrackError during update', async () => {
       vi.mocked(trackCore.runTrack).mockRejectedValue(
         new TrackError(
-          'no changes specified\nhint: use --status, --salary, --tag, or --target-role',
+          'no changes specified\nhint: use --status, --salary, --tags, or --target-role',
         ),
       );
 

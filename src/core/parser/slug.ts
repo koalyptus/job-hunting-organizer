@@ -8,12 +8,9 @@
 //   jobId        : optional, extracted from the URL (LinkedIn, Seek, Indeed, generic)
 //   -N           : optional, integer suffix on collision (see core/counters.ts)
 
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { MONTH_ABBR, formatDate, parseDateOrNow } from '../date.js';
 import { sanitizeToken, sanitizeUnbounded } from './sanitize.js';
 import { extractJobIdFromUrl } from './url.js';
-import { readCountersAsync, writeCountersAsync } from '../../workflow/applications/counters.js';
 import { getRootLogger } from '../../lib/logger/logger.js';
 import type { SlugBuildInput, SlugOptions } from '../types.js';
 
@@ -101,8 +98,8 @@ export function companySlug(company: string, maxLen = 32): string {
 /**
  * Compose a full application slug from the standard components. Missing
  * inputs are filled with `'unknown'` so the output is always a valid
- * slug. The collision suffix `-N` is intentionally NOT added here — the
- * caller checks {@link readCollisionSuffix} and appends the suffix.
+ * slug. The collision suffix `-N` is intentionally NOT added here —
+ * {@link uniqueSlug} handles collisions via injected counters.
  * @param input - The slug inputs. All fields are optional.
  * @param _options - Reserved for future use. Ignored for now.
  * @returns A slug like `2026-Jun-03-senior-engineer-nuage-92448554`.
@@ -121,16 +118,25 @@ export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): st
   return base;
 }
 
+/** Collision counters keyed by base slug. */
+export type Counters = Record<string, number>;
+
 /**
  * Build a unique slug for a new application. Handles collision suffixes
  * by reading the counter and appending `-N` when needed.
  * @param input - Fields for slug generation.
  * @param appliedDir - The applied directory (for counter lookups).
+ * @param fileExists - Probe function to check if a file exists (injected for testability).
+ * @param readCounters - Function to read collision counters (injected for I/O-free core).
+ * @param writeCounters - Function to persist collision counters (injected for I/O-free core).
  * @returns A unique slug string.
  */
 export async function uniqueSlug(
   input: { title?: string; company?: string; url?: string; appliedOn?: string | Date },
   appliedDir: string,
+  fileExists: (path: string) => boolean,
+  readCounters?: (appliedDir: string) => Promise<Counters>,
+  writeCounters?: (appliedDir: string, counters: Counters) => Promise<boolean>,
 ): Promise<string> {
   const base = buildSlug({
     title: input.title,
@@ -139,19 +145,21 @@ export async function uniqueSlug(
     appliedOn: input.appliedOn,
   });
 
-  const counters = await readCountersAsync(appliedDir);
+  const counters = readCounters ? await readCounters(appliedDir) : {};
   const current = counters[base] ?? 0;
 
-  if (current === 0 && !existsSync(join(appliedDir, base))) {
+  if (current === 0 && !fileExists(`${appliedDir}/${base}`)) {
     return base;
   }
 
   const next = current + 1;
   counters[base] = next;
   getRootLogger().debug({ base, suffix: next }, 'slug.collision');
-  const written = await writeCountersAsync(appliedDir, counters);
-  if (!written) {
-    getRootLogger().debug({ slug: `${base}-${next}` }, 'failed to persist collision counter');
+  if (writeCounters) {
+    const written = await writeCounters(appliedDir, counters);
+    if (!written) {
+      getRootLogger().debug({ slug: `${base}-${next}` }, 'failed to persist collision counter');
+    }
   }
   return `${base}-${next}`;
 }

@@ -4,8 +4,8 @@ import { GLOBAL_FLAG_DEFS } from '../core/parser/prompt-parser.js';
 export type { GlobalOpts } from '../core/types.js';
 
 /**
- * Commander accumulator callback for repeatable `--tag` options.
- * Passed as the third argument to `.option('--tag <tag>', ..., collectTags, [])`.
+ * Commander accumulator callback for repeatable `--tags` options.
+ * Passed as the third argument to `.option('--tags <tag>', ..., collectTags, [])`.
  * @param value - The current tag value.
  * @param previous - Tags accumulated so far.
  * @returns The extended array.

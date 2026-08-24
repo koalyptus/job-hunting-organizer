@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 // Default import carries the full namespace merge (including .symbols) that
 // TypeScript doesn't expose on named imports from CJS modules with NodeNext.
 import pino, { type Logger, type LoggerOptions } from 'pino';
-import { DEFAULT_LOG_FILENAME, type LogLevel, type LoggerConfig } from '../../core/types.js';
+import { DEFAULT_LOG_FILENAME, type LogLevel, type LoggerConfig } from '../constants.js';
 import { SECRET_PATHS } from '../config/config.view.js';
 import { resolveConfigHome } from '../paths.js';
 import { getPackageVersion } from '../package.js';
@@ -37,7 +37,7 @@ export const DEFAULT_REDACT_PATHS: readonly string[] = [
   '*.clientSecret',
   '*.password',
   '*.secret',
-  ...SECRET_PATHS.map((s) => s.path.join('.')),
+  ...SECRET_PATHS.map((s) => s.keyPath.join('.')),
 ];
 
 /**

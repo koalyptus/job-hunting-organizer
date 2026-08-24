@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { doctorCommand } from '../../commands/doctor.js';
-import * as doctorCore from '../../../core/doctor/index.js';
-import { DoctorError } from '../../../core/doctor/index.js';
-import type { DoctorIssue } from '../../../core/doctor/types.js';
+import * as doctorCore from '../../../workflow/doctor/index.js';
+import { DoctorError } from '../../../workflow/doctor/index.js';
+import type { DoctorIssue } from '../../../workflow/doctor/types.js';
 import {
   BACKEND_NAME_OLLAMA,
   BACKEND_NAME_LMSTUDIO,
@@ -20,7 +20,7 @@ vi.mock('detect-local-agents', () => ({
   detectAgents: vi.fn(),
 }));
 
-vi.mock('../../../core/doctor/index.js', async (importOriginal) => {
+vi.mock('../../../workflow/doctor/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof doctorCore>();
   return {
     ...actual,

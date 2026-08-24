@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runCommand } from '../helpers.js';
 import { statsCommand } from '../../commands/stats.js';
-import * as statsCoreModule from '../../../core/stats/index.js';
+import * as statsCoreModule from '../../../workflow/stats/index.js';
 import * as pathsModule from '../../../lib/paths.js';
 import type { CampaignStats } from '../../../core/types.js';
 
@@ -13,7 +13,7 @@ function parentSetup(parent: Command): void {
   parent.addOption(new Option('--campaign <name>', 'campaign to operate on'));
 }
 
-vi.mock('../../../core/stats/index.js', async (importOriginal) => {
+vi.mock('../../../workflow/stats/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof statsCoreModule>();
   return {
     ...actual,

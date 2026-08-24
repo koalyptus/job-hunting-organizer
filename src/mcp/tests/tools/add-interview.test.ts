@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { INTERVIEW_TYPES } from '../../../core/interviews/types.js';
-import { addInterview } from '../../../core/interviews/interviews.js';
+import { INTERVIEW_TYPES } from '../../../workflow/interviews/types.js';
+import { addInterview } from '../../../workflow/interviews/interviews.js';
 import { registerAddInterview } from '../../tools/add-interview.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -39,7 +39,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/interviews/interviews.js', () => ({
+vi.mock('../../../workflow/interviews/interviews.js', () => ({
   addInterview: vi.fn().mockResolvedValue({ index: 1 }),
 }));
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { aggregateRetros } from '../../../core/retro/aggregate.js';
+import { aggregateRetros } from '../../../workflow/retro/aggregate.js';
 import { registerAggregateRetros } from '../../tools/aggregate-retros.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -38,7 +38,7 @@ vi.mock('../../../lib/paths.js', () => ({
   resolveAppliedDir: vi.fn(() => '/data/campaigns/default/applied'),
 }));
 
-vi.mock('../../../core/retro/aggregate.js', () => ({
+vi.mock('../../../workflow/retro/aggregate.js', () => ({
   aggregateRetros: vi.fn().mockResolvedValue([
     { label: 'System design — consistency models', count: 3, apps: ['app1', 'app2', 'app3'] },
     { label: 'Behavioral — STAR format', count: 2, apps: ['app1', 'app4'] },

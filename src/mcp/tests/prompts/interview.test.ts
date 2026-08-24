@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, promptText } from './helpers.js';
-import { generatePrep } from '../../../core/prepare/prepare.js';
+import { generatePrep } from '../../../workflow/prepare/prepare.js';
 import { registerInterviewPrompt } from '../../prompts/interview.js';
 
 vi.mock('../../../lib/logger/logger.js', () => ({
@@ -12,7 +12,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/prepare/prepare.js', () => ({
+vi.mock('../../../workflow/prepare/prepare.js', () => ({
   generatePrep: vi.fn().mockResolvedValue({ prep: 'test prep content' }),
 }));
 

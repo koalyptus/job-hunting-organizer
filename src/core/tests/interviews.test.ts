@@ -13,7 +13,7 @@ import {
   InterviewError,
   INTERVIEW_TYPES,
   INTERVIEW_STATUSES,
-} from '../interviews/index.js';
+} from '../../workflow/interviews/index.js';
 import type * as fsModule from '../../lib/fs.js';
 import type * as appModule from '../../workflow/applications/applications.js';
 

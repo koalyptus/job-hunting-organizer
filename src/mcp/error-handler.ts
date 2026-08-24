@@ -1,20 +1,20 @@
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { mcpLogger } from './logger.js';
 import { ApplicationNotFoundError } from '../workflow/applications/applications.js';
-import { InterviewNotFoundError } from '../core/interviews/interviews.js';
+import { InterviewNotFoundError } from '../workflow/interviews/interviews.js';
 import {
   CoverLetterError,
   CoverLetterReadError,
 } from '../workflow/applications/cover-letter-errors.js';
 import { AnswerError, QaReadError } from '../workflow/applications/application-qa-errors.js';
-import { TrackError } from '../core/track/errors.js';
-import { RepairError } from '../core/repair/repair.js';
-import { DoctorError } from '../core/doctor/doctor.js';
-import { RetroError, RetroNotFoundError } from '../core/retro/retro-errors.js';
-import { PrepError, PrepReadError } from '../core/prepare/prepare-errors.js';
+import { TrackError } from '../workflow/track/errors.js';
+import { RepairError } from '../workflow/repair/repair.js';
+import { DoctorError } from '../workflow/doctor/doctor.js';
+import { RetroError, RetroNotFoundError } from '../workflow/retro/retro-errors.js';
+import { PrepError, PrepReadError } from '../workflow/prepare/prepare-errors.js';
 import { ProfileReadError } from '../workflow/campaign/profile-read.js';
 import { ProfileWriteError } from '../workflow/campaign/profile-writer.js';
-import { StatsError } from '../core/stats/errors.js';
+import { StatsError } from '../workflow/stats/errors.js';
 import { ListError } from '../core/list/errors.js';
 import { InitError } from '../workflow/init/errors.js';
 import { ShowError } from '../workflow/applications/show.js';

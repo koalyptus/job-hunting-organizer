@@ -5,7 +5,7 @@ import {
   invokeResourceRead,
   resourceText,
 } from './helpers.js';
-import { computeStats } from '../../../core/stats/stats.js';
+import { computeStats } from '../../../workflow/stats/stats.js';
 import { registerStats } from '../../resources/stats.js';
 
 vi.mock('../../../lib/logger/logger.js', () => ({
@@ -22,7 +22,7 @@ vi.mock('../../../lib/paths.js', () => ({
   resolveAppliedDir: vi.fn().mockReturnValue('/mock/applied'),
 }));
 
-vi.mock('../../../core/stats/stats.js', () => ({
+vi.mock('../../../workflow/stats/stats.js', () => ({
   computeStats: vi.fn(),
 }));
 

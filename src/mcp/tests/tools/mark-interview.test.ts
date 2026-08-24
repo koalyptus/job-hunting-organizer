@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { INTERVIEW_STATUSES } from '../../../core/interviews/types.js';
-import { markInterviewStatus, appendInterviewNotes } from '../../../core/interviews/interviews.js';
+import { INTERVIEW_STATUSES } from '../../../workflow/interviews/types.js';
+import {
+  markInterviewStatus,
+  appendInterviewNotes,
+} from '../../../workflow/interviews/interviews.js';
 import { registerMarkInterview } from '../../tools/mark-interview.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -36,7 +39,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/interviews/interviews.js', () => ({
+vi.mock('../../../workflow/interviews/interviews.js', () => ({
   markInterviewStatus: vi.fn().mockResolvedValue(true),
   appendInterviewNotes: vi.fn().mockResolvedValue(true),
 }));

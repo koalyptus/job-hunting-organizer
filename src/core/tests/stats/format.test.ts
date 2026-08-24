@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { renderFullStats, renderCompactStats, renderThisMonth } from '../../stats/format.js';
+import {
+  renderFullStats,
+  renderCompactStats,
+  renderThisMonth,
+} from '../../../workflow/stats/format.js';
 import type { CampaignStats } from '../../types.js';
 
 const baseStats: CampaignStats = {

@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { PROFILE_ITEMS, isRealResource } from '../shared.js';
 import { loadCases } from './cases.js';
-import { loadPromptTemplate } from '../../src/core/prompts.js';
+import { loadPromptTemplate } from '../../src/workflow/prompts.js';
 import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
 import { isRefusal, countWords } from '../../src/core/generation-utils.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';

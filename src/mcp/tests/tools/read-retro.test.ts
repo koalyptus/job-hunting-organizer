@@ -25,11 +25,11 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/retro/index.js', () => ({
+vi.mock('../../../workflow/retro/index.js', () => ({
   showRetro: vi.fn(),
 }));
 
-import { showRetro } from '../../../core/retro/index.js';
+import { showRetro } from '../../../workflow/retro/index.js';
 import { registerReadRetro } from '../../tools/read-retro.js';
 import { createStore } from '../../../storage/index.js';
 

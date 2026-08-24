@@ -18,8 +18,8 @@ import {
   InterviewNotFoundError,
   INTERVIEW_TYPES,
   INTERVIEW_STATUSES,
-} from '../../core/interviews/index.js';
-import type { InterviewEntry, InterviewType } from '../../core/interviews/index.js';
+} from '../../workflow/interviews/index.js';
+import type { InterviewEntry, InterviewType } from '../../workflow/interviews/index.js';
 import type { Logger } from 'pino';
 import { getRootLogger, logError } from '../../lib/logger/logger.js';
 import { userError, userOutput, userSuccess } from '../output.js';

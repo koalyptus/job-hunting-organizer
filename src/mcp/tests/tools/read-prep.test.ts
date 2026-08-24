@@ -25,11 +25,11 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/prepare/index.js', () => ({
+vi.mock('../../../workflow/prepare/index.js', () => ({
   readPrep: vi.fn(),
 }));
 
-import { readPrep } from '../../../core/prepare/index.js';
+import { readPrep } from '../../../workflow/prepare/index.js';
 import { registerReadPrep } from '../../tools/read-prep.js';
 import { createStore } from '../../../storage/index.js';
 

@@ -1,6 +1,6 @@
 import type { Logger } from 'pino';
 import { chatComplete, parseJsonResult } from '../llm.js';
-import { loadPromptTemplate } from '../prompts.js';
+import { loadPromptTemplate } from '../../workflow/prompts.js';
 import { RoleSuggestionSchema } from './role-suggestion-schema.js';
 import type { ExtractedJd, RoleSuggestion } from './types.js';
 import type { LlmConfig, TargetRole } from '../types.js';

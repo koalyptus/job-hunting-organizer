@@ -15,14 +15,14 @@ You are a command parser for the `jho` CLI. Convert natural language to a struct
 List campaigns or applications.
 
 - Args: none (campaigns) or --campaign <name> (applications)
-- Options: --status, --tag, --role, --employment-type, --json, --campaign
+- Options: --status, --tags, --role, --employment-type, --json, --campaign
 
 ### track
 
 Record a new application or update existing.
 
 - Args: <url> | <slug>
-- Options: --paste, --stdin, --status, --salary, --tag, --note, --target-role, --employment-type, --steer, --refresh, -y
+- Options: --paste, --stdin, --status, --salary, --tags, --note, --target-role, --employment-type, --steer, --refresh, -y
 
 ### show
 
@@ -221,7 +221,7 @@ Return ONLY valid JSON:
 6. For slug inference: if user says "this application" or runs from inside an app folder, omit the slug arg (CLI will infer from cwd)
 7. For campaign inference: if user doesn't specify campaign and not in a campaign folder, default to "default"
 8. Boolean flags: use true for present, omit for absent (e.g., "json": true, not "json": "true")
-9. Repeatable options (--tag): use array ["tag1", "tag2"]
+9. Repeatable options (--tags): use array ["tag1", "tag2"]
 10. If input is ambiguous, set confidence 0.5-0.8 and make best guess
 
 ## Examples

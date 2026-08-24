@@ -25,7 +25,7 @@ vi.mock('../../src/core/llm.js', async (importOriginal) => {
   };
 });
 
-vi.mock('../../src/core/prompts.js', () => ({
+vi.mock('../../src/workflow/prompts.js', () => ({
   loadPromptTemplate: vi.fn(async () => ({
     body: 'You are a job-hunting coach.',
     temperature: 0.6,
@@ -134,9 +134,9 @@ describe('CLI: track command', () => {
     const { exitCode } = await runCommand(trackCommand, [
       'track',
       slug,
-      '--tag',
+      '--tags',
       'urgent',
-      '--tag',
+      '--tags',
       'remote',
       '--yes',
     ]);

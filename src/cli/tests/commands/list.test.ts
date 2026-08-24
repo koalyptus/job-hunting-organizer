@@ -260,7 +260,7 @@ describe('list command', () => {
 
       const { stderr: _stderr, exitCode } = await runCommand(
         listCommand,
-        ['list', '--campaign', 'default', '--tag', 'react'],
+        ['list', '--campaign', 'default', '--tags', 'react'],
         parentSetup,
       );
       expect(exitCode).toBe(0);

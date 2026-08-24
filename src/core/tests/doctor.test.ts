@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { diagnoseCampaign, diagnoseApp, DoctorError } from '../doctor/index.js';
+import { diagnoseCampaign, diagnoseApp, DoctorError } from '../../workflow/doctor/index.js';
 import * as toolhashModule from '../../lib/toolhash.js';
 const { computeHash, writeToolhash } = toolhashModule;
 

@@ -3,7 +3,7 @@ import type { FileStore } from '../../storage/types.js';
 import { DoctorInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
-import { diagnoseCampaign, diagnoseApp } from '../../core/doctor/doctor.js';
+import { diagnoseCampaign, diagnoseApp } from '../../workflow/doctor/doctor.js';
 import { mcpLogger } from '../logger.js';
 
 /**

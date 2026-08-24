@@ -81,7 +81,7 @@
   - [x] 9h — Move `campaign` workflow to `src/workflow/campaign/`
   - [x] 9i — Move `applications` workflow to `src/workflow/applications/`
   - [x] 9j — Extract infrastructure utilities to `src/lib/`
-  - [ ] 9k — Validate pure core, remove deprecated barrels
+  - [x] 9k — Validate pure core, remove deprecated barrels
 - [ ] **Phase 10** — Polish & public readiness
 
 ---
@@ -323,7 +323,7 @@ Split into sub-phases for incremental delivery.
 - `src/cli/commands/track.ts` — replace stub with full implementation
 - `src/cli/commands/track/prompts.ts` — interactive: confirm tracking, prompt job ID, confirm update
 - Create flow: fetch → extract → suggest role → show summary → confirm → create app
-- Update flow: `jho track <slug> [--status X] [--salary X] [--tag X] [--note X] [--target-role X]` → read existing → merge patch → write
+- Update flow: `jho track <slug> [--status X] [--salary X] [--tags X] [--note X] [--target-role X]` → read existing → merge patch → write
 - `--paste` flow: read clipboard → extract from text → same as create
 - `--stdin` flow: read pipe → extract from text → same as create
 - `--yes` mode: skip all prompts, use flags + defaults
@@ -363,7 +363,7 @@ Split into sub-phases for incremental delivery.
 
 - `src/cli/commands/list.ts` — replace stub with real implementation
 - Reads `.index.json`; default: pretty table via `cli-table3` (Slug, Title, Company, Status, Role, Date)
-- `--json`: machine-readable; `--status`, `--role`, `--tag` filters (AND-combined)
+- `--json`: machine-readable; `--status`, `--role`, `--tags` filters (AND-combined)
 - Tests: list all, filter by status/role/tag, JSON output, empty result
 
 **Deliverable**: `jho list --role senior-backend-engineer` filters applications.
@@ -1206,6 +1206,8 @@ The 9g–9j moves made `src/workflow/*` the only I/O-touching layer. 9k closes t
 - Run full test suite + coverage
 
 **Forbidden imports in core:** `node:fs`, `node:path`, `node:os`, `core/fs`, `core/locks`, `core/config`, `core/paths`, `src/storage/*`, `src/lib/*` (infrastructure).
+
+**Purity scope (v1):** no direct `node:fs`/`node:path`/`node:os` builtins, enforced by ESLint `no-restricted-imports` on `src/core/**` (tests exempt). Network, env, console, and transitive workflow/lib access remain in core by design until Phase 11+.
 
 **Deliverable**: core is pure; CI enforces it.
 

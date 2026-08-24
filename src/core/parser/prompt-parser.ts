@@ -1,5 +1,5 @@
 import { defaultLlmConfig, chatComplete, parseJsonResult } from '../llm.js';
-import { loadPromptTemplate } from '../prompts.js';
+import { loadPromptTemplate } from '../../workflow/prompts.js';
 import { getRootLogger } from '../../lib/logger/logger.js';
 import { SLUG_PATTERN } from './slug.js';
 import type { Logger } from 'pino';

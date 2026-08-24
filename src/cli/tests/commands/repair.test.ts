@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { repairCommand } from '../../commands/repair.js';
-import * as repairCore from '../../../core/repair/index.js';
-import { RepairError } from '../../../core/repair/index.js';
-import type { RepairResult } from '../../../core/repair/types.js';
+import * as repairCore from '../../../workflow/repair/index.js';
+import { RepairError } from '../../../workflow/repair/index.js';
+import type { RepairResult } from '../../../workflow/repair/types.js';
 
-vi.mock('../../../core/repair/index.js', async (importOriginal) => {
+vi.mock('../../../workflow/repair/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof repairCore>();
   return {
     ...actual,

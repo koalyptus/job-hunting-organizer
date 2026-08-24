@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { generatePrep, appendTopic } from '../../../core/prepare/prepare.js';
+import { generatePrep, appendTopic } from '../../../workflow/prepare/prepare.js';
 import { registerPrepare } from '../../tools/prepare-tool.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -35,7 +35,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/prepare/prepare.js', () => ({
+vi.mock('../../../workflow/prepare/prepare.js', () => ({
   generatePrep: vi.fn().mockResolvedValue({
     content: '# Prep plan\nStudy algorithms.',
     wordCount: 20,

@@ -5,7 +5,7 @@ import {
   createApplication,
   updateApplication,
 } from '../../src/workflow/applications/applications.js';
-import { addInterview } from '../../src/core/interviews/index.js';
+import { addInterview } from '../../src/workflow/interviews/index.js';
 import type { TestEnv } from '../helpers.js';
 import { createTestCampaign, setupTestEnv, cleanupTestDir } from '../helpers.js';
 

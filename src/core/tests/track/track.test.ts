@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { runTrack, runTrackRefresh, prepareTrack, confirmAndCreate } from '../../track/track.js';
-import { TrackError, TrackCancelled, NoLinkStoredError } from '../../track/errors.js';
+import {
+  runTrack,
+  runTrackRefresh,
+  prepareTrack,
+  confirmAndCreate,
+} from '../../../workflow/track/track.js';
+import { TrackError, TrackCancelled, NoLinkStoredError } from '../../../workflow/track/errors.js';
 import { extractJdFromUrl, extractJdFromText } from '../../jobs/extract.js';
 import { suggestTargetRole } from '../../jobs/suggest.js';
 import { readProfile } from '../../../workflow/campaign/profile-read.js';
@@ -11,7 +16,7 @@ import {
   readApplication,
   appendNote,
 } from '../../../workflow/applications/applications.js';
-import { confirmTrackSummary, confirmTrackUpdate } from '../../track/prompts.js';
+import { confirmTrackSummary, confirmTrackUpdate } from '../../../workflow/track/prompts.js';
 import { replaceRegion, replaceSteer } from '../../parser/markers.js';
 import { atomicWrite } from '../../../lib/fs.js';
 import type { ApplicationFrontmatter } from '../../../workflow/applications/types.js';
@@ -55,7 +60,7 @@ vi.mock('../../../workflow/applications/applications.js', () => ({
   appendNote: vi.fn(),
 }));
 
-vi.mock('../../track/prompts.js', () => ({
+vi.mock('../../../workflow/track/prompts.js', () => ({
   confirmTrackSummary: vi.fn(() => Promise.resolve(true)),
   confirmTrackUpdate: vi.fn(() => Promise.resolve(true)),
 }));

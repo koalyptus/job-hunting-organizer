@@ -5,7 +5,7 @@ import * as path from 'node:path';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { pathExists } from './fs.js';
 import { getRootLogger } from './logger/logger.js';
-import { SLUG_PATTERN } from '../core/parser/slug.js';
+import { SLUG_PATTERN } from './constants.js';
 import type { CampaignListing } from '../core/types.js';
 
 /**

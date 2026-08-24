@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { startRetro } from '../../core/retro/retro.js';
+import { startRetro } from '../../workflow/retro/retro.js';
 import { mcpLogger } from '../logger.js';
 
 export function registerRetroPrompt(server: McpServer): void {

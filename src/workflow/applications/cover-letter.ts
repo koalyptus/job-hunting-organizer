@@ -1,6 +1,6 @@
 /**
  * Core orchestrator for the `jho cover-letter` workflow. Follows the
- * same pattern as `core/track/track.ts`: all business logic lives here,
+ * same pattern as `workflow/track/track.ts`: all business logic lives here,
  * the CLI is a thin wrapper that parses options and catches errors.
  *
  * This module is reusable from both the CLI and the MCP server.
@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { getConfig } from '../../lib/config/config.js';
 import { defaultLlmConfig, chatComplete } from '../../core/llm.js';
-import { loadPromptTemplateWithVoice } from '../../core/prompts.js';
+import { loadPromptTemplateWithVoice } from '../../workflow/prompts.js';
 import { humanize } from '../../core/humanize.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import {

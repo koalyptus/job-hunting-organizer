@@ -13,9 +13,9 @@
  * its default redaction paths from the same source — single source
  * of truth for "where do secrets live".
  */
-export const SECRET_PATHS: ReadonlyArray<{ path: readonly string[]; envVar: string }> = [
-  { path: ['llm', 'apiKey'], envVar: 'LLM_API_KEY' },
-  { path: ['github', 'token'], envVar: 'GITHUB_TOKEN' },
+export const SECRET_PATHS: ReadonlyArray<{ keyPath: readonly string[]; envVar: string }> = [
+  { keyPath: ['llm', 'apiKey'], envVar: 'LLM_API_KEY' },
+  { keyPath: ['github', 'token'], envVar: 'GITHUB_TOKEN' },
 ];
 
 /** The string substituted for secret values when `reveal` is `false`. */
@@ -37,8 +37,8 @@ const REDACTION_MARKER = '***';
  */
 export function redactSecrets<T>(config: T): T {
   const out = structuredClone(config);
-  for (const { path, envVar } of SECRET_PATHS) {
-    setAtPath(out, path, `${REDACTION_MARKER} (set ${envVar})`);
+  for (const { keyPath, envVar } of SECRET_PATHS) {
+    setAtPath(out, keyPath, `${REDACTION_MARKER} (set ${envVar})`);
   }
   return out;
 }

@@ -5,12 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { prepareCommand } from '../../commands/prepare.js';
-import * as prepareCore from '../../../core/prepare/index.js';
-import { PrepError, PrepNotFoundError, PrepReadError } from '../../../core/prepare/index.js';
+import * as prepareCore from '../../../workflow/prepare/index.js';
+import { PrepError, PrepNotFoundError, PrepReadError } from '../../../workflow/prepare/index.js';
 import * as extractModule from '../../../core/jobs/extract.js';
 import type { ExtractedJd } from '../../../core/jobs/types.js';
 
-vi.mock('../../../core/prepare/index.js', async (importOriginal) => {
+vi.mock('../../../workflow/prepare/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof prepareCore>();
   return {
     ...actual,

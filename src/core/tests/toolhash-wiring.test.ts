@@ -5,14 +5,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { computeHash, readToolhash } from '../../lib/toolhash.js';
 import { createApplication, updateApplication } from '../../workflow/applications/applications.js';
 import { chatComplete } from '../llm.js';
-import { startRetro, appendRetro } from '../retro/index.js';
+import { startRetro, appendRetro } from '../../workflow/retro/index.js';
 import {
   addInterview,
   markInterviewStatus,
   appendInterviewNotes,
-} from '../interviews/interviews.js';
+} from '../../workflow/interviews/interviews.js';
 import { generateCoverLetter } from '../../workflow/applications/cover-letter.js';
-import { generatePrep, appendTopic } from '../prepare/prepare.js';
+import { generatePrep, appendTopic } from '../../workflow/prepare/prepare.js';
 
 vi.mock('../config.js', () => ({
   getConfig: vi.fn(() => ({
@@ -119,7 +119,7 @@ vi.mock('../jobs/suggest.js', () => ({
   })),
 }));
 
-vi.mock('../retro/aggregate.js', () => ({
+vi.mock('../../workflow/retro/aggregate.js', () => ({
   aggregateRetros: vi.fn(async () => []),
 }));
 

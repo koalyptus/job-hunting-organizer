@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createTestServer, getTextContent } from './helpers.js';
 import { z } from 'zod';
-import { appendRetro } from '../../../core/retro/retro.js';
+import { appendRetro } from '../../../workflow/retro/retro.js';
 import { registerAppendRetro } from '../../tools/append-retro-tool.js';
 import { createStore } from '../../../storage/index.js';
 
@@ -37,7 +37,7 @@ vi.mock('../../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('../../../core/retro/retro.js', () => ({
+vi.mock('../../../workflow/retro/retro.js', () => ({
   appendRetro: vi.fn().mockResolvedValue({
     content: '# New Section\nMore study.',
     wordCount: 8,
