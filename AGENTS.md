@@ -47,17 +47,20 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 ├── src/
 │   ├── cli/            # CLI commands
 │   ├── mcp/            # MCP server
-│   ├── workflow/       # workflow orchestration shared by CLI and MCP (no I/O boundaries)
-│   │   └── init/       # init wizard orchestration (moved from core/init in Phase 9g)
-│   └── core/           # shared business logic (no I/O boundaries)
-│       ├── interviews/  # interview pipeline management (no LLM, H2-based append-only)
-│       ├── retro/       # reflection retros (any stage) with LLM-backed learning plans + cross-app aggregation
-│       ├── prepare/     # pre-interview prep plans (LLM-backed, toolhash sidecar)
-│       ├── doctor/      # campaign diagnostics
-│       ├── repair/      # auto-repair (frontmatter, indexes, counters)
+│   ├── workflow/       # workflow orchestration shared by CLI and MCP (I/O permitted)
+│   │   ├── init/       # init wizard orchestration (moved from core/init in Phase 9g)
+│   │   ├── campaign/   # campaign workflow (moved from core/campaign in Phase 9h)
+│   │   ├── applications/ # application CRUD workflow (moved from core/applications in Phase 9i)
+│   │   ├── doctor/     # campaign diagnostics (moved from core/doctor in Phase 9k)
+│   │   ├── interviews/ # interview pipeline (moved from core/interviews in Phase 9k)
+│   │   ├── prepare/    # pre-interview prep (moved from core/prepare in Phase 9k)
+│   │   ├── repair/     # auto-repair (moved from core/repair in Phase 9k)
+│   │   ├── retro/      # reflection retros (moved from core/retro in Phase 9k)
+│   │   ├── stats/      # campaign stats (moved from core/stats in Phase 9k)
+│   │   ├── track/      # track orchestration (moved from core/track in Phase 9k)
+│   │   └── prompts.ts  # prompt template loader (moved from core/prompts in Phase 9k)
+│   └── core/           # shared business logic (I/O-free: no node:fs/path/os)
 │       ├── jobs/        # JD fetch, extraction (single LLM call), target-role suggestion
-│       ├── track/       # track orchestration (create/update/refresh)
-│       ├── stats/       # campaign snapshot: counts by status/role/site, funnel, this-month delta
 │       ├── list/        # list applications with filters
 │       ├── parser/      # parsing modules: frontmatter (pure), markers, slug, url, sanitize, prompt-parser
 │       ├── types.ts     # shared interfaces and type aliases consumed by 2+ modules (consumed via `import type`); private/internal types stay colocated with their module
@@ -308,7 +311,7 @@ When interacting via MCP:
 
 ## Current phase
 
-Phase 9g — IO-free core. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase and what's in scope. Sub-phases: 9g (move `init` workflow to `src/workflow/init/`), 9h (move `campaign` workflow), 9i (move `applications` workflow), 9j (extract infrastructure to `src/lib/`), 9k (validate pure core, remove deprecated barrels).
+Phase 9k — pure core delivered. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current phase. All I/O-tainted orchestrators have moved to `src/workflow/`; `src/core/` is now I/O-free (enforced by ESLint `no-restricted-imports` in CI).
 
 ## Cross-platform conventions
 

@@ -123,6 +123,9 @@ export function buildSlug(input: SlugBuildInput, _options: SlugOptions = {}): st
  * by reading the counter and appending `-N` when needed.
  * @param input - Fields for slug generation.
  * @param appliedDir - The applied directory (for counter lookups).
+ * @param fileExists - Probe function to check if a file exists (injected for testability).
+ * @param readCounters - Function to read collision counters (injected for I/O-free core).
+ * @param writeCounters - Function to persist collision counters (injected for I/O-free core).
  * @returns A unique slug string.
  */
 export type Counters = Record<string, number>;
