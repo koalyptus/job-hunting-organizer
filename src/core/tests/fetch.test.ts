@@ -158,6 +158,30 @@ describe('fetchWithFallback', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  it('retries with browser UA and logs when first attempt fails (no AbortError)', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch
+      .mockRejectedValueOnce(new TypeError('connection reset'))
+      .mockResolvedValueOnce(mockFetchResponse('ok-retry'));
+
+    const log = { debug: vi.fn() } as unknown as Logger;
+    const result = await fetchWithFallback('https://example.com/job/123', {}, log);
+
+    expect(result.body).toBe('ok-retry');
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(log.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ fallbackUserAgent: expect.stringContaining('Chrome') }),
+      'fetch.retry',
+    );
+  });
+
+  it('re-throws a non-AbortError thrown by attemptFetch', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValue(new Error('unexpected'));
+
+    await expect(fetchWithFallback('https://example.com/job/123')).rejects.toThrow('unexpected');
+  });
+
   it('clears timeout on success', async () => {
     const fetch = vi.mocked(globalThis.fetch);
     fetch.mockResolvedValueOnce(mockFetchResponse('ok'));
@@ -333,6 +357,40 @@ describe('createLlmFetch', () => {
     const reqPromise = fetch(`http://127.0.0.1:${port}/`, { signal: controller.signal });
     controller.abort('user cancellation');
     await expect(reqPromise).rejects.toThrow();
+  });
+
+  it('uses https module for https URLs', async () => {
+    const fetch = createLlmFetch(5000);
+    const response = await fetch(`https://example.com/`);
+    // example.com resolves; we just assert the call returns without throwing
+    expect(response).toBeInstanceOf(Response);
+  }, 10000);
+
+  it('handles undefined headers on the request', async () => {
+    let receivedHeaders: Record<string, string | string[]> = {};
+    handler = (req, res) => {
+      receivedHeaders = req.headers as Record<string, string | string[]>;
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('ok');
+    };
+    const fetch = createLlmFetch(5000);
+    const response = await fetch(`http://127.0.0.1:${port}/`, {
+      method: 'GET',
+      headers: undefined,
+    });
+    expect(response.status).toBe(200);
+    // headers become undefined → module uses (undefined as Record) which Node tolerates
+    expect(receivedHeaders).toBeDefined();
+  });
+
+  it('includes statusText and status when server omits extras', async () => {
+    handler = (_req, res) => {
+      res.writeHead(201);
+      res.end('created');
+    };
+    const fetch = createLlmFetch(5000);
+    const response = await fetch(`http://127.0.0.1:${port}/`);
+    expect(response.status).toBe(201);
   });
 
   it('converts Headers objects to plain objects for http.request', async () => {

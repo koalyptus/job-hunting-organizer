@@ -88,6 +88,24 @@ status: applied
     expect(() => parseFrontmatter(content)).toThrow(FrontmatterParseError);
   });
 
+  it('throws when frontmatter is a YAML scalar', () => {
+    const content = `---
+just a string
+---
+`;
+    expect(() => parseFrontmatter(content)).toThrow(FrontmatterParseError);
+  });
+
+  it('returns empty frontmatter when YAML is null', () => {
+    const content = `---
+null
+---
+body`;
+    const { frontmatter, body } = parseFrontmatter(content);
+    expect(frontmatter).toEqual({});
+    expect(body).toBe('body');
+  });
+
   it('handles CRLF line endings', () => {
     const content = '---\r\nslug: foo\r\n---\r\nbody';
     const { frontmatter, body } = parseFrontmatter(content);

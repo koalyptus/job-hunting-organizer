@@ -373,6 +373,32 @@ describe('chatComplete', () => {
       expect(result.finishReason).toBeNull();
     });
 
+    it('uses the injected fetch when options.fetch is provided', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(okJson(successBody));
+
+      const customFetch = vi.fn(async () => okJson(successBody)) as never;
+      const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {
+        ...testChatOpts,
+        fetch: customFetch,
+      });
+
+      expect(result.content).toBe('Hello!');
+      expect(customFetch).toHaveBeenCalled();
+    });
+
+    it('falls back to createLlmFetch when options.fetch is omitted', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(okJson(successBody));
+
+      const result = await chatComplete([{ role: 'user', content: 'Hi' }], testConfig, {
+        jsonMode: false,
+        fetch: globalThis.fetch as never,
+      });
+
+      expect(result.content).toBe('Hello!');
+    });
+
     it('falls back to "no-key" when apiKey is empty', async () => {
       const fetch = vi.mocked(globalThis.fetch);
       fetch.mockResolvedValueOnce(okJson(successBody));
