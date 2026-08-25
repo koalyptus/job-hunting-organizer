@@ -1,7 +1,12 @@
 import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { computeHash, writeToolhash, TOOL_MANAGED_FILES } from '../../lib/toolhash.js';
+import {
+  computeHash,
+  writeToolhash,
+  migrateToolhashSidecar,
+  TOOL_MANAGED_FILES,
+} from '../../lib/toolhash.js';
 import { rebuildIndex } from '../../workflow/applications/index-builder.js';
 import { updateApplication } from '../../workflow/applications/applications.js';
 import { APPLICATION_STATUS } from '../../workflow/applications/types.js';
@@ -62,6 +67,19 @@ export async function repairApp(
         try {
           const content = await readFile(filePath, 'utf8');
           const hash = computeHash(content);
+
+          // Migrate any legacy sibling sidecar into the .sidecars/ directory
+          // before writing the refreshed hash, so the relocated sidecar is
+          // used (and the legacy file is dropped) rather than left behind.
+          const migrated = await migrateToolhashSidecar(filePath);
+          if (migrated) {
+            actions.push({
+              action: 'toolhash_migrated',
+              message: `Migrated legacy sidecar for ${filename} into .sidecars/.`,
+              slug,
+            });
+          }
+
           const written = await writeToolhash(filePath, hash);
           if (written) {
             actions.push({

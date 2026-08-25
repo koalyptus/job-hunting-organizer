@@ -17,7 +17,7 @@ import {
 import { todayDateKey } from '../../../core/date.js';
 import * as fsModule from '../../../lib/fs.js';
 import { writeFrontmatter } from '../../../lib/frontmatter.js';
-import { writeToolhash, computeHash } from '../../../lib/toolhash.js';
+import { writeToolhash, computeHash, toolhashPath } from '../../../lib/toolhash.js';
 import { writeCountersAsync, readCountersAsync } from '../counters.js';
 
 const mockRootLogger = vi.hoisted(() => ({
@@ -660,15 +660,15 @@ describe('deleteApplication', () => {
     expect(result).toBe(false);
   });
 
-  it('removes .toolhash sidecars with the folder', async () => {
+  it('removes sidecars with the folder', async () => {
     const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
     const metaPath = join(appliedDir, slug, 'meta.md');
     const content = await readFile(metaPath, 'utf8');
     await writeToolhash(metaPath, computeHash(content));
 
-    expect(existsSync(join(metaPath + '.toolhash'))).toBe(true);
+    expect(existsSync(toolhashPath(metaPath))).toBe(true);
     await deleteApplication(appliedDir, slug);
-    expect(existsSync(join(metaPath + '.toolhash'))).toBe(false);
+    expect(existsSync(toolhashPath(metaPath))).toBe(false);
   });
 
   it('cleans .counters.json entry for the deleted slug', async () => {

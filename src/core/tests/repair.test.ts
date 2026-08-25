@@ -3,7 +3,13 @@ import { join } from 'node:path';
 import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { repairApp, repairAll, RepairError } from '../../workflow/repair/index.js';
-import { computeHash, readToolhash, writeToolhash } from '../../lib/toolhash.js';
+import {
+  computeHash,
+  readToolhash,
+  writeToolhash,
+  legacyToolhashPath,
+  toolhashPath,
+} from '../../lib/toolhash.js';
 
 vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -128,6 +134,28 @@ describe('repairApp', () => {
     // Verify sidecar now matches
     const hash = await readToolhash(join(appDir, 'jd.md'));
     expect(hash).toBe(computeHash('Current content.'));
+  });
+
+  it('migrates legacy sibling sidecars into .sidecars/ during repair', async () => {
+    const slug = '2026-Jun-03-SE-Migrate';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+    await writeFile(join(appDir, 'jd.md'), 'Job description content.');
+
+    // Pre-10a layout: sibling .toolhash in the application folder.
+    const legacy = legacyToolhashPath(join(appDir, 'jd.md'));
+    await writeFile(legacy, computeHash('Job description content.') + '\n');
+
+    const result = await repairApp(appliedDir, slug);
+    const migrateActions = result.actions.filter((a) => a.action === 'toolhash_migrated');
+    expect(migrateActions.length).toBeGreaterThanOrEqual(1);
+
+    // Legacy sibling is gone; new location holds the sidecar.
+    expect(await readFile(toolhashPath(join(appDir, 'jd.md')), 'utf8')).toBe(
+      computeHash('Job description content.') + '\n',
+    );
+    await expect(readFile(legacy, 'utf8')).rejects.toThrow();
   });
 
   it('skips files without sidecars when updateToolhash is false', async () => {

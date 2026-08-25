@@ -4,7 +4,12 @@ import { join } from 'node:path';
 import { readFrontmatter } from '../../lib/frontmatter.js';
 import { safeValidateApplicationFrontmatter } from '../../workflow/applications/meta-schema.js';
 import { SLUG_PATTERN } from '../../core/parser/slug.js';
-import { readToolhash, computeHash, TOOL_MANAGED_FILES } from '../../lib/toolhash.js';
+import {
+  readToolhash,
+  computeHash,
+  TOOL_MANAGED_FILES,
+  hasLegacyToolhashSidecars,
+} from '../../lib/toolhash.js';
 import { readIndex, indexPath } from '../../workflow/applications/index-builder.js';
 import { moduleLogger } from '../../lib/logger/logger.js';
 import type { DoctorIssue } from './types.js';
@@ -206,6 +211,19 @@ export async function diagnoseApp(appliedDir: string, slug: string): Promise<Doc
         remediation: 'Check file permissions.',
       });
     }
+  }
+
+  // Legacy sidecar layout: sibling .toolhash files left by pre-10a versions.
+  // Flag so the user can migrate them into .sidecars/ with jho repair.
+  if (await hasLegacyToolhashSidecars(appFolder)) {
+    issues.push({
+      severity: 'info',
+      category: 'toolhash',
+      check: 'legacy_toolhash_sidecars',
+      message: `${slug} has legacy .toolhash sidecars in the application folder (pre-10a layout).`,
+      slug,
+      remediation: 'Run jho repair to migrate sidecars into the .sidecars/ directory.',
+    });
   }
 
   log.debug({ slug, issueCount: issues.length }, 'doctor.app.completed');

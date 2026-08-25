@@ -303,6 +303,23 @@ describe('diagnoseApp', () => {
     expect(readErrorIssues[0]!.slug).toBe(slug);
     expect(readErrorIssues[0]!.remediation).toBe('Check file permissions.');
   });
+
+  it('flags legacy sibling sidecars in the application folder', async () => {
+    const slug = '2026-Jun-03-SE-Legacy';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+    await writeFile(join(appDir, 'jd.md'), 'Job description.');
+
+    // Pre-10a layout: sibling .toolhash file in the application folder.
+    await writeFile(join(appDir, 'jd.md.toolhash'), computeHash('Job description.') + '\n');
+
+    const issues = await diagnoseApp(appliedDir, slug);
+    const legacyIssues = issues.filter((i) => i.check === 'legacy_toolhash_sidecars');
+    expect(legacyIssues).toHaveLength(1);
+    expect(legacyIssues[0]!.severity).toBe('info');
+    expect(legacyIssues[0]!.slug).toBe(slug);
+  });
 });
 
 describe('DoctorError', () => {
