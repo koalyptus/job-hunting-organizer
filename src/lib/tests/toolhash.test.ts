@@ -104,17 +104,20 @@ describe('computeHash', () => {
 
 describe('toolhashPath', () => {
   it('places the sidecar in the .sidecars/ subdirectory beside the file', () => {
-    const result = toolhashPath('/foo/bar/meta.md');
-    expect(basename(result)).toBe('meta.md.toolhash');
+    const filePath = '/foo/bar/meta.md';
+    const result = toolhashPath(filePath);
+    expect(basename(result)).toBe(`${basename(filePath)}.toolhash`);
     expect(basename(dirname(result))).toBe(SIDECARS_DIR);
-    expect(dirname(dirname(result))).toBe(dirname('/foo/bar/meta.md'));
+    expect(dirname(dirname(result))).toBe(dirname(filePath));
   });
 
   it('uses the SIDECARS_DIR constant for the subdirectory name', () => {
     expect(SIDECARS_DIR).toBe('.sidecars');
-    const result = toolhashPath('/foo/bar/jd.md');
-    expect(basename(result)).toBe('jd.md.toolhash');
+    const filePath = '/foo/bar/jd.md';
+    const result = toolhashPath(filePath);
+    expect(basename(result)).toBe(`${basename(filePath)}.toolhash`);
     expect(basename(dirname(result))).toBe(SIDECARS_DIR);
+    expect(dirname(dirname(result))).toBe(dirname(filePath));
   });
 });
 
