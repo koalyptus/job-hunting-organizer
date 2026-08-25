@@ -271,7 +271,7 @@ describe('writeToolhash', () => {
   });
 });
 
-describe('writeToolhash', () => {
+describe('writeToolhash (.sidecars/ layout)', () => {
   let workDir: string;
 
   beforeEach(async () => {
@@ -295,41 +295,10 @@ describe('writeToolhash', () => {
     expect(toolhashPath(filePath)).toBe(join(workDir, '.sidecars', 'meta.md.toolhash'));
   });
 
-  it('creates parent directories if needed', async () => {
-    const filePath = join(workDir, 'nested', 'dir', 'meta.md');
-    const hash = computeHash('content');
-
-    const result = await writeToolhash(filePath, hash);
-    expect(result).toBe(true);
-
-    const stored = await readFile(toolhashPath(filePath), 'utf8');
-    expect(stored).toBe(hash + '\n');
-  });
-
   it('does not write a sibling sidecar', async () => {
     const filePath = join(workDir, 'meta.md');
     await writeToolhash(filePath, computeHash('content'));
     expect(existsSync(legacyToolhashPath(filePath))).toBe(false);
-  });
-
-  it('overwrites existing sidecar', async () => {
-    const filePath = join(workDir, 'meta.md');
-    const hash1 = computeHash('old');
-    const hash2 = computeHash('new');
-
-    await writeToolhash(filePath, hash1);
-    await writeToolhash(filePath, hash2);
-
-    const stored = await readFile(toolhashPath(filePath), 'utf8');
-    expect(stored).toBe(hash2 + '\n');
-  });
-
-  it('returns false when write fails', async () => {
-    const filePath = join(workDir, 'meta.md');
-    vi.mocked(writeFile).mockRejectedValueOnce(new Error('EACCES: permission denied'));
-
-    const result = await writeToolhash(filePath, computeHash('test'));
-    expect(result).toBe(false);
   });
 });
 
@@ -351,24 +320,24 @@ describe('migrateToolhashSidecar', () => {
     await writeFile(legacyToolhashPath(filePath), hash + '\n', 'utf8');
 
     const migrated = await migrateToolhashSidecar(filePath);
-    expect(migrated).toBe(true);
+    expect(migrated).toBe('migrated');
     expect(existsSync(legacyToolhashPath(filePath))).toBe(false);
     expect(await readFile(toolhashPath(filePath), 'utf8')).toBe(hash + '\n');
   });
 
-  it('returns false when no legacy sidecar exists', async () => {
+  it('returns none when no legacy sidecar exists', async () => {
     const filePath = join(workDir, 'meta.md');
-    expect(await migrateToolhashSidecar(filePath)).toBe(false);
+    expect(await migrateToolhashSidecar(filePath)).toBe('none');
   });
 
-  it('removes the legacy sidecar when the new location already exists', async () => {
+  it("removes the legacy sidecar but reports 'cleaned' when the new location already exists", async () => {
     const filePath = join(workDir, 'meta.md');
     const hash = computeHash('content');
     await seedSidecar(filePath, hash + '\n');
     await writeFile(legacyToolhashPath(filePath), 'stale\n', 'utf8');
 
     const migrated = await migrateToolhashSidecar(filePath);
-    expect(migrated).toBe(false);
+    expect(migrated).toBe('cleaned');
     expect(existsSync(legacyToolhashPath(filePath))).toBe(false);
     expect(await readFile(toolhashPath(filePath), 'utf8')).toBe(hash + '\n');
   });
@@ -397,6 +366,11 @@ describe('hasLegacyToolhashSidecars', () => {
   });
 
   it('returns false for an empty folder', async () => {
+    expect(await hasLegacyToolhashSidecars(workDir)).toBe(false);
+  });
+
+  it('ignores a stray <name>.toolhash that is not a tool-managed sidecar', async () => {
+    await writeFile(join(workDir, 'foo.toolhash'), 'hash\n', 'utf8');
     expect(await hasLegacyToolhashSidecars(workDir)).toBe(false);
   });
 });
@@ -455,7 +429,7 @@ describe('toolhash error edges', () => {
     vi.mocked(rename).mockRejectedValueOnce(new Error('EXDEV: cross-device link'));
 
     const migrated = await migrateToolhashSidecar(filePath);
-    expect(migrated).toBe(false);
+    expect(migrated).toBe('none');
   });
 
   it('removeLegacySidecar: ignores non-ENOENT unlink errors', async () => {

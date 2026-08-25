@@ -68,14 +68,22 @@ export async function repairApp(
           const content = await readFile(filePath, 'utf8');
           const hash = computeHash(content);
 
-          // Migrate any legacy sibling sidecar into the .sidecars/ directory
-          // before writing the refreshed hash, so the relocated sidecar is
-          // used (and the legacy file is dropped) rather than left behind.
+          // Migrate any legacy sibling sidecar into .sidecars/ *before* writing
+          // the refreshed hash. The migration's job is specifically to remove the
+          // legacy sibling so the application folder is not polluted; the
+          // subsequent writeToolhash always (re)creates the canonical .sidecars/
+          // entry regardless.
           const migrated = await migrateToolhashSidecar(filePath);
-          if (migrated) {
+          if (migrated === 'migrated') {
             actions.push({
               action: 'toolhash_migrated',
               message: `Migrated legacy sidecar for ${filename} into .sidecars/.`,
+              slug,
+            });
+          } else if (migrated === 'cleaned') {
+            actions.push({
+              action: 'toolhash_cleaned',
+              message: `Removed redundant legacy sidecar for ${filename} (already in .sidecars/).`,
               slug,
             });
           }

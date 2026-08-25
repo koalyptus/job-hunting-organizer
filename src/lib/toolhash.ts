@@ -83,6 +83,12 @@ export async function readToolhash(filePath: string): Promise<string | null> {
     if (code === 'ENOENT') {
       log.debug({ sidecar }, 'toolhash.missing');
     } else {
+      // A non-ENOENT error (e.g. EACCES) on the canonical .sidecars/ location is
+      // surfaced rather than masked by silently falling back to the legacy sibling.
+      // We deliberately do NOT fall through to the legacy path here: if the new
+      // location is unreadable the deployment is misconfigured and the operator
+      // should see the warning, instead of quietly reading a possibly-stale legacy
+      // hash that could hide a genuine permissions/disk problem.
       log.warn({ sidecar, err }, 'toolhash.read.failed');
       return null;
     }
@@ -138,20 +144,40 @@ export async function writeToolhash(filePath: string, hash: string): Promise<boo
  * @param filePath - Absolute path to the tool-managed file.
  * @returns `true` when a legacy sidecar was moved into `.sidecars/`.
  */
-export async function migrateToolhashSidecar(filePath: string): Promise<boolean> {
+/**
+ * Result of {@link migrateToolhashSidecar}.
+ * - `'migrated'`: a legacy sibling sidecar was moved into `.sidecars/`.
+ * - `'cleaned'`: the new `.sidecars/` sidecar already existed, so the legacy
+ *   sibling was removed (folder de-cluttered) but nothing was moved.
+ * - `'none'`: there was no legacy sidecar to act on.
+ */
+export type MigrateResult = 'migrated' | 'cleaned' | 'none';
+
+/**
+ * Move a legacy sibling sidecar (`<file>.toolhash`) into the current
+ * `.sidecars/` location for the same file. When the new location already
+ * holds a sidecar, the legacy sibling is removed (de-clutter) and the result
+ * is `'cleaned'`. Returns `'none'` when there is no legacy sidecar.
+ * Safe to call repeatedly; it never overwrites an existing `.sidecars` entry.
+ *
+ * @param filePath - Absolute path to the tool-managed file.
+ * @returns What action (if any) was taken on the legacy sidecar.
+ */
+export async function migrateToolhashSidecar(filePath: string): Promise<MigrateResult> {
   const legacy = legacyToolhashPath(filePath);
   const sidecar = toolhashPath(filePath);
   try {
     await readFile(legacy, 'utf8');
   } catch {
-    return false;
+    return 'none';
   }
   try {
     await readFile(sidecar, 'utf8');
     // New location already has a sidecar — drop the legacy one so the
-    // application folder is clean.
+    // application folder is clean. We report 'cleaned' (not 'none') so callers
+    // like `repair --all` can surface that a legacy file was removed.
     await removeLegacySidecar(filePath);
-    return false;
+    return 'cleaned';
   } catch {
     // New location absent — proceed with the move.
   }
@@ -159,10 +185,10 @@ export async function migrateToolhashSidecar(filePath: string): Promise<boolean>
     await mkdir(dirname(sidecar), { recursive: true });
     await rename(legacy, sidecar);
     log.info({ from: legacy, to: sidecar }, 'toolhash.migrated');
-    return true;
+    return 'migrated';
   } catch (err) {
     log.warn({ from: legacy, to: sidecar, err }, 'toolhash.migrate.failed');
-    return false;
+    return 'none';
   }
 }
 
@@ -197,5 +223,9 @@ export async function hasLegacyToolhashSidecars(appFolder: string): Promise<bool
   } catch {
     return false;
   }
-  return entries.some((name) => name.endsWith('.toolhash'));
+  // Only flag sidecars for files the tool actually manages. A stray
+  // `<anything>.toolhash` the user created by hand is not ours to touch, so it
+  // must not be reported (and therefore not removed by repair).
+  const managedSidecars = new Set(TOOL_MANAGED_FILES.map((f) => `${f}.toolhash`));
+  return entries.some((name) => managedSidecars.has(name));
 }
