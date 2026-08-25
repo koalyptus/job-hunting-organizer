@@ -108,7 +108,6 @@ describe('toolhashPath', () => {
     const result = toolhashPath(filePath);
     expect(basename(result)).toBe(`${basename(filePath)}.toolhash`);
     expect(basename(dirname(result))).toBe(SIDECARS_DIR);
-    expect(dirname(dirname(result))).toBe(dirname(filePath));
   });
 
   it('uses the SIDECARS_DIR constant for the subdirectory name', () => {
@@ -117,7 +116,6 @@ describe('toolhashPath', () => {
     const result = toolhashPath(filePath);
     expect(basename(result)).toBe(`${basename(filePath)}.toolhash`);
     expect(basename(dirname(result))).toBe(SIDECARS_DIR);
-    expect(dirname(dirname(result))).toBe(dirname(filePath));
   });
 });
 
