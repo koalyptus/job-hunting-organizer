@@ -1,5 +1,5 @@
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import type * as FsPromisesModule from 'node:fs/promises';
 import {
   chmod,
@@ -104,12 +104,17 @@ describe('computeHash', () => {
 
 describe('toolhashPath', () => {
   it('places the sidecar in the .sidecars/ subdirectory beside the file', () => {
-    expect(toolhashPath('/foo/bar/meta.md')).toBe('/foo/bar/.sidecars/meta.md.toolhash');
+    const result = toolhashPath('/foo/bar/meta.md');
+    expect(basename(result)).toBe('meta.md.toolhash');
+    expect(basename(dirname(result))).toBe(SIDECARS_DIR);
+    expect(dirname(dirname(result))).toBe(dirname('/foo/bar/meta.md'));
   });
 
   it('uses the SIDECARS_DIR constant for the subdirectory name', () => {
     expect(SIDECARS_DIR).toBe('.sidecars');
-    expect(toolhashPath('/foo/bar/jd.md')).toBe(join('/foo/bar', SIDECARS_DIR, 'jd.md.toolhash'));
+    const result = toolhashPath('/foo/bar/jd.md');
+    expect(basename(result)).toBe('jd.md.toolhash');
+    expect(basename(dirname(result))).toBe(SIDECARS_DIR);
   });
 });
 
