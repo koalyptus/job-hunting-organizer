@@ -127,6 +127,51 @@ describe('fetchGithubUser', () => {
     await expect(fetchGithubUser('testuser')).rejects.toThrow('Network error');
   });
 
+  it('logs a network_error warning when a logger is provided', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+
+    const log = { info: vi.fn(), warn: vi.fn() };
+    await expect(fetchGithubUser('testuser', undefined, log as never)).rejects.toThrow(
+      'Network error',
+    );
+
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ url: 'https://api.github.com/users/testuser' }),
+      'github.fetch.network_error',
+    );
+  });
+
+  it('logs a rate_limited warning when a logger is provided', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockResolvedValueOnce(rateLimitedResponse());
+
+    const log = { info: vi.fn(), warn: vi.fn() };
+    await expect(fetchGithubUser('testuser', undefined, log as never)).rejects.toThrow(
+      'GitHub API rate limit exceeded',
+    );
+
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 403 }),
+      'github.fetch.rate_limited',
+    );
+  });
+
+  it('logs an http_error warning when a logger is provided', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockResolvedValueOnce(errJson(404));
+
+    const log = { info: vi.fn(), warn: vi.fn() };
+    await expect(fetchGithubUser('testuser', undefined, log as never)).rejects.toThrow(
+      'GitHub API returned 404 for',
+    );
+
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 404 }),
+      'github.fetch.http_error',
+    );
+  });
+
   it('logs when a logger is provided', async () => {
     const fetch = vi.mocked(globalThis.fetch);
     fetch.mockResolvedValueOnce(okJson(USER_PROFILE_RESPONSE));

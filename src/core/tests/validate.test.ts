@@ -91,6 +91,20 @@ describe('validateSlug', () => {
     });
   });
 
+  it('rejects day 0', () => {
+    expect(validateSlug('2026-Jun-00-senior-backend-acme')).toEqual({
+      ok: false,
+      reason: 'invalid day: 00',
+    });
+  });
+
+  it('rejects year below 1900 with non-matching four-digit', () => {
+    expect(validateSlug('1899-Jun-15-senior-backend-acme')).toEqual({
+      ok: false,
+      reason: 'invalid year: 1899',
+    });
+  });
+
   it('rejects invalid year', () => {
     expect(validateSlug('1899-Jun-15-senior-backend-acme')).toEqual({
       ok: false,

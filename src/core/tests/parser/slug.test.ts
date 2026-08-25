@@ -241,6 +241,22 @@ describe('uniqueSlug', () => {
     );
     expect(result3).toBe(`${baseSlug}-2`);
   });
+
+  it('logs a debug warning when writeCounters returns false', async () => {
+    const appliedDir = join(testDir, 'applied');
+    const baseSlug = '2026-Jun-03-engineer-foo';
+    mkdirSync(join(appliedDir, baseSlug), { recursive: true });
+
+    const counters: Record<string, number> = {};
+    const result = await uniqueSlug(
+      { title: 'Engineer', company: 'foo', appliedOn: '2026-06-03T00:00:00Z' },
+      appliedDir,
+      existsSync,
+      async () => counters,
+      async () => false,
+    );
+    expect(result).toBe(`${baseSlug}-1`);
+  });
 });
 
 describe('validateSlug', () => {

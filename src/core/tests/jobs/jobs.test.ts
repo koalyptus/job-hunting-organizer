@@ -460,6 +460,15 @@ describe('extractJdFromUrl', () => {
     expect(result.site).toBe('CustomBoard');
   });
 
+  it('wraps a non-Error fetch failure', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValue('a string error');
+
+    await expect(extractJdFromUrl('https://example.com/job/123', testLlmConfig)).rejects.toThrow(
+      'a string error',
+    );
+  });
+
   it('throws on fetch failure', async () => {
     const fetch = vi.mocked(globalThis.fetch);
     fetch.mockRejectedValue(new TypeError('fetch failed'));

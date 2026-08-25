@@ -102,6 +102,24 @@ describe('looksLikeNaturalLanguage', () => {
     expect(looksLikeNaturalLanguage(['inspect everything please'], live)).toBe(true);
   });
 
+  it('returns false when the first arg is undefined (sparse array)', () => {
+    expect(looksLikeNaturalLanguage([undefined, 'list'] as unknown as string[])).toBe(false);
+  });
+
+  it('skips undefined entries in extractPromptAndGlobals', () => {
+    const result = extractPromptAndGlobals([
+      '--campaign',
+      'default',
+      undefined,
+      'list',
+      'all',
+    ] as unknown as string[]);
+    expect(result.globals.campaign).toBe('default');
+    expect(result.prompt).toContain('list');
+    expect(result.prompt).toContain('all');
+    expect(result.prompt).not.toContain('undefined');
+  });
+
   it('deriveKnownCommands builds a set from command names', () => {
     expect(deriveKnownCommands(['list', 'track', 'list'])).toEqual(new Set(['list', 'track']));
   });
