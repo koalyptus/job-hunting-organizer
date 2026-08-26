@@ -106,6 +106,30 @@ describe('validateCvPath', () => {
     const result = await validateCvPath(cvPath);
     expect(result.ok).toBe(true);
   });
+
+  it('returns error for file with no extension (dotIdx < 0)', async () => {
+    const cvPath = join(testDir, 'cvnoext');
+    await writeFile(cvPath, 'test');
+    const result = await validateCvPath(cvPath);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('Unsupported');
+  });
+
+  it('returns error for file with trailing dot (dotIdx === length-1)', async () => {
+    const cvPath = join(testDir, 'cv.');
+    await writeFile(cvPath, 'test');
+    const result = await validateCvPath(cvPath);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('Unsupported');
+  });
+
+  it('returns error for hidden file with no supported extension', async () => {
+    const cvPath = join(testDir, '.hidden');
+    await writeFile(cvPath, 'test');
+    const result = await validateCvPath(cvPath);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('Unsupported');
+  });
 });
 
 describe('readCv', () => {

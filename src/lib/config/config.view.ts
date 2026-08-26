@@ -53,7 +53,7 @@ export function redactSecrets<T>(config: T): T {
  * @param path - The key path. Empty paths are ignored.
  * @param value - The value to set at the leaf.
  */
-function setAtPath(obj: unknown, path: readonly string[], value: unknown): void {
+export function setAtPath(obj: unknown, path: readonly string[], value: unknown): void {
   if (path.length === 0) {
     return;
   }

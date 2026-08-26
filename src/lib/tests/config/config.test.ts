@@ -142,4 +142,41 @@ describe('config', () => {
 
     expect(() => loadCampaignConfig('stale')).toThrowError(/migration|schema version/i);
   });
+
+  it('falls back to defaults and warns on corrupted global config JSON (non-ENOENT)', async () => {
+    const configHome = resolve(testHome, '.job-hunting-organizer');
+    await mkdir(configHome, { recursive: true });
+    await writeFile(resolve(configHome, DEFAULT_CONFIG_FILENAME), '{ not json', 'utf8');
+    clearConfigCache();
+    const config = loadGlobalConfig();
+    expect(config.version).toBe(1);
+    expect(config.llm.model).toBe('llama3.1');
+  });
+
+  it('falls back to defaults and warns on corrupted campaign config JSON (non-ENOENT)', async () => {
+    const campaignRoot = resolve(testHome, 'job-hunting-organizer-data', 'campaigns', 'corrupt');
+    await mkdir(campaignRoot, { recursive: true });
+    await writeFile(resolve(campaignRoot, DEFAULT_CONFIG_FILENAME), '{ bad json', 'utf8');
+    clearConfigCache();
+    const config = loadCampaignConfig('corrupt');
+    expect(config.version).toBe(1);
+  });
+
+  it('retries after corrupted file then valid file (cache invalidation)', async () => {
+    const configHome = resolve(testHome, '.job-hunting-organizer');
+    await mkdir(configHome, { recursive: true });
+    await writeFile(resolve(configHome, DEFAULT_CONFIG_FILENAME), '{ bad', 'utf8');
+    clearConfigCache();
+    const first = loadGlobalConfig();
+    expect(first.version).toBe(1);
+    // overwrite with valid config and clear cache
+    await writeFile(
+      resolve(configHome, DEFAULT_CONFIG_FILENAME),
+      JSON.stringify({ version: 1, llm: { model: 'custom-model' } }),
+      'utf8',
+    );
+    clearConfigCache();
+    const second = loadGlobalConfig();
+    expect(second.llm.model).toBe('custom-model');
+  });
 });

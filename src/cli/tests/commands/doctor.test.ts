@@ -132,6 +132,12 @@ describe('doctor command', () => {
       expect(exitCode).toBe(1);
       expect(stderr).toContain('Campaign not found');
     });
+
+    it('re-throws unexpected errors for campaign', async () => {
+      vi.mocked(doctorCore.diagnoseCampaign).mockRejectedValue(new Error('weird'));
+
+      await expect(runCommand(doctorCommand, ['doctor'])).rejects.toThrow('weird');
+    });
   });
 
   describe('single app diagnosis', () => {
@@ -172,6 +178,16 @@ describe('doctor command', () => {
       expect(stdout).toContain('1 issue(s)');
       expect(stdout).toContain('meta_missing');
       expect(stdout).toContain('ERROR');
+    });
+
+    it('re-throws unexpected errors for app', async () => {
+      vi.mocked(doctorCore.diagnoseApp).mockRejectedValue(new Error('weird'));
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      await expect(runCommand(doctorCommand, ['doctor', slug])).rejects.toThrow('weird');
     });
   });
 

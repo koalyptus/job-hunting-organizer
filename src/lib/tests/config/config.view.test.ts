@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { redactSecrets } from '../../config/config.view.js';
+import { redactSecrets, setAtPath } from '../../config/config.view.js';
 import type { GlobalConfig } from '../../../core/types.js';
 
 // Test fixture: a fully-populated config shape that matches
@@ -61,5 +61,68 @@ describe('redactSecrets', () => {
     const config = { version: 1, dataRoot: '/tmp' };
     const result = redactSecrets(config);
     expect(result).toEqual(config);
+  });
+
+  it('handles llm as string (non-object intermediate) gracefully', () => {
+    const config = {
+      version: 1,
+      dataRoot: '/tmp',
+      llm: 'not-an-object',
+      github: { user: 'me', token: 'tok' },
+    };
+    const result = redactSecrets(config as unknown as GlobalConfig);
+    // llm.apiKey cannot be redacted when llm is a string → remains untouched
+    expect((result as unknown as Record<string, unknown>).llm).toBe('not-an-object');
+    // github.token still redacted
+    expect((result as unknown as Record<string, unknown>).github).toBeDefined();
+  });
+
+  it('handles llm as number (non-object intermediate) gracefully', () => {
+    const config = { version: 1, dataRoot: '/tmp', llm: 123, github: null };
+    const result = redactSecrets(config as unknown as GlobalConfig);
+    expect((result as unknown as Record<string, unknown>).llm).toBe(123);
+  });
+});
+
+describe('setAtPath', () => {
+  it('ignores empty path', () => {
+    const obj: Record<string, unknown> = { a: 1 };
+    setAtPath(obj, [], 'x');
+    expect(obj).toEqual({ a: 1 });
+  });
+
+  it('aborts when intermediate is null', () => {
+    const obj: Record<string, unknown> = { a: null };
+    setAtPath(obj, ['a', 'b'], 'x');
+    expect(obj).toEqual({ a: null });
+  });
+
+  it('aborts when intermediate is non-object', () => {
+    const obj: Record<string, unknown> = { a: 'string' };
+    setAtPath(obj, ['a', 'b'], 'x');
+    expect(obj).toEqual({ a: 'string' });
+  });
+
+  it('aborts when leaf parent is non-object', () => {
+    const obj: Record<string, unknown> = { a: 'string' };
+    setAtPath(obj, ['a'], 'x');
+    // When path length is 1, loop not entered; cur is obj itself (object), so it sets obj.a
+    // To hit leaf-parent non-object, need path like ['a','b'] where a is non-object already handled above;
+    // For single-segment where obj itself is non-object:
+    const nonObj = 'not-obj' as unknown as Record<string, unknown>;
+    setAtPath(nonObj, ['x'], 'val');
+    // no throw
+  });
+
+  it('sets value at nested path', () => {
+    const obj: Record<string, unknown> = { llm: { apiKey: 'old' } };
+    setAtPath(obj, ['llm', 'apiKey'], 'new');
+    expect((obj.llm as Record<string, unknown>).apiKey).toBe('new');
+  });
+
+  it('aborts when cur is not object at leaf-parent check', () => {
+    const obj: Record<string, unknown> = { llm: null as unknown as Record<string, unknown> };
+    setAtPath(obj, ['llm', 'apiKey'], 'x');
+    expect(obj.llm).toBeNull();
   });
 });

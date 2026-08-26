@@ -258,6 +258,14 @@ describe('show command', () => {
       expect(exitCode).toBe(1);
       expect(stderr).toContain('application not found');
     });
+
+    it('re-throws unexpected errors', async () => {
+      vi.mocked(showCore.readShowData).mockRejectedValue(new Error('weird'));
+
+      await expect(runCommand(showCommand, ['show', '2026-Jun-03-se-test-corp'])).rejects.toThrow(
+        'weird',
+      );
+    });
   });
 
   describe('--jd flag', () => {
