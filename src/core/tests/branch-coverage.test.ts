@@ -57,12 +57,15 @@ describe('branch coverage: fetch.ts', () => {
     const fetchMock = vi.mocked(globalThis.fetch);
     const longBody = 'a'.repeat(300);
     fetchMock.mockImplementation(() => Promise.resolve(mockFetchResponse(longBody, 502)));
+    expect.assertions(2);
+    await expect(fetchWithFallback('https://example.com/long')).rejects.toThrow(
+      /response preview:/,
+    );
+    // Verify truncation length via direct call
     try {
       await fetchWithFallback('https://example.com/long');
     } catch (e) {
-      const msg = (e as Error).message;
-      const preview = msg.split('response preview: ')[1] ?? '';
-      expect(preview.length).toBeLessThanOrEqual(200);
+      const preview = (e as Error).message.split('response preview: ')[1] ?? '';
       expect(preview.length).toBe(200);
     }
   });
@@ -403,6 +406,7 @@ describe('branch coverage: markers.ts', () => {
 
 describe('branch coverage: prompt-parser.ts', () => {
   it('looksLikeNaturalLanguage handles parts[0] ?? "" and parts[1] ?? "" fallbacks', () => {
+    const originalSplit = String.prototype.split as unknown as (sep: string | RegExp) => string[];
     const splitSpy = vi.spyOn(String.prototype, 'split').mockImplementation(function (
       this: string,
       sep: unknown,
@@ -411,7 +415,10 @@ describe('branch coverage: prompt-parser.ts', () => {
         return [undefined as unknown as string, 'second'] as unknown as string[];
       }
       // Fallback to original
-      return (this as string).split(sep as string);
+      return (originalSplit as unknown as (this: string, sep: string) => string[]).call(
+        this,
+        sep as string,
+      );
     });
     const result = looksLikeNaturalLanguage(['list all applications for default campaign']);
     expect(result).toBe(true);
@@ -419,6 +426,7 @@ describe('branch coverage: prompt-parser.ts', () => {
   });
 
   it('looksLikeNaturalLanguage secondWord fallback when parts length 1', () => {
+    const originalSplit = String.prototype.split as unknown as (sep: string | RegExp) => string[];
     const splitSpy = vi.spyOn(String.prototype, 'split').mockImplementation(function (
       this: string,
       sep: unknown,
@@ -426,10 +434,13 @@ describe('branch coverage: prompt-parser.ts', () => {
       if (this === 'weird input with space' && sep === ' ') {
         return ['weird'] as unknown as string[];
       }
-      return (this as string).split(sep as string);
+      return (originalSplit as unknown as (this: string, sep: string) => string[]).call(
+        this,
+        sep as string,
+      );
     });
     const result = looksLikeNaturalLanguage(['weird input with space']);
-    expect(typeof result).toBe('boolean');
+    expect(result).toBe(true);
     splitSpy.mockRestore();
   });
 });

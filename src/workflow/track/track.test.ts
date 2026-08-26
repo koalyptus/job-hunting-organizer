@@ -66,6 +66,8 @@ describe('track branch coverage (18-519,550-551)', () => {
   });
 
   afterEach(async () => {
+    delete process.env['JHO_CONFIG_HOME'];
+    delete process.env['JHO_DATA'];
     await rm(tmpRoot, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
