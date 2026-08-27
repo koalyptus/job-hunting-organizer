@@ -13,6 +13,10 @@ import {
   runTrackUpdate,
 } from './track.js';
 import { createApplication } from '../applications/applications.js';
+import * as applicationsModule from '../applications/applications.js';
+import * as jobsExtractModule from '../../core/jobs/extract.js';
+import * as fsModule from '../../lib/fs.js';
+import * as trackPromptsModule from './prompts.js';
 import type { ExtractedJd } from '../../core/jobs/types.js';
 
 const mockLog = vi.hoisted(() => ({
@@ -161,9 +165,7 @@ describe('track branch coverage (18-519,550-551)', () => {
       });
       expect(result.changed).toBe(true);
       // Verify salary/tag update persisted via read
-      const { frontmatter } = await (
-        await import('../applications/applications.js')
-      ).readApplication(appliedDir, slug);
+      const { frontmatter } = await applicationsModule.readApplication(appliedDir, slug);
       expect(frontmatter.salary).toBe('120k');
     });
 
@@ -199,8 +201,8 @@ describe('track branch coverage (18-519,550-551)', () => {
     });
 
     it('refresh succeeds with text and steer (covers text branch + steer write)', async () => {
-      const jobsModule = await import('../../core/jobs/extract.js');
-      const spy = vi.spyOn(jobsModule, 'extractJdFromText').mockResolvedValue({
+      
+      const spy = vi.spyOn(jobsExtractModule, 'extractJdFromText').mockResolvedValue({
         title: 'Refreshed Title',
         company: 'Acme',
         description: 'New JD description',
@@ -281,7 +283,6 @@ describe('track branch coverage (18-519,550-551)', () => {
         company: 'Acme',
         appliedOn: '2026-06-01',
       });
-      const fsModule = await import('../../lib/fs.js');
       const spy = vi.spyOn(fsModule, 'atomicWrite').mockResolvedValue(false);
       await expect(writeSteerToJd(appliedDir, slug, 'steer text')).rejects.toThrow(
         /failed to write jd\.md/,
@@ -329,8 +330,8 @@ describe('track branch coverage (18-519,550-551)', () => {
         appliedOn: '2026-06-01',
         status: 'applied',
       });
-      const promptsModule = await import('./prompts.js');
-      const spy = vi.spyOn(promptsModule, 'confirmTrackUpdate').mockResolvedValue(true);
+      
+      const spy = vi.spyOn(trackPromptsModule, 'confirmTrackUpdate').mockResolvedValue(true);
       const result = await runTrackUpdate({
         campaign: campaignName,
         slug,
@@ -363,8 +364,8 @@ describe('track branch coverage (18-519,550-551)', () => {
 
   describe('runTrackRefresh jd.md missing (669-670)', () => {
     it('creates jd.md when missing during refresh', async () => {
-      const jobsModule = await import('../../core/jobs/extract.js');
-      const spy = vi.spyOn(jobsModule, 'extractJdFromUrl').mockResolvedValue({
+      
+      const spy = vi.spyOn(jobsExtractModule, 'extractJdFromUrl').mockResolvedValue({
         title: 'Title',
         company: 'Acme',
         description: 'Refreshed via URL',
@@ -392,8 +393,8 @@ describe('track branch coverage (18-519,550-551)', () => {
     });
 
     it('throws TrackError when atomicWrite fails during refresh', async () => {
-      const jobsModule = await import('../../core/jobs/extract.js');
-      const spyExtract = vi.spyOn(jobsModule, 'extractJdFromText').mockResolvedValue({
+      
+      const spyExtract = vi.spyOn(jobsExtractModule, 'extractJdFromText').mockResolvedValue({
         title: 'Title',
         company: 'Acme',
         description: 'JD text',
@@ -407,7 +408,6 @@ describe('track branch coverage (18-519,550-551)', () => {
         appliedOn: '2026-06-01',
         url: 'https://example.com/job',
       });
-      const fsModule = await import('../../lib/fs.js');
       const originalAtomicWrite = fsModule.atomicWrite;
       const spyWrite = vi
         .spyOn(fsModule, 'atomicWrite')

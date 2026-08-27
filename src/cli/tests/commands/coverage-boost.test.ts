@@ -12,6 +12,14 @@ import { repairCommand } from '../../commands/repair.js';
 import { removeApplicationCommand } from '../../commands/remove-application.js';
 import { removeCampaignCommand } from '../../commands/remove-campaign.js';
 import { retroCommand } from '../../commands/retro.js';
+import * as coverLetterWorkflow from '../../../workflow/applications/cover-letter.js';
+import * as initWorkflow from '../../../workflow/init/index.js';
+import * as repairWorkflow from '../../../workflow/repair/index.js';
+import * as applicationsWorkflow from '../../../workflow/applications/index.js';
+import * as removeCampaignWorkflow from '../../../workflow/campaign/remove-campaign.js';
+import * as retroWorkflow from '../../../workflow/retro/index.js';
+import * as retroErrors from '../../../workflow/retro/retro-errors.js';
+import * as storageModule from '../../../storage/index.js';
 
 vi.mock('../../../workflow/applications/cover-letter.js', async (importOriginal) => {
   const actual =
@@ -110,8 +118,8 @@ describe('coverage boost - generic rethrows and edge branches', () => {
   });
 
   it('cover-letter generic throw is rethrown (134-135)', async () => {
-    const mod = await import('../../../workflow/applications/cover-letter.js');
-    vi.mocked(mod.generateCoverLetter).mockRejectedValue(new Error('generic cover'));
+    
+    vi.mocked(coverLetterWorkflow.generateCoverLetter).mockRejectedValue(new Error('generic cover'));
     const slug = '2026-Jun-29-SE-Test-Corp';
     const campaignDir = join(testHome, 'data', 'campaigns', 'default');
     await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
@@ -121,20 +129,20 @@ describe('coverage boost - generic rethrows and edge branches', () => {
   });
 
   it('init generic throw is rethrown (54-55)', async () => {
-    const mod = await import('../../../workflow/init/index.js');
-    vi.mocked(mod.runInit).mockRejectedValue(new Error('generic init'));
+    
+    vi.mocked(initWorkflow.runInit).mockRejectedValue(new Error('generic init'));
     await expect(runCommand(initCommand, ['init', 'default'])).rejects.toThrow('generic init');
   });
 
   it('repair generic throw is rethrown (109-110)', async () => {
-    const mod = await import('../../../workflow/repair/index.js');
-    vi.mocked(mod.repairAll).mockRejectedValue(new Error('generic repair'));
+    
+    vi.mocked(repairWorkflow.repairAll).mockRejectedValue(new Error('generic repair'));
     await expect(runCommand(repairCommand, ['repair'])).rejects.toThrow('generic repair');
   });
 
   it('retro show generic throw rethrown (79-80)', async () => {
-    const mod = await import('../../../workflow/retro/index.js');
-    vi.mocked(mod.showRetro).mockRejectedValue(new Error('generic show'));
+    
+    vi.mocked(retroWorkflow.showRetro).mockRejectedValue(new Error('generic show'));
     const slug = '2026-Jun-29-SE-Test-Corp';
     const campaignDir = join(testHome, 'data', 'campaigns', 'default');
     await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
@@ -148,9 +156,9 @@ describe('coverage boost - generic rethrows and edge branches', () => {
   });
 
   it('retro show handles RetroNotFoundError (67-72)', async () => {
-    const { RetroNotFoundError } = await import('../../../workflow/retro/retro-errors.js');
-    const mod = await import('../../../workflow/retro/index.js');
-    vi.mocked(mod.showRetro).mockRejectedValue(new RetroNotFoundError('not found'));
+    
+    
+    vi.mocked(retroWorkflow.showRetro).mockRejectedValue(new retroErrors.RetroNotFoundError('not found'));
     const slug = '2026-Jun-29-SE-Test-Corp';
     const campaignDir = join(testHome, 'data', 'campaigns', 'default');
     await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
@@ -160,8 +168,8 @@ describe('coverage boost - generic rethrows and edge branches', () => {
   });
 
   it('retro aggregate generic throw rethrown (246-247)', async () => {
-    const mod = await import('../../../workflow/retro/index.js');
-    vi.mocked(mod.aggregateRetros).mockRejectedValue(new Error('generic agg'));
+    
+    vi.mocked(retroWorkflow.aggregateRetros).mockRejectedValue(new Error('generic agg'));
     await expect(runCommand(retroCommand, ['retro', 'aggregate'])).rejects.toThrow('generic agg');
   });
 
@@ -198,10 +206,10 @@ describe('coverage boost - generic rethrows and edge branches', () => {
   it('remove-application handles generic throw after isCancel branches (27-28)', async () => {
     // Test the confirmRemoval branches via removeApplication without --yes
     // We mock deleteApplication to throw generic after confirm
-    const storeMod = await import('../../../storage/index.js');
-    vi.spyOn(storeMod, 'createStore').mockReturnValue({ exists: async () => true } as never);
-    const appMod = await import('../../../workflow/applications/index.js');
-    vi.mocked(appMod.deleteApplication).mockRejectedValue(new Error('generic del'));
+    
+    vi.spyOn(storageModule, 'createStore').mockReturnValue({ exists: async () => true } as never);
+    
+    vi.mocked(applicationsWorkflow.deleteApplication).mockRejectedValue(new Error('generic del'));
 
     const slug = '2026-Jun-29-SE-Test-Corp';
     const campaignDir = join(testHome, 'data', 'campaigns', 'default');
@@ -214,8 +222,8 @@ describe('coverage boost - generic rethrows and edge branches', () => {
   });
 
   it('remove-campaign handles generic throw (covers 39-40)', async () => {
-    const mod = await import('../../../workflow/campaign/remove-campaign.js');
-    vi.mocked(mod.removeCampaign).mockRejectedValue(new Error('generic rc'));
+    
+    vi.mocked(removeCampaignWorkflow.removeCampaign).mockRejectedValue(new Error('generic rc'));
     await expect(
       runCommand(removeCampaignCommand, ['remove-campaign', 'test', '--yes']),
     ).rejects.toThrow('generic rc');

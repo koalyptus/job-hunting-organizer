@@ -3,6 +3,12 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm, mkdir } from 'node:fs/promises';
+import * as writeModule from './write.js';
+import * as kbContextModule from '../../workflow/campaign/kb-context.js';
+import * as cvModule from '../../lib/cv.js';
+import * as fsLib from '../../lib/fs.js';
+import * as fspModule from 'node:fs/promises';
+import * as clackPrompts from '@clack/prompts';
 
 vi.mock('@clack/prompts', () => ({
   log: { info: vi.fn(), warn: vi.fn(), success: vi.fn(), error: vi.fn() },
@@ -38,48 +44,45 @@ describe('workflow/init/write branch coverage', () => {
   });
 
   it('ingestKnowledgeBase returns empty when no kbPath (92)', async () => {
-    const { ingestKnowledgeBase } = await import('./write.js');
-    const result = await ingestKnowledgeBase(tmpRoot, undefined, join(tmpRoot, 'kb'));
+    
+    const result = await writeModule.ingestKnowledgeBase(tmpRoot, undefined, join(tmpRoot, 'kb'));
     expect(result).toEqual([]);
     expect(mockIngest).not.toHaveBeenCalled();
   });
 
   it('ingestKnowledgeBase logs info when copied >0 (95-96)', async () => {
     mockIngest.mockResolvedValue(['a.pdf', 'b.md']);
-    const { ingestKnowledgeBase } = await import('./write.js');
-    const clack = await import('@clack/prompts');
-    const result = await ingestKnowledgeBase(tmpRoot, 'some/path', join(tmpRoot, 'kb'));
+    
+    const result = await writeModule.ingestKnowledgeBase(tmpRoot, 'some/path', join(tmpRoot, 'kb'));
     expect(result.length).toBe(1);
-    expect(clack.log.info).toHaveBeenCalled();
+    expect(clackPrompts.log.info).toHaveBeenCalled();
   });
 
   it('ingestKnowledgeBase logs warn when copied ==0 (98-99)', async () => {
     mockIngest.mockResolvedValue([]);
-    const { ingestKnowledgeBase } = await import('./write.js');
-    const clack = await import('@clack/prompts');
-    const result = await ingestKnowledgeBase(tmpRoot, 'some/path', join(tmpRoot, 'kb'));
+    
+    const result = await writeModule.ingestKnowledgeBase(tmpRoot, 'some/path', join(tmpRoot, 'kb'));
     expect(result).toEqual([]);
-    expect(clack.log.warn).toHaveBeenCalled();
+    expect(clackPrompts.log.warn).toHaveBeenCalled();
   });
 
   it('scaffoldVoiceGuide early return when exists (109-110)', async () => {
-    const fs = await import('../../lib/fs.js');
-    vi.spyOn(fs, 'pathExists').mockResolvedValue(true);
-    const { scaffoldVoiceGuide } = await import('./write.js');
-    await scaffoldVoiceGuide(tmpRoot);
+    
+    vi.spyOn(fsLib, 'pathExists').mockResolvedValue(true);
+    
+    await writeModule.scaffoldVoiceGuide(tmpRoot);
     // should not call writeFile
-    const fsp = await import('node:fs/promises');
-    expect(vi.mocked(fsp.writeFile)).not.toHaveBeenCalled();
+    
+    expect(vi.mocked(fspModule.writeFile)).not.toHaveBeenCalled();
   });
 
   it('scaffoldVoiceGuide fail-soft when writeFile throws (117-120)', async () => {
-    const fs = await import('../../lib/fs.js');
-    vi.spyOn(fs, 'pathExists').mockResolvedValue(false);
-    const fsp = await import('node:fs/promises');
-    vi.mocked(fsp.writeFile).mockRejectedValue(new Error('EACCES'));
-    const { scaffoldVoiceGuide } = await import('./write.js');
-    const clack = await import('@clack/prompts');
-    await scaffoldVoiceGuide(tmpRoot);
-    expect(clack.log.warn).toHaveBeenCalled();
+    
+    vi.spyOn(fsLib, 'pathExists').mockResolvedValue(false);
+    
+    vi.mocked(fspModule.writeFile).mockRejectedValue(new Error('EACCES'));
+    
+    await writeModule.scaffoldVoiceGuide(tmpRoot);
+    expect(clackPrompts.log.warn).toHaveBeenCalled();
   });
 });

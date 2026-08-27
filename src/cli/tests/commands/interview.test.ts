@@ -1327,9 +1327,9 @@ describe('interview command', () => {
     });
 
     it('mark handles InterviewNotFound vs InterviewError differently', async () => {
-      const { InterviewNotFoundError: NotFound } =
-        await import('../../../workflow/interviews/index.js');
-      vi.mocked(interviewsCore.markInterviewStatus).mockRejectedValue(new NotFound('not found'));
+      vi.mocked(interviewsCore.markInterviewStatus).mockRejectedValue(
+        new InterviewNotFoundError('not found'),
+      );
 
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');

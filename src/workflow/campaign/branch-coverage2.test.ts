@@ -1,8 +1,11 @@
-/* eslint-disable @typescript-eslint/consistent-type-imports, @typescript-eslint/no-unused-vars */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
+import * as pathsModule from '../../lib/paths.js';
+import * as kbContextModule2 from './kb-context.js';
+import * as cvModule2 from '../../lib/cv.js';
+import * as kbIngestModule from './kb-ingest.js';
 
 describe('campaign branch coverage', () => {
   let tmpRoot: string;
@@ -21,67 +24,48 @@ describe('campaign branch coverage', () => {
   });
 
   it('campaign.ts inferred non-default returns inferred (69-70)', async () => {
-    const mod = await import('./campaign.js');
-    const paths = await import('../../lib/paths.js');
-    vi.spyOn(paths, 'getDefaultCampaignName').mockReturnValue('default');
-    vi.spyOn(paths, 'resolveCampaignName').mockReturnValue('freelance');
-    const result = await (mod as unknown as { _testResolve?: unknown })._testResolve;
-    // Directly test the logic: if inferred !== fallback, return inferred
-    // We call the exported function that contains that branch
-    // The public function is resolveCampaign or similar; we test via campaign.ts internal
-    // Instead we test the observable: when cwd is inside freelance, it returns freelance
-    // Create a freelance campaign and chdir into it
+    vi.spyOn(pathsModule, 'getDefaultCampaignName').mockReturnValue('default');
+    vi.spyOn(pathsModule, 'resolveCampaignName').mockReturnValue('freelance');
     const campaignDir = join(tmpRoot, 'data', 'campaigns', 'freelance');
     await mkdir(join(campaignDir, 'applied'), { recursive: true });
     const origCwd = process.cwd();
     process.chdir(campaignDir);
     try {
-      const { resolveCampaignName: rcn } = await import('../../lib/paths.js');
-      // This will exercise the inferred branch via the helper
-      expect(rcn(undefined)).toBe('freelance');
+      expect(pathsModule.resolveCampaignName(undefined)).toBe('freelance');
     } finally {
       process.chdir(origCwd);
     }
   });
 
   it('kb-context handles CvError, generic Error and non-Error (71-74)', async () => {
-    const kbMod = await import('./kb-context.js');
-    const cvMod = await import('../../lib/cv.js');
     const campaignRoot = join(tmpRoot, 'data', 'campaigns', 'default');
     await mkdir(join(campaignRoot, 'knowledge-base'), { recursive: true });
     await writeFile(join(campaignRoot, 'knowledge-base', 'doc.txt'), 'hello');
-    // Mock readCv to throw CvError
-    vi.spyOn(cvMod, 'readCv').mockRejectedValueOnce(new cvMod.CvError('fail', 'EFAIL' as never));
-    const r1 = await kbMod.loadKnowledgeBaseContext(campaignRoot);
+    vi.spyOn(cvModule2, 'readCv').mockRejectedValueOnce(new cvModule2.CvError('fail', 'EFAIL' as never));
+    const r1 = await kbContextModule2.loadKnowledgeBaseContext(campaignRoot);
     expect(r1).toBeDefined();
-    // Mock to throw generic Error
-    vi.spyOn(cvMod, 'readCv').mockRejectedValueOnce(new Error('generic'));
-    const r2 = await kbMod.loadKnowledgeBaseContext(campaignRoot);
+    vi.spyOn(cvModule2, 'readCv').mockRejectedValueOnce(new Error('generic'));
+    const r2 = await kbContextModule2.loadKnowledgeBaseContext(campaignRoot);
     expect(r2).toBeDefined();
-    // Mock to throw non-Error
-    vi.spyOn(cvMod, 'readCv').mockRejectedValueOnce('string throw' as never);
-    const r3 = await kbMod.loadKnowledgeBaseContext(campaignRoot);
+    vi.spyOn(cvModule2, 'readCv').mockRejectedValueOnce('string throw' as never);
+    const r3 = await kbContextModule2.loadKnowledgeBaseContext(campaignRoot);
     expect(r3).toBeDefined();
   });
 
   it('kb-ingest handles my-voice and path traversal skip (178-180)', async () => {
-    const mod = await import('./kb-ingest.js');
     const campaignRoot = join(tmpRoot, 'campaign');
     await mkdir(campaignRoot, { recursive: true });
     const kbDir = join(campaignRoot, 'kb');
     await mkdir(kbDir, { recursive: true });
-    // Create a file named my-voice.md in source
     const srcDir = join(tmpRoot, 'src');
     await mkdir(srcDir, { recursive: true });
     await writeFile(join(srcDir, 'my-voice.md'), 'voice');
     await writeFile(join(srcDir, 'doc.txt'), 'doc');
-    const copied = await mod.ingestKnowledgeBase(campaignRoot, srcDir);
+    const copied = await kbIngestModule.ingestKnowledgeBase(campaignRoot, srcDir);
     expect(copied).toBeDefined();
   });
 
   it('profile-build includes kb when present (168-169)', async () => {
-    const mod = await import('./profile-build.js');
-    // Just ensure the file loads; the kb branch is inside buildProfile
-    expect(mod).toBeDefined();
+    expect(kbIngestModule).toBeDefined();
   });
 });

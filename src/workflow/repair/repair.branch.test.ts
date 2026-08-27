@@ -4,6 +4,9 @@ import { join } from 'node:path';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { createApplication } from '../applications/applications.js';
 import { repairApp, repairAll } from './repair.js';
+import * as toolhashModule from '../../lib/toolhash.js';
+import * as interviewsModule from '../interviews/interviews.js';
+import * as repairModule from './repair.js';
 
 describe('repair branch coverage (100-101,138-139,225-226)', () => {
   let tmpRoot: string;
@@ -36,8 +39,8 @@ describe('repair branch coverage (100-101,138-139,225-226)', () => {
       company: 'Acme',
       appliedOn: '2026-06-01',
     });
-    const toolhash = await import('../../lib/toolhash.js');
-    vi.spyOn(toolhash, 'computeHash').mockImplementation(() => {
+    
+    vi.spyOn(toolhashModule, 'computeHash').mockImplementation(() => {
       throw new Error('hash fail');
     });
     const result = await repairApp(appliedDir, slug);
@@ -51,8 +54,8 @@ describe('repair branch coverage (100-101,138-139,225-226)', () => {
       company: 'Acme',
       appliedOn: '2026-06-01',
     });
-    const mod = await import('../interviews/interviews.js');
-    vi.spyOn(mod, 'listInterviews').mockRejectedValue(new Error('interviews fail'));
+    
+    vi.spyOn(interviewsModule, 'listInterviews').mockRejectedValue(new Error('interviews fail'));
     const result = await repairApp(appliedDir, slug);
     expect(result).toBeDefined();
   });
@@ -64,10 +67,10 @@ describe('repair branch coverage (100-101,138-139,225-226)', () => {
       company: 'Acme',
       appliedOn: '2026-06-01',
     });
-    const repairMod = await import('./repair.js');
-    const orig = repairMod.repairApp;
+    
+    const orig = repairModule.repairApp;
     const spy = vi
-      .spyOn(repairMod, 'repairApp')
+      .spyOn(repairModule, 'repairApp')
       .mockImplementation(async (dir: string, s: string) => {
         if (s === slug) {
           throw new Error('repair fail');

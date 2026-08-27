@@ -6,6 +6,7 @@ import {
   PromptParseError,
 } from '../../../core/parser/prompt-parser.js';
 import { dispatchNaturalLanguage, validateParsedCommand } from '../../nl-dispatch.js';
+import * as campaignModule from '../../campaign.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -210,9 +211,7 @@ describe('dispatchNaturalLanguage', () => {
     const program = makeProgram();
     program.addCommand(new Command('list').option('--status <s>').action(action));
 
-    const resolveSpy = vi
-      .spyOn(await import('../../campaign.js'), 'resolveCampaign')
-      .mockResolvedValue('default');
+    const resolveSpy = vi.spyOn(campaignModule, 'resolveCampaign').mockResolvedValue('default');
 
     // LLM parsed `yes: true` from the natural language, but the user did NOT
     // pass --yes on the CLI. The campaign prompt must still run (yes=false).
@@ -237,9 +236,7 @@ describe('dispatchNaturalLanguage', () => {
     const program = makeProgram();
     program.addCommand(new Command('list').option('--status <s>').action(action));
 
-    const resolveSpy = vi
-      .spyOn(await import('../../campaign.js'), 'resolveCampaign')
-      .mockResolvedValue('default');
+    const resolveSpy = vi.spyOn(campaignModule, 'resolveCampaign').mockResolvedValue('default');
 
     await dispatchNaturalLanguage(
       {
