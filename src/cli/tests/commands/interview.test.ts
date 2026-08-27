@@ -1199,4 +1199,207 @@ describe('interview command', () => {
       ).rejects.toThrow('unexpected');
     });
   });
+
+  describe('prompt validation via wizard (53-55,59-61,89-91)', () => {
+    it('wizard exits when when is empty (53-55)', async () => {
+      vi.mocked(text).mockResolvedValueOnce('');
+      vi.mocked(isCancel).mockReturnValueOnce(false);
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stderr, exitCode } = await runCommand(interviewCommand, ['interview', 'add', slug]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Interview date/time is required');
+    });
+
+    it('wizard exits when when is invalid datetime (59-61)', async () => {
+      vi.mocked(text).mockResolvedValueOnce('not-a-date');
+      vi.mocked(isCancel).mockReturnValueOnce(false);
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stderr, exitCode } = await runCommand(interviewCommand, ['interview', 'add', slug]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Invalid date/time');
+    });
+
+    it('wizard exits when duration is NaN or <=0 (89-91)', async () => {
+      vi.mocked(text)
+        .mockResolvedValueOnce('2026-07-15 10:00')
+        .mockResolvedValueOnce('not-a-number');
+      vi.mocked(select).mockResolvedValueOnce('technical');
+      vi.mocked(isCancel).mockReturnValue(false);
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stderr, exitCode } = await runCommand(interviewCommand, ['interview', 'add', slug]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Duration must be a positive number');
+    });
+
+    it('wizard exits when duration is zero', async () => {
+      vi.mocked(text).mockResolvedValueOnce('2026-07-15 10:00').mockResolvedValueOnce('0');
+      vi.mocked(select).mockResolvedValueOnce('technical');
+      vi.mocked(isCancel).mockReturnValue(false);
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stderr, exitCode } = await runCommand(interviewCommand, ['interview', 'add', slug]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('Duration must be a positive number');
+    });
+  });
+
+  describe('list InterviewError branch (401-408)', () => {
+    it('exits when listInterviews throws InterviewError', async () => {
+      vi.mocked(interviewsCore.listInterviews).mockRejectedValue(new InterviewError('list failed'));
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stderr, exitCode } = await runCommand(interviewCommand, ['interview', 'list', slug]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('list failed');
+    });
+
+    it('list rethrows non-InterviewError', async () => {
+      vi.mocked(interviewsCore.listInterviews).mockRejectedValue(new Error('unexpected list'));
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      await expect(runCommand(interviewCommand, ['interview', 'list', slug])).rejects.toThrow(
+        'unexpected list',
+      );
+    });
+  });
+
+  describe('mark numeric slug shuffle (441-443) and error branches', () => {
+    it('mark treats single numeric arg as n and infers slug from cwd (441-443)', async () => {
+      vi.mocked(interviewsCore.markInterviewStatus).mockResolvedValue(true);
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      const appDir = join(campaignDir, 'applied', slug);
+      await mkdir(appDir, { recursive: true });
+
+      const origCwd = process.cwd();
+      process.chdir(appDir);
+      try {
+        const { stdout, exitCode } = await runCommand(interviewCommand, [
+          'interview',
+          'mark',
+          '1',
+          '--status',
+          'passed',
+        ]);
+        expect(exitCode).toBe(0);
+        expect(stdout).toContain('Interview #1 marked as passed');
+        expect(interviewsCore.markInterviewStatus).toHaveBeenCalledWith(expect.any(String), slug, {
+          sectionNumber: 1,
+          status: 'passed',
+        });
+      } finally {
+        process.chdir(origCwd);
+      }
+    });
+
+    it('mark handles SlugMissingError (477-483)', async () => {
+      const { stderr, exitCode } = await runCommand(interviewCommand, [
+        'interview',
+        'mark',
+        '1',
+        '--status',
+        'passed',
+      ]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('missing <slug> argument');
+    });
+
+    it('mark handles InterviewNotFound vs InterviewError differently', async () => {
+      const { InterviewNotFoundError: NotFound } =
+        await import('../../../workflow/interviews/index.js');
+      vi.mocked(interviewsCore.markInterviewStatus).mockRejectedValue(new NotFound('not found'));
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stderr, exitCode } = await runCommand(interviewCommand, [
+        'interview',
+        'mark',
+        slug,
+        '1',
+        '--status',
+        'passed',
+      ]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('not found');
+    });
+  });
+
+  describe('notes branches (525-527,569-575)', () => {
+    it('notes treats single numeric arg as n and infers slug from cwd (525-527)', async () => {
+      vi.mocked(interviewsCore.appendInterviewNotes).mockResolvedValue(true);
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      const appDir = join(campaignDir, 'applied', slug);
+      await mkdir(appDir, { recursive: true });
+
+      const origCwd = process.cwd();
+      process.chdir(appDir);
+      try {
+        const { stdout, exitCode } = await runCommand(interviewCommand, [
+          'interview',
+          'notes',
+          '1',
+          '--append',
+          'note text',
+        ]);
+        expect(exitCode).toBe(0);
+        expect(stdout).toContain('Notes appended to interview #1');
+        expect(interviewsCore.appendInterviewNotes).toHaveBeenCalledWith(expect.any(String), slug, {
+          sectionNumber: 1,
+          notes: 'note text',
+        });
+      } finally {
+        process.chdir(origCwd);
+      }
+    });
+
+    it('notes handles SlugMissingError (569-575)', async () => {
+      const { stderr, exitCode } = await runCommand(interviewCommand, [
+        'interview',
+        'notes',
+        '1',
+        '--append',
+        'text',
+      ]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('missing <slug> argument');
+    });
+
+    it('notes rethrows unknown error', async () => {
+      vi.mocked(interviewsCore.appendInterviewNotes).mockRejectedValue(new Error('unknown notes'));
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      await expect(
+        runCommand(interviewCommand, ['interview', 'notes', slug, '1', '--append', 'text']),
+      ).rejects.toThrow('unknown notes');
+    });
+  });
 });

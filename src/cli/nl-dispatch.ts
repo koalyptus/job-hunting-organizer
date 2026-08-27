@@ -76,8 +76,10 @@ export async function dispatchNaturalLanguage(
   // Backwards-compat: the LLM may still emit legacy `tag` (pre-rename to `tags`);
   // normalize it so downstream code only has to check `tags`.
   const normalizedOptions: ParsedCommand['options'] = { ...parsed.options };
-  if ('tag' in normalizedOptions && !('tags' in normalizedOptions)) {
-    normalizedOptions.tags = normalizedOptions.tag;
+  if ('tag' in normalizedOptions) {
+    if (!('tags' in normalizedOptions)) {
+      normalizedOptions.tags = normalizedOptions.tag;
+    }
     delete normalizedOptions.tag;
   }
 

@@ -334,6 +334,73 @@ describe('dispatchNaturalLanguage', () => {
     // `skip: false` is skipped (not pushed as a flag)
     expect(opts.skip).toBeUndefined();
   });
+
+  it('normalizes legacy `tag` option to `tags` (80-82)', async () => {
+    const action = vi.fn();
+    const program = makeProgram();
+    const collect = (val: string, prev: string[] = []) => prev.concat(val);
+    program.addCommand(new Command('list').option('--tags <t>', 'tag', collect, []).action(action));
+
+    await dispatchNaturalLanguage(
+      {
+        command: 'list',
+        args: [],
+        // LLM still emits legacy `tag` singular
+        options: { tag: 'remote' } as unknown as Record<string, unknown>,
+        confidence: 0.9,
+      },
+      {},
+      program,
+    );
+
+    const opts = action.mock.calls[0]?.[0] as { tags?: string[] };
+    expect(opts.tags).toEqual(['remote']);
+  });
+
+  it('does not overwrite tags when both tag and tags present', async () => {
+    const action = vi.fn();
+    const program = makeProgram();
+    const collect = (val: string, prev: string[] = []) => prev.concat(val);
+    program.addCommand(new Command('list').option('--tags <t>', 'tag', collect, []).action(action));
+
+    await dispatchNaturalLanguage(
+      {
+        command: 'list',
+        args: [],
+        options: { tag: 'legacy', tags: ['actual'] } as unknown as Record<string, unknown>,
+        confidence: 0.9,
+      },
+      {},
+      program,
+    );
+
+    const opts = action.mock.calls[0]?.[0] as { tags?: string[] };
+    expect(opts.tags).toEqual(['actual']);
+  });
+
+  it('handles commander.help error by exiting 0 (128-133)', async () => {
+    const program = makeProgram();
+    // Program that throws commander.help on parse
+    const helpCmd = new Command('help');
+    program.addCommand(helpCmd);
+    const spyExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('EXIT_0');
+    }) as never);
+    // Mock program.parseAsync to throw commander.help
+    const origParse = program.parseAsync.bind(program);
+    program.parseAsync = vi.fn().mockRejectedValue({ code: 'commander.help', exitCode: 0 });
+
+    await expect(
+      dispatchNaturalLanguage(
+        { command: 'help', args: [], options: {}, confidence: 0.9 },
+        {},
+        program,
+      ),
+    ).rejects.toThrow('EXIT_0');
+    expect(spyExit).toHaveBeenCalledWith(0);
+    spyExit.mockRestore();
+    program.parseAsync = origParse;
+  });
 });
 
 describe('validateParsedCommand', () => {
