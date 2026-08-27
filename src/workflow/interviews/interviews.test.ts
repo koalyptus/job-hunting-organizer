@@ -12,28 +12,23 @@ import {
 import { createApplication } from '../applications/applications.js';
 import type { InterviewStatus, InterviewType } from './types.js';
 
+const mockLog = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  child: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    child: vi.fn(),
+  })),
+}));
 vi.mock('../../lib/logger/logger.js', () => ({
-  moduleLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
-  getRootLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
-  childLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
+  moduleLogger: vi.fn(() => mockLog),
+  getRootLogger: vi.fn(() => mockLog),
+  childLogger: vi.fn(() => mockLog),
 }));
 
 describe('interviews branch coverage (97,604)', () => {
@@ -51,17 +46,12 @@ describe('interviews branch coverage (97,604)', () => {
   });
 
   it('getTypeLabel fallback via buildSection with unknown type string (line 97)', async () => {
-    // Use addInterview with a type that bypasses validation via cast, hitting getTypeLabel fallback
     const slug = await createApplication({
       appliedDir,
       title: 'Eng',
       company: 'Acme',
       appliedOn: '2026-06-01',
     });
-    // Cast to any to bypass type check - addInterview validates type, so use 'other' for valid but check fallback via parse
-    // Instead directly test parseInterviewsFile with unknown type still parsed as 'other'
-    // For line 97, we can verify that an unknown type string returns itself when not in map
-    // Do it via parse: create a file with unknown Type then parse
     const appFolder = join(appliedDir, slug);
     const content = [
       '<!-- jho:interview-log — append-only. `jho interview mark` only updates Status: line. -->',
@@ -83,10 +73,9 @@ describe('interviews branch coverage (97,604)', () => {
     expect(entries2[0]!.type).toBe('other');
   });
 
-  it('parseInterviewsFile handles content without valid heading (null parse)', () => {
+  it('parseInterviewsFile returns [] when content has no valid H2 heading', () => {
     const entries = parseInterviewsFile('# No H2 here\njust text\n## \n- Type: other');
-    // Should return empty or filter null headings
-    expect(Array.isArray(entries)).toBe(true);
+    expect(entries).toEqual([]);
   });
 
   it('append notes when Notes heading exists but no bullets yet (line 604 false branch)', async () => {
@@ -97,7 +86,6 @@ describe('interviews branch coverage (97,604)', () => {
       appliedOn: '2026-06-01',
     });
     const appFolder = join(appliedDir, slug);
-    // Create interviews.md with Notes heading but no bullets
     const initial = [
       '<!-- jho:interview-log — append-only. `jho interview mark` only updates Status: line. -->',
       '',
@@ -141,11 +129,9 @@ describe('interviews branch coverage (97,604)', () => {
     });
     await addInterview(appliedDir, slug, { when: '2026-06-15 10:00', type: 'hr' });
     await addInterview(appliedDir, slug, { when: '2026-06-16 10:00', type: 'technical' });
-    // First section has no Notes; append to it should insert block before second H2 and ensure blank line
     await appendInterviewNotes(appliedDir, slug, { sectionNumber: 1, notes: 'note for first' });
     const content = await readFile(join(appliedDir, slug, 'interviews.md'), 'utf8');
     expect(content).toContain('note for first');
-    // Ensure two sections still exist
     const entries = await listInterviews(appliedDir, slug);
     expect(entries.length).toBe(2);
   });

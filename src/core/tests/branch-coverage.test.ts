@@ -387,9 +387,12 @@ describe('branch coverage: markers.ts', () => {
       }
       return originalMatch.call(this, re as RegExp);
     });
-    const result = extractSteer('<!-- jho:steer: something -->');
-    expect(result).toBe('');
-    spy.mockRestore();
+    try {
+      const result = extractSteer('<!-- jho:steer: something -->');
+      expect(result).toBe('');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('extractSteer returns empty string when no steer marker (covers false branch at line 218)', () => {
@@ -405,9 +408,18 @@ describe('branch coverage: markers.ts', () => {
 });
 
 describe('branch coverage: prompt-parser.ts', () => {
+  const originalSplit = String.prototype.split as unknown as (sep: string | RegExp) => string[];
+  let splitSpy: any;
+
+  afterEach(() => {
+    if (splitSpy) {
+      splitSpy.mockRestore();
+      splitSpy = null;
+    }
+  });
+
   it('looksLikeNaturalLanguage handles parts[0] ?? "" and parts[1] ?? "" fallbacks', () => {
-    const originalSplit = String.prototype.split as unknown as (sep: string | RegExp) => string[];
-    const splitSpy = vi.spyOn(String.prototype, 'split').mockImplementation(function (
+    splitSpy = vi.spyOn(String.prototype, 'split').mockImplementation(function (
       this: string,
       sep: unknown,
     ) {
@@ -422,12 +434,10 @@ describe('branch coverage: prompt-parser.ts', () => {
     });
     const result = looksLikeNaturalLanguage(['list all applications for default campaign']);
     expect(result).toBe(true);
-    splitSpy.mockRestore();
   });
 
   it('looksLikeNaturalLanguage secondWord fallback when parts length 1', () => {
-    const originalSplit = String.prototype.split as unknown as (sep: string | RegExp) => string[];
-    const splitSpy = vi.spyOn(String.prototype, 'split').mockImplementation(function (
+    splitSpy = vi.spyOn(String.prototype, 'split').mockImplementation(function (
       this: string,
       sep: unknown,
     ) {
@@ -441,7 +451,6 @@ describe('branch coverage: prompt-parser.ts', () => {
     });
     const result = looksLikeNaturalLanguage(['weird input with space']);
     expect(result).toBe(true);
-    splitSpy.mockRestore();
   });
 });
 

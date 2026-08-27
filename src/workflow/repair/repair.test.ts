@@ -6,28 +6,23 @@ import { repairApp, repairAll } from './repair.js';
 import { createApplication } from '../applications/applications.js';
 import { computeHash, writeToolhash } from '../../lib/toolhash.js';
 
+const mockLog = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  child: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    child: vi.fn(),
+  })),
+}));
 vi.mock('../../lib/logger/logger.js', () => ({
-  moduleLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
-  getRootLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
-  childLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
+  moduleLogger: vi.fn(() => mockLog),
+  getRootLogger: vi.fn(() => mockLog),
+  childLogger: vi.fn(() => mockLog),
 }));
 
 describe('repair branch coverage 38-139,225-226', () => {
@@ -64,7 +59,7 @@ describe('repair branch coverage 38-139,225-226', () => {
       updateToolhash: false,
       syncInterviewStatus: false,
     });
-    expect(result.actions.length).toBe(0);
+    expect(result.actions).toEqual([]);
   });
 
   it('skips status sync when syncInterviewStatus false', async () => {

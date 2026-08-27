@@ -72,7 +72,7 @@ describe('locks release failure branches', () => {
     expect(mockReleaseThrows).toHaveBeenCalled();
   });
 
-  it('tryAcquireLock: release thunk no-op when release undefined', async () => {
+  it('tryAcquireLock: release thunk succeeds on normal release', async () => {
     // Force lock to fail with ELOCKED so tryAcquireLock returns null;
     // then we test the returned thunk path where release is undefined is unreachable externally,
     // but we can test the success path already covers 113-114.

@@ -2,32 +2,27 @@ import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises';
-import { validateTrackStatus, hasTrackUpdateFlags, runTrack } from './track.js';
+import { validateTrackStatus, hasTrackUpdateFlags, runTrack, prepareTrack } from './track.js';
 import { createApplication } from '../applications/applications.js';
 import type { ExtractedJd } from '../../core/jobs/types.js';
 
+const mockLog = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  child: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    child: vi.fn(),
+  })),
+}));
 vi.mock('../../lib/logger/logger.js', () => ({
-  moduleLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
-  getRootLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
-  childLogger: vi.fn(() => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(),
-  })),
+  moduleLogger: vi.fn(() => mockLog),
+  getRootLogger: vi.fn(() => mockLog),
+  childLogger: vi.fn(() => mockLog),
 }));
 
 const campaignName = `trk-wf-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -228,10 +223,9 @@ describe('track branch coverage (18-519,550-551)', () => {
   });
 
   describe('runTrack create with text branches', () => {
-    it('throws when no URL or text provided via prepareTrack path', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(runTrack({ campaign: campaignName, url: 'not-a-url' } as any)).rejects.toThrow(
-        /missing slug/,
+    it('prepareTrack throws No URL or text provided when both missing (covers track.ts:285-287)', async () => {
+      await expect(prepareTrack({ campaign: campaignName })).rejects.toThrow(
+        /No URL or text provided/,
       );
     });
   });
