@@ -315,8 +315,6 @@ describe('branch coverage: llm.ts', () => {
 
 describe('branch coverage: frontmatter.ts', () => {
   it('throws FrontmatterParseError with generic cause when load throws non-YAMLException (lines 60-61)', async () => {
-    // Mock js-yaml to throw generic Error
-    const originalLoad = await import('js-yaml');
     vi.doMock('js-yaml', async () => {
       // eslint-disable-next-line @typescript-eslint/consistent-type-imports
       const actual = (await vi.importActual('js-yaml')) as typeof import('js-yaml');
@@ -338,11 +336,8 @@ describe('branch coverage: frontmatter.ts', () => {
       expect((e as Error).message).toMatch(/invalid YAML in frontmatter/);
       expect((e as FrontmatterParseError).cause).toBeInstanceOf(Error);
     }
-    // Restore: import original again to reset
     vi.doUnmock('js-yaml');
     vi.resetModules();
-    // Re-establish original for subsequent tests by re-importing js-yaml (no need to assert)
-    void originalLoad;
   });
 
   it('throws FrontmatterParseError with YAMLException cause (branch true)', () => {
@@ -352,6 +347,10 @@ describe('branch coverage: frontmatter.ts', () => {
 });
 
 describe('branch coverage: markers.ts', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('replaceRegion with empty newContent hits newContent === "" branch (line 177 true)', () => {
     const content =
       '<!-- jho:start:fetched-jd -->\nold content\n<!-- jho:end:fetched-jd -->\n\nuser notes';
