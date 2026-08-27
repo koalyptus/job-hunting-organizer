@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { runCommand } from '../helpers.js';
 import { retroCommand } from '../../commands/retro.js';
 import { prepareCommand } from '../../commands/prepare.js';
@@ -7,6 +7,7 @@ import { mcpCommand } from '../../commands/mcp.js';
 import { campaignCommand } from '../../commands/campaign.js';
 import { profileCommand } from '../../commands/profile.js';
 import { trackCommand } from '../../commands/track.js';
+import * as mcpServer from '../../../mcp/server.js';
 
 describe('stub commands exit with correct phase messages', () => {
   it('retro exits with slug missing error when run outside app folder', async () => {
@@ -46,6 +47,13 @@ describe('stub commands exit with correct phase messages', () => {
   it('mcp starts and exits cleanly when no stdio input', async () => {
     const { exitCode } = await runCommand(mcpCommand, ['mcp']);
     expect(exitCode).toBe(0);
+  });
+
+  it('mcp exits with error when server fails to start (covers 18-20)', async () => {
+    const spy = vi.spyOn(mcpServer, 'startServer').mockRejectedValue(new Error('boom'));
+    const { exitCode } = await runCommand(mcpCommand, ['mcp']);
+    expect(exitCode).toBe(1);
+    spy.mockRestore();
   });
 
   it('profile rebuild exits with code 1 and mentions phase 4c', async () => {

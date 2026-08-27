@@ -79,7 +79,7 @@ export async function runLockedInitSteps(opts: InitWriteOptions): Promise<void> 
 }
 
 /** Ingest the optional knowledge-base source; returns the recorded sources. */
-async function ingestKnowledgeBase(
+export async function ingestKnowledgeBase(
   campaignRoot: string,
   kbPath: string | undefined,
   kbDir: string,
@@ -104,7 +104,7 @@ async function ingestKnowledgeBase(
  * Scaffold the personal voice guide template. Fail-soft: a read-only KB dir
  * must not abort init before configs are written.
  */
-async function scaffoldVoiceGuide(campaignRoot: string): Promise<void> {
+export async function scaffoldVoiceGuide(campaignRoot: string): Promise<void> {
   const voicePath = resolveMyVoicePath(campaignRoot);
   if (await pathExists(voicePath)) {
     return;
