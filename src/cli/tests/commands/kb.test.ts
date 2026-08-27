@@ -162,6 +162,16 @@ describe('kb command', () => {
     expect(stderr).toContain('boom');
   });
 
+  it('update surfaces KbError and exits non-zero', async () => {
+    await setupCampaign();
+    vi.spyOn(kbIngest, 'syncKnowledgeBase').mockRejectedValue(new kbIngest.KbError('boom-update'));
+
+    const { stderr, exitCode } = await runCommand(kbCommand, ['kb', 'update']);
+
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('boom-update');
+  });
+
   it('add re-throws unexpected non-KbError errors', async () => {
     await setupCampaign();
     vi.spyOn(kbIngest, 'ingestKnowledgeBase').mockRejectedValue(new Error('weird'));
