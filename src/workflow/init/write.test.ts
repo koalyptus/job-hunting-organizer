@@ -44,7 +44,6 @@ describe('workflow/init/write branch coverage', () => {
   });
 
   it('ingestKnowledgeBase returns empty when no kbPath (92)', async () => {
-    
     const result = await writeModule.ingestKnowledgeBase(tmpRoot, undefined, join(tmpRoot, 'kb'));
     expect(result).toEqual([]);
     expect(mockIngest).not.toHaveBeenCalled();
@@ -52,7 +51,7 @@ describe('workflow/init/write branch coverage', () => {
 
   it('ingestKnowledgeBase logs info when copied >0 (95-96)', async () => {
     mockIngest.mockResolvedValue(['a.pdf', 'b.md']);
-    
+
     const result = await writeModule.ingestKnowledgeBase(tmpRoot, 'some/path', join(tmpRoot, 'kb'));
     expect(result.length).toBe(1);
     expect(clackPrompts.log.info).toHaveBeenCalled();
@@ -60,28 +59,26 @@ describe('workflow/init/write branch coverage', () => {
 
   it('ingestKnowledgeBase logs warn when copied ==0 (98-99)', async () => {
     mockIngest.mockResolvedValue([]);
-    
+
     const result = await writeModule.ingestKnowledgeBase(tmpRoot, 'some/path', join(tmpRoot, 'kb'));
     expect(result).toEqual([]);
     expect(clackPrompts.log.warn).toHaveBeenCalled();
   });
 
   it('scaffoldVoiceGuide early return when exists (109-110)', async () => {
-    
     vi.spyOn(fsLib, 'pathExists').mockResolvedValue(true);
-    
+
     await writeModule.scaffoldVoiceGuide(tmpRoot);
     // should not call writeFile
-    
+
     expect(vi.mocked(fspModule.writeFile)).not.toHaveBeenCalled();
   });
 
   it('scaffoldVoiceGuide fail-soft when writeFile throws (117-120)', async () => {
-    
     vi.spyOn(fsLib, 'pathExists').mockResolvedValue(false);
-    
+
     vi.mocked(fspModule.writeFile).mockRejectedValue(new Error('EACCES'));
-    
+
     await writeModule.scaffoldVoiceGuide(tmpRoot);
     expect(clackPrompts.log.warn).toHaveBeenCalled();
   });

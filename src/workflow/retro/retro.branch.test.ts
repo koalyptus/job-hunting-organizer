@@ -61,9 +61,9 @@ describe('retro branch coverage (333-334,533-534,558-563)', () => {
       join(appliedDir, slug, 'jd.md'),
       '<!-- jho:start:fetched-jd -->JD<!-- jho:end:fetched-jd -->',
     );
-    
+
     vi.spyOn(kbContextRetro, 'loadKbContextForCampaign').mockResolvedValue('KB CONTENT');
-    
+
     const result = await startRetro({ slug, campaign: 'default', weakTopics: ['SQL'], notes: '' });
     expect(result.content).toBe('plan');
   });
@@ -79,7 +79,7 @@ describe('retro branch coverage (333-334,533-534,558-563)', () => {
       join(appliedDir, slug, 'retro.md'),
       '<!-- jho:retro -->\n# Retro — Eng @ Acme\nNo sections here',
     );
-    
+
     await expect(appendRetro({ slug, campaign: 'default', weakTopics: ['SQL'] })).rejects.toThrow(
       /No retro sections/,
     );
@@ -96,9 +96,9 @@ describe('retro branch coverage (333-334,533-534,558-563)', () => {
       join(appliedDir, slug, 'retro.md'),
       '<!-- jho:retro -->\n# Retro — Eng @ Acme\n\n## Retro for interview: 2026-01-01 — Reflection [applied]\n- Date: 2026-01-01\n- Status at the time: applied\n\n### Weak topics\n\n- SQL\n\n### Learning plan\n\nplan',
     );
-    
+
     vi.spyOn(appModuleRetro, 'readApplication').mockRejectedValue(new Error('read fail'));
-    
+
     await expect(appendRetro({ slug, campaign: 'default', weakTopics: ['New'] })).rejects.toThrow(
       /Failed to read application/,
     );

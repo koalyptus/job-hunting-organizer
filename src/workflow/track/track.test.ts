@@ -201,7 +201,6 @@ describe('track branch coverage (18-519,550-551)', () => {
     });
 
     it('refresh succeeds with text and steer (covers text branch + steer write)', async () => {
-      
       const spy = vi.spyOn(jobsExtractModule, 'extractJdFromText').mockResolvedValue({
         title: 'Refreshed Title',
         company: 'Acme',
@@ -330,7 +329,7 @@ describe('track branch coverage (18-519,550-551)', () => {
         appliedOn: '2026-06-01',
         status: 'applied',
       });
-      
+
       const spy = vi.spyOn(trackPromptsModule, 'confirmTrackUpdate').mockResolvedValue(true);
       const result = await runTrackUpdate({
         campaign: campaignName,
@@ -364,7 +363,6 @@ describe('track branch coverage (18-519,550-551)', () => {
 
   describe('runTrackRefresh jd.md missing (669-670)', () => {
     it('creates jd.md when missing during refresh', async () => {
-      
       const spy = vi.spyOn(jobsExtractModule, 'extractJdFromUrl').mockResolvedValue({
         title: 'Title',
         company: 'Acme',
@@ -393,7 +391,6 @@ describe('track branch coverage (18-519,550-551)', () => {
     });
 
     it('throws TrackError when atomicWrite fails during refresh', async () => {
-      
       const spyExtract = vi.spyOn(jobsExtractModule, 'extractJdFromText').mockResolvedValue({
         title: 'Title',
         company: 'Acme',

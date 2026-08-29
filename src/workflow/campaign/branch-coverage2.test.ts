@@ -24,24 +24,26 @@ describe('campaign branch coverage', () => {
   });
 
   it('campaign.ts inferred non-default returns inferred (69-70)', async () => {
+    const campaignMod = await import('./campaign.js');
     vi.spyOn(pathsModule, 'getDefaultCampaignName').mockReturnValue('default');
     vi.spyOn(pathsModule, 'resolveCampaignName').mockReturnValue('freelance');
-    const campaignDir = join(tmpRoot, 'data', 'campaigns', 'freelance');
-    await mkdir(join(campaignDir, 'applied'), { recursive: true });
-    const origCwd = process.cwd();
-    process.chdir(campaignDir);
-    try {
-      expect(pathsModule.resolveCampaignName(undefined)).toBe('freelance');
-    } finally {
-      process.chdir(origCwd);
-    }
+    // Should return inferred without prompting, even with tty true and multiple campaigns present
+    vi.spyOn(pathsModule, 'listCampaigns').mockResolvedValue([
+      { name: 'default', applicationCount: 1 },
+      { name: 'freelance', applicationCount: 2 },
+    ]);
+    const result = await campaignMod.resolveCampaignInteractive(undefined, { tty: true });
+    expect(result).toBe('freelance');
+    expect(pathsModule.listCampaigns).not.toHaveBeenCalled();
   });
 
   it('kb-context handles CvError, generic Error and non-Error (71-74)', async () => {
     const campaignRoot = join(tmpRoot, 'data', 'campaigns', 'default');
     await mkdir(join(campaignRoot, 'knowledge-base'), { recursive: true });
     await writeFile(join(campaignRoot, 'knowledge-base', 'doc.txt'), 'hello');
-    vi.spyOn(cvModule2, 'readCv').mockRejectedValueOnce(new cvModule2.CvError('fail', 'EFAIL' as never));
+    vi.spyOn(cvModule2, 'readCv').mockRejectedValueOnce(
+      new cvModule2.CvError('fail', 'EFAIL' as never),
+    );
     const r1 = await kbContextModule2.loadKnowledgeBaseContext(campaignRoot);
     expect(r1).toBeDefined();
     vi.spyOn(cvModule2, 'readCv').mockRejectedValueOnce(new Error('generic'));

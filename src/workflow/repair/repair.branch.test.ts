@@ -39,7 +39,7 @@ describe('repair branch coverage (100-101,138-139,225-226)', () => {
       company: 'Acme',
       appliedOn: '2026-06-01',
     });
-    
+
     vi.spyOn(toolhashModule, 'computeHash').mockImplementation(() => {
       throw new Error('hash fail');
     });
@@ -54,7 +54,7 @@ describe('repair branch coverage (100-101,138-139,225-226)', () => {
       company: 'Acme',
       appliedOn: '2026-06-01',
     });
-    
+
     vi.spyOn(interviewsModule, 'listInterviews').mockRejectedValue(new Error('interviews fail'));
     const result = await repairApp(appliedDir, slug);
     expect(result).toBeDefined();
@@ -67,7 +67,7 @@ describe('repair branch coverage (100-101,138-139,225-226)', () => {
       company: 'Acme',
       appliedOn: '2026-06-01',
     });
-    
+
     const orig = repairModule.repairApp;
     const spy = vi
       .spyOn(repairModule, 'repairApp')
