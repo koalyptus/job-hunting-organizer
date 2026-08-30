@@ -80,23 +80,23 @@ describe('workflow lines coverage boost', () => {
 
   it('target-roles: handles sectionStart -1 via mocked match', async () => {
     const mod = await import('./campaign/target-roles.js');
-    // Force String.prototype.match to return object with index undefined to hit L53-54
-    const origMatch = String.prototype.match;
-    // Create a body where regex matches but index is undefined
-    (String.prototype as any).match = function (this: string, _re: any) {
-      if (_re.toString().includes('Target')) {
-        const m: any = ['## Target roles'];
-        m.index = undefined;
-        return m;
-      }
-      return origMatch.call(this, _re);
-    };
+    const originalMatch = String.prototype.match;
+    const spy = vi
+      .spyOn(String.prototype as unknown as { match: typeof String.prototype.match }, 'match')
+      .mockImplementation(function (this: string, re: string | RegExp) {
+        if (re.toString().includes('Target')) {
+          const m = ['## Target roles'] as unknown as RegExpMatchArray;
+          (m as { index?: number }).index = undefined;
+          return m;
+        }
+        return originalMatch.call(this, re as unknown as RegExp);
+      } as unknown as typeof String.prototype.match);
     try {
       const body = '## Target roles\n### a — A [primary]\n- Level: S\n';
       const res = mod.extractTargetRoles(body);
       expect(res).toEqual([]);
     } finally {
-      String.prototype.match = origMatch;
+      spy.mockRestore();
     }
     // Also test normal parsing still works
     const body2 =
