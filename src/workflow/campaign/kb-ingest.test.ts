@@ -261,6 +261,28 @@ describe('kb-ingest list and ingest edge cases', () => {
     expect(listed).toEqual([]);
   });
 
+  it('skips non-CV files when listing knowledge base (L145-146)', async () => {
+    const kbDir = join(campaignRoot, 'knowledge-base');
+    await writeFile(join(kbDir, 'doc.md'), 'doc content', 'utf8');
+    await writeFile(join(kbDir, 'image.png'), 'binary data', 'utf8');
+    await writeFile(join(kbDir, 'data.json'), 'json data', 'utf8');
+
+    const listed = await listKnowledgeBase(campaignRoot);
+
+    expect(listed).toEqual(['doc.md']);
+  });
+
+  it('skips my-voice.md and path-traversal sources when ingesting a single file (L178-180)', async () => {
+    const sourceFile = join(testDir, 'my-voice.md');
+    await writeFile(sourceFile, 'voice from source', 'utf8');
+
+    const copied = await ingestKnowledgeBase(campaignRoot, sourceFile);
+
+    // copyOne skips my-voice.md by name — nothing is copied.
+    expect(copied).toEqual([]);
+    expect(await pathExists(join(campaignRoot, 'knowledge-base', 'my-voice.md'))).toBe(false);
+  });
+
   it('re-scans in place when sources is empty for syncKnowledgeBase', async () => {
     const kbDir = join(campaignRoot, 'knowledge-base');
     await writeFile(join(kbDir, 'existing.md'), 'existing doc', 'utf8');

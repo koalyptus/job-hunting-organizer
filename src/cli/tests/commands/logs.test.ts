@@ -177,4 +177,30 @@ describe('logs command', () => {
     expect(result.stdout).toContain('INFO');
     expect(result.stdout).toContain('info message');
   });
+
+  it('--level skips malformed JSON lines (covers 83-84 catch false)', async () => {
+    const good = { level: 50, time: Date.now(), msg: 'good error' };
+    const bad = 'not-json-at-all';
+    await writeFile(logFile, `${JSON.stringify(good)}\n${bad}\n`, 'utf8');
+
+    const result = await runCommand(logsCommand, ['logs', '--json', '--level', 'error']);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('good error');
+    expect(result.stdout).not.toContain(bad);
+  });
+
+  it('--level includes entries with level >= min and excludes malformed', async () => {
+    const info = { level: 30, time: Date.now(), msg: 'info' };
+    const warn = { level: 40, time: Date.now(), msg: 'warn' };
+    await writeFile(
+      logFile,
+      `bad-json\n${JSON.stringify(info)}\n${JSON.stringify(warn)}\n`,
+      'utf8',
+    );
+
+    const result = await runCommand(logsCommand, ['logs', '--json', '--level', 'warn']);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('warn');
+    expect(result.stdout).not.toContain('info');
+  });
 });

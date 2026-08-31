@@ -122,7 +122,11 @@ export function hasTrackUpdateFlags(opts: {
  * shared helper used by the three code paths that write steer:
  * confirmAndCreate, runTrackCreate, and runTrackUpdate.
  */
-async function writeSteerToJd(appliedDir: string, slug: string, steer: string): Promise<void> {
+export async function writeSteerToJd(
+  appliedDir: string,
+  slug: string,
+  steer: string,
+): Promise<void> {
   const appFolder = join(appliedDir, slug);
   const jdPath = join(appFolder, 'jd.md');
 
@@ -193,7 +197,7 @@ export interface ConfirmAndCreateOptions {
  * Build a human-readable list of changes for the update confirmation prompt.
  * Only includes fields that actually differ from the current state.
  */
-function describeChanges(
+export function describeChanges(
   opts: {
     status?: string;
     salary?: string;
@@ -398,7 +402,7 @@ export async function confirmAndCreate(opts: ConfirmAndCreateOptions): Promise<s
 /**
  * Run the track-create workflow: extract JD → suggest role → confirm → create.
  */
-async function runTrackCreate(opts: TrackOptions): Promise<string> {
+export async function runTrackCreate(opts: TrackOptions): Promise<string> {
   const {
     campaign,
     url,
@@ -510,7 +514,7 @@ async function runTrackCreate(opts: TrackOptions): Promise<string> {
  * function returns `{ slug, changed: false }` so the CLI can report
  * "no changes to apply".
  */
-async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
+export async function runTrackUpdate(opts: TrackOptions): Promise<TrackResult> {
   const { campaign, slug, status, salary, tags, targetRole, note, steer, yes, employmentType } =
     opts;
 

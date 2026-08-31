@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { loadKnowledgeBaseContext } from '../../../workflow/campaign/kb-context.js';
-import { CvError } from '../../../lib/cv.js';
+import { CvError, readCv } from '../../../lib/cv.js';
 
 vi.mock('../../../lib/cv.js', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -13,7 +13,7 @@ vi.mock('../../../lib/cv.js', async (importOriginal) => {
   };
 });
 
-const readCvMock = vi.mocked((await import('../../../lib/cv.js')).readCv);
+const readCvMock = vi.mocked(readCv);
 
 // The module logs via moduleLogger(import.meta.url); spy on it so we can
 // assert on pino `warn` calls (the test in question checks kb.truncated).
@@ -111,6 +111,28 @@ describe('loadKnowledgeBaseContext', () => {
     await writeFile(join(kbDir, 'bad.pdf'), '%PDF');
 
     readCvMock.mockRejectedValueOnce(new CvError('boom', 'parse_error'));
+
+    const result = await loadKnowledgeBaseContext(root);
+    expect(result).toBe('');
+  });
+
+  it('logs and skips on a generic Error (non-CvError branch, L71-73)', async () => {
+    const kbDir = join(root, 'knowledge-base');
+    await mkdir(kbDir, { recursive: true });
+    await writeFile(join(kbDir, 'bad.pdf'), '%PDF');
+
+    readCvMock.mockRejectedValueOnce(new Error('generic failure'));
+
+    const result = await loadKnowledgeBaseContext(root);
+    expect(result).toBe('');
+  });
+
+  it('logs and skips on a non-Error throw (L73-74)', async () => {
+    const kbDir = join(root, 'knowledge-base');
+    await mkdir(kbDir, { recursive: true });
+    await writeFile(join(kbDir, 'bad.pdf'), '%PDF');
+
+    readCvMock.mockRejectedValueOnce('some string failure' as unknown as Error);
 
     const result = await loadKnowledgeBaseContext(root);
     expect(result).toBe('');
