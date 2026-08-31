@@ -14,7 +14,7 @@ import {
 } from '../../workflow/prepare/index.js';
 import type { PrepPlan } from '../../workflow/prepare/types.js';
 import type * as FsModule from '../../lib/fs.js';
-import type * as AppModule from '../../workflow/applications/applications.js';
+import * as AppModule from '../../workflow/applications/applications.js';
 import { aggregateRetros } from '../../workflow/retro/aggregate.js';
 import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
 
@@ -96,6 +96,10 @@ vi.mock('../../workflow/applications/applications.js', async () => {
 
 vi.mock('../../workflow/retro/aggregate.js', () => ({
   aggregateRetros: vi.fn(async () => []),
+}));
+
+vi.mock('../../workflow/campaign/kb-context.js', () => ({
+  loadKbContextForCampaign: vi.fn(async () => null),
 }));
 
 const MOCK_LLM_RESPONSE = {
@@ -538,6 +542,18 @@ describe('generatePrep', () => {
     spy.mockRestore();
   });
 
+  it('wraps non-Error readApplication failures in PrepError', async () => {
+    const slug = '2026-Jun-01-SE-Test-Corp';
+    await setupApp(slug);
+
+    const appMod = AppModule;
+    vi.spyOn(appMod, 'readApplication').mockRejectedValueOnce(42);
+
+    await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
+      'Failed to read application: 42',
+    );
+  });
+
   it('wraps non-Error JD read failures in PrepError', async () => {
     const slug = '2026-Jun-01-SE-Test-Corp';
     await setupApp(slug);
@@ -723,6 +739,64 @@ describe('generatePrep — retro cross-reference', () => {
     expect(userMessage?.content).toContain('Retro cross-reference');
     expect(userMessage?.content).toContain('System design — consistency models');
     expect(userMessage?.content).toContain('Behavioural — conflict');
+
+    vi.mocked(aggregateRetros).mockResolvedValue([]);
+  });
+});
+
+describe('generatePrep — retro cross-reference with non-empty retroCrossRef', () => {
+  let workDir: string;
+  let campaignRoot: string;
+  let appliedDir: string;
+  let originalJhoData: string | undefined;
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), 'jho-prep-retro2-'));
+    originalJhoData = process.env['JHO_DATA'];
+    process.env['JHO_DATA'] = workDir;
+    campaignRoot = join(workDir, 'campaigns', 'test-campaign');
+    appliedDir = join(campaignRoot, 'applied');
+    await mkdir(appliedDir, { recursive: true });
+    mockChatComplete.mockReset();
+  });
+
+  afterEach(async () => {
+    if (originalJhoData !== undefined) {
+      process.env['JHO_DATA'] = originalJhoData;
+    } else {
+      delete process.env['JHO_DATA'];
+    }
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  it('includes retro cross-reference section when aggregateRetros returns data', async () => {
+    const slug = '2026-Jun-01-SE-Test-Corp';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+    await writeJdMd(appDir);
+    await writeProfileMd(campaignRoot);
+
+    vi.mocked(aggregateRetros).mockResolvedValueOnce([
+      { label: 'System design — consistency models', count: 2, apps: ['app-a'] },
+    ]);
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: JSON.stringify(MOCK_LLM_RESPONSE),
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await generatePrep({ slug, campaign: 'test-campaign' });
+
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user');
+    expect(userMessage?.content).toContain('Retro cross-reference');
 
     vi.mocked(aggregateRetros).mockResolvedValue([]);
   });
