@@ -7,6 +7,7 @@ import * as applicationsModule from '../applications/applications.js';
 import { startRetro, appendRetro, showRetro } from './retro.js';
 import { RetroError, RetroNotFoundError } from './retro-errors.js';
 import * as kbContext from '../campaign/kb-context.js';
+import { replaceRegion } from '../../core/parser/markers.js';
 
 const { warnSpy, infoSpy, mockChatComplete } = vi.hoisted(() => ({
   warnSpy: vi.fn(),
@@ -134,7 +135,7 @@ describe('retro workflow branches', () => {
     );
     await writeFile(
       join(appDir, 'jd.md'),
-      '<!-- jho:start:fetched-jd -->JD<!-- jho:end:fetched-jd -->',
+      replaceRegion('', 'fetched-jd', 'JD', { createIfMissing: true }),
     );
   }
 

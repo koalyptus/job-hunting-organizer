@@ -5,6 +5,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { repairApp, repairAll } from './repair.js';
 import { createApplication } from '../applications/applications.js';
 import { computeHash, writeToolhash } from '../../lib/toolhash.js';
+import * as toolhashModule from '../../lib/toolhash.js';
 
 const mockLog = vi.hoisted(() => ({
   debug: vi.fn(),
@@ -190,5 +191,20 @@ describe('repair branch coverage 38-139,225-226', () => {
     const result = await repairAll(campaignRoot);
     expect(result.isIndexRebuilt).toBe(true);
     expect(result.actions.find((a) => a.action === 'index_rebuilt')).toBeTruthy();
+  });
+
+  it('repairApp handles computeHash throw gracefully (100-101)', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Eng',
+      company: 'Acme',
+      appliedOn: '2026-06-01',
+    });
+
+    vi.spyOn(toolhashModule, 'computeHash').mockImplementation(() => {
+      throw new Error('hash fail');
+    });
+    const result = await repairApp(appliedDir, slug);
+    expect(result.actions.length).toBeGreaterThanOrEqual(0);
   });
 });

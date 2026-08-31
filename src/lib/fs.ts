@@ -95,14 +95,6 @@ export async function pathExists(target: string): Promise<boolean> {
 }
 
 /**
- * Alias for {@link pathExists} with explicit async suffix for callers that
- * prefer the `Async` naming convention. Both names resolve to the same
- * implementation; `pathExists` remains the canonical export for
- * backwards compatibility.
- */
-export const pathExistsAsync = pathExists;
-
-/**
  * Run `fn` with a safety net: if the file at `target` exists, copy
  * it to `<target><backupSuffix>` first. If `fn` throws, restore the
  * backup over `target` and re-throw. The backup is removed in a
