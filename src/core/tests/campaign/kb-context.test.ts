@@ -116,6 +116,28 @@ describe('loadKnowledgeBaseContext', () => {
     expect(result).toBe('');
   });
 
+  it('logs and skips on a generic Error (non-CvError branch, L71-73)', async () => {
+    const kbDir = join(root, 'knowledge-base');
+    await mkdir(kbDir, { recursive: true });
+    await writeFile(join(kbDir, 'bad.pdf'), '%PDF');
+
+    readCvMock.mockRejectedValueOnce(new Error('generic failure'));
+
+    const result = await loadKnowledgeBaseContext(root);
+    expect(result).toBe('');
+  });
+
+  it('logs and skips on a non-Error throw (L73-74)', async () => {
+    const kbDir = join(root, 'knowledge-base');
+    await mkdir(kbDir, { recursive: true });
+    await writeFile(join(kbDir, 'bad.pdf'), '%PDF');
+
+    readCvMock.mockRejectedValueOnce('some string failure' as unknown as Error);
+
+    const result = await loadKnowledgeBaseContext(root);
+    expect(result).toBe('');
+  });
+
   it('respects maxChars with oldest-first truncation + warning', async () => {
     const kbDir = join(root, 'knowledge-base');
     await mkdir(kbDir, { recursive: true });

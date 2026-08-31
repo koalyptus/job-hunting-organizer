@@ -685,6 +685,42 @@ describe('generateCoverLetter', () => {
     expect(userMessage).toContain('## Additional instructions');
     expect(userMessage).toContain('Existing steer from file');
   });
+
+  it('does not write cover-letter.md when noSave is set (L224)', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'No-save cover letter.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    const result = await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      noSave: true,
+    });
+
+    expect(result.content).toBe('No-save cover letter.');
+    await expect(
+      readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'cover-letter.md'), 'utf8'),
+    ).rejects.toThrow();
+  });
+
+  it('throws CoverLetterError when LLM returns a non-Error rejection', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockRejectedValueOnce('string failure' as unknown as Error);
+
+    await expect(
+      generateCoverLetter({
+        slug: '2026-Jun-01-SE-Test-Corp',
+        campaign: 'test-campaign',
+      }),
+    ).rejects.toThrow(CoverLetterError);
+  });
 });
 
 describe('readCoverLetter', () => {

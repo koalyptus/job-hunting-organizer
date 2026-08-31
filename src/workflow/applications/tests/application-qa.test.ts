@@ -694,6 +694,44 @@ describe('answerQuestion', () => {
     expect(qaContent).toContain('- Steer: First steer');
     expect(qaContent).toContain('- Steer: Second steer');
   });
+
+  it('throws AnswerError when LLM returns a non-Error rejection', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockRejectedValueOnce('string failure' as unknown as Error);
+
+    await expect(
+      answerQuestion({
+        slug: '2026-Jun-01-SE-Test-Corp',
+        campaign: 'test-campaign',
+        question: 'Test?',
+      }),
+    ).rejects.toThrow(AnswerError);
+  });
+
+  it('returns the answer without writing qa.md when noSave is set', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'No-save answer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      durationMs: 200,
+    });
+
+    const result = await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Test?',
+      noSave: true,
+    });
+
+    expect(result.answer).toBe('No-save answer.');
+    await expect(
+      readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'qa.md'), 'utf8'),
+    ).rejects.toThrow();
+  });
 });
 
 describe('readQa', () => {
