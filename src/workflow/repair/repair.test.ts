@@ -1,7 +1,8 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdtemp, rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { repairApp, repairAll } from './repair.js';
 import { createApplication } from '../applications/applications.js';
 import { computeHash, writeToolhash } from '../../lib/toolhash.js';
@@ -161,7 +162,6 @@ describe('repair branch coverage 38-139,225-226', () => {
   });
 
   it('repairAll creates missing applied dir (line 161)', async () => {
-    const { existsSync } = await import('node:fs');
     await rm(appliedDir, { recursive: true, force: true });
     expect(existsSync(appliedDir)).toBe(false);
     const result = await repairAll(campaignRoot);
@@ -172,7 +172,6 @@ describe('repair branch coverage 38-139,225-226', () => {
 
   it('repairAll rebuilds counters when suffix present (needsUpdate true)', async () => {
     await createApplication({ appliedDir, title: 'Eng', company: 'Acme', appliedOn: '2026-06-01' });
-    const { readdir } = await import('node:fs/promises');
     const entries = await readdir(appliedDir);
     const firstSlug = entries.find((e) => e.startsWith('2026-Jun-01'))!;
     const base = firstSlug.replace(/-\d+$/, '');
