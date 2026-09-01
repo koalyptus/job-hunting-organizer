@@ -21,4 +21,25 @@ describe('runCommand', () => {
     expect(result.exitCode).toBe(commanderErr.exitCode);
     origParse.mockRestore();
   });
+
+  it('returns 1 when CommanderError has no exitCode', async () => {
+    const cmd = new Command('test');
+    const origParse = vi.spyOn(Command.prototype, 'parseAsync');
+    const commanderErr = new CommanderError(undefined, 'ERR_NO_EXIT', 'test error');
+    origParse.mockRejectedValue(commanderErr);
+    const result = await runCommand(cmd, ['test']);
+    expect(result.exitCode).toBe(1);
+    origParse.mockRestore();
+  });
+
+  it('returns true from process.stdout.write and process.stderr.write', async () => {
+    const cmd = new Command('test');
+    const origParse = vi.spyOn(Command.prototype, 'parseAsync');
+    origParse.mockResolvedValueOnce(undefined);
+    const result = await runCommand(cmd, ['test']);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toBe('');
+    expect(result.exitCode).toBe(0);
+    origParse.mockRestore();
+  });
 });

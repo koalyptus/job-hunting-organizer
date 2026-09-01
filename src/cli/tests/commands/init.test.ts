@@ -7,6 +7,7 @@ import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { initCommand } from '../../commands/init.js';
 import * as profileModule from '../../../workflow/campaign/profile-build.js';
+import * as initModule from '../../../workflow/init/index.js';
 
 vi.mock('detect-local-agents', () => ({
   detectAgents: vi.fn(() => Promise.resolve([])),
@@ -761,5 +762,11 @@ describe('init command', () => {
 
     const { exitCode } = await run();
     expect(exitCode).toBe(0);
+  });
+
+  it('rethrows unexpected errors from runInit', async () => {
+    const spy = vi.spyOn(initModule, 'runInit').mockRejectedValueOnce(new Error('unexpected init failure'));
+    await expect(run()).rejects.toThrow('unexpected init failure');
+    spy.mockRestore();
   });
 });
