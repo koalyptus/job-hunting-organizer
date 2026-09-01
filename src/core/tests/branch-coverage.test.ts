@@ -408,6 +408,7 @@ describe('branch coverage: markers.ts', () => {
 
 describe('branch coverage: prompt-parser.ts', () => {
   const originalSplit = String.prototype.split as unknown as (sep: string | RegExp) => string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vitest MockInstance overload workaround
   let splitSpy: any;
 
   afterEach(() => {

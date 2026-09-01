@@ -26,7 +26,7 @@ describe('runCommand', () => {
     const cmd = new Command('test');
     const origParse = vi.spyOn(Command.prototype, 'parseAsync');
     const commanderErr = new CommanderError(1, 'ERR_NO_EXIT', 'test error');
-    commanderErr.exitCode = undefined as any;
+    Object.assign(commanderErr, { exitCode: undefined });
     origParse.mockRejectedValue(commanderErr);
     const result = await runCommand(cmd, ['test']);
     expect(result.exitCode).toBe(1);
