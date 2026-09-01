@@ -770,65 +770,6 @@ describe('generatePrep — retro cross-reference', () => {
     vi.mocked(aggregateRetros).mockResolvedValue([]);
   });
 });
-
-describe('generatePrep — retro cross-reference with non-empty retroCrossRef', () => {
-  let workDir: string;
-  let campaignRoot: string;
-  let appliedDir: string;
-  let originalJhoData: string | undefined;
-
-  beforeEach(async () => {
-    workDir = await mkdtemp(join(tmpdir(), 'jho-prep-retro2-'));
-    originalJhoData = process.env['JHO_DATA'];
-    process.env['JHO_DATA'] = workDir;
-    campaignRoot = join(workDir, 'campaigns', 'test-campaign');
-    appliedDir = join(campaignRoot, 'applied');
-    await mkdir(appliedDir, { recursive: true });
-    mockChatComplete.mockReset();
-  });
-
-  afterEach(async () => {
-    if (originalJhoData !== undefined) {
-      process.env['JHO_DATA'] = originalJhoData;
-    } else {
-      delete process.env['JHO_DATA'];
-    }
-    await rm(workDir, { recursive: true, force: true });
-  });
-
-  it('includes retro cross-reference section when aggregateRetros returns data', async () => {
-    const slug = '2026-Jun-01-SE-Test-Corp';
-    const appDir = join(appliedDir, slug);
-    await mkdir(appDir, { recursive: true });
-    await writeMetaMd(appDir, slug);
-    await writeJdMd(appDir);
-    await writeProfileMd(campaignRoot);
-
-    vi.mocked(aggregateRetros).mockResolvedValueOnce([
-      { label: 'System design — consistency models', count: 2, apps: ['app-a'] },
-    ]);
-
-    mockChatComplete.mockResolvedValueOnce({
-      content: JSON.stringify(MOCK_LLM_RESPONSE),
-      model: 'gpt-4o-mini',
-      finishReason: 'stop',
-      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
-      durationMs: 500,
-    });
-
-    await generatePrep({ slug, campaign: 'test-campaign' });
-
-    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
-      role: string;
-      content: string;
-    }>;
-    const userMessage = messages.find((m) => m.role === 'user');
-    expect(userMessage?.content).toContain('Retro cross-reference');
-
-    vi.mocked(aggregateRetros).mockResolvedValue([]);
-  });
-});
-
 describe('generatePrep — JSON extraction', () => {
   let workDir: string;
   let campaignRoot: string;
