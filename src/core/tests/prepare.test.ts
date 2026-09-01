@@ -17,6 +17,7 @@ import type * as FsModule from '../../lib/fs.js';
 import * as AppModule from '../../workflow/applications/applications.js';
 import { aggregateRetros } from '../../workflow/retro/aggregate.js';
 import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
+import * as KbContextModule from '../../workflow/campaign/kb-context.js';
 
 vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -414,6 +415,32 @@ describe('generatePrep', () => {
       'utf8',
     );
     expect(prepContent).toContain('<!-- jho:steer: Focus on senior-level topics only -->');
+  });
+
+  it('includes knowledge base context when available', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    vi.mocked(KbContextModule.loadKbContextForCampaign).mockResolvedValueOnce('My KB content');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: JSON.stringify(MOCK_LLM_RESPONSE),
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await generatePrep({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+    });
+
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user');
+    expect(userMessage?.content).toContain('My KB content');
   });
 
   it('preserves existing steer when no new steer provided', async () => {
