@@ -25,7 +25,8 @@ describe('runCommand', () => {
   it('returns 1 when CommanderError has no exitCode', async () => {
     const cmd = new Command('test');
     const origParse = vi.spyOn(Command.prototype, 'parseAsync');
-    const commanderErr = new CommanderError(undefined, 'ERR_NO_EXIT', 'test error');
+    const commanderErr = new CommanderError(1, 'ERR_NO_EXIT', 'test error');
+    commanderErr.exitCode = undefined as any;
     origParse.mockRejectedValue(commanderErr);
     const result = await runCommand(cmd, ['test']);
     expect(result.exitCode).toBe(1);
@@ -35,7 +36,7 @@ describe('runCommand', () => {
   it('returns true from process.stdout.write and process.stderr.write', async () => {
     const cmd = new Command('test');
     const origParse = vi.spyOn(Command.prototype, 'parseAsync');
-    origParse.mockResolvedValueOnce(undefined);
+    origParse.mockResolvedValueOnce(undefined as unknown as Command);
     const result = await runCommand(cmd, ['test']);
     expect(result.stdout).toBe('');
     expect(result.stderr).toBe('');

@@ -765,7 +765,9 @@ describe('init command', () => {
   });
 
   it('rethrows unexpected errors from runInit', async () => {
-    const spy = vi.spyOn(initModule, 'runInit').mockRejectedValueOnce(new Error('unexpected init failure'));
+    const spy = vi
+      .spyOn(initModule, 'runInit')
+      .mockRejectedValueOnce(new Error('unexpected init failure'));
     await expect(run()).rejects.toThrow('unexpected init failure');
     spy.mockRestore();
   });
