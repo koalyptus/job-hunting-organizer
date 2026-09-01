@@ -1,6 +1,6 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, readFile, writeFile, unlink } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   generatePrep,
@@ -13,7 +13,7 @@ import {
   PrepReadError,
 } from '../../workflow/prepare/index.js';
 import type { PrepPlan } from '../../workflow/prepare/types.js';
-import type * as FsModule from '../../lib/fs.js';
+import * as FsModule from '../../lib/fs.js';
 import * as AppModule from '../../workflow/applications/applications.js';
 import { aggregateRetros } from '../../workflow/retro/aggregate.js';
 import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
@@ -559,7 +559,7 @@ describe('generatePrep', () => {
       durationMs: 500,
     });
 
-    const fsMod = await import('../../lib/fs.js');
+    const fsMod = FsModule;
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
 
     await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
@@ -587,7 +587,7 @@ describe('generatePrep', () => {
 
     // Replace jd.md with content that causes extractJdContent to throw a non-Error
     // Actually, we need readFile to throw a non-Error. Let's remove jd.md.
-    const { unlink } = await import('node:fs/promises');
+    // unlink already statically imported
     await unlink(join(appliedDir, slug, 'jd.md'));
 
     await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
@@ -1111,7 +1111,7 @@ describe('appendTopic — error paths', () => {
     await mkdir(join(appliedDir, slug), { recursive: true });
     await writeFile(join(appliedDir, slug, 'prepare.md'), '<!-- jho:prepare -->\nexisting\n');
 
-    const fsMod = await import('../../lib/fs.js');
+    const fsMod = FsModule;
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
 
     await expect(appendTopic('test-campaign', slug, 'new topic')).rejects.toThrow(
@@ -1126,7 +1126,7 @@ describe('appendTopic — error paths', () => {
     await mkdir(join(appliedDir, slug), { recursive: true });
     await writeFile(join(appliedDir, slug, 'prepare.md'), '<!-- jho:prepare -->\nexisting\n');
 
-    const fsMod = await import('../../lib/fs.js');
+    const fsMod = FsModule;
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockRejectedValueOnce(new Error('disk full'));
 
     await expect(appendTopic('test-campaign', slug, 'new topic')).rejects.toThrow(
