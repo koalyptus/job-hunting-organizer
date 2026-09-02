@@ -114,6 +114,18 @@ describe('setAtPath', () => {
     // no throw
   });
 
+  it('aborts when an intermediate key is missing', () => {
+    const obj: Record<string, unknown> = { a: { b: 1 } };
+    setAtPath(obj, ['a', 'missing', 'deep'], 'x');
+    expect(obj).toEqual({ a: { b: 1 } });
+  });
+
+  it('aborts when intermediate becomes null mid-path', () => {
+    const obj: Record<string, unknown> = { a: { b: null } };
+    setAtPath(obj, ['a', 'b', 'c'], 'x');
+    expect(obj).toEqual({ a: { b: null } });
+  });
+
   it('sets value at nested path', () => {
     const obj: Record<string, unknown> = { llm: { apiKey: 'old' } };
     setAtPath(obj, ['llm', 'apiKey'], 'new');
