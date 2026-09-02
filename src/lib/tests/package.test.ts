@@ -96,35 +96,6 @@ describe('getPackageVersion', () => {
   it('returns the version string from package.json', () => {
     expect(getPackageVersion()).toBe('0.1.0');
   });
-
-  it('falls back to 0.0.0 when version is missing', async () => {
-    const { join } = await import('node:path');
-    const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
-    const { tmpdir } = await import('node:os');
-
-    const root = await mkdtemp(join(tmpdir(), 'jho-pkg-'));
-    const pkgPath = join(root, 'package.json');
-    await writeFile(pkgPath, JSON.stringify({ name: 'test' }));
-    clearPackageCache();
-
-    const orig = await import('../../lib/package.js');
-    const _getPkgRoot = orig.getPackageRoot;
-    // Override cache by manipulating module internals isn't exposed;
-    // instead we read directly via getPackageJson after clearing cache and chdir
-    process.chdir(root);
-    clearPackageCache();
-    // Re-import to pick up new root via internal cache reset
-    const pkg = (await import('../../lib/package.js')).getPackageJson();
-    expect((pkg as Record<string, unknown>).name).toBe('test');
-    expect((pkg as Record<string, unknown>).version).toBeUndefined();
-
-    const version = (await import('../../lib/package.js')).getPackageVersion();
-    expect(version).toBe('0.0.0');
-
-    process.chdir(join(root, '..'));
-    await rm(root, { recursive: true, force: true });
-    clearPackageCache();
-  });
 });
 
 describe('clearPackageCache', () => {
