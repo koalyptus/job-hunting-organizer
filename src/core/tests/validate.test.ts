@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { validateName, validateSlug } from '../validate.js';
+import { SLUG_PATTERN } from '../parser/slug.js';
 
 describe('validateName', () => {
   it('accepts valid names', () => {
@@ -121,5 +122,25 @@ describe('validateSlug', () => {
       ok: false,
       reason: 'does not match YYYY-MMM-DD-* pattern',
     });
+  });
+});
+describe('branch coverage: validate.ts', () => {
+  it('covers mmm ?? "" fallback when mmm is undefined (line 62)', () => {
+    const spy = vi.spyOn(SLUG_PATTERN, 'test').mockReturnValue(true);
+    const result = validateSlug('2026');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toMatch(/invalid month/);
+    }
+    spy.mockRestore();
+  });
+
+  it('covers normal validateSlug success path', () => {
+    expect(validateSlug('2026-Jun-15-role-company')).toEqual({ ok: true });
+  });
+
+  it('covers mmm ?? "" when mmm is defined (branch not fallback)', () => {
+    const r = validateSlug('2026-Jan-02-x-y');
+    expect(r.ok).toBe(true);
   });
 });

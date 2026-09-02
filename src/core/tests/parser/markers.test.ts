@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import {
   REGION_MARKER_NAMES,
   MarkerError,
@@ -312,5 +312,67 @@ describe('replaceSteer', () => {
     const updated = replaceSteer(content, '');
     expect(updated).not.toContain('jho:steer:');
     expect(updated).toContain('user notes');
+  });
+});
+
+// ---- branch coverage migrated from branch-coverage.test.ts ----
+
+describe('branch coverage: markers.ts', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('replaceRegion with empty newContent hits newContent === "" branch (line 177 true)', () => {
+    const content =
+      '<!-- jho:start:fetched-jd -->\nold content\n<!-- jho:end:fetched-jd -->\n\nuser notes';
+    const updated = replaceRegion(content, 'fetched-jd', '');
+    expect(updated).toBe(
+      '<!-- jho:start:fetched-jd -->\n<!-- jho:end:fetched-jd -->\n\nuser notes',
+    );
+  });
+
+  it('replaceRegion with content ending newline hits newLines.pop branch (line 178-179)', () => {
+    const content = '<!-- jho:start:fetched-jd -->\nold\n<!-- jho:end:fetched-jd -->\n';
+    const updated = replaceRegion(content, 'fetched-jd', 'new\n');
+    expect(updated).toContain('new\n<!-- jho:end:fetched-jd -->');
+    expect(updated).not.toContain('new\n\n<!-- jho:end:fetched-jd -->');
+  });
+
+  it('findSectionMarker returns null when section name mismatches (line 201 false)', () => {
+    const content = ['<!-- jho:other — some text -->', 'body'].join('\n');
+    expect(findSectionMarker(content, 'meta')).toBeNull();
+    const content2 = ['<!-- jho:meta — frontmatter is tool-managed -->', 'body'].join('\n');
+    expect(findSectionMarker(content2, 'other')).toBeNull();
+  });
+
+  it('extractSteer handles undefined group fallback (line 219 ?? "")', () => {
+    const originalMatch = String.prototype.match;
+    const spy = vi.spyOn(String.prototype, 'match').mockImplementation(function (
+      this: string,
+      re: unknown,
+    ) {
+      if (this.includes('jho:steer:')) {
+        const fake = ['<!-- jho:steer: -->'] as unknown as RegExpMatchArray;
+        return fake;
+      }
+      return originalMatch.call(this, re as RegExp);
+    });
+    try {
+      const result = extractSteer('<!-- jho:steer: something -->');
+      expect(result).toBe('');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('extractSteer returns empty string when no steer marker (covers false branch at line 218)', () => {
+    expect(extractSteer('no markers')).toBe('');
+  });
+
+  it('findSectionMarker covers match && name branches (both true and false)', () => {
+    const content = ['<!-- jho:meta — hello -->', '<!-- jho:other — world -->'].join('\n');
+    expect(findSectionMarker(content, 'meta')).not.toBeNull();
+    expect(findSectionMarker(content, 'other')).not.toBeNull();
+    expect(findSectionMarker(content, 'missing')).toBeNull();
   });
 });

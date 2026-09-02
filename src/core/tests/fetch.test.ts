@@ -1,3 +1,4 @@
+import https from 'node:https';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
@@ -415,5 +416,175 @@ describe('createLlmFetch', () => {
     expect(receivedHeaders['content-type']).toBe('application/json');
     expect(receivedHeaders['authorization']).toBe('Bearer test-key');
     expect(receivedHeaders['x-custom-header']).toBe('custom-value');
+  });
+});
+
+// ---- branch coverage migrated from branch-coverage.test.ts ----
+
+describe('fetch.ts', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('snippet branch false (empty body) has no preview', async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    fetchMock.mockImplementation(() => Promise.resolve(mockFetchResponse('', 500)));
+    let msg = '';
+    try {
+      await fetchWithFallback('https://example.com/empty');
+    } catch (e) {
+      msg = (e as Error).message;
+    }
+    expect(msg).toMatch(/HTTP 500/);
+    expect(msg).not.toMatch(/response preview/);
+  });
+
+  it('snippet branch true (non-empty body) includes preview', async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    fetchMock.mockImplementation(() => Promise.resolve(mockFetchResponse('hello', 404)));
+    await expect(fetchWithFallback('https://example.com/has-body')).rejects.toThrow(
+      /response preview: hello/,
+    );
+  });
+
+  it('snippet truncated to 200 chars', async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    const longBody = 'a'.repeat(300);
+    fetchMock.mockImplementation(() => Promise.resolve(mockFetchResponse(longBody, 502)));
+    expect.assertions(2);
+    await expect(fetchWithFallback('https://example.com/long')).rejects.toThrow(
+      /response preview:/,
+    );
+    // Verify truncation length via direct call
+    try {
+      await fetchWithFallback('https://example.com/long');
+    } catch (e) {
+      const preview = (e as Error).message.split('response preview: ')[1] ?? '';
+      expect(preview.length).toBe(200);
+    }
+  });
+
+  it('covers port fallback branches (no port, http vs https) via mocked request', async () => {
+    const captured: Array<{ mod: string; options: http.RequestOptions }> = [];
+
+    const mockReq = {
+      on: vi.fn().mockReturnThis(),
+      write: vi.fn(),
+      end: vi.fn(),
+      destroy: vi.fn(),
+    };
+
+    const httpSpy = vi.spyOn(http, 'request').mockImplementation(((opts: unknown, cb: unknown) => {
+      captured.push({ mod: 'http', options: opts as http.RequestOptions });
+      const fakeRes: unknown = {
+        statusCode: 200,
+        statusMessage: 'OK',
+        headers: { 'content-type': 'text/plain' },
+        on: (ev: string, handler: (c: Buffer) => void) => {
+          if (ev === 'data') {
+            handler(Buffer.from('ok-http'));
+          }
+          if (ev === 'end') {
+            handler(Buffer.from(''));
+          }
+          return fakeRes;
+        },
+      };
+      (cb as (r: unknown) => void)(fakeRes);
+      return mockReq as unknown as ReturnType<typeof http.request>;
+    }) as never);
+
+    const httpsSpy = vi.spyOn(https, 'request').mockImplementation(((
+      opts: unknown,
+      cb: unknown,
+    ) => {
+      captured.push({ mod: 'https', options: opts as http.RequestOptions });
+      const fakeRes: unknown = {
+        statusCode: 200,
+        statusMessage: 'OK',
+        headers: { 'content-type': 'text/plain' },
+        on: (ev: string, handler: (c: Buffer) => void) => {
+          if (ev === 'data') {
+            handler(Buffer.from('ok-https'));
+          }
+          if (ev === 'end') {
+            handler(Buffer.from(''));
+          }
+          return fakeRes;
+        },
+      };
+      (cb as (r: unknown) => void)(fakeRes);
+      return mockReq as unknown as ReturnType<typeof https.request>;
+    }) as never);
+
+    const fetchHttp = createLlmFetch(5000);
+    await fetchHttp('http://example.com/path');
+    expect(captured[0]?.options.port).toBe(80);
+    expect(captured[0]?.options.hostname).toBe('example.com');
+
+    captured.length = 0;
+    const fetchHttps = createLlmFetch(5000);
+    await fetchHttps('https://example.com/secure');
+    expect(captured[0]?.options.port).toBe(443);
+
+    captured.length = 0;
+    await fetchHttp('http://example.com:8080/with-port');
+    expect(captured[0]?.options.port).toBe(8080);
+
+    captured.length = 0;
+    const headers = new Headers({ 'X-Test': '1' });
+    await fetchHttp('http://example.com/headers', { headers, method: 'GET' });
+    expect(captured[0]?.options.headers).toMatchObject({ 'x-test': '1' });
+
+    httpSpy.mockRestore();
+    httpsSpy.mockRestore();
+  });
+
+  it('covers flatHeaders branches: array vs string, undefined value, statusCode/statusMessage fallbacks', async () => {
+    const mockReq = {
+      on: vi.fn().mockReturnThis(),
+      write: vi.fn(),
+      end: vi.fn(),
+      destroy: vi.fn(),
+    };
+
+    vi.spyOn(http, 'request').mockImplementation(((opts: unknown, cb: unknown) => {
+      const fakeRes: unknown = {
+        statusCode: undefined as unknown as number,
+        statusMessage: undefined as unknown as string,
+        headers: {
+          'content-type': 'text/plain',
+          'x-array': ['a', 'b'],
+          'x-undefined': undefined as unknown as string,
+          'x-single': 'single-value',
+        },
+        on: (ev: string, handler: (c: Buffer) => void) => {
+          if (ev === 'data') {
+            handler(Buffer.from('branch-ok'));
+          }
+          if (ev === 'end') {
+            handler(Buffer.from(''));
+          }
+          return fakeRes;
+        },
+      };
+      (cb as (r: unknown) => void)(fakeRes);
+      return mockReq as unknown as ReturnType<typeof http.request>;
+    }) as never);
+
+    const fetchFn = createLlmFetch(5000);
+    const res = await fetchFn('http://example.com/branch');
+    expect(res.status).toBe(200);
+    expect(res.statusText).toBe('');
+    expect(res.headers.get('x-array')).toBe('a, b');
+    expect(res.headers.get('x-single')).toBe('single-value');
+    expect(res.headers.get('x-undefined')).toBeNull();
+    expect(await res.text()).toBe('branch-ok');
+
+    vi.restoreAllMocks();
   });
 });
