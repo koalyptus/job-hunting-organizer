@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import {
   runTrack,
   runTrackRefresh,
@@ -20,7 +23,6 @@ import { confirmTrackSummary, confirmTrackUpdate } from '../../../workflow/track
 import { replaceRegion, replaceSteer } from '../../parser/markers.js';
 import { atomicWrite } from '../../../lib/fs.js';
 import type { ApplicationFrontmatter } from '../../../workflow/applications/types.js';
-
 vi.mock('../../config.js', () => ({
   getConfig: vi.fn(() => ({
     global: { llm: { baseUrl: 'http://test', apiKey: 'key', model: 'model' } },
@@ -937,6 +939,47 @@ describe('runTrackRefresh', () => {
     expect(replaceRegion).toHaveBeenCalledWith('', 'fetched-jd', 'Updated description', {
       createIfMissing: true,
     });
+  });
+
+  it('handles unreadable jd.md gracefully', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'jho-track-'));
+    const tempAppDir = join(tempDir, 'applied', '2026-Jun-21-SE-test-co');
+    await mkdir(tempAppDir, { recursive: true });
+    const jdPath = join(tempAppDir, 'jd.md');
+    await writeFile(jdPath, 'old content');
+
+    const pathsModule = await import('../../../lib/paths.js');
+    const resolveCampaignRootSpy = vi.spyOn(pathsModule, 'resolveCampaignRoot').mockReturnValue(tempDir);
+    const resolveAppliedDirSpy = vi.spyOn(pathsModule, 'resolveAppliedDir').mockReturnValue(join(tempDir, 'applied'));
+
+    vi.mocked(readApplication).mockImplementation(async () => {
+      await rm(jdPath);
+      return { frontmatter: createMockFrontmatter({ link: 'https://example.com/job/123' }), body: '' };
+    });
+    vi.mocked(extractJdFromUrl).mockResolvedValue({
+      title: 'Engineer',
+      company: 'TestCo',
+      location: 'Remote',
+      description: 'Updated description',
+    });
+    vi.mocked(replaceRegion).mockReturnValue(
+      '<!-- jho:start:fetched-jd -->\nUpdated description\n<!-- jho:end:fetched-jd -->',
+    );
+
+    const result = await runTrackRefresh({
+      campaign: 'default',
+      slug: '2026-Jun-21-SE-test-co',
+      yes: true,
+    });
+
+    expect(result.changed).toBe(true);
+    expect(replaceRegion).toHaveBeenCalledWith('', 'fetched-jd', 'Updated description', {
+      createIfMissing: true,
+    });
+
+    resolveCampaignRootSpy.mockRestore();
+    resolveAppliedDirSpy.mockRestore();
+    await rm(tempDir, { recursive: true, force: true });
   });
 
   it('throws TrackError when atomicWrite fails', async () => {
