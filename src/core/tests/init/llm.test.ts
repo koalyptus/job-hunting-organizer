@@ -260,7 +260,7 @@ describe('promptLlm', () => {
 
   it('returns null when loadGlobalConfig throws', () => {
     vi.spyOn(globalThis.console, 'warn').mockImplementation(() => {});
-    vi.spyOn(configModule || {}, 'loadGlobalConfig').mockImplementation(() => {
+    vi.spyOn(configModule, 'loadGlobalConfig').mockImplementation(() => {
       throw new Error('corrupt config');
     });
     expect(loadExistingConfig()).toBeNull();

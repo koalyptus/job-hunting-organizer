@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import * as pathsModule from '../../../lib/paths.js';
 import {
   runTrack,
   runTrackRefresh,
@@ -948,7 +949,7 @@ describe('runTrackRefresh', () => {
     const jdPath = join(tempAppDir, 'jd.md');
     await writeFile(jdPath, 'old content');
 
-    const pathsModule = await import('../../../lib/paths.js');
+
     const resolveCampaignRootSpy = vi
       .spyOn(pathsModule, 'resolveCampaignRoot')
       .mockReturnValue(tempDir);
