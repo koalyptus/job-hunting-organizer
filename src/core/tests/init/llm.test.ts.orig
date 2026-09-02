@@ -12,7 +12,6 @@ import {
   getBackendModel,
 } from '../../../workflow/init/llm.js';
 import { detectAgents } from 'detect-local-agents';
-import * as configModule from '../../../lib/config/config.js';
 import { clearConfigCache } from '../../../lib/config/config.js';
 import { InitCancelled } from '../../../workflow/init/errors.js';
 import {
@@ -256,14 +255,6 @@ describe('promptLlm', () => {
   it('returns null when no config file exists', async () => {
     const result = loadExistingConfig();
     expect(result === null || typeof result === 'object').toBe(true);
-  });
-
-  it('returns null when loadGlobalConfig throws', () => {
-    vi.spyOn(globalThis.console, 'warn').mockImplementation(() => {});
-    vi.spyOn(configModule || {}, 'loadGlobalConfig').mockImplementation(() => {
-      throw new Error('corrupt config');
-    });
-    expect(loadExistingConfig()).toBeNull();
   });
 
   it('returns false for invalid URL in isLocalUrl', async () => {
