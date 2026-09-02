@@ -949,12 +949,19 @@ describe('runTrackRefresh', () => {
     await writeFile(jdPath, 'old content');
 
     const pathsModule = await import('../../../lib/paths.js');
-    const resolveCampaignRootSpy = vi.spyOn(pathsModule, 'resolveCampaignRoot').mockReturnValue(tempDir);
-    const resolveAppliedDirSpy = vi.spyOn(pathsModule, 'resolveAppliedDir').mockReturnValue(join(tempDir, 'applied'));
+    const resolveCampaignRootSpy = vi
+      .spyOn(pathsModule, 'resolveCampaignRoot')
+      .mockReturnValue(tempDir);
+    const resolveAppliedDirSpy = vi
+      .spyOn(pathsModule, 'resolveAppliedDir')
+      .mockReturnValue(join(tempDir, 'applied'));
 
     vi.mocked(readApplication).mockImplementation(async () => {
       await rm(jdPath);
-      return { frontmatter: createMockFrontmatter({ link: 'https://example.com/job/123' }), body: '' };
+      return {
+        frontmatter: createMockFrontmatter({ link: 'https://example.com/job/123' }),
+        body: '',
+      };
     });
     vi.mocked(extractJdFromUrl).mockResolvedValue({
       title: 'Engineer',
