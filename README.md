@@ -1,8 +1,6 @@
 # job-hunting-organizer
 
-A local-first CLI and MCP server for running a job-hunting campaign.
-
-> **Status:** under active development. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress. Currently at **Phase 10c** (docs refinement).
+A CLI and MCP server helping job seekers to keep track of job applications without leaving the comfort of the terminal or harness ;-) 
 
 ## What it does
 
@@ -62,31 +60,7 @@ integration-tests/
 ├── helpers.ts              # Shared setup utilities
 ├── mocks.ts                # Shared vitest mock factories
 ├── cli/                    # CLI end-to-end tests
-│   ├── answer.test.ts
-│   ├── application-lifecycle.test.ts
-│   ├── campaign-config.test.ts
-│   ├── campaign-init.test.ts
-│   ├── campaign.test.ts
-│   ├── cover-letter.test.ts
-│   ├── doctor-diagnostics.test.ts
-│   ├── help.test.ts
-│   ├── init.test.ts
-│   ├── interview.test.ts
-│   ├── kb.test.ts
-│   ├── list.test.ts
-│   ├── logs.test.ts
-│   ├── mcp.test.ts
-│   ├── ownership.test.ts
-│   ├── prepare.test.ts
-│   ├── profile.test.ts
-│   ├── remove-application.test.ts
-│   ├── remove-campaign.test.ts
-│   ├── rename-application.test.ts
-│   ├── rename-campaign.test.ts
-│   ├── repair.test.ts
-│   ├── retro.test.ts
-│   ├── stats.test.ts
-│   └── track.test.ts
+│   ├── ...
 └── mcp/                    # MCP tool dispatch tests
     └── tools-e2e.test.ts
 ```
