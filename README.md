@@ -1,6 +1,6 @@
 # job-hunting-organizer
 
-A CLI and MCP server helping job seekers to keep track of job applications without leaving the comfort of the terminal or harness ;-) 
+A CLI and MCP server helping job seekers to keep track of job applications without leaving the comfort of the terminal or harness ;-)
 
 ## What it does
 
