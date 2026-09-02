@@ -949,7 +949,6 @@ describe('runTrackRefresh', () => {
     const jdPath = join(tempAppDir, 'jd.md');
     await writeFile(jdPath, 'old content');
 
-
     const resolveCampaignRootSpy = vi
       .spyOn(pathsModule, 'resolveCampaignRoot')
       .mockReturnValue(tempDir);
