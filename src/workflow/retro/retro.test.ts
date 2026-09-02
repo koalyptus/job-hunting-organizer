@@ -1,6 +1,6 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { readFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { createApplication } from '../applications/applications.js';
 import * as applicationsModule from '../applications/applications.js';
@@ -210,6 +210,33 @@ describe('retro workflow branches', () => {
     await expect(
       appendRetro({ slug, campaign: 'test-campaign', weakTopics: ['SQL'] }),
     ).rejects.toThrow(/No retro sections/);
+  });
+
+  it('appendRetro preserves noCarryOver behavior (L546-551)', async () => {
+    const slug = '2026-Jun-01-SE-Test-Corp';
+    await setupApp(slug);
+    await writeFile(
+      join(appliedDir, slug, 'retro.md'),
+      '<!-- jho:retro -->\n# Retro — Eng @ Acme\n\n## Retro for interview: 2026-01-01 — Reflection [applied]\n- Date: 2026-01-01\n- Status at the time: applied\n\n### Weak topics\n\n- SQL\n\n### Learning plan\n\nplan\n\n### Other notes\n\nold notes',
+    );
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'new plan',
+      model: 'm',
+      durationMs: 10,
+    });
+    await appendRetro({
+      slug,
+      campaign: 'test-campaign',
+      weakTopics: ['New topic'],
+      noCarryOver: true,
+    });
+    const updated = await readFile(join(appliedDir, slug, 'retro.md'), 'utf8');
+    const sections = updated.split('## Retro for interview:');
+    expect(sections.length).toBeGreaterThanOrEqual(2);
+    const newSection = sections[sections.length - 1]!;
+    expect(newSection).toContain('New topic');
+    expect(newSection).not.toContain('SQL');
+    expect(newSection).not.toContain('old notes');
   });
 
   it('appendRetro maps readApplication failure to RetroError (L558-563)', async () => {

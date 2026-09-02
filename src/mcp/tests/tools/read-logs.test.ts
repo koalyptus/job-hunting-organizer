@@ -128,6 +128,23 @@ describe('read_logs tool', () => {
     expect(result.isError).toBeUndefined();
   });
 
+  it('falls back to info level when level is unknown', async () => {
+    const testLogContent =
+      '\n{"level": 10, "msg": "trace"}\n{"level": 30, "msg": "info"}\n{"level": 40, "msg": "warn"}\n';
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockReturnValue(testLogContent);
+
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
+    const result = await client.callTool({
+      name: 'read_logs',
+      arguments: { level: 'not-a-level' },
+    });
+    const data = getTextContent(result);
+    expect(data).toContain('info');
+    expect(data).toContain('warn');
+    expect(data).not.toContain('trace');
+  });
+
   it('returns raw lines when json flag is true', async () => {
     const testLogContent = '\n{"level": 30, "msg": "hello"}\n{"level": 40, "msg": "world"}\n';
     vi.mocked(existsSync).mockReturnValue(true);

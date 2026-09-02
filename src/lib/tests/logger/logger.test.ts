@@ -82,6 +82,24 @@ describe('defaultLoggerConfig', () => {
     expect(cfg.level).toBe('warn');
     expect(cfg.redactPaths).toEqual(['x']);
   });
+
+  it('uses disableFileLogging to suppress file', () => {
+    const cfg = defaultLoggerConfig({ disableFileLogging: true });
+    expect(cfg.file).toBeUndefined();
+  });
+
+  it('includes correlationId when provided', () => {
+    const cfg = defaultLoggerConfig({ correlationId: 'cid-123' });
+    expect(cfg.correlationId).toBe('cid-123');
+  });
+
+  it('uses an empty overrides object', () => {
+    const cfg = defaultLoggerConfig({});
+    expect(cfg.level).toBe('info');
+    expect(cfg.file).toBe(`${resolveConfigHome()}/${DEFAULT_LOG_FILENAME}`);
+    expect(cfg.redactPaths).toEqual([]);
+    expect(cfg).not.toHaveProperty('correlationId');
+  });
 });
 
 describe('createLogger', () => {
@@ -328,5 +346,39 @@ describe('logError', () => {
     const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
     expect(args.campaign).toBe('default');
     expect(args.userId).toBe(42);
+  });
+
+  it('logs an Error instance with an empty name using the empty name', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = Object.assign(new Error('no name'), { name: '' });
+
+    logError(log, err, 'no name');
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    // Empty string name is falsy for ?? fallback but preserved as-is since ?? only checks null/undefined
+    expect((args.error as Record<string, unknown>).type).toBe('');
+  });
+
+  it('logs an error-like object with an empty message falling back to String(err)', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = { name: 'MyError', message: '' };
+
+    logError(log, err, 'empty msg');
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect((args.error as Record<string, unknown>).message).toBe('');
+  });
+
+  it('logs an error-like object without a code', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = { name: 'MyError', message: 'oops' };
+
+    logError(log, err, 'no code');
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect((args.error as Record<string, unknown>).code).toBeUndefined();
   });
 });

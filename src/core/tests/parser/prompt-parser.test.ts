@@ -342,3 +342,53 @@ describe('parseNaturalLanguage', () => {
     await expect(parseNaturalLanguage('list', emptyGlobals)).rejects.toThrow(/connection lost/i);
   });
 });
+
+// ---- branch coverage migrated from branch-coverage.test.ts ----
+
+describe('branch coverage: prompt-parser.ts', () => {
+  const originalSplit = String.prototype.split as unknown as (sep: string | RegExp) => string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vitest MockInstance overload workaround
+  let splitSpy: any;
+
+  afterEach(() => {
+    if (splitSpy) {
+      splitSpy.mockRestore();
+      splitSpy = null;
+    }
+  });
+
+  it('looksLikeNaturalLanguage handles parts[0] ?? "" and parts[1] ?? "" fallbacks', () => {
+    splitSpy = vi.spyOn(String.prototype, 'split').mockImplementation(function (
+      this: string,
+      sep: unknown,
+    ) {
+      if (this === 'list all applications for default campaign' && sep === ' ') {
+        return [undefined as unknown as string, 'second'] as unknown as string[];
+      }
+      // Fallback to original
+      return (originalSplit as unknown as (this: string, sep: string) => string[]).call(
+        this,
+        sep as string,
+      );
+    });
+    const result = looksLikeNaturalLanguage(['list all applications for default campaign']);
+    expect(result).toBe(true);
+  });
+
+  it('looksLikeNaturalLanguage secondWord fallback when parts length 1', () => {
+    splitSpy = vi.spyOn(String.prototype, 'split').mockImplementation(function (
+      this: string,
+      sep: unknown,
+    ) {
+      if (this === 'weird input with space' && sep === ' ') {
+        return ['weird'] as unknown as string[];
+      }
+      return (originalSplit as unknown as (this: string, sep: string) => string[]).call(
+        this,
+        sep as string,
+      );
+    });
+    const result = looksLikeNaturalLanguage(['weird input with space']);
+    expect(result).toBe(true);
+  });
+});

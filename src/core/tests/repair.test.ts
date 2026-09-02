@@ -356,4 +356,39 @@ describe('repairAll', () => {
     const meta = await readFile(join(appDir, 'meta.md'), 'utf8');
     expect(meta).toContain('status: interview');
   });
+
+  it('does not write counters when rebuilt do not exceed current', async () => {
+    const appliedDir = join(campaignRoot, 'applied');
+    const slug = '2026-Jun-03-SE-Foo';
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+
+    // Pre-populate counters so rebuilt values don't exceed them
+    const countersPath = join(appliedDir, '.counters.json');
+    await writeFile(countersPath, JSON.stringify({ [slug]: 5 }));
+
+    const result = await repairAll(campaignRoot);
+    expect(result.actions.some((a) => a.action === 'counters_rebuilt')).toBe(false);
+  });
+
+  it('writes counters when rebuilt exceed current', async () => {
+    const appliedDir = join(campaignRoot, 'applied');
+    const base = '2026-Jun-03-SE-Bar';
+    const appDir = join(appliedDir, base);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, base);
+
+    // Pre-populate counters so rebuilt values exceed them
+    const countersPath = join(appliedDir, '.counters.json');
+    await writeFile(countersPath, JSON.stringify({ [base]: 2 }));
+
+    // Create a folder with a higher suffix
+    const higherDir = join(appliedDir, `${base}-3`);
+    await mkdir(higherDir, { recursive: true });
+    await writeMetaMd(higherDir, base);
+
+    const result = await repairAll(campaignRoot);
+    expect(result.actions.some((a) => a.action === 'counters_rebuilt')).toBe(true);
+  });
 });

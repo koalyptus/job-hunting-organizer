@@ -88,6 +88,11 @@ describe('extractTargetRoles', () => {
     expect(extractTargetRoles('## Summary\n\nHello world')).toEqual([]);
   });
 
+  it('returns empty array when Target roles section exists but has no matching body', () => {
+    const body = '## Target roles\n';
+    expect(extractTargetRoles(body)).toEqual([]);
+  });
+
   it('returns empty array when section has no roles', () => {
     const body = '## Target roles\n\nNo roles defined yet.\n\n## Experience\n';
     expect(extractTargetRoles(body)).toEqual([]);

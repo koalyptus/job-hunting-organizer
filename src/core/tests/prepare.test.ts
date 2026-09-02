@@ -1,6 +1,6 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdir, mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, readFile, writeFile, unlink } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   generatePrep,
@@ -13,10 +13,11 @@ import {
   PrepReadError,
 } from '../../workflow/prepare/index.js';
 import type { PrepPlan } from '../../workflow/prepare/types.js';
-import type * as FsModule from '../../lib/fs.js';
-import type * as AppModule from '../../workflow/applications/applications.js';
+import * as FsModule from '../../lib/fs.js';
+import * as AppModule from '../../workflow/applications/applications.js';
 import { aggregateRetros } from '../../workflow/retro/aggregate.js';
 import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
+import * as KbContextModule from '../../workflow/campaign/kb-context.js';
 
 vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -96,6 +97,10 @@ vi.mock('../../workflow/applications/applications.js', async () => {
 
 vi.mock('../../workflow/retro/aggregate.js', () => ({
   aggregateRetros: vi.fn(async () => []),
+}));
+
+vi.mock('../../workflow/campaign/kb-context.js', () => ({
+  loadKbContextForCampaign: vi.fn(async () => null),
 }));
 
 const MOCK_LLM_RESPONSE = {
@@ -412,6 +417,32 @@ describe('generatePrep', () => {
     expect(prepContent).toContain('<!-- jho:steer: Focus on senior-level topics only -->');
   });
 
+  it('includes knowledge base context when available', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+
+    vi.mocked(KbContextModule.loadKbContextForCampaign).mockResolvedValueOnce('My KB content');
+
+    mockChatComplete.mockResolvedValueOnce({
+      content: JSON.stringify(MOCK_LLM_RESPONSE),
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 200, completionTokens: 150, totalTokens: 350 },
+      durationMs: 500,
+    });
+
+    await generatePrep({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+    });
+
+    const messages = mockChatComplete.mock.calls[0]?.[0] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const userMessage = messages.find((m) => m.role === 'user');
+    expect(userMessage?.content).toContain('My KB content');
+  });
+
   it('preserves existing steer when no new steer provided', async () => {
     await setupApp('2026-Jun-01-SE-Test-Corp');
 
@@ -528,7 +559,7 @@ describe('generatePrep', () => {
       durationMs: 500,
     });
 
-    const fsMod = await import('../../lib/fs.js');
+    const fsMod = FsModule;
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
 
     await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
@@ -538,13 +569,25 @@ describe('generatePrep', () => {
     spy.mockRestore();
   });
 
+  it('wraps non-Error readApplication failures in PrepError', async () => {
+    const slug = '2026-Jun-01-SE-Test-Corp';
+    await setupApp(slug);
+
+    const appMod = AppModule;
+    vi.spyOn(appMod, 'readApplication').mockRejectedValueOnce(42);
+
+    await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
+      'Failed to read application: 42',
+    );
+  });
+
   it('wraps non-Error JD read failures in PrepError', async () => {
     const slug = '2026-Jun-01-SE-Test-Corp';
     await setupApp(slug);
 
     // Replace jd.md with content that causes extractJdContent to throw a non-Error
     // Actually, we need readFile to throw a non-Error. Let's remove jd.md.
-    const { unlink } = await import('node:fs/promises');
+    // unlink already statically imported
     await unlink(join(appliedDir, slug, 'jd.md'));
 
     await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
@@ -727,7 +770,6 @@ describe('generatePrep — retro cross-reference', () => {
     vi.mocked(aggregateRetros).mockResolvedValue([]);
   });
 });
-
 describe('generatePrep — JSON extraction', () => {
   let workDir: string;
   let campaignRoot: string;
@@ -1069,7 +1111,7 @@ describe('appendTopic — error paths', () => {
     await mkdir(join(appliedDir, slug), { recursive: true });
     await writeFile(join(appliedDir, slug, 'prepare.md'), '<!-- jho:prepare -->\nexisting\n');
 
-    const fsMod = await import('../../lib/fs.js');
+    const fsMod = FsModule;
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockResolvedValueOnce(false);
 
     await expect(appendTopic('test-campaign', slug, 'new topic')).rejects.toThrow(
@@ -1084,7 +1126,7 @@ describe('appendTopic — error paths', () => {
     await mkdir(join(appliedDir, slug), { recursive: true });
     await writeFile(join(appliedDir, slug, 'prepare.md'), '<!-- jho:prepare -->\nexisting\n');
 
-    const fsMod = await import('../../lib/fs.js');
+    const fsMod = FsModule;
     const spy = vi.spyOn(fsMod, 'atomicWrite').mockRejectedValueOnce(new Error('disk full'));
 
     await expect(appendTopic('test-campaign', slug, 'new topic')).rejects.toThrow(

@@ -1,3 +1,4 @@
+import https from 'node:https';
 import {
   AuthenticationError,
   BadRequestError,
@@ -565,5 +566,129 @@ describe('extractJson', () => {
   it('throws SyntaxError when no JSON found', () => {
     expect(() => extractJson('no json here')).toThrow(SyntaxError);
     expect(() => extractJson('no json here')).toThrow('No JSON found');
+  });
+});
+
+// ---- branch coverage migrated from branch-coverage.test.ts ----
+
+describe('llm.ts', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('defaultLlmConfig with explicit global skips loadGlobalConfig (branch true for ??)', () => {
+    const global = {
+      version: 1 as const,
+      dataRoot: '/tmp',
+      llm: {
+        baseUrl: 'https://explicit.com/v1',
+        apiKey: 'explicit-key',
+        model: 'explicit-model',
+        timeoutMs: 9999,
+      },
+      github: { user: '', token: '', repos: [] },
+      logging: { level: 'info' as const, file: '', redactPaths: [] },
+      fetch: { timeoutMs: 30000 },
+    };
+    const result = defaultLlmConfig(global);
+    expect(result.baseUrl).toBe('https://explicit.com/v1');
+    expect(result.model).toBe('explicit-model');
+  });
+
+  it('defaultLlmConfig fallback when global is undefined (line 40)', async () => {
+    // Use a fresh import with mocked config to cover loadGlobalConfig path
+    // Instead of mocking the module, just call with undefined and rely on global config file fallback
+    // If no config file exists, it should return defaults (ollama)
+    const result = defaultLlmConfig(undefined);
+    // Should have some baseUrl (default is http://localhost:11434/v1 or similar)
+    expect(result.baseUrl).toBeTruthy();
+  });
+
+  it('chatComplete falls back to createLlmFetch when options.fetch is undefined (line 76)', async () => {
+    const mockReq = {
+      on: vi.fn().mockReturnThis(),
+      write: vi.fn(),
+      end: vi.fn(),
+      destroy: vi.fn(),
+    };
+    const successBody = {
+      id: 'chatcmpl-abc',
+      object: 'chat.completion',
+      created: 1700000000,
+      model: 'gpt-4o',
+      choices: [
+        {
+          index: 0,
+          message: { role: 'assistant', content: 'Hello fallback' },
+          finish_reason: 'stop',
+        },
+      ],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    };
+    vi.spyOn(https, 'request').mockImplementation(((opts: unknown, cb: unknown) => {
+      const fakeRes: unknown = {
+        statusCode: 200,
+        statusMessage: 'OK',
+        headers: { 'content-type': 'application/json' },
+        on: (ev: string, handler: (c: Buffer) => void) => {
+          if (ev === 'data') {
+            handler(Buffer.from(JSON.stringify(successBody)));
+          }
+          if (ev === 'end') {
+            handler(Buffer.from(''));
+          }
+          return fakeRes;
+        },
+      };
+      (cb as (r: unknown) => void)(fakeRes);
+      return mockReq as unknown as ReturnType<typeof https.request>;
+    }) as never);
+    const cfg = {
+      baseUrl: 'https://api.test.com/v1',
+      apiKey: 'sk',
+      model: 'gpt-4o',
+      timeoutMs: 300_000,
+    };
+    const result = await chatComplete([{ role: 'user', content: 'Hi' }], cfg, {});
+    expect(result.content).toBe('Hello fallback');
+    vi.restoreAllMocks();
+  });
+
+  it('chatComplete uses provided fetch when supplied (branch false for ??)', async () => {
+    const customFetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            id: 'x',
+            object: 'chat.completion',
+            created: 0,
+            model: 'm',
+            choices: [
+              {
+                index: 0,
+                message: { role: 'assistant', content: 'custom' },
+                finish_reason: 'stop',
+              },
+            ],
+            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+    );
+    const cfg = {
+      baseUrl: 'https://api.test.com/v1',
+      apiKey: 'sk',
+      model: 'm',
+      timeoutMs: 300_000,
+    };
+    const result = await chatComplete([{ role: 'user', content: 'Hi' }], cfg, {
+      fetch: customFetch as unknown as typeof fetch,
+    });
+    expect(customFetch).toHaveBeenCalled();
+    expect(result.content).toBe('custom');
   });
 });
