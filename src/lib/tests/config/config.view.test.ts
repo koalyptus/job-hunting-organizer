@@ -138,3 +138,26 @@ describe('setAtPath', () => {
     expect(obj.llm).toBeNull();
   });
 });
+
+describe('setAtPath loop-body guard (migrated from cv-loop.test.ts)', () => {
+  it('returns when nested intermediate is null', () => {
+    const obj = { a: null };
+    setAtPath(obj, ['a', 'b', 'c'], 'x');
+    expect(obj).toEqual({ a: null });
+  });
+  it('returns when nested intermediate is a string', () => {
+    const obj = { a: { b: 'string' } };
+    setAtPath(obj, ['a', 'b', 'c'], 'x');
+    expect(obj).toEqual({ a: { b: 'string' } });
+  });
+  it('returns when nested intermediate is a number', () => {
+    const obj = { a: { b: 123 } };
+    setAtPath(obj, ['a', 'b', 'c'], 'x');
+    expect(obj).toEqual({ a: { b: 123 } });
+  });
+  it('returns when nested intermediate is a boolean', () => {
+    const obj = { a: { b: true } };
+    setAtPath(obj, ['a', 'b', 'c'], 'x');
+    expect(obj).toEqual({ a: { b: true } });
+  });
+});
