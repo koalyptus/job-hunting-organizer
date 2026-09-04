@@ -174,11 +174,11 @@ Check your harness documentation for correct configuration, as an example:
 {
   "servers": {
     "jho-mcp": {
-			"type": "stdio",
-			"command": "node",
-			"args": ["bin/jho-mcp"],
-			"cwd": "C:\\path\\to\\job-hunting-organizer"
-		}
+      "type": "stdio",
+      "command": "node",
+      "args": ["bin/jho-mcp"],
+      "cwd": "C:\\path\\to\\job-hunting-organizer"
+    }
   }
 }
 ```
@@ -191,10 +191,7 @@ Check your harness documentation for correct configuration, as an example:
   "mcp": {
     "jho-mcp": {
       "type": "local",
-      "command": [
-        "node",
-        "bin/jho-mcp"
-      ],
+      "command": ["node", "bin/jho-mcp"],
       "cwd": "path/to/job-hunting-organizer/bin/jho-mcp",
       "enabled": true,
       "timeout": 60000
