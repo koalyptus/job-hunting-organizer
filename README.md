@@ -166,69 +166,19 @@ Global flags work too: `jho --yes "list apps"`. Lower-confidence parses are echo
 ## As an MCP server
 
 This package ships an MCP server via the `jho-mcp` binary.
-Pick the config that matches your client:
-
-**Claude Desktop** (`claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "jho": {
-      "command": "jho-mcp",
-      "args": [],
-      "env": {}
-    }
-  }
-}
-```
-
-**Cursor** (`.cursor/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "jho": {
-      "command": "jho-mcp",
-      "args": [],
-      "env": {}
-    }
-  }
-}
-```
-
-**Continue** (`.continue/mcpServers/jho.json`):
-
-```json
-{
-  "mcpServers": [
-    {
-      "name": "jho",
-      "command": "jho-mcp",
-      "args": []
-    }
-  ]
-}
-```
-
-**Codex** (`~/.codex/config.toml`):
-
-```toml
-[mcp_servers.jho]
-command = "jho-mcp"
-args = []
-```
+Check your harness documentation for correct configuration, as an example:
 
 **GitHub Copilot** (`.vscode/mcp.json`):
 
 ```json
 {
   "servers": {
-    "jho": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["path/to/job-hunting-organizer/bin/jho-mcp"],
-      "env": {}
-    }
+    "jho-mcp": {
+			"type": "stdio",
+			"command": "node",
+			"args": ["bin/jho-mcp"],
+			"cwd": "C:\\path\\to\\job-hunting-organizer"
+		}
   }
 }
 ```
@@ -239,10 +189,15 @@ args = []
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "jho": {
+    "jho-mcp": {
       "type": "local",
-      "command": ["jho-mcp"],
-      "enabled": true
+      "command": [
+        "node",
+        "bin/jho-mcp"
+      ],
+      "cwd": "path/to/job-hunting-organizer/bin/jho-mcp",
+      "enabled": true,
+      "timeout": 60000
     }
   }
 }
