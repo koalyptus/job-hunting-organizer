@@ -1,8 +1,6 @@
 # job-hunting-organizer
 
-A local-first CLI and MCP server for running a job-hunting campaign.
-
-> **Status:** under active development. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress. Currently at **Phase 8** (MCP server).
+A CLI and MCP server helping job seekers to keep track of job applications without leaving the comfort of the terminal or harness ;-)
 
 ## What it does
 
@@ -57,14 +55,12 @@ npm run test:integration
 
 **Structure**:
 
-```
+```text
 integration-tests/
 ├── helpers.ts              # Shared setup utilities
 ├── mocks.ts                # Shared vitest mock factories
 ├── cli/                    # CLI end-to-end tests
-│   ├── application-lifecycle.test.ts
-│   ├── campaign-init.test.ts
-│   └── doctor-diagnostics.test.ts
+│   ├── ...
 └── mcp/                    # MCP tool dispatch tests
     └── tools-e2e.test.ts
 ```
@@ -170,68 +166,18 @@ Global flags work too: `jho --yes "list apps"`. Lower-confidence parses are echo
 ## As an MCP server
 
 This package ships an MCP server via the `jho-mcp` binary.
-Pick the config that matches your client:
-
-**Claude Desktop** (`claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "jho": {
-      "command": "jho-mcp",
-      "args": [],
-      "env": {}
-    }
-  }
-}
-```
-
-**Cursor** (`.cursor/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "jho": {
-      "command": "jho-mcp",
-      "args": [],
-      "env": {}
-    }
-  }
-}
-```
-
-**Continue** (`.continue/mcpServers/jho.json`):
-
-```json
-{
-  "mcpServers": [
-    {
-      "name": "jho",
-      "command": "jho-mcp",
-      "args": []
-    }
-  ]
-}
-```
-
-**Codex** (`~/.codex/config.toml`):
-
-```toml
-[mcp_servers.jho]
-command = "jho-mcp"
-args = []
-```
+Check your harness documentation for correct configuration, as an example:
 
 **GitHub Copilot** (`.vscode/mcp.json`):
 
 ```json
 {
   "servers": {
-    "jho": {
+    "jho-mcp": {
       "type": "stdio",
       "command": "node",
-      "args": ["path/to/job-hunting-organizer/bin/jho-mcp"],
-      "env": {}
+      "args": ["bin/jho-mcp"],
+      "cwd": "C:\\path\\to\\job-hunting-organizer"
     }
   }
 }
@@ -243,10 +189,12 @@ args = []
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "jho": {
+    "jho-mcp": {
       "type": "local",
-      "command": ["jho-mcp"],
-      "enabled": true
+      "command": ["node", "bin/jho-mcp"],
+      "cwd": "path/to/job-hunting-organizer/bin/jho-mcp",
+      "enabled": true,
+      "timeout": 60000
     }
   }
 }
