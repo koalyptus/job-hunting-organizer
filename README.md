@@ -187,7 +187,6 @@ Check your harness documentation for correct configuration, as an example:
 
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "jho-mcp": {
       "type": "local",
