@@ -20,10 +20,8 @@ async function detectAndDisplayAgents(): Promise<void> {
   userOutput('Detecting local OpenAI-compatible backends...');
 
   try {
-    const agents = await detectAgents();
-    const backends = agents.filter(
-      (a) => (a.name === BACKEND_NAME_OLLAMA || a.name === BACKEND_NAME_LMSTUDIO) && a.isConfigured,
-    );
+    const agents = await detectAgents({ only: [BACKEND_NAME_OLLAMA, BACKEND_NAME_LMSTUDIO] });
+    const backends = agents.filter((a) => a.isConfigured);
 
     if (backends.length === 0) {
       userOutput('No local OpenAI-compatible backend detected.');

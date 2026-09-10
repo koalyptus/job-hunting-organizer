@@ -84,7 +84,7 @@
   - [x] 9k — Validate pure core, remove deprecated barrels
 - [ ] **Phase 10** — Polish & public readiness
   - [x] 10a — Relocate toolhash sidecars into a `.sidecars/` folder (no folder pollution) + migration path
-  - [ ] 10b — Reach 100% test coverage across the suite
+  - [x] 10b — Reach 100% test coverage across the suite
   - [ ] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
 
 ---
