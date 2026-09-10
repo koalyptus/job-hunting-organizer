@@ -20,9 +20,7 @@ async function detectAndDisplayAgents(): Promise<void> {
   userOutput('Detecting local OpenAI-compatible backends...');
 
   try {
-    // Restrict detection to the two LLM backends jho supports (detector ids).
     const agents = await detectAgents({ only: [BACKEND_NAME_OLLAMA, BACKEND_NAME_LMSTUDIO] });
-    // Detection is already scoped to ollama/lmstudio via `only`, so just filter configured.
     const backends = agents.filter((a) => a.isConfigured);
 
     if (backends.length === 0) {
