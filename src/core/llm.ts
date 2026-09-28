@@ -44,7 +44,10 @@ export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
   // Default tag for providers that require it (Nous Research's inference
   // gateway returns 400 "missing tags" without a `user=<value>` entry).
   // Env var overrides config, which overrides the built-in default.
-  const envTags = envRaw?.split(',').map((s) => s.trim()).filter(Boolean);
+  const envTags = envRaw
+    ?.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   const tags = envTags ?? tagsFromConfig ?? DEFAULT_TAGS;
   return {
     baseUrl: process.env['LLM_BASE_URL'] ?? config.llm.baseUrl,
