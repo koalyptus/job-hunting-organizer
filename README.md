@@ -259,9 +259,28 @@ Check your harness documentation for correct configuration, as an example:
 
 During `jho init`, the tool automatically detects locally-installed Ollama and LM Studio instances (via the [detect-local-agents](https://www.npmjs.com/package/detect-local-agents) package) and pre-fills the recommended LLM config. Run `jho doctor --detect-agents` at any time to see what's detected.
 
+### Environment variables
+
+All env var names are uppercase. Prefix `JHO_` denotes jho-internal config; prefix `LLM_` overrides the corresponding field in `config.json`'s `llm` block (only relevant when the LLM is called).
+
+| Variable | Description |
+| -------- | ----------- |
+| `JHO_CONFIG_HOME` | Override the config home directory (default `~/.job-hunting-organizer/`) |
+| `JHO_DATA` | Override the data root directory (default `~/job-hunting-organizer-data/`) |
+| `JHO_DEFAULT_CAMPAIGN` | Default campaign name when `--campaign` is omitted (default `default`) |
+| `JHO_URL_PATTERNS` | JSON array of `{ name, pattern, group }` URL-pattern objects used to extract job IDs from job ad URLs; tried before the built-in Seek/LinkedIn/Indeed patterns |
+| `JHO_CV_PATH` | Pre-fill the CV path during `jho init` |
+| `JHO_LINKEDIN_URL` | Pre-fill the LinkedIn profile URL during `jho init` |
+| `JHO_LOG_FILE` | Override the log file path (default `<config-home>/jho.log`); set to any falsy value via `logging.disableFileLogging` in `config.json` to suppress file logging |
+| `JHO_LOG_LEVEL` | Override the minimum log level written to file |
+| `LLM_BASE_URL` | Override the LLM endpoint base URL from `config.json` |
+| `LLM_API_KEY` | Override the API key from `config.json` |
+| `LLM_MODEL` | Override the model from `config.json` |
+| `LLM_TAGS` | Comma-separated `key=value` tags sent on every LLM call (e.g. `user=jho`). Some providers (notably [Nous Research's inference gateway](https://portal.nousresearch.com/api-docs)) require a `user=<value>` tag or return `400 missing tags`. `jho` ships with a default `user=jho` tag so this is handled automatically for Nous; override it here if you need a different value. |
+| `NO_COLOR` | Set to disable ANSI colour output in terminal output |
+
 ## Documentation
 
-- [`docs/PLAN.md`](docs/PLAN.md) — the full design plan
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased build plan with status
 - [`AGENTS.md`](AGENTS.md) — for AI agents using the MCP server
 

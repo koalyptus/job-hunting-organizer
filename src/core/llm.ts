@@ -38,11 +38,20 @@ function normalizeBaseUrl(url: string): string {
  */
 export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
   const config = global ?? loadGlobalConfig();
+  const envRaw = process.env['LLM_TAGS'];
+  const tagsFromConfig = config.llm.tags;
+  const DEFAULT_TAGS = ['user=jho'];
+  // Default tag for providers that require it (Nous Research's inference
+  // gateway returns 400 "missing tags" without a `user=<value>` entry).
+  // Env var overrides config, which overrides the built-in default.
+  const envTags = envRaw?.split(',').map((s) => s.trim()).filter(Boolean);
+  const tags = envTags ?? tagsFromConfig ?? DEFAULT_TAGS;
   return {
     baseUrl: process.env['LLM_BASE_URL'] ?? config.llm.baseUrl,
     apiKey: process.env['LLM_API_KEY'] ?? config.llm.apiKey,
     model: process.env['LLM_MODEL'] ?? config.llm.model,
     timeoutMs: config.llm.timeoutMs,
+    tags,
   };
 }
 
@@ -78,6 +87,14 @@ export async function chatComplete(
 
   const start = performance.now();
 
+  // Some providers require a top-level `tags` array on chat completion
+  // requests. Configured via `LLM_TAGS` env var or the `llm.tags` config
+  // field as an array of "key=value" strings (e.g. ["user=jho"]).
+  const extraBody: Record<string, unknown> = {};
+  if (config.tags && config.tags.length > 0) {
+    extraBody.tags = config.tags;
+  }
+
   const response = await client.chat.completions.create(
     {
       model: config.model,
@@ -85,6 +102,7 @@ export async function chatComplete(
       temperature,
       ...(maxTokens !== undefined ? { max_tokens: maxTokens } : {}),
       ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+      ...extraBody,
     },
     { signal: options.signal },
   );
