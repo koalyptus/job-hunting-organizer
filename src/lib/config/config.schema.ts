@@ -94,8 +94,6 @@ export const GlobalConfigSchema = z.object({
     })
     .default({
       baseUrl: 'http://localhost:11434/v1',
-      /** Optional tags array; overrides schema default when set. */
-      tags: [],
       apiKey: 'no-key',
       model: 'llama3.1',
       timeoutMs: 1_200_000,
