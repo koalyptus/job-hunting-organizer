@@ -159,6 +159,32 @@ describe('chatComplete', () => {
       expect(callBody.tags).toBeUndefined();
     });
 
+    it('prefers LLM_TAGS over config tags in the serialized request body', async () => {
+      const originalTags = process.env['LLM_TAGS'];
+      process.env['LLM_TAGS'] = 'user=env,app=jho';
+
+      try {
+        const fetch = vi.mocked(globalThis.fetch);
+        fetch.mockResolvedValueOnce(okJson(successBody));
+
+        await chatComplete(
+          [{ role: 'user', content: 'Hi' }],
+          { ...testConfig, tags: ['user=config'] },
+          testChatOpts,
+        );
+
+        const [, init] = fetch.mock.calls[0] as [unknown, { body?: string }];
+        const callBody = JSON.parse(init?.body ?? '{}');
+        expect(callBody.tags).toEqual(['user=env', 'app=jho']);
+      } finally {
+        if (originalTags === undefined) {
+          delete process.env['LLM_TAGS'];
+        } else {
+          process.env['LLM_TAGS'] = originalTags;
+        }
+      }
+    });
+
     it('handles null content from the model', async () => {
       const fetch = vi.mocked(globalThis.fetch);
       fetch.mockResolvedValueOnce(

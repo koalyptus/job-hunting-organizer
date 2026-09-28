@@ -281,6 +281,7 @@ All env var names are uppercase. Prefix `JHO_` denotes jho-internal config; pref
 
 ## Documentation
 
+- [`docs/PLAN.md`](docs/PLAN.md) — full design plan
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased build plan with status
 - [`AGENTS.md`](AGENTS.md) — for AI agents using the MCP server
 
