@@ -110,6 +110,7 @@ LLM configuration (override via env var; falls back to campaign config):
   $LLM_BASE_URL           LLM API base URL
   $LLM_API_KEY            LLM API key
   $LLM_MODEL              LLM model identifier
+  $LLM_TAGS               Comma-separated key=value tags sent on every LLM call (e.g. user=jho); some providers (notably [Nous Research's inference gateway](https://portal.nousresearch.com/api-docs)) require a 'user=<value>' tag or return '400 missing tags'
 
 Logging:
   $JHO_LOG_LEVEL          Override log level (default: from config)
