@@ -12,8 +12,26 @@ export const DEFAULT_LLM_TIMEOUT_MS = 1_200_000;
 /** Default temperature for LLM requests. */
 const DEFAULT_TEMPERATURE = 0.6;
 
+/** Default provider tags for chat completion requests. */
+const DEFAULT_TAGS = ['user=jho'];
+
 /** Maximum characters for LLM response preview in error messages. */
 const LLM_RESPONSE_PREVIEW_LENGTH = 500;
+
+/**
+ * Resolve request tags from env/config/default precedence.
+ * Explicit `tags: []` remains an opt-out.
+ * @param configTags - Tags from the caller-provided config, if any.
+ */
+function resolveLlmTags(configTags?: readonly string[]): readonly string[] {
+  const envRaw = process.env['LLM_TAGS'];
+  const envTags = envRaw
+    ?.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return envTags ?? configTags ?? DEFAULT_TAGS;
+}
 
 /**
  * Normalize a base URL for the OpenAI-compatible API.
@@ -38,11 +56,13 @@ function normalizeBaseUrl(url: string): string {
  */
 export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
   const config = global ?? loadGlobalConfig();
+
   return {
     baseUrl: process.env['LLM_BASE_URL'] ?? config.llm.baseUrl,
     apiKey: process.env['LLM_API_KEY'] ?? config.llm.apiKey,
     model: process.env['LLM_MODEL'] ?? config.llm.model,
     timeoutMs: config.llm.timeoutMs,
+    tags: resolveLlmTags(config.llm.tags),
   };
 }
 
@@ -78,6 +98,16 @@ export async function chatComplete(
 
   const start = performance.now();
 
+  // Some providers require a top-level `tags` array on chat completion
+  // requests. Configured via `LLM_TAGS` env var or the `llm.tags` config
+  // field as an array of "key=value" strings (e.g. ["user=jho"]).
+  const tags = resolveLlmTags(config.tags);
+  const extraBody: Record<string, unknown> = {};
+
+  if (tags.length > 0) {
+    extraBody.tags = tags;
+  }
+
   const response = await client.chat.completions.create(
     {
       model: config.model,
@@ -85,6 +115,7 @@ export async function chatComplete(
       temperature,
       ...(maxTokens !== undefined ? { max_tokens: maxTokens } : {}),
       ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+      ...extraBody,
     },
     { signal: options.signal },
   );

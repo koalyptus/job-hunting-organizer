@@ -129,6 +129,62 @@ describe('chatComplete', () => {
       expect(callBody.response_format).toEqual({ type: 'json_object' });
     });
 
+    it('sends the default tags when config.tags is undefined', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(okJson(successBody));
+
+      await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        { ...testConfig, tags: undefined },
+        testChatOpts,
+      );
+
+      const [, init] = fetch.mock.calls[0] as [unknown, { body?: string }];
+      const callBody = JSON.parse(init?.body ?? '{}');
+      expect(callBody.tags).toEqual(['user=jho']);
+    });
+
+    it('omits tags when config.tags is an explicit empty array', async () => {
+      const fetch = vi.mocked(globalThis.fetch);
+      fetch.mockResolvedValueOnce(okJson(successBody));
+
+      await chatComplete(
+        [{ role: 'user', content: 'Hi' }],
+        { ...testConfig, tags: [] },
+        testChatOpts,
+      );
+
+      const [, init] = fetch.mock.calls[0] as [unknown, { body?: string }];
+      const callBody = JSON.parse(init?.body ?? '{}');
+      expect(callBody.tags).toBeUndefined();
+    });
+
+    it('prefers LLM_TAGS over config tags in the serialized request body', async () => {
+      const originalTags = process.env['LLM_TAGS'];
+      process.env['LLM_TAGS'] = 'user=env,app=jho';
+
+      try {
+        const fetch = vi.mocked(globalThis.fetch);
+        fetch.mockResolvedValueOnce(okJson(successBody));
+
+        await chatComplete(
+          [{ role: 'user', content: 'Hi' }],
+          { ...testConfig, tags: ['user=config'] },
+          testChatOpts,
+        );
+
+        const [, init] = fetch.mock.calls[0] as [unknown, { body?: string }];
+        const callBody = JSON.parse(init?.body ?? '{}');
+        expect(callBody.tags).toEqual(['user=env', 'app=jho']);
+      } finally {
+        if (originalTags === undefined) {
+          delete process.env['LLM_TAGS'];
+        } else {
+          process.env['LLM_TAGS'] = originalTags;
+        }
+      }
+    });
+
     it('handles null content from the model', async () => {
       const fetch = vi.mocked(globalThis.fetch);
       fetch.mockResolvedValueOnce(
@@ -477,9 +533,11 @@ describe('defaultLlmConfig', () => {
       kept['LLM_API_KEY'] = process.env['LLM_API_KEY'];
       kept['LLM_BASE_URL'] = process.env['LLM_BASE_URL'];
       kept['LLM_MODEL'] = process.env['LLM_MODEL'];
+      kept['LLM_TAGS'] = process.env['LLM_TAGS'];
       delete process.env['LLM_API_KEY'];
       delete process.env['LLM_BASE_URL'];
       delete process.env['LLM_MODEL'];
+      delete process.env['LLM_TAGS'];
     });
 
     afterEach(() => {
@@ -506,6 +564,35 @@ describe('defaultLlmConfig', () => {
       process.env['LLM_MODEL'] = 'env-model';
       expect(defaultLlmConfig(testGlobalConfig).model).toBe('env-model');
     });
+
+    it('LLM_TAGS overrides config tags', () => {
+      process.env['LLM_TAGS'] = 'user=env,app=jho';
+      expect(
+        defaultLlmConfig({
+          ...testGlobalConfig,
+          llm: {
+            ...testGlobalConfig.llm,
+            tags: ['user=config'],
+          },
+        }).tags,
+      ).toEqual(['user=env', 'app=jho']);
+    });
+  });
+
+  it('uses default tags when config tags are absent', () => {
+    expect(defaultLlmConfig(testGlobalConfig).tags).toEqual(['user=jho']);
+  });
+
+  it('preserves explicit empty config tags as an opt-out', () => {
+    expect(
+      defaultLlmConfig({
+        ...testGlobalConfig,
+        llm: {
+          ...testGlobalConfig.llm,
+          tags: [],
+        },
+      }).tags,
+    ).toEqual([]);
   });
 });
 

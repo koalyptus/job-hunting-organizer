@@ -89,6 +89,8 @@ export const GlobalConfigSchema = z.object({
       model: z.string().default('llama3.1'),
       /** Per-request timeout in milliseconds for LLM calls (default 20min). Increase for slow local models. */
       timeoutMs: z.number().int().min(30_000).max(3_600_000).default(1_200_000),
+      /** Optional tags array for providers that require a top-level `tags` field on completion requests (e.g. Nous Research's inference gateway expects `user=<value>`). */
+      tags: z.array(z.string()).optional(),
     })
     .default({
       baseUrl: 'http://localhost:11434/v1',

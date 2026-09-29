@@ -106,6 +106,13 @@ export interface LlmConfig {
   readonly model: string;
   /** Per-request timeout in milliseconds for LLM calls (default 1200s). */
   readonly timeoutMs: number;
+  /**
+   * Optional tags array sent as a top-level field on every chat completion
+   * request. Some providers (e.g. Nous Research's inference gateway) require
+   * a `user=<value>` entry; others ignore it. Format: array of "key=value"
+   * strings (e.g. `["user=jho"]`). Set via `LLM_TAGS` env var or in config.
+   */
+  readonly tags?: readonly string[];
 }
 
 /**
@@ -233,6 +240,13 @@ export interface GlobalConfig {
     model: string;
     /** Per-request timeout in milliseconds for LLM calls (default 20min). */
     timeoutMs: number;
+    /**
+     * Optional tags array sent as a top-level field on every chat completion
+     * request. Some providers (e.g. Nous Research's inference gateway) require
+     * a `user=<value>` entry; others ignore it. Format: array of "key=value"
+     * strings (e.g. `["user=jho"]`). Set via `LLM_TAGS` env var or in config.
+     */
+    tags?: readonly string[];
   };
   /** Optional GitHub integration for `jho campaign init` profile building. */
   github: {
