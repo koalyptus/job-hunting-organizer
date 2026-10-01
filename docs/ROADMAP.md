@@ -86,6 +86,7 @@
   - [x] 10a — Relocate toolhash sidecars into a `.sidecars/` folder (no folder pollution) + migration path
   - [x] 10b — Reach 100% test coverage across the suite
   - [ ] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
+  - [ ] 10d — Release pipeline & npm publication
 
 ---
 
@@ -1264,6 +1265,54 @@ the file-ownership model and sidecar references. Snapshot-test any help-text cha
 - No snapshot tests cover help output.
 
 **Commit**: `docs: refine README, AGENTS.md, PLAN.md, and help text`
+
+### 10d — Release pipeline & npm publication
+
+Make the package installable from the registry (`npm i -g job-hunting-organizer`,
+`npx job-hunting-organizer`, and the `npx jho-mcp` MCP entry point promised by
+Phase 8). Today `package.json` sets `"private": true`, so `npm publish` refuses
+outright, and there is no versioning, changelog, or release workflow.
+
+**Decision required before starting**: the package is currently described as
+local-first with a privacy posture and the README documents only a clone-and-build
+install. Publishing is a product decision, not just a build step — confirm the
+distribution model (public registry vs. GitHub-only) before flipping `private`.
+
+**Scope**
+
+- **Flip `private`** — remove `"private": true`. This is the actual gate; nothing
+  publishes while it is set. Keep it until every other item below is done.
+- **Fix the tarball contents.** `npm pack --dry-run` currently ships 3.0 MB
+  unpacked, of which ~2.1 MB is `.js.map` sourcemaps. Decide whether to ship
+  sourcemaps (drop them for a leaner install, or keep them for debuggability) and
+  add an `.npmignore` or a `files`-array refinement accordingly. Also verify
+  `bin/README.md` is intentional — it is tracked and ships inside the `bin` entry.
+- **Add `publishConfig`** — pin `{"access": "public"}` so the scoped/unscoped
+  publish cannot silently default to restricted.
+- **Versioning & changelog.** The version has sat at `0.1.0` and has never been
+  bumped. Choose a strategy (manual semver bumps + `CHANGELOG.md`, or
+  `changesets` / `semantic-release`) and wire it up. If adopting a tool, prefer a
+  vendored, battle-tested one over hand-rolling.
+- **Release workflow** — a `.github/workflows/release.yml` triggered on tag push
+  that runs the full `npm run verify` gate, builds, and publishes with provenance
+  (`npm publish --provenance`, which needs `id-token: write`). Do not publish from
+  a developer machine.
+- **Pre-publish verification** — a scripted check that packs the tarball, installs
+  it into a throwaway consumer directory, and asserts `jho --version`, an MCP
+  `initialize` + `tools/list` handshake, and one prompt-loading command all work
+  from the _installed_ package (not the repo). This catches packaging regressions
+  such as `prompts/` or `dist/` being dropped from `files`, which would break
+  `getPackageRoot()` at runtime.
+- **README install section** — document the registry install path alongside the
+  existing clone-and-build instructions, and the `npx jho-mcp` MCP client config.
+
+**Verified during planning** (so the phase starts from a known-good baseline): the
+current tarball _does_ install and run correctly — `jho --version` prints `0.1.0`,
+`jho-mcp` completes an `initialize`/`tools/list` handshake, and `jho ownership`
+resolves `prompts/` from the installed package root. The packaging is sound; the
+work is the release machinery around it.
+
+**Commit**: `chore(release): add npm publish pipeline and changelog`
 
 ---
 
