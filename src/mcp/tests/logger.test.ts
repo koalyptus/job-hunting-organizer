@@ -46,7 +46,7 @@ describe('mcpLogger', () => {
       } else {
         process.env['JHO_CONFIG_HOME'] = prev;
       }
-      await rm(testHome, { recursive: true, force: true });
+      await rm(testHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });
