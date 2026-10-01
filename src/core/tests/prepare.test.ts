@@ -21,8 +21,8 @@ import * as KbContextModule from '../../workflow/campaign/kb-context.js';
 import * as LlmModule from '../llm.js';
 import type * as FsPromises from 'node:fs/promises';
 
-let throwStringOnce: string | null = null;
-let throwOnlyFor: string | null = null;
+let throwStringOnceFor: string | null = null;
+let throwPathSuffix: string | null = null;
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof FsPromises>();
@@ -30,10 +30,13 @@ vi.mock('node:fs/promises', async (importOriginal) => {
     ...actual,
     readFile: async (...args: Parameters<typeof actual.readFile>) => {
       const p = String(args[0]);
-      if (throwStringOnce !== null && (throwOnlyFor === null || p.endsWith(throwOnlyFor))) {
-        const v = throwStringOnce;
-        throwStringOnce = null;
-        throwOnlyFor = null;
+      if (
+        throwStringOnceFor !== null &&
+        (throwPathSuffix === null || p.endsWith(throwPathSuffix))
+      ) {
+        const v = throwStringOnceFor;
+        throwStringOnceFor = null;
+        throwPathSuffix = null;
         throw v;
       }
       return actual.readFile(...args);
@@ -1211,8 +1214,8 @@ describe('generatePrep non-Error branches', () => {
 
   it('wraps non-Error JD read failures', async () => {
     await setupApp('2026-Jun-01-SE-Test-Corp');
-    throwStringOnce = 'jd-string-fail';
-    throwOnlyFor = 'jd.md';
+    throwStringOnceFor = 'jd-string-fail';
+    throwPathSuffix = 'jd.md';
     await expect(
       generatePrep({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
     ).rejects.toThrow('Failed to read JD: jd-string-fail');

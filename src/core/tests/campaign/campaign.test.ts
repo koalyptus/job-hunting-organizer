@@ -102,8 +102,8 @@ describe('resolveCampaignInteractive', () => {
     const dataRoot = await mkdtemp(join(tmpdir(), 'jho-camp-infer-'));
     const campaignDir = join(dataRoot, 'campaigns', 'freelance');
     await mkdir(join(campaignDir, 'applied'), { recursive: true });
-    const prevData = process.env['JHO_DATA'];
-    const prevCwd = process.cwd();
+    const origData = process.env['JHO_DATA'];
+    const origCwd = process.cwd();
     process.env['JHO_DATA'] = dataRoot;
     process.chdir(campaignDir);
     try {
@@ -112,11 +112,11 @@ describe('resolveCampaignInteractive', () => {
       expect(pathsModule.listCampaigns).not.toHaveBeenCalled();
       expect(clack.select).not.toHaveBeenCalled();
     } finally {
-      process.chdir(prevCwd);
-      if (prevData === undefined) {
+      process.chdir(origCwd);
+      if (origData === undefined) {
         delete process.env['JHO_DATA'];
       } else {
-        process.env['JHO_DATA'] = prevData;
+        process.env['JHO_DATA'] = origData;
       }
       await rm(dataRoot, { recursive: true, force: true });
     }

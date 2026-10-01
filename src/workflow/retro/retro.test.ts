@@ -11,8 +11,8 @@ import * as profileRead from '../campaign/profile-read.js';
 import { replaceRegion } from '../../core/parser/markers.js';
 import type * as FsPromises from 'node:fs/promises';
 
-let throwStringOnce: string | null = null;
-let throwOnlyFor: string | null = null;
+let throwStringOnceFor: string | null = null;
+let throwPathSuffix: string | null = null;
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof FsPromises>();
@@ -20,10 +20,13 @@ vi.mock('node:fs/promises', async (importOriginal) => {
     ...actual,
     readFile: async (...args: Parameters<typeof actual.readFile>) => {
       const p = String(args[0]);
-      if (throwStringOnce !== null && (throwOnlyFor === null || p.endsWith(throwOnlyFor))) {
-        const v = throwStringOnce;
-        throwStringOnce = null;
-        throwOnlyFor = null;
+      if (
+        throwStringOnceFor !== null &&
+        (throwPathSuffix === null || p.endsWith(throwPathSuffix))
+      ) {
+        const v = throwStringOnceFor;
+        throwStringOnceFor = null;
+        throwPathSuffix = null;
         throw v;
       }
       return actual.readFile(...args);
@@ -376,8 +379,8 @@ describe('retro non-Error branches', () => {
 
   it('startRetro wraps non-Error JD read failures', async () => {
     const slug = await setupApp('x');
-    throwStringOnce = 'retro-jd-fail';
-    throwOnlyFor = 'jd.md';
+    throwStringOnceFor = 'retro-jd-fail';
+    throwPathSuffix = 'jd.md';
     await expect(
       startRetro({ slug, campaign: 'test-campaign', weakTopics: ['SQL'] }),
     ).rejects.toThrow('Failed to read JD: retro-jd-fail');
