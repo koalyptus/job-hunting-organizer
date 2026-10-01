@@ -160,6 +160,20 @@ describe('cover-letter command', () => {
       expect(exitCode).toBe(1);
       expect(stderr).toContain('LLM call failed');
     });
+
+    it('rethrows unexpected generation errors', async () => {
+      vi.mocked(coverLetterCore.generateCoverLetter).mockRejectedValueOnce(
+        new Error('cl-boom'),
+      );
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      await expect(runCommand(coverLetterCommand, ['cover-letter', slug])).rejects.toThrow(
+        'cl-boom',
+      );
+    });
   });
 
   describe('show subcommand', () => {

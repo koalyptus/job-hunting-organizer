@@ -15,6 +15,7 @@ import {
 import { createApplication } from '../applications/applications.js';
 import * as applicationsModule from '../applications/applications.js';
 import * as jobsExtractModule from '../../core/jobs/extract.js';
+import * as suggestModule from '../../core/jobs/suggest.js';
 import * as fsModule from '../../lib/fs.js';
 import * as trackPromptsModule from './prompts.js';
 import type { ExtractedJd } from '../../core/jobs/types.js';
@@ -427,6 +428,280 @@ describe('track branch coverage (18-519,550-551)', () => {
       ).rejects.toThrow(/failed to write jd\.md/);
       spyExtract.mockRestore();
       spyWrite.mockRestore();
+    });
+  });
+
+  describe('prepareTrack/create non-Error branches', () => {
+    const makeLog = () => ({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    });
+
+    function writeRolesProfile() {
+      return writeFile(
+        join(campaignRoot, 'profile.md'),
+        [
+          '# Profile',
+          '',
+          '## Target roles',
+          '',
+          '<!-- jho:target-roles -->',
+          '',
+          '### senior-backend-engineer — Senior Backend Engineer [primary]',
+          '',
+          '- Level: Senior',
+          '- Domain: Backend',
+          '- Stack: TypeScript',
+          '- Work style: Remote',
+          '- Compensation: 150k',
+          '- Notes: x',
+        ].join('\n'),
+      );
+    }
+
+    function mockTextExtract(jd: Partial<ExtractedJd> = {}) {
+      return vi.spyOn(jobsExtractModule, 'extractJdFromText').mockResolvedValue({
+        title: 'T',
+        company: 'C',
+        description: 'D',
+        location: '',
+        site: '',
+        ...jd,
+      } as unknown as ExtractedJd);
+    }
+
+    it('prepareTrack proceeds without roles when the profile is missing (with log)', async () => {
+      await rm(join(campaignRoot, 'profile.md'), { force: true });
+      const spy = mockTextExtract();
+      const log = makeLog();
+      try {
+        const result = await prepareTrack({
+          campaign: campaignName,
+          text: 'some jd',
+          log: log as never,
+        });
+        expect(result.suggestion.reasoning).toContain('No target roles');
+        expect(log.debug).toHaveBeenCalledWith(expect.anything(), 'profile.read.failed');
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('prepareTrack proceeds without roles when the profile is missing (no log)', async () => {
+      await rm(join(campaignRoot, 'profile.md'), { force: true });
+      const spy = mockTextExtract();
+      try {
+        const result = await prepareTrack({ campaign: campaignName, text: 'some jd' });
+        expect(result.targetRoles).toEqual([]);
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('prepareTrack wraps non-Error extract failures', async () => {
+      const spy = vi
+        .spyOn(jobsExtractModule, 'extractJdFromText')
+        .mockRejectedValueOnce('extract-boom');
+      try {
+        await expect(
+          prepareTrack({ campaign: campaignName, text: 'some jd' }),
+        ).rejects.toThrow('Failed to extract JD: extract-boom');
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('prepareTrack wraps non-Error suggest failures', async () => {
+      await writeRolesProfile();
+      const spyExtract = mockTextExtract();
+      const spySuggest = vi
+        .spyOn(suggestModule, 'suggestTargetRole')
+        .mockRejectedValueOnce('suggest-boom');
+      try {
+        await expect(
+          prepareTrack({ campaign: campaignName, text: 'some jd' }),
+        ).rejects.toThrow('Failed to suggest target role: suggest-boom');
+      } finally {
+        spyExtract.mockRestore();
+        spySuggest.mockRestore();
+      }
+    });
+
+    it('runTrackCreate proceeds without roles when the profile is missing', async () => {
+      await rm(join(campaignRoot, 'profile.md'), { force: true });
+      const spy = mockTextExtract();
+      const log = makeLog();
+      try {
+        const slug = await runTrackCreate({
+          campaign: campaignName,
+          text: 'some jd',
+          yes: true,
+          log: log as never,
+        });
+        expect(typeof slug).toBe('string');
+        expect(log.debug).toHaveBeenCalledWith(expect.anything(), 'profile.read.failed');
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('runTrackCreate wraps non-Error extract failures', async () => {
+      const spy = vi
+        .spyOn(jobsExtractModule, 'extractJdFromText')
+        .mockRejectedValueOnce('create-extract-boom');
+      try {
+        await expect(
+          runTrackCreate({ campaign: campaignName, text: 'some jd', yes: true }),
+        ).rejects.toThrow('Failed to extract JD: create-extract-boom');
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('runTrackCreate wraps non-Error suggest failures', async () => {
+      await writeRolesProfile();
+      const spyExtract = mockTextExtract();
+      const spySuggest = vi
+        .spyOn(suggestModule, 'suggestTargetRole')
+        .mockRejectedValueOnce('create-suggest-boom');
+      try {
+        await expect(
+          runTrackCreate({ campaign: campaignName, text: 'some jd', yes: true }),
+        ).rejects.toThrow('Failed to suggest target role: create-suggest-boom');
+      } finally {
+        spyExtract.mockRestore();
+        spySuggest.mockRestore();
+      }
+    });
+  });
+
+  describe('runTrackRefresh branches', () => {
+    const makeLog = () => ({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    });
+
+    it('wraps non-Error refresh extract failures', async () => {
+      const spy = vi
+        .spyOn(jobsExtractModule, 'extractJdFromUrl')
+        .mockRejectedValueOnce('refresh-boom');
+      const slug = await createApplication({
+        appliedDir,
+        title: 'Eng',
+        company: 'Acme',
+        appliedOn: '2026-06-01',
+        url: 'https://example.com/job',
+      });
+      try {
+        await expect(
+          runTrack({ campaign: campaignName, slug, refresh: true, yes: true }),
+        ).rejects.toThrow('Failed to refresh JD: refresh-boom');
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('confirms with link source when refreshing from URL', async () => {
+      const spyExtract = vi.spyOn(jobsExtractModule, 'extractJdFromUrl').mockResolvedValue({
+        title: 'Title',
+        company: 'Acme',
+        description: 'JD via link',
+        location: '',
+        site: '',
+      } as unknown as ExtractedJd);
+      const spyConfirm = vi
+        .spyOn(trackPromptsModule, 'confirmTrackUpdate')
+        .mockResolvedValue(true);
+      const slug = await createApplication({
+        appliedDir,
+        title: 'Eng',
+        company: 'Acme',
+        appliedOn: '2026-06-01',
+        url: 'https://example.com/job',
+      });
+      try {
+        const result = await runTrack({ campaign: campaignName, slug, refresh: true });
+        expect(result.changed).toBe(true);
+        expect(spyConfirm).toHaveBeenCalledWith(
+          slug,
+          expect.anything(),
+          ['re-fetch JD from https://example.com/job'],
+        );
+      } finally {
+        spyExtract.mockRestore();
+        spyConfirm.mockRestore();
+      }
+    });
+
+    it('logs refresh progress when a logger is provided', async () => {
+      const spyExtract = vi.spyOn(jobsExtractModule, 'extractJdFromText').mockResolvedValue({
+        title: 'Title',
+        company: 'Acme',
+        description: 'JD text',
+        location: '',
+        site: '',
+      } as unknown as ExtractedJd);
+      const slug = await createApplication({
+        appliedDir,
+        title: 'Eng',
+        company: 'Acme',
+        appliedOn: '2026-06-01',
+        url: 'https://example.com/job',
+      });
+      await rm(join(appliedDir, slug, 'jd.md'), { force: true });
+      const log = makeLog();
+      try {
+        const result = await runTrack({
+          campaign: campaignName,
+          slug,
+          refresh: true,
+          text: 'pasted',
+          yes: true,
+          log: log as never,
+        });
+        expect(result.changed).toBe(true);
+        expect(log.debug).toHaveBeenCalledWith(
+          expect.anything(),
+          'jd.md not found when refreshing; creating fresh file',
+        );
+        expect(log.info).toHaveBeenCalledWith(expect.anything(), 'track.refresh.completed');
+      } finally {
+        spyExtract.mockRestore();
+      }
+    });
+
+    it('handles missing description when refreshing', async () => {
+      const spyExtract = vi.spyOn(jobsExtractModule, 'extractJdFromText').mockResolvedValue({
+        title: 'Title',
+        company: 'Acme',
+        location: '',
+        site: '',
+      } as unknown as ExtractedJd);
+      const slug = await createApplication({
+        appliedDir,
+        title: 'Eng',
+        company: 'Acme',
+        appliedOn: '2026-06-01',
+        url: 'https://example.com/job',
+      });
+      try {
+        const result = await runTrack({
+          campaign: campaignName,
+          slug,
+          refresh: true,
+          text: 'pasted',
+          yes: true,
+        });
+        expect(result.changed).toBe(true);
+        const jdContent = await readFile(join(appliedDir, slug, 'jd.md'), 'utf8');
+        expect(jdContent).toContain('fetched-jd');
+      } finally {
+        spyExtract.mockRestore();
+      }
     });
   });
 });

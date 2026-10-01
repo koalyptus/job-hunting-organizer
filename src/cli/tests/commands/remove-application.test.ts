@@ -6,7 +6,8 @@ import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { removeApplicationCommand } from '../../commands/remove-application.js';
 import type * as ClackPrompts from '@clack/prompts';
-import { confirm } from '@clack/prompts';
+import { confirm, isCancel } from '@clack/prompts';
+import * as appIndex from '../../../workflow/applications/index.js';
 
 const SLUG = '2026-Jan-15-frontend-acme-12345';
 
@@ -15,12 +16,13 @@ vi.mock('@clack/prompts', async (importOriginal) => {
   return {
     ...actual,
     confirm: vi.fn(),
-    isCancel: actual.isCancel,
+    isCancel: vi.fn(actual.isCancel),
     log: actual.log,
   };
 });
 
 const mockedConfirm = vi.mocked(confirm);
+const mockedIsCancel = vi.mocked(isCancel);
 
 /** Integration test — real disk, real store */
 describe('remove-application command (integration)', () => {
@@ -157,5 +159,24 @@ describe('remove-application command (integration)', () => {
       'utf8',
     );
     expect(JSON.parse(index)).toEqual([]);
+  });
+
+  it('reports cancellation when the prompt is cancelled (Ctrl+C)', async () => {
+    mockedIsCancel.mockReturnValueOnce(true);
+    mockedConfirm.mockResolvedValueOnce(false);
+    const { stdout, exitCode } = await run(SLUG);
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('cancelled');
+  });
+
+  it('errors when the application vanishes between check and delete', async () => {
+    const spy = vi.spyOn(appIndex, 'deleteApplication').mockResolvedValueOnce(false);
+    try {
+      const { stderr, exitCode } = await run(SLUG, '--yes');
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('not found');
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

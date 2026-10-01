@@ -103,6 +103,19 @@ describe('writeIndex', () => {
     ]);
   });
 
+  it('breaks same-date ties by slug descending', async () => {
+    const entries = [
+      makeEntry({ slug: '2026-Jun-03-aaa-A-1' }),
+      makeEntry({ slug: '2026-Jun-03-zzz-B-2' }),
+    ];
+    await writeIndex(appliedDir, entries);
+    const result = await readIndex(appliedDir);
+    expect(result.map((e) => e.slug)).toEqual([
+      '2026-Jun-03-zzz-B-2',
+      '2026-Jun-03-aaa-A-1',
+    ]);
+  });
+
   it('creates the applied directory if it does not exist', async () => {
     const newDir = join(workDir, 'new-applied');
     await writeIndex(newDir, [makeEntry()]);

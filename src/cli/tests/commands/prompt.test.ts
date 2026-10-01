@@ -443,4 +443,20 @@ describe('validateParsedCommand', () => {
       ),
     ).not.toThrow();
   });
+
+  it('rethrows non-help dispatch errors', async () => {
+    const program = makeProgram();
+    program.addCommand(
+      new Command('list').action(() => {
+        throw new Error('dispatch-boom');
+      }),
+    );
+    await expect(
+      dispatchNaturalLanguage(
+        { command: 'list', args: [], options: {}, confidence: 0.9 },
+        {},
+        program,
+      ),
+    ).rejects.toThrow('dispatch-boom');
+  });
 });

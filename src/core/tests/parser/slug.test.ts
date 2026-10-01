@@ -185,6 +185,15 @@ describe('uniqueSlug', () => {
     expect(result).toBe('2026-Jun-03-engineer-foo');
   });
 
+  it('works without optional counter functions', async () => {
+    const result = await uniqueSlug(
+      { title: 'Engineer', company: 'Foo', appliedOn: '2026-06-03T00:00:00Z' },
+      join(testDir, 'applied'),
+      existsSync,
+    );
+    expect(result).toBe('2026-Jun-03-engineer-foo');
+  });
+
   it('appends -1 when folder already exists', async () => {
     const appliedDir = join(testDir, 'applied');
     const baseSlug = '2026-Jun-03-engineer-foo';

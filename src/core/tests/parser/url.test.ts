@@ -166,6 +166,21 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
     expect(extractJobId('https://example.com/opening/2024/')).toBeNull(); // user pattern not valid
   });
 
+  it('falls back when JSON.parse throws a non-Error', async () => {
+    process.env.JHO_URL_PATTERNS = '[{"name": "x"}]';
+    const parseSpy = vi.spyOn(JSON, 'parse').mockImplementationOnce(() => {
+      throw 'string-parse-failure';
+    });
+    try {
+      const urlModule = await import('../../parser/url.js');
+      const { extractJobIdFromUrl: extractJobId } = urlModule;
+      // Built-in patterns still work after the fallback
+      expect(extractJobId('https://www.linkedin.com/jobs/view/12345')).toBe('12345');
+    } finally {
+      parseSpy.mockRestore();
+    }
+  });
+
   it('ignores malformed entries in the JSON array', async () => {
     process.env.JHO_URL_PATTERNS = JSON.stringify([
       { name: 'valid', pattern: '/item/(\\d+)/', group: 1 },

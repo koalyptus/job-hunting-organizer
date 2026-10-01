@@ -85,50 +85,7 @@
 - [ ] **Phase 10** — Polish & public readiness
   - [x] 10a — Relocate toolhash sidecars into a `.sidecars/` folder (no folder pollution) + migration path
   - [x] 10b — Reach 100% test coverage across the suite
-  - [ ] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
-
----
-
-## Phase 10 — Polish & public readiness
-
-### 10a — Relocate toolhash sidecars into `.sidecars/` (folder hygiene + migration)
-
-Leftover cleanup from the Phase 9x work: toolhash sidecars (`<file>.toolhash`)
-were written as siblings of each tool-managed file (meta.md, jd.md, …) directly
-inside the application folder, so `applied/<slug>/` was cluttered with one
-`.toolhash` file per managed file. This phase moves every sidecar into a single
-`.sidecars/` subdirectory beside the files it guards, so the application folder
-shows only user-facing tool output.
-
-**Scope**
-
-- `src/lib/toolhash.ts` — `toolhashPath()` now resolves `<dir>/.sidecars/<basename>.toolhash`; add `legacyToolhashPath()`, `migrateToolhashSidecar()`, `removeLegacySidecar()`, `hasLegacyToolhashSidecars()`; `readToolhash()` falls back to the legacy sibling location so existing data keeps working.
-- `src/workflow/repair/repair.ts` — `repairApp` migrates any legacy sibling sidecar into `.sidecars/` and reports a `toolhash_migrated` action (run `jho repair` / `jho repair --all` once to backfill).
-- `src/workflow/doctor/doctor.ts` — `diagnoseApp` flags legacy sibling sidecars with an `info`-severity `legacy_toolhash_sidecars` issue.
-- All write sites (applications, track, cover-letter, prepare, interviews, retro, profile-writer) are unchanged — they call `writeToolhash()`/`readToolhash()` which now target `.sidecars/` transparently.
-
-**Migration path for existing sidecars**: existing deployments have sibling
-`.toolhash` files. After upgrade, the tool (a) reads them transparently via the
-legacy fallback, and (b) migrates them on the next `jho repair` (or `jho doctor`
-will surface the `legacy_toolhash_sidecars` info issue first). No manual step is
-required; the migration is idempotent and safe to re-run.
-
-**Commit**: `refactor(toolhash): relocate sidecars into .sidecars/ with migration`
-
-### 10b — Reach 100% test coverage across the suite
-
-Bring the full vitest + integration suite to 100% line/branch coverage. Close the
-remaining gaps in `src/lib`, `src/workflow`, and `src/core` with targeted tests.
-Coverage must not regress below HEAD at any point.
-
-**Commit**: `test: reach 100% coverage`
-
-### 10c — Refine all documentation
-
-Polish README, AGENTS.md, PLAN.md, and CLI help text for public readiness. Update
-the file-ownership model and sidecar references. Snapshot-test any help-text change.
-
-**Commit**: `docs: refine README, AGENTS.md, PLAN.md, and help text`
+  - [x] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
 
 ---
 
@@ -1257,23 +1214,48 @@ The 9g–9j moves made `src/workflow/*` the only I/O-touching layer. 9k closes t
 
 **Deliverable**: core is pure; CI enforces it.
 
-### Phase 10 — Polish & public readiness
+---
 
-**Scope**:
+## Phase 10 — Polish & public readiness
 
-- README final pass (all sections)
-- `docs/help/{file-ownership,interviews,slug-format,profile,application-lifecycle,troubleshooting,mcp}.md`
-- `jho help <topic>` wired
-- Snapshot tests for help output
-- `docs/examples/`
-- **Default log file**: `defaultLoggerConfig()` computes `${resolveConfigHome()}/jho.log` when no `JHO_LOG_FILE` env var or `logging.file` override is set. Append-only, no rotation (user manages externally). Update `AGENTS.md` logging conventions accordingly.
-- `npm publish --dry-run` clean
-- Glama submission
-- Tagged release
+### 10a — Relocate toolhash sidecars into `.sidecars/` (folder hygiene + migration)
 
-**Deliverable**: Public, glama-listed, fully documented.
+Leftover cleanup from the Phase 9x work: toolhash sidecars (`<file>.toolhash`)
+were written as siblings of each tool-managed file (meta.md, jd.md, …) directly
+inside the application folder, so `applied/<slug>/` was cluttered with one
+`.toolhash` file per managed file. This phase moves every sidecar into a single
+`.sidecars/` subdirectory beside the files it guards, so the application folder
+shows only user-facing tool output.
 
-**Commit**: `docs: README, help topics, examples, glama-ready`
+**Scope**
+
+- `src/lib/toolhash.ts` — `toolhashPath()` now resolves `<dir>/.sidecars/<basename>.toolhash`; add `legacyToolhashPath()`, `migrateToolhashSidecar()`, `removeLegacySidecar()`, `hasLegacyToolhashSidecars()`; `readToolhash()` falls back to the legacy sibling location so existing data keeps working.
+- `src/workflow/repair/repair.ts` — `repairApp` migrates any legacy sibling sidecar into `.sidecars/` and reports a `toolhash_migrated` action (run `jho repair` / `jho repair --all` once to backfill).
+- `src/workflow/doctor/doctor.ts` — `diagnoseApp` flags legacy sibling sidecars with an `info`-severity `legacy_toolhash_sidecars` issue.
+- All write sites (applications, track, cover-letter, prepare, interviews, retro, profile-writer) are unchanged — they call `writeToolhash()`/`readToolhash()` which now target `.sidecars/` transparently.
+
+**Migration path for existing sidecars**: existing deployments have sibling
+`.toolhash` files. After upgrade, the tool (a) reads them transparently via the
+legacy fallback, and (b) migrates them on the next `jho repair` (or `jho doctor`
+will surface the `legacy_toolhash_sidecars` info issue first). No manual step is
+required; the migration is idempotent and safe to re-run.
+
+**Commit**: `refactor(toolhash): relocate sidecars into .sidecars/ with migration`
+
+### 10b — Reach 100% test coverage across the suite
+
+Bring the full vitest + integration suite to 100% line/branch coverage. Close the
+remaining gaps in `src/lib`, `src/workflow`, and `src/core` with targeted tests.
+Coverage must not regress below HEAD at any point.
+
+**Commit**: `test: reach 100% coverage`
+
+### 10c — Refine all documentation
+
+Polish README, AGENTS.md, PLAN.md, and CLI help text for public readiness. Update
+the file-ownership model and sidecar references. Snapshot-test any help-text change.
+
+**Commit**: `docs: refine README, AGENTS.md, PLAN.md, and help text`
 
 ---
 

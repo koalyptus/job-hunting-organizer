@@ -11,7 +11,7 @@ vi.mock('node:fs', async (importOriginal) => {
 });
 
 import { readFileSync } from 'node:fs';
-import { clearPackageCache, getPackageJson } from '../package.js';
+import { clearPackageCache, getPackageJson, getPackageVersion } from '../package.js';
 
 describe('package branch: getPackageJson catch', () => {
   afterEach(() => {
@@ -48,5 +48,16 @@ describe('package branch: getPackageJson catch', () => {
     expect(first).toBe(second);
     expect(first).toEqual({});
     expect(vi.mocked(readFileSync)).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to 0.0.0 when version is missing', () => {
+    clearPackageCache();
+    vi.mocked(readFileSync).mockReturnValueOnce('{}');
+    try {
+      expect(getPackageVersion()).toBe('0.0.0');
+    } finally {
+      vi.mocked(readFileSync).mockRestore?.();
+      clearPackageCache();
+    }
   });
 });

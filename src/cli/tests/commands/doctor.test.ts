@@ -333,6 +333,23 @@ describe('doctor command', () => {
       expect(stdout).toContain('ollama.com/install.sh');
     });
 
+    it('omits the version when a backend reports none', async () => {
+      const { detectAgents } = await import('detect-local-agents');
+      vi.mocked(detectAgents).mockResolvedValue([
+        {
+          name: BACKEND_NAME_OLLAMA,
+          binary: 'ollama',
+          isConfigured: true,
+          isACPAgent: false,
+        },
+      ] as never);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain(BACKEND_NAME_OLLAMA);
+    });
+
     it('exits with error when detection fails', async () => {
       const { detectAgents } = await import('detect-local-agents');
       vi.mocked(detectAgents).mockRejectedValue(new Error('Detection error'));

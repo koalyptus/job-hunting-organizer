@@ -6,19 +6,21 @@ import { clearConfigCache } from '../../../lib/config/config.js';
 import { runCommand } from '../helpers.js';
 import { removeCampaignCommand } from '../../commands/remove-campaign.js';
 import type * as ClackPrompts from '@clack/prompts';
-import { confirm } from '@clack/prompts';
+import { confirm, isCancel } from '@clack/prompts';
+import * as removeCampaignCore from '../../../workflow/campaign/remove-campaign.js';
 
 vi.mock('@clack/prompts', async (importOriginal) => {
   const actual = await importOriginal<typeof ClackPrompts>();
   return {
     ...actual,
     confirm: vi.fn(),
-    isCancel: actual.isCancel,
+    isCancel: vi.fn(actual.isCancel),
     log: actual.log,
   };
 });
 
 const mockedConfirm = vi.mocked(confirm);
+const mockedIsCancel = vi.mocked(isCancel);
 
 describe('remove-campaign command', () => {
   let testHome: string;
@@ -175,5 +177,24 @@ describe('remove-campaign command', () => {
     );
     expect(mockedConfirm).not.toHaveBeenCalled();
     await expect(access(join(testHome, 'data', 'campaigns', 'freelance'))).rejects.toThrow();
+  });
+
+  it('reports cancellation when the prompt is cancelled (Ctrl+C)', async () => {
+    mockedIsCancel.mockReturnValueOnce(true);
+    mockedConfirm.mockResolvedValueOnce(false);
+    const { stdout, exitCode } = await run('freelance');
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('cancelled');
+  });
+
+  it('rethrows unexpected removal errors', async () => {
+    const spy = vi
+      .spyOn(removeCampaignCore, 'removeCampaign')
+      .mockRejectedValueOnce(new Error('boom-x'));
+    try {
+      await expect(run('freelance', '--yes')).rejects.toThrow('boom-x');
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

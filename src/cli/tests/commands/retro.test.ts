@@ -619,5 +619,71 @@ describe('retro command', () => {
       expect(exitCode).toBe(1);
       expect(stderr).toContain('Aggregate failed');
     });
+
+    it('rethrows unexpected aggregate errors', async () => {
+      vi.mocked(retroCore.aggregateRetros).mockRejectedValueOnce(new Error('agg-boom'));
+
+      await expect(runCommand(retroCommand, ['retro', 'aggregate'])).rejects.toThrow('agg-boom');
+    });
+  });
+
+  describe('retro branches', () => {
+    it('rethrows unexpected show errors', async () => {
+      vi.mocked(retroCore.showRetro).mockRejectedValueOnce(new Error('retro-show-boom'));
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      await expect(runCommand(retroCommand, ['retro', 'show', slug])).rejects.toThrow(
+        'retro-show-boom',
+      );
+    });
+
+    it('exits with slug-missing for show outside an app folder', async () => {
+      const origCwd = process.cwd();
+      process.chdir(testHome);
+      try {
+        const { stderr, exitCode } = await runCommand(retroCommand, ['retro', 'show']);
+
+        expect(exitCode).toBe(1);
+        expect(stderr).toContain('missing');
+      } finally {
+        process.chdir(origCwd);
+      }
+    });
+
+    it('rejects empty weak topics on generate', async () => {
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stderr, exitCode } = await runCommand(retroCommand, [
+        'retro',
+        slug,
+        '--weak-topics',
+        ' , , ',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('at least one weak topic');
+    });
+
+    it('rejects empty weak topics on append', async () => {
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { stderr, exitCode } = await runCommand(retroCommand, [
+        'retro',
+        'append',
+        slug,
+        '--weak-topics',
+        ' , ',
+      ]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('at least one weak topic');
+    });
   });
 });

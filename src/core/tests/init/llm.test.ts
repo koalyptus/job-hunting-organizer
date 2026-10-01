@@ -253,6 +253,36 @@ describe('promptLlm', () => {
     expect(password).toHaveBeenCalled();
   });
 
+  it('pre-fills the local model prompt from existing config', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('http://localhost:11434/v1')
+      .mockResolvedValueOnce('');
+
+    const result = await promptLlm(false, {
+      llm: { baseUrl: 'http://old:11434/v1', model: 'old-model' },
+    } as GlobalConfig);
+
+    expect(text).toHaveBeenCalledWith(expect.objectContaining({ initialValue: 'old-model' }));
+    expect(result).toEqual({
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: undefined,
+      model: undefined,
+    });
+  });
+
+  it('leaves the API key undefined when no key is entered or stored', async () => {
+    vi.mocked(text)
+      .mockResolvedValueOnce('https://api.openai.com/v1')
+      .mockResolvedValueOnce('gpt-4');
+    vi.mocked(password).mockResolvedValue('');
+
+    const result = await promptLlm(false, {
+      llm: { baseUrl: 'http://old:11434/v1', model: 'old-model' },
+    } as GlobalConfig);
+
+    expect(result.apiKey).toBeUndefined();
+  });
+
   it('returns null when no config file exists', async () => {
     const result = loadExistingConfig();
     expect(result === null || typeof result === 'object').toBe(true);
@@ -421,6 +451,22 @@ describe('detectLocalBackend', () => {
     const result = await detectLocalBackend(mockLog);
     expect(result).toBeUndefined();
     expect(mockLog.debug).toHaveBeenCalled();
+  });
+
+  it('omits the version when ollama reports none', async () => {
+    mockDetectAgents.mockResolvedValueOnce([
+      { name: 'ollama', binary: '/usr/bin/ollama' },
+    ] as DetectedAgent[]);
+    const result = await detectLocalBackend(mockLog);
+    expect(result).toEqual({ baseUrl: 'http://localhost:11434/v1', model: 'llama3.1' });
+  });
+
+  it('omits the version when lmstudio reports none', async () => {
+    mockDetectAgents.mockResolvedValueOnce([
+      { name: 'lmstudio', binary: '/usr/bin/lms' },
+    ] as DetectedAgent[]);
+    const result = await detectLocalBackend(mockLog);
+    expect(result).toEqual({ baseUrl: 'http://localhost:1234/v1', model: 'auto' });
   });
 });
 

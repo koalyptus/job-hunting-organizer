@@ -183,6 +183,18 @@ describe('fetchWithFallback', () => {
     await expect(fetchWithFallback('https://example.com/job/123')).rejects.toThrow('unexpected');
   });
 
+  it('retries after a non-Error first failure', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValueOnce('string-failure' as never);
+    fetch.mockResolvedValueOnce(mockFetchResponse('recovered'));
+
+    const log = { debug: vi.fn() } as unknown as Logger;
+    const result = await fetchWithFallback('https://example.com/job/123', {}, log);
+
+    expect(result.body).toBe('recovered');
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('clears timeout on success', async () => {
     const fetch = vi.mocked(globalThis.fetch);
     fetch.mockResolvedValueOnce(mockFetchResponse('ok'));
@@ -338,6 +350,17 @@ describe('createLlmFetch', () => {
     const response = await fetch(new URL(`http://127.0.0.1:${port}/u`));
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe('url-ok');
+  });
+
+  it('accepts a Request object', async () => {
+    handler = (_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('req-ok');
+    };
+    const fetch = createLlmFetch(5000);
+    const response = await fetch(new Request(`http://127.0.0.1:${port}/r`));
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('req-ok');
   });
 
   it('rejects on pre-aborted signal with non-Error reason', async () => {

@@ -49,10 +49,8 @@ export function extractTargetRoles(body: string): TargetRole[] {
   if (!sectionMatch) {
     return [];
   }
-  const sectionStart = sectionMatch.index ?? -1;
-  if (sectionStart === -1) {
-    return [];
-  }
+  // String.match with a non-global regex always sets `index` on success.
+  const sectionStart = sectionMatch.index as number;
 
   // Find the next H2 after "## Target roles" to bound the section
   const afterSection = body.slice(sectionStart + sectionMatch[0].length);

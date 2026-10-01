@@ -18,6 +18,28 @@ import * as AppModule from '../../workflow/applications/applications.js';
 import { aggregateRetros } from '../../workflow/retro/aggregate.js';
 import * as ProfileReadModule from '../../workflow/campaign/profile-read.js';
 import * as KbContextModule from '../../workflow/campaign/kb-context.js';
+import * as LlmModule from '../llm.js';
+import type * as FsPromises from 'node:fs/promises';
+
+let throwStringOnce: string | null = null;
+let throwOnlyFor: string | null = null;
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof FsPromises>();
+  return {
+    ...actual,
+    readFile: async (...args: Parameters<typeof actual.readFile>) => {
+      const p = String(args[0]);
+      if (throwStringOnce !== null && (throwOnlyFor === null || p.endsWith(throwOnlyFor))) {
+        const v = throwStringOnce;
+        throwStringOnce = null;
+        throwOnlyFor = null;
+        throw v;
+      }
+      return actual.readFile(...args);
+    },
+  };
+});
 
 vi.mock('../../lib/logger/logger.js', () => ({
   getRootLogger: vi.fn(() => ({
@@ -1142,6 +1164,108 @@ describe('appendTopic — error paths', () => {
 
     await expect(appendTopic('test-campaign', slug, 'new topic')).rejects.toThrow(
       'No prep plan found for',
+    );
+  });
+});
+
+describe('generatePrep non-Error branches', () => {
+  let workDir: string;
+  let campaignRoot: string;
+  let appliedDir: string;
+  let originalJhoData: string | undefined;
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), 'jho-prep-br-'));
+    originalJhoData = process.env['JHO_DATA'];
+    process.env['JHO_DATA'] = workDir;
+    campaignRoot = join(workDir, 'campaigns', 'test-campaign');
+    appliedDir = join(campaignRoot, 'applied');
+    await mkdir(appliedDir, { recursive: true });
+    mockChatComplete.mockReset();
+  });
+
+  afterEach(async () => {
+    if (originalJhoData !== undefined) {
+      process.env['JHO_DATA'] = originalJhoData;
+    } else {
+      delete process.env['JHO_DATA'];
+    }
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  async function setupApp(slug: string) {
+    const appDir = join(appliedDir, slug);
+    await mkdir(appDir, { recursive: true });
+    await writeMetaMd(appDir, slug);
+    await writeJdMd(appDir);
+    await writeProfileMd(campaignRoot);
+  }
+
+  it('wraps non-Error application read failures', async () => {
+    vi.mocked(AppModule.readApplication).mockRejectedValueOnce('app-string-fail');
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    await expect(
+      generatePrep({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+    ).rejects.toThrow('Failed to read application: app-string-fail');
+  });
+
+  it('wraps non-Error JD read failures', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    throwStringOnce = 'jd-string-fail';
+    throwOnlyFor = 'jd.md';
+    await expect(
+      generatePrep({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+    ).rejects.toThrow('Failed to read JD: jd-string-fail');
+  });
+
+  it('wraps non-Error profile read failures', async () => {
+    vi.spyOn(ProfileReadModule, 'readProfile').mockRejectedValueOnce('prof-string-fail' as never);
+    try {
+      await setupApp('2026-Jun-01-SE-Test-Corp');
+      await expect(
+        generatePrep({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+      ).rejects.toThrow('Failed to read profile: prof-string-fail');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('wraps non-Error LLM failures', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    mockChatComplete.mockRejectedValueOnce('llm-string-fail');
+    await expect(
+      generatePrep({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+    ).rejects.toThrow('LLM call failed: llm-string-fail');
+  });
+
+  it('wraps non-Error response parse failures', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'not json at all',
+      model: 'gpt-4o-mini',
+      finishReason: 'stop',
+      usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 },
+      durationMs: 10,
+    });
+    const spy = vi.spyOn(LlmModule, 'extractJson').mockImplementationOnce(() => {
+      throw 'parse-string-fail';
+    });
+    try {
+      await expect(
+        generatePrep({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+      ).rejects.toThrow('Failed to parse LLM response: parse-string-fail');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('wraps non-Error topic-append failures', async () => {
+    const slug = '2026-Jun-01-SE-Test-Corp';
+    await mkdir(join(appliedDir, slug), { recursive: true });
+    await writeFile(join(appliedDir, slug, 'prepare.md'), '<!-- jho:prepare -->\nexisting\n');
+    vi.mocked(FsModule.atomicWrite).mockRejectedValueOnce('append-string-fail' as never);
+    await expect(appendTopic('test-campaign', slug, 'new topic')).rejects.toThrow(
+      'Failed to append topic: append-string-fail',
     );
   });
 });

@@ -43,4 +43,34 @@ describe('runCommand', () => {
     expect(result.exitCode).toBe(0);
     origParse.mockRestore();
   });
+
+  it('decodes Uint8Array stdout/stderr chunks', async () => {
+    const cmd = new Command('echo-bin').description('write binary chunks').action(() => {
+      process.stdout.write(new TextEncoder().encode('hello-bin'));
+      process.stderr.write(new TextEncoder().encode('err-bin'));
+    });
+    const result = await runCommand(cmd, ['echo-bin']);
+    expect(result.stdout).toContain('hello-bin');
+    expect(result.stderr).toContain('err-bin');
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('defaults to exit code 0 when process.exit has no code', async () => {
+    const cmd = new Command('exit-nocode')
+      .description('exit without code')
+      .action(() => {
+        process.exit();
+      });
+    const result = await runCommand(cmd, ['exit-nocode']);
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('rethrows unknown errors', async () => {
+    const cmd = new Command('boom')
+      .description('throw unknown')
+      .action(() => {
+        throw new Error('unexpected-boom');
+      });
+    await expect(runCommand(cmd, ['boom'])).rejects.toThrow('unexpected-boom');
+  });
 });

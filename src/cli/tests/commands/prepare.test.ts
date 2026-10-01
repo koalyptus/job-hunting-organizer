@@ -410,5 +410,29 @@ describe('prepare command', () => {
       expect(exitCode).toBe(1);
       expect(stderr).toContain('missing <slug> argument');
     });
+
+    it('rethrows unexpected show errors', async () => {
+      vi.mocked(prepareCore.readPrep).mockRejectedValueOnce(new Error('prep-show-boom'));
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      await expect(runCommand(prepareCommand, ['prepare', 'show', slug])).rejects.toThrow(
+        'prep-show-boom',
+      );
+    });
+  });
+
+  describe('unexpected errors', () => {
+    it('rethrows unexpected generation errors', async () => {
+      vi.mocked(prepareCore.generatePrep).mockRejectedValueOnce(new Error('prep-boom'));
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      await expect(runCommand(prepareCommand, ['prepare', slug])).rejects.toThrow('prep-boom');
+    });
   });
 });
