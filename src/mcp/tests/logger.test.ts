@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { Logger } from 'pino';
 import { createMcpLogger, mcpLogger, getMcpLogPath } from '../logger.js';
+import { cleanupTempDir } from '../../core/tests/cleanup.js';
 
 describe('mcpLogger', () => {
   it('creates a configured logger with file destination', () => {
@@ -38,15 +40,20 @@ describe('mcpLogger', () => {
     const testHome = await mkdtemp(join(tmpdir(), 'jho-mcplog-'));
     const prev = process.env['JHO_CONFIG_HOME'];
     process.env['JHO_CONFIG_HOME'] = join(testHome, 'no-such-dir');
+    const loggers: Logger[] = [];
     try {
-      expect(createMcpLogger()).toBeDefined();
+      const log = createMcpLogger();
+      loggers.push(log);
+      expect(log).toBeDefined();
     } finally {
       if (prev === undefined) {
         delete process.env['JHO_CONFIG_HOME'];
       } else {
         process.env['JHO_CONFIG_HOME'] = prev;
       }
-      await rm(testHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      // The logger holds an open handle on jho-mcp.log; close it before rm
+      // or Windows fails the delete with ENOTEMPTY.
+      await cleanupTempDir(testHome, loggers);
     }
   });
 });
