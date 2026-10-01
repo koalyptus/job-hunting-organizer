@@ -110,10 +110,7 @@ describe('writeIndex', () => {
     ];
     await writeIndex(appliedDir, entries);
     const result = await readIndex(appliedDir);
-    expect(result.map((e) => e.slug)).toEqual([
-      '2026-Jun-03-zzz-B-2',
-      '2026-Jun-03-aaa-A-1',
-    ]);
+    expect(result.map((e) => e.slug)).toEqual(['2026-Jun-03-zzz-B-2', '2026-Jun-03-aaa-A-1']);
   });
 
   it('creates the applied directory if it does not exist', async () => {

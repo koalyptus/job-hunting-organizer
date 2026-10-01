@@ -162,9 +162,7 @@ describe('cover-letter command', () => {
     });
 
     it('rethrows unexpected generation errors', async () => {
-      vi.mocked(coverLetterCore.generateCoverLetter).mockRejectedValueOnce(
-        new Error('cl-boom'),
-      );
+      vi.mocked(coverLetterCore.generateCoverLetter).mockRejectedValueOnce(new Error('cl-boom'));
 
       const slug = '2026-Jun-29-SE-Test-Corp';
       const campaignDir = join(testHome, 'data', 'campaigns', 'default');

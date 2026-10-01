@@ -505,9 +505,9 @@ describe('track branch coverage (18-519,550-551)', () => {
         .spyOn(jobsExtractModule, 'extractJdFromText')
         .mockRejectedValueOnce('extract-boom');
       try {
-        await expect(
-          prepareTrack({ campaign: campaignName, text: 'some jd' }),
-        ).rejects.toThrow('Failed to extract JD: extract-boom');
+        await expect(prepareTrack({ campaign: campaignName, text: 'some jd' })).rejects.toThrow(
+          'Failed to extract JD: extract-boom',
+        );
       } finally {
         spy.mockRestore();
       }
@@ -520,9 +520,9 @@ describe('track branch coverage (18-519,550-551)', () => {
         .spyOn(suggestModule, 'suggestTargetRole')
         .mockRejectedValueOnce('suggest-boom');
       try {
-        await expect(
-          prepareTrack({ campaign: campaignName, text: 'some jd' }),
-        ).rejects.toThrow('Failed to suggest target role: suggest-boom');
+        await expect(prepareTrack({ campaign: campaignName, text: 'some jd' })).rejects.toThrow(
+          'Failed to suggest target role: suggest-boom',
+        );
       } finally {
         spyExtract.mockRestore();
         spySuggest.mockRestore();
@@ -613,9 +613,7 @@ describe('track branch coverage (18-519,550-551)', () => {
         location: '',
         site: '',
       } as unknown as ExtractedJd);
-      const spyConfirm = vi
-        .spyOn(trackPromptsModule, 'confirmTrackUpdate')
-        .mockResolvedValue(true);
+      const spyConfirm = vi.spyOn(trackPromptsModule, 'confirmTrackUpdate').mockResolvedValue(true);
       const slug = await createApplication({
         appliedDir,
         title: 'Eng',
@@ -626,11 +624,9 @@ describe('track branch coverage (18-519,550-551)', () => {
       try {
         const result = await runTrack({ campaign: campaignName, slug, refresh: true });
         expect(result.changed).toBe(true);
-        expect(spyConfirm).toHaveBeenCalledWith(
-          slug,
-          expect.anything(),
-          ['re-fetch JD from https://example.com/job'],
-        );
+        expect(spyConfirm).toHaveBeenCalledWith(slug, expect.anything(), [
+          're-fetch JD from https://example.com/job',
+        ]);
       } finally {
         spyExtract.mockRestore();
         spyConfirm.mockRestore();

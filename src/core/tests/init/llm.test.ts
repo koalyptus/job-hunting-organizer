@@ -254,9 +254,7 @@ describe('promptLlm', () => {
   });
 
   it('pre-fills the local model prompt from existing config', async () => {
-    vi.mocked(text)
-      .mockResolvedValueOnce('http://localhost:11434/v1')
-      .mockResolvedValueOnce('');
+    vi.mocked(text).mockResolvedValueOnce('http://localhost:11434/v1').mockResolvedValueOnce('');
 
     const result = await promptLlm(false, {
       llm: { baseUrl: 'http://old:11434/v1', model: 'old-model' },

@@ -56,21 +56,17 @@ describe('runCommand', () => {
   });
 
   it('defaults to exit code 0 when process.exit has no code', async () => {
-    const cmd = new Command('exit-nocode')
-      .description('exit without code')
-      .action(() => {
-        process.exit();
-      });
+    const cmd = new Command('exit-nocode').description('exit without code').action(() => {
+      process.exit();
+    });
     const result = await runCommand(cmd, ['exit-nocode']);
     expect(result.exitCode).toBe(0);
   });
 
   it('rethrows unknown errors', async () => {
-    const cmd = new Command('boom')
-      .description('throw unknown')
-      .action(() => {
-        throw new Error('unexpected-boom');
-      });
+    const cmd = new Command('boom').description('throw unknown').action(() => {
+      throw new Error('unexpected-boom');
+    });
     await expect(runCommand(cmd, ['boom'])).rejects.toThrow('unexpected-boom');
   });
 });

@@ -341,7 +341,7 @@ describe('retro non-Error branches', () => {
     await rm(workDir, { recursive: true, force: true });
   });
 
-  async function setupApp(slug: string) {
+  async function setupApp(_slug: string) {
     const created = await createApplication({
       appliedDir,
       title: 'Eng',
