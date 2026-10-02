@@ -2,7 +2,7 @@
 
 A local-first CLI and MCP server for running a job-hunting campaign.
 
-> **Status:** v1.0.0 — installable from npm. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress.
+> **Status:** v0.1.0 — first public release. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress.
 
 ## What it does
 
