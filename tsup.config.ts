@@ -10,7 +10,7 @@ export default defineConfig({
   outDir: 'dist',
   clean: true,
   dts: true,
-  sourcemap: true,
+  sourcemap: false,
   shims: false,
   splitting: false,
   treeshake: true,

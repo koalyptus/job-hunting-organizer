@@ -1,7 +1,6 @@
 {
   "name": "job-hunting-organizer",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0.0",
   "description": "Local-first CLI and MCP server for running a job-hunting campaign: profile from CV + GitHub, tailored cover letters, application Q&A, and interview tracking.",
   "type": "module",
   "license": "MIT",
@@ -40,6 +39,9 @@
     "prompts",
     "docs"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsx watch src/cli/index.ts",
@@ -54,7 +56,9 @@
     "test:integration": "vitest run --config vitest.config.integration.ts",
     "eval": "vitest run --config evals/vitest.config.ts",
     "eval:update": "vitest run --config evals/vitest.config.ts -u",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run test:integration"
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run test:integration",
+    "prepublishOnly": "npm run verify && tsx scripts/pre-publish-check.ts",
+    "release": "npm run verify && npm run build && npm publish --provenance"
   },
   "keywords": [
     "mcp",
