@@ -13,7 +13,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,7 +75,7 @@ pass(`tarball created: ${tarballName}`);
 // Step 2: Install into a throwaway consumer directory
 console.log('Installing into throwaway consumer...');
 const consumerDir = join(scratchDir, 'consumer');
-spawnSync('mkdir', ['-p', consumerDir]);
+mkdirSync(consumerDir, { recursive: true });
 
 const initResult = spawnSync('npm', ['init', '-y'], {
   cwd: consumerDir,
@@ -124,36 +124,47 @@ const mcpResult = spawnSync('./node_modules/.bin/jho-mcp', {
   cwd: consumerDir,
   encoding: 'utf-8',
   timeout: 25_000,
-  input: [
-    JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'pre-publish-check', version: '1' },
-      },
-    }),
-    JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
-    JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }),
-  ].join('\n'),
+  input:
+    [
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: { name: 'pre-publish-check', version: '1' },
+        },
+      }),
+      JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+      JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }),
+    ].join('\n') + '\n',
 });
 
 if (mcpResult.status !== 0) {
   fail(`jho-mcp exited with ${mcpResult.status}: ${mcpResult.stderr}`);
 }
 
-const mcpOutput = mcpResult.stdout;
-if (!mcpOutput.includes('"result"')) {
-  fail('MCP handshake did not return a result');
+// Parse JSON-RPC frames and assert on the tools/list response (id === 2)
+const parsed = mcpResult.stdout
+  .split('\n')
+  .filter(Boolean)
+  .flatMap((line) => {
+    try {
+      return [JSON.parse(line)];
+    } catch {
+      return [];
+    }
+  });
+
+const toolsResponse = parsed.find((m) => m.id === 2);
+if (!toolsResponse?.result?.tools?.length) {
+  fail(`MCP tools/list did not return tools: ${JSON.stringify(toolsResponse)}`);
 }
 
-if (!mcpOutput.includes('tools/list')) {
-  fail('MCP tools/list response not found');
-}
-
-pass('MCP initialize + tools/list handshake succeeded');
+pass(
+  `MCP initialize + tools/list handshake succeeded (${toolsResponse.result.tools.length} tools registered)`,
+);
 
 // Step 5: Check prompt-loading command (jho ownership)
 console.log('Checking prompt-loading command...');

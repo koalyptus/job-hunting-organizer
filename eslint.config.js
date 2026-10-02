@@ -53,4 +53,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['scripts/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
 );

@@ -36,8 +36,7 @@
   "files": [
     "bin",
     "dist",
-    "prompts",
-    "docs"
+    "prompts"
   ],
   "publishConfig": {
     "access": "public"
@@ -57,7 +56,7 @@
     "eval": "vitest run --config evals/vitest.config.ts",
     "eval:update": "vitest run --config evals/vitest.config.ts -u",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run test:integration",
-    "prepublishOnly": "npm run verify && tsx scripts/pre-publish-check.ts",
+    "prepublishOnly": "npm run build && tsx scripts/pre-publish-check.ts",
     "release": "npm run verify && npm run build && npm publish --provenance"
   },
   "keywords": [

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import {
   clearPackageCache,
   findNearestPackageRoot,
@@ -10,6 +11,8 @@ import {
   getPackageRoot,
   getPackageVersion,
 } from '../package.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** Read the expected version directly from package.json so the test never breaks on a version bump. */
 function expectedVersion(): string {

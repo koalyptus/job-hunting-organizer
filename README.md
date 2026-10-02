@@ -39,7 +39,7 @@ For MCP clients (Claude Desktop, Cursor, etc.):
   "mcpServers": {
     "jho": {
       "command": "npx",
-      "args": ["jho-mcp"]
+      "args": ["-y", "--package=job-hunting-organizer", "jho-mcp"]
     }
   }
 }
