@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile, readdir } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile, readdir, stat } from 'node:fs/promises';
 import { atomicWrite, pathExists, withBackup } from '../fs.js';
 
 describe('pathExists', () => {
@@ -152,5 +152,10 @@ describe('withBackup', () => {
   it('honours custom encoding and mode', async () => {
     const target = join(workDir, 'enc.txt');
     expect(await atomicWrite(target, 'hi', { encoding: 'utf8', mode: 0o600 })).toBe(true);
+    expect(await readFile(target, 'utf8')).toBe('hi');
+    if (process.platform !== 'win32') {
+      const { mode } = await stat(target);
+      expect(mode & 0o777).toBe(0o600);
+    }
   });
 });

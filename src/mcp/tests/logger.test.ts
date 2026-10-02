@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mkdtemp } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Logger } from 'pino';
@@ -45,6 +46,8 @@ describe('mcpLogger', () => {
       const log = createMcpLogger();
       loggers.push(log);
       expect(log).toBeDefined();
+      // The point of this test: the missing config home was created.
+      expect(existsSync(join(testHome, 'no-such-dir'))).toBe(true);
     } finally {
       if (prev === undefined) {
         delete process.env['JHO_CONFIG_HOME'];

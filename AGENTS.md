@@ -81,7 +81,7 @@ The config home is fixed; the data root is fixed; campaigns are subfolders of th
 ├── docs/
 │   ├── PLAN.md         # full design plan
 │   ├── ROADMAP.md      # phased build plan
-│   └── help/           # conceptual guides for `jho help <topic>`
+│   └── help/           # conceptual guides for `jho help <topic>` (not yet created — Phase 10c)
 ├── .github/workflows/  # CI (lint, typecheck, test, build)
 ├── glama.json          # glama.ai MCP registry metadata
 ├── tsconfig.json       # TypeScript configuration

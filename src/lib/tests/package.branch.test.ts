@@ -53,11 +53,7 @@ describe('package branch: getPackageJson catch', () => {
   it('falls back to 0.0.0 when version is missing', () => {
     clearPackageCache();
     vi.mocked(readFileSync).mockReturnValueOnce('{}');
-    try {
-      expect(getPackageVersion()).toBe('0.0.0');
-    } finally {
-      vi.mocked(readFileSync).mockRestore?.();
-      clearPackageCache();
-    }
+    // The file's afterEach restores readFileSync and clears the cache.
+    expect(getPackageVersion()).toBe('0.0.0');
   });
 });

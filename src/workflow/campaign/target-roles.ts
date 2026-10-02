@@ -49,7 +49,9 @@ export function extractTargetRoles(body: string): TargetRole[] {
   if (!sectionMatch) {
     return [];
   }
-  // String.match with a non-global regex always sets `index` on success.
+  // `match` sets `index` on success (spec guarantee), so the cast is safe and
+  // adds no runtime branch. A `?? 0` fallback here would be unreachable code
+  // that silently parses the whole profile if it ever did fire.
   const sectionStart = sectionMatch.index as number;
 
   // Find the next H2 after "## Target roles" to bound the section

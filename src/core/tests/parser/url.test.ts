@@ -171,13 +171,19 @@ describe('extractJobIdFromUrl (user-supplied patterns via JHO_URL_PATTERNS)', ()
     const parseSpy = vi.spyOn(JSON, 'parse').mockImplementationOnce(() => {
       throw 'string-parse-failure';
     });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const urlModule = await import('../../parser/url.js');
       const { extractJobIdFromUrl: extractJobId } = urlModule;
       // Built-in patterns still work after the fallback
       expect(extractJobId('https://www.linkedin.com/jobs/view/12345')).toBe('12345');
+      // The non-Error branch interpolates String(e), not e.message.
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to parse JHO_URL_PATTERNS: string-parse-failure'),
+      );
     } finally {
       parseSpy.mockRestore();
+      warnSpy.mockRestore();
     }
   });
 

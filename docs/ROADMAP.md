@@ -85,7 +85,7 @@
 - [ ] **Phase 10** — Polish & public readiness
   - [x] 10a — Relocate toolhash sidecars into a `.sidecars/` folder (no folder pollution) + migration path
   - [x] 10b — Reach 100% test coverage across the suite
-  - [x] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
+  - [ ] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
 
 ---
 
@@ -1254,6 +1254,14 @@ Coverage must not regress below HEAD at any point.
 
 Polish README, AGENTS.md, PLAN.md, and CLI help text for public readiness. Update
 the file-ownership model and sidecar references. Snapshot-test any help-text change.
+
+**Still outstanding** (the checkbox stays `[ ]` until these land):
+
+- `docs/help/` does not exist yet — the topic guides for `jho help <topic>` are
+  documented in AGENTS.md but never created.
+- `jho help <topic>` is not wired: `src/cli/commands/help.ts` falls through to
+  `userError('No command or topic named "<x>" found.')` for every topic.
+- No snapshot tests cover help output.
 
 **Commit**: `docs: refine README, AGENTS.md, PLAN.md, and help text`
 

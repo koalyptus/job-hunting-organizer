@@ -127,6 +127,10 @@ describe('generateCoverLetter', () => {
       delete process.env['JHO_DATA'];
     }
     await rm(workDir, { recursive: true, force: true });
+    // Reset the readFile throw-harness so an armed value cannot leak into
+    // the next test if this one failed before consuming it.
+    throwStringOnceFor = null;
+    throwPathSuffix = null;
   });
 
   async function setupApp(slug: string, opts?: { targetRole?: string }) {

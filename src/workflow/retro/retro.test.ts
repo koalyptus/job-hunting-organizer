@@ -342,9 +342,13 @@ describe('retro non-Error branches', () => {
       delete process.env['JHO_DATA'];
     }
     await rm(workDir, { recursive: true, force: true });
+    // Reset the readFile throw-harness so an armed value cannot leak into
+    // the next test if this one failed before consuming it.
+    throwStringOnceFor = null;
+    throwPathSuffix = null;
   });
 
-  async function setupApp(_slug: string) {
+  async function setupApp() {
     const created = await createApplication({
       appliedDir,
       title: 'Eng',
@@ -378,7 +382,7 @@ describe('retro non-Error branches', () => {
   });
 
   it('startRetro wraps non-Error JD read failures', async () => {
-    const slug = await setupApp('x');
+    const slug = await setupApp();
     throwStringOnceFor = 'retro-jd-fail';
     throwPathSuffix = 'jd.md';
     await expect(
@@ -387,7 +391,7 @@ describe('retro non-Error branches', () => {
   });
 
   it('startRetro wraps non-Error profile read failures', async () => {
-    const slug = await setupApp('x');
+    const slug = await setupApp();
     vi.spyOn(profileRead, 'readProfile').mockRejectedValueOnce('retro-prof-fail' as never);
     try {
       await expect(
@@ -399,7 +403,7 @@ describe('retro non-Error branches', () => {
   });
 
   it('startRetro wraps non-Error application read failures', async () => {
-    const slug = await setupApp('x');
+    const slug = await setupApp();
     vi.spyOn(applicationsModule, 'readApplication').mockRejectedValueOnce('retro-app-fail');
     try {
       await expect(
@@ -411,7 +415,7 @@ describe('retro non-Error branches', () => {
   });
 
   it('startRetro wraps non-Error LLM failures', async () => {
-    const slug = await setupApp('x');
+    const slug = await setupApp();
     mockChatComplete.mockRejectedValueOnce('retro-llm-fail');
     await expect(
       startRetro({ slug, campaign: 'test-campaign', weakTopics: ['SQL'] }),
@@ -419,7 +423,7 @@ describe('retro non-Error branches', () => {
   });
 
   it('appendRetro wraps non-Error application read failures', async () => {
-    const slug = await setupApp('x');
+    const slug = await setupApp();
     await writeFile(
       join(appliedDir, slug, 'retro.md'),
       '<!-- jho:retro -->\n# Retro\n\n## Retro for interview: 2026-01-01 — Reflection [applied]\n- Date: 2026-01-01\n- Status at the time: applied\n\n### Weak topics\n\n- SQL\n\n### Learning plan\n\nplan',
@@ -435,7 +439,7 @@ describe('retro non-Error branches', () => {
   });
 
   it('appendRetro with noCarryOver uses incoming notes when provided', async () => {
-    const slug = await setupApp('x');
+    const slug = await setupApp();
     await writeFile(
       join(appliedDir, slug, 'retro.md'),
       '<!-- jho:retro -->\n# Retro\n\n## Retro for interview: 2026-01-01 — Reflection [applied]\n- Date: 2026-01-01\n- Status at the time: applied\n\n### Weak topics\n\n- SQL\n\n### Learning plan\n\nplan\n\n### Other notes\n\nold notes',
