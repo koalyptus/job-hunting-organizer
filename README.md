@@ -53,70 +53,6 @@ npm run test:integration # vitest (integration tests)
 npm run eval             # lightweight LLM eval suite (manual)
 ```
 
-### Integration tests
-
-End-to-end tests exercising the full CLI or MCP stack with real filesystem operations.
-
-**Location**: `integration-tests/`
-
-**Run**:
-
-```sh
-npm run test:integration
-```
-
-**Structure**:
-
-```text
-integration-tests/
-├── helpers.ts              # Shared setup utilities
-├── mocks.ts                # Shared vitest mock factories
-├── cli/                    # CLI end-to-end tests
-│   ├── answer.test.ts
-│   ├── application-lifecycle.test.ts
-│   ├── campaign-config.test.ts
-│   ├── campaign-init.test.ts
-│   ├── campaign.test.ts
-│   ├── cover-letter.test.ts
-│   ├── doctor-diagnostics.test.ts
-│   ├── help.test.ts
-│   ├── init.test.ts
-│   ├── interview.test.ts
-│   ├── kb.test.ts
-│   ├── list.test.ts
-│   ├── logs.test.ts
-│   ├── mcp.test.ts
-│   ├── ownership.test.ts
-│   ├── prepare.test.ts
-│   ├── profile.test.ts
-│   ├── remove-application.test.ts
-│   ├── remove-campaign.test.ts
-│   ├── rename-application.test.ts
-│   ├── rename-campaign.test.ts
-│   ├── repair.test.ts
-│   ├── retro.test.ts
-│   ├── stats.test.ts
-│   └── track.test.ts
-└── mcp/                    # MCP tool dispatch tests
-    └── tools-e2e.test.ts
-```
-
-**What's mocked vs real**:
-
-| Layer       | Unit Tests | Integration Tests |
-| ----------- | ---------- | ----------------- |
-| CLI parsing | Real       | Real              |
-| Core logic  | Mocked     | **Real**          |
-| Filesystem  | Real       | Real              |
-| LLM         | Mocked     | Mocked            |
-| Logger      | Mocked     | Mocked            |
-
-**Adding a new test**:
-
-1. CLI: Add to `integration-tests/cli/`, use `runCommand()` from `src/cli/tests/helpers.ts`
-2. MCP: Add to `integration-tests/mcp/`, use `createTestServer()` from `src/mcp/tests/tools/helpers.ts`
-3. Mock only logger and LLM — never mock the layer under test
-
 ### Cross-platform notes
 
 Runs unchanged on Linux, macOS, and Windows.
@@ -235,16 +171,7 @@ Check your harness documentation for correct configuration, as an example:
 }
 ```
 
-> **Local model tip:** If you use a local LLM (Ollama, LM Studio, OpenCode), add `"timeout": 30000` to the MCP server config. Local models can be slow on first load, and the default 5-second timeout may fire before the server responds to `initialize` or `tools/list`.
->
-> ```json
-> {
->   "type": "local",
->   "command": ["jho-mcp"],
->   "enabled": true,
->   "timeout": 30000
-> }
-> ```
+> **Local model tip:** If you use a local LLM (Ollama, LM Studio, OpenCode), add `"timeout": 60000` to the MCP server config. Local models can be slow on first load, and the default 5-second timeout may fire before the server responds to `initialize` or `tools/list`.
 
 > **Note:** MCP client configs are not standardized — each client uses its own schema and key names.
 > To set a custom data location, add `"JHO_DATA": "/path/to/data"` to the `env` block (Claude Desktop, Cursor, Copilot) or `environment` block (Opencode).
