@@ -2,7 +2,7 @@
 
 A local-first CLI and MCP server for running a job-hunting campaign.
 
-> **Status:** under active development. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress. Currently at **Phase 10c** (docs refinement).
+> **Status:** v0.1.0 — first public release. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress.
 
 ## What it does
 
@@ -24,7 +24,32 @@ The data layout (folder-per-application, markdown + JSON, no DB) leaves room for
 
 ## Install
 
+### From npm (recommended)
+
 ```sh
+npm install -g job-hunting-organizer
+```
+
+Then run `jho init` to set up your first campaign.
+
+For MCP clients (Claude Desktop, Cursor, etc.):
+
+```json
+{
+  "mcpServers": {
+    "jho": {
+      "command": "npx",
+      "args": ["-y", "--package=job-hunting-organizer", "jho-mcp"]
+    }
+  }
+}
+```
+
+### From source
+
+```sh
+git clone https://github.com/koalyptus/job-hunting-organizer.git
+cd job-hunting-organizer
 npm install
 npm run build
 ```

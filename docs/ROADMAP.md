@@ -82,11 +82,11 @@
   - [x] 9i — Move `applications` workflow to `src/workflow/applications/`
   - [x] 9j — Extract infrastructure utilities to `src/lib/`
   - [x] 9k — Validate pure core, remove deprecated barrels
-- [ ] **Phase 10** — Polish & public readiness
+- [x] **Phase 10** — Polish & public readiness
   - [x] 10a — Relocate toolhash sidecars into a `.sidecars/` folder (no folder pollution) + migration path
   - [x] 10b — Reach 100% test coverage across the suite
-  - [ ] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
-  - [ ] 10d — Release pipeline & npm publication
+  - [x] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
+  - [x] 10d — Release pipeline & npm publication
 
 ---
 
@@ -1290,9 +1290,8 @@ distribution model (public registry vs. GitHub-only) before flipping `private`.
 - **Add `publishConfig`** — pin `{"access": "public"}` so the scoped/unscoped
   publish cannot silently default to restricted.
 - **Versioning & changelog.** The version has sat at `0.1.0` and has never been
-  bumped. Choose a strategy (manual semver bumps + `CHANGELOG.md`, or
-  `changesets` / `semantic-release`) and wire it up. If adopting a tool, prefer a
-  vendored, battle-tested one over hand-rolling.
+  bumped. Strategy: manual semver bumps + GitHub auto-generated release notes
+  (no `CHANGELOG.md` to maintain).
 - **Release workflow** — a `.github/workflows/release.yml` triggered on tag push
   that runs the full `npm run verify` gate, builds, and publishes with provenance
   (`npm publish --provenance`, which needs `id-token: write`). Do not publish from
