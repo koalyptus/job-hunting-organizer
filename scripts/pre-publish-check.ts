@@ -39,13 +39,13 @@ function cleanup(): void {
   }
 }
 
-function fail(message: string): never {
+function failCheck(message: string): never {
   console.error(`pre-publish check FAILED: ${message}`);
   cleanup();
   process.exit(1);
 }
 
-function pass(message: string): void {
+function logPass(message: string): void {
   console.log(`  ok: ${message}`);
 }
 
@@ -60,17 +60,17 @@ const packResult = spawnSync('npm', ['pack', '--pack-destination', scratchDir], 
 });
 
 if (packResult.status !== 0) {
-  fail(`npm pack failed: ${packResult.stderr}`);
+  failCheck(`npm pack failed: ${packResult.stderr}`);
 }
 
 const tarballName = `job-hunting-organizer-${expectedVersion}.tgz`;
 const tarballPath = join(scratchDir, tarballName);
 
 if (!existsSync(tarballPath)) {
-  fail(`tarball not found at ${tarballPath}`);
+  failCheck(`tarball not found at ${tarballPath}`);
 }
 
-pass(`tarball created: ${tarballName}`);
+logPass(`tarball created: ${tarballName}`);
 
 // Step 2: Install into a throwaway consumer directory
 console.log('Installing into throwaway consumer...');
@@ -84,7 +84,7 @@ const initResult = spawnSync('npm', ['init', '-y'], {
 });
 
 if (initResult.status !== 0) {
-  fail(`npm init failed: ${initResult.stderr}`);
+  failCheck(`npm init failed: ${initResult.stderr}`);
 }
 
 const npmInstallResult = spawnSync('npm', ['install', tarballPath], {
@@ -94,10 +94,10 @@ const npmInstallResult = spawnSync('npm', ['install', tarballPath], {
 });
 
 if (npmInstallResult.status !== 0) {
-  fail(`npm install failed: ${npmInstallResult.stderr}`);
+  failCheck(`npm install failed: ${npmInstallResult.stderr}`);
 }
 
-pass('installed into consumer directory');
+logPass('installed into consumer directory');
 
 // Step 3: Check `jho --version`
 console.log('Checking jho --version...');
@@ -108,15 +108,15 @@ const versionResult = spawnSync('./node_modules/.bin/jho', ['--version'], {
 });
 
 if (versionResult.status !== 0) {
-  fail(`jho --version exited with ${versionResult.status}: ${versionResult.stderr}`);
+  failCheck(`jho --version exited with ${versionResult.status}: ${versionResult.stderr}`);
 }
 
 const actualVersion = versionResult.stdout.trim();
 if (actualVersion !== expectedVersion) {
-  fail(`version mismatch: expected ${expectedVersion}, got ${actualVersion}`);
+  failCheck(`version mismatch: expected ${expectedVersion}, got ${actualVersion}`);
 }
 
-pass(`jho --version => ${actualVersion}`);
+logPass(`jho --version => ${actualVersion}`);
 
 // Step 4: Check MCP initialize + tools/list handshake
 console.log('Checking MCP handshake...');
@@ -142,11 +142,11 @@ const mcpResult = spawnSync('./node_modules/.bin/jho-mcp', {
 });
 
 if (mcpResult.status !== 0) {
-  fail(`jho-mcp exited with ${mcpResult.status}: ${mcpResult.stderr}`);
+  failCheck(`jho-mcp exited with ${mcpResult.status}: ${mcpResult.stderr}`);
 }
 
 // Parse JSON-RPC frames and assert on the tools/list response (id === 2)
-const parsed = mcpResult.stdout
+const parsedResponses = mcpResult.stdout
   .split('\n')
   .filter(Boolean)
   .flatMap((line) => {
@@ -157,18 +157,18 @@ const parsed = mcpResult.stdout
     }
   });
 
-const toolsResponse = parsed.find((m) => m.id === 2);
+const toolsResponse = parsedResponses.find((m) => m.id === 2);
 if (!toolsResponse?.result?.tools?.length) {
-  fail(`MCP tools/list did not return tools: ${JSON.stringify(toolsResponse)}`);
+  failCheck(`MCP tools/list did not return tools: ${JSON.stringify(toolsResponse)}`);
 }
 
-pass(
+logPass(
   `MCP initialize + tools/list handshake succeeded (${toolsResponse.result.tools.length} tools registered)`,
 );
 
 // Step 5: Check prompt-loading command (jho ownership)
 console.log('Checking prompt-loading command...');
-const env = {
+const ownershipEnv = {
   ...process.env,
   JHO_CONFIG_HOME: join(scratchDir, 'home'),
   JHO_DATA: join(scratchDir, 'data'),
@@ -178,18 +178,18 @@ const ownershipResult = spawnSync('./node_modules/.bin/jho', ['ownership'], {
   cwd: consumerDir,
   encoding: 'utf-8',
   timeout: 15_000,
-  env,
+  env: ownershipEnv,
 });
 
 if (ownershipResult.status !== 0) {
-  fail(`jho ownership exited with ${ownershipResult.status}: ${ownershipResult.stderr}`);
+  failCheck(`jho ownership exited with ${ownershipResult.status}: ${ownershipResult.stderr}`);
 }
 
 if (!ownershipResult.stdout.includes('meta.md')) {
-  fail('jho ownership output does not mention meta.md');
+  failCheck('jho ownership output does not mention meta.md');
 }
 
-pass('jho ownership resolved prompts from installed package root');
+logPass('jho ownership resolved prompts from installed package root');
 
 // All checks passed
 console.log('\nAll pre-publish checks passed.');
