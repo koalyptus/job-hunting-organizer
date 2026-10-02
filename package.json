@@ -4,6 +4,10 @@
   "description": "Local-first CLI and MCP server for running a job-hunting campaign: profile from CV + GitHub, tailored cover letters, application Q&A, and interview tracking.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/koalyptus/job-hunting-organizer"
+  },
   "engines": {
     "node": ">=20.16.0"
   },
