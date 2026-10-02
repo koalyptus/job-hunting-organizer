@@ -4,10 +4,35 @@ import { readFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { createApplication } from '../applications/applications.js';
 import * as applicationsModule from '../applications/applications.js';
-import { startRetro, appendRetro, showRetro } from './retro.js';
+import { startRetro, appendRetro, showRetro, parseRetroFile } from './retro.js';
 import { RetroError, RetroNotFoundError } from './retro-errors.js';
 import * as kbContext from '../campaign/kb-context.js';
+import * as profileRead from '../campaign/profile-read.js';
 import { replaceRegion } from '../../core/parser/markers.js';
+import type * as FsPromises from 'node:fs/promises';
+
+let throwStringOnceFor: string | null = null;
+let throwPathSuffix: string | null = null;
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof FsPromises>();
+  return {
+    ...actual,
+    readFile: async (...args: Parameters<typeof actual.readFile>) => {
+      const p = String(args[0]);
+      if (
+        throwStringOnceFor !== null &&
+        (throwPathSuffix === null || p.endsWith(throwPathSuffix))
+      ) {
+        const v = throwStringOnceFor;
+        throwStringOnceFor = null;
+        throwPathSuffix = null;
+        throw v;
+      }
+      return actual.readFile(...args);
+    },
+  };
+});
 
 const { warnSpy, infoSpy, mockChatComplete } = vi.hoisted(() => ({
   warnSpy: vi.fn(),
@@ -290,5 +315,148 @@ describe('retro workflow branches', () => {
     await expect(startRetro({ slug, campaign: 'test-campaign', weakTopics: [] })).rejects.toThrow(
       RetroError,
     );
+  });
+});
+
+describe('retro non-Error branches', () => {
+  let workDir: string;
+  let campaignRoot: string;
+  let appliedDir: string;
+  let origData: string | undefined;
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), 'jho-retro-br-'));
+    origData = process.env['JHO_DATA'];
+    process.env['JHO_DATA'] = workDir;
+    campaignRoot = join(workDir, 'campaigns', 'test-campaign');
+    appliedDir = join(campaignRoot, 'applied');
+    await mkdir(appliedDir, { recursive: true });
+    await writeFile(join(campaignRoot, 'profile.md'), '# Profile\n');
+    mockChatComplete.mockReset();
+  });
+
+  afterEach(async () => {
+    if (origData !== undefined) {
+      process.env['JHO_DATA'] = origData;
+    } else {
+      delete process.env['JHO_DATA'];
+    }
+    await rm(workDir, { recursive: true, force: true });
+    // Reset the readFile throw-harness so an armed value cannot leak into
+    // the next test if this one failed before consuming it.
+    throwStringOnceFor = null;
+    throwPathSuffix = null;
+  });
+
+  async function setupApp() {
+    const created = await createApplication({
+      appliedDir,
+      title: 'Eng',
+      company: 'Acme',
+      appliedOn: '2026-06-01',
+    });
+    await writeFile(
+      join(appliedDir, created, 'jd.md'),
+      '<!-- jho:start:fetched-jd -->JD<!-- jho:end:fetched-jd -->',
+    );
+    return created;
+  }
+
+  it('parseRetroFile defaults non-numeric interview ids to 0', () => {
+    const sections = parseRetroFile(
+      [
+        '# Retro',
+        '',
+        '## Retro for interview: 2026-01-01 — Reflection [applied]',
+        '- Date: 2026-01-01',
+        '- Interview id: abc',
+        '- Status at the time: applied',
+        '',
+        '### Weak topics',
+        '',
+        '- SQL',
+      ].join('\n'),
+    );
+    expect(sections).toHaveLength(1);
+    expect(sections[0]!.interviewId).toBe(0);
+  });
+
+  it('startRetro wraps non-Error JD read failures', async () => {
+    const slug = await setupApp();
+    throwStringOnceFor = 'retro-jd-fail';
+    throwPathSuffix = 'jd.md';
+    await expect(
+      startRetro({ slug, campaign: 'test-campaign', weakTopics: ['SQL'] }),
+    ).rejects.toThrow('Failed to read JD: retro-jd-fail');
+  });
+
+  it('startRetro wraps non-Error profile read failures', async () => {
+    const slug = await setupApp();
+    vi.spyOn(profileRead, 'readProfile').mockRejectedValueOnce('retro-prof-fail' as never);
+    try {
+      await expect(
+        startRetro({ slug, campaign: 'test-campaign', weakTopics: ['SQL'] }),
+      ).rejects.toThrow('Failed to read profile: retro-prof-fail');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('startRetro wraps non-Error application read failures', async () => {
+    const slug = await setupApp();
+    vi.spyOn(applicationsModule, 'readApplication').mockRejectedValueOnce('retro-app-fail');
+    try {
+      await expect(
+        startRetro({ slug, campaign: 'test-campaign', weakTopics: ['SQL'] }),
+      ).rejects.toThrow('Failed to read application: retro-app-fail');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('startRetro wraps non-Error LLM failures', async () => {
+    const slug = await setupApp();
+    mockChatComplete.mockRejectedValueOnce('retro-llm-fail');
+    await expect(
+      startRetro({ slug, campaign: 'test-campaign', weakTopics: ['SQL'] }),
+    ).rejects.toThrow('LLM call failed: retro-llm-fail');
+  });
+
+  it('appendRetro wraps non-Error application read failures', async () => {
+    const slug = await setupApp();
+    await writeFile(
+      join(appliedDir, slug, 'retro.md'),
+      '<!-- jho:retro -->\n# Retro\n\n## Retro for interview: 2026-01-01 — Reflection [applied]\n- Date: 2026-01-01\n- Status at the time: applied\n\n### Weak topics\n\n- SQL\n\n### Learning plan\n\nplan',
+    );
+    vi.spyOn(applicationsModule, 'readApplication').mockRejectedValueOnce('retro-app2-fail');
+    try {
+      await expect(
+        appendRetro({ slug, campaign: 'test-campaign', weakTopics: ['New'] }),
+      ).rejects.toThrow('Failed to read application: retro-app2-fail');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('appendRetro with noCarryOver uses incoming notes when provided', async () => {
+    const slug = await setupApp();
+    await writeFile(
+      join(appliedDir, slug, 'retro.md'),
+      '<!-- jho:retro -->\n# Retro\n\n## Retro for interview: 2026-01-01 — Reflection [applied]\n- Date: 2026-01-01\n- Status at the time: applied\n\n### Weak topics\n\n- SQL\n\n### Learning plan\n\nplan\n\n### Other notes\n\nold notes',
+    );
+    mockChatComplete.mockResolvedValueOnce({ content: 'new plan', model: 'm', durationMs: 10 });
+    await appendRetro({
+      slug,
+      campaign: 'test-campaign',
+      weakTopics: ['New topic'],
+      noCarryOver: true,
+      notes: 'fresh notes',
+    });
+    const updated = await readFile(join(appliedDir, slug, 'retro.md'), 'utf8');
+    const sections = updated.split('## Retro for interview:');
+    const newSection = sections[sections.length - 1]!;
+    expect(newSection).toContain('New topic');
+    expect(newSection).toContain('fresh notes');
+    expect(newSection).not.toContain('old notes');
   });
 });

@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile, readdir } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile, readdir, stat } from 'node:fs/promises';
 import { atomicWrite, pathExists, withBackup } from '../fs.js';
 
 describe('pathExists', () => {
@@ -127,5 +127,35 @@ describe('withBackup', () => {
     const target = join(workDir, 'new.txt');
     const result = await withBackup(target, async () => 42);
     expect(result).toBe(42);
+  });
+
+  it('rethrows without restoring when the file never existed', async () => {
+    const target = join(workDir, 'never-there.txt');
+    await expect(
+      withBackup(target, async () => {
+        throw new Error('fn boom');
+      }),
+    ).rejects.toThrow('fn boom');
+  });
+
+  it('resolves relative paths against cwd', async () => {
+    const origCwd = process.cwd();
+    process.chdir(workDir);
+    try {
+      expect(await atomicWrite('rel-file.txt', 'hello-relative')).toBe(true);
+      expect(await readFile(join(workDir, 'rel-file.txt'), 'utf8')).toBe('hello-relative');
+    } finally {
+      process.chdir(origCwd);
+    }
+  });
+
+  it('honours custom encoding and mode', async () => {
+    const target = join(workDir, 'enc.txt');
+    expect(await atomicWrite(target, 'hi', { encoding: 'utf8', mode: 0o600 })).toBe(true);
+    expect(await readFile(target, 'utf8')).toBe('hi');
+    if (process.platform !== 'win32') {
+      const { mode } = await stat(target);
+      expect(mode & 0o777).toBe(0o600);
+    }
   });
 });

@@ -86,49 +86,7 @@
   - [x] 10a — Relocate toolhash sidecars into a `.sidecars/` folder (no folder pollution) + migration path
   - [x] 10b — Reach 100% test coverage across the suite
   - [ ] 10c — Refine all documentation (README, AGENTS.md, PLAN.md, help text)
-
----
-
-## Phase 10 — Polish & public readiness
-
-### 10a — Relocate toolhash sidecars into `.sidecars/` (folder hygiene + migration)
-
-Leftover cleanup from the Phase 9x work: toolhash sidecars (`<file>.toolhash`)
-were written as siblings of each tool-managed file (meta.md, jd.md, …) directly
-inside the application folder, so `applied/<slug>/` was cluttered with one
-`.toolhash` file per managed file. This phase moves every sidecar into a single
-`.sidecars/` subdirectory beside the files it guards, so the application folder
-shows only user-facing tool output.
-
-**Scope**
-
-- `src/lib/toolhash.ts` — `toolhashPath()` now resolves `<dir>/.sidecars/<basename>.toolhash`; add `legacyToolhashPath()`, `migrateToolhashSidecar()`, `removeLegacySidecar()`, `hasLegacyToolhashSidecars()`; `readToolhash()` falls back to the legacy sibling location so existing data keeps working.
-- `src/workflow/repair/repair.ts` — `repairApp` migrates any legacy sibling sidecar into `.sidecars/` and reports a `toolhash_migrated` action (run `jho repair` / `jho repair --all` once to backfill).
-- `src/workflow/doctor/doctor.ts` — `diagnoseApp` flags legacy sibling sidecars with an `info`-severity `legacy_toolhash_sidecars` issue.
-- All write sites (applications, track, cover-letter, prepare, interviews, retro, profile-writer) are unchanged — they call `writeToolhash()`/`readToolhash()` which now target `.sidecars/` transparently.
-
-**Migration path for existing sidecars**: existing deployments have sibling
-`.toolhash` files. After upgrade, the tool (a) reads them transparently via the
-legacy fallback, and (b) migrates them on the next `jho repair` (or `jho doctor`
-will surface the `legacy_toolhash_sidecars` info issue first). No manual step is
-required; the migration is idempotent and safe to re-run.
-
-**Commit**: `refactor(toolhash): relocate sidecars into .sidecars/ with migration`
-
-### 10b — Reach 100% test coverage across the suite
-
-Bring the full vitest + integration suite to 100% line/branch coverage. Close the
-remaining gaps in `src/lib`, `src/workflow`, and `src/core` with targeted tests.
-Coverage must not regress below HEAD at any point.
-
-**Commit**: `test: reach 100% coverage`
-
-### 10c — Refine all documentation
-
-Polish README, AGENTS.md, PLAN.md, and CLI help text for public readiness. Update
-the file-ownership model and sidecar references. Snapshot-test any help-text change.
-
-**Commit**: `docs: refine README, AGENTS.md, PLAN.md, and help text`
+  - [ ] 10d — Release pipeline & npm publication
 
 ---
 
@@ -1257,23 +1215,104 @@ The 9g–9j moves made `src/workflow/*` the only I/O-touching layer. 9k closes t
 
 **Deliverable**: core is pure; CI enforces it.
 
-### Phase 10 — Polish & public readiness
+---
 
-**Scope**:
+## Phase 10 — Polish & public readiness
 
-- README final pass (all sections)
-- `docs/help/{file-ownership,interviews,slug-format,profile,application-lifecycle,troubleshooting,mcp}.md`
-- `jho help <topic>` wired
-- Snapshot tests for help output
-- `docs/examples/`
-- **Default log file**: `defaultLoggerConfig()` computes `${resolveConfigHome()}/jho.log` when no `JHO_LOG_FILE` env var or `logging.file` override is set. Append-only, no rotation (user manages externally). Update `AGENTS.md` logging conventions accordingly.
-- `npm publish --dry-run` clean
-- Glama submission
-- Tagged release
+### 10a — Relocate toolhash sidecars into `.sidecars/` (folder hygiene + migration)
 
-**Deliverable**: Public, glama-listed, fully documented.
+Leftover cleanup from the Phase 9x work: toolhash sidecars (`<file>.toolhash`)
+were written as siblings of each tool-managed file (meta.md, jd.md, …) directly
+inside the application folder, so `applied/<slug>/` was cluttered with one
+`.toolhash` file per managed file. This phase moves every sidecar into a single
+`.sidecars/` subdirectory beside the files it guards, so the application folder
+shows only user-facing tool output.
 
-**Commit**: `docs: README, help topics, examples, glama-ready`
+**Scope**
+
+- `src/lib/toolhash.ts` — `toolhashPath()` now resolves `<dir>/.sidecars/<basename>.toolhash`; add `legacyToolhashPath()`, `migrateToolhashSidecar()`, `removeLegacySidecar()`, `hasLegacyToolhashSidecars()`; `readToolhash()` falls back to the legacy sibling location so existing data keeps working.
+- `src/workflow/repair/repair.ts` — `repairApp` migrates any legacy sibling sidecar into `.sidecars/` and reports a `toolhash_migrated` action (run `jho repair` / `jho repair --all` once to backfill).
+- `src/workflow/doctor/doctor.ts` — `diagnoseApp` flags legacy sibling sidecars with an `info`-severity `legacy_toolhash_sidecars` issue.
+- All write sites (applications, track, cover-letter, prepare, interviews, retro, profile-writer) are unchanged — they call `writeToolhash()`/`readToolhash()` which now target `.sidecars/` transparently.
+
+**Migration path for existing sidecars**: existing deployments have sibling
+`.toolhash` files. After upgrade, the tool (a) reads them transparently via the
+legacy fallback, and (b) migrates them on the next `jho repair` (or `jho doctor`
+will surface the `legacy_toolhash_sidecars` info issue first). No manual step is
+required; the migration is idempotent and safe to re-run.
+
+**Commit**: `refactor(toolhash): relocate sidecars into .sidecars/ with migration`
+
+### 10b — Reach 100% test coverage across the suite
+
+Bring the full vitest + integration suite to 100% line/branch coverage. Close the
+remaining gaps in `src/lib`, `src/workflow`, and `src/core` with targeted tests.
+Coverage must not regress below HEAD at any point.
+
+**Commit**: `test: reach 100% coverage`
+
+### 10c — Refine all documentation
+
+Polish README, AGENTS.md, PLAN.md, and CLI help text for public readiness. Update
+the file-ownership model and sidecar references. Snapshot-test any help-text change.
+
+**Still outstanding** (the checkbox stays `[ ]` until these land):
+
+- `docs/help/` does not exist yet — the topic guides for `jho help <topic>` are
+  documented in AGENTS.md but never created.
+- `jho help <topic>` is not wired: `src/cli/commands/help.ts` falls through to
+  `userError('No command or topic named "<x>" found.')` for every topic.
+- No snapshot tests cover help output.
+
+**Commit**: `docs: refine README, AGENTS.md, PLAN.md, and help text`
+
+### 10d — Release pipeline & npm publication
+
+Make the package installable from the registry (`npm i -g job-hunting-organizer`,
+`npx job-hunting-organizer`, and the `npx jho-mcp` MCP entry point promised by
+Phase 8). Today `package.json` sets `"private": true`, so `npm publish` refuses
+outright, and there is no versioning, changelog, or release workflow.
+
+**Decision required before starting**: the package is currently described as
+local-first with a privacy posture and the README documents only a clone-and-build
+install. Publishing is a product decision, not just a build step — confirm the
+distribution model (public registry vs. GitHub-only) before flipping `private`.
+
+**Scope**
+
+- **Flip `private`** — remove `"private": true`. This is the actual gate; nothing
+  publishes while it is set. Keep it until every other item below is done.
+- **Fix the tarball contents.** `npm pack --dry-run` currently ships 3.0 MB
+  unpacked, of which ~2.1 MB is `.js.map` sourcemaps. Decide whether to ship
+  sourcemaps (drop them for a leaner install, or keep them for debuggability) and
+  add an `.npmignore` or a `files`-array refinement accordingly. Also verify
+  `bin/README.md` is intentional — it is tracked and ships inside the `bin` entry.
+- **Add `publishConfig`** — pin `{"access": "public"}` so the scoped/unscoped
+  publish cannot silently default to restricted.
+- **Versioning & changelog.** The version has sat at `0.1.0` and has never been
+  bumped. Choose a strategy (manual semver bumps + `CHANGELOG.md`, or
+  `changesets` / `semantic-release`) and wire it up. If adopting a tool, prefer a
+  vendored, battle-tested one over hand-rolling.
+- **Release workflow** — a `.github/workflows/release.yml` triggered on tag push
+  that runs the full `npm run verify` gate, builds, and publishes with provenance
+  (`npm publish --provenance`, which needs `id-token: write`). Do not publish from
+  a developer machine.
+- **Pre-publish verification** — a scripted check that packs the tarball, installs
+  it into a throwaway consumer directory, and asserts `jho --version`, an MCP
+  `initialize` + `tools/list` handshake, and one prompt-loading command all work
+  from the _installed_ package (not the repo). This catches packaging regressions
+  such as `prompts/` or `dist/` being dropped from `files`, which would break
+  `getPackageRoot()` at runtime.
+- **README install section** — document the registry install path alongside the
+  existing clone-and-build instructions, and the `npx jho-mcp` MCP client config.
+
+**Verified during planning** (so the phase starts from a known-good baseline): the
+current tarball _does_ install and run correctly — `jho --version` prints `0.1.0`,
+`jho-mcp` completes an `initialize`/`tools/list` handshake, and `jho ownership`
+resolves `prompts/` from the installed package root. The packaging is sound; the
+work is the release machinery around it.
+
+**Commit**: `chore(release): add npm publish pipeline and changelog`
 
 ---
 

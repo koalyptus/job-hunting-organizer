@@ -1,7 +1,21 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import type * as Yaml from 'js-yaml';
+
+vi.mock('js-yaml', async (importOriginal) => {
+  const actual = await importOriginal<typeof Yaml>();
+  return {
+    ...actual,
+    load: (text: string) => {
+      if (text.includes('TRIGGER_GENERIC')) {
+        throw new Error('generic boom');
+      }
+      return actual.load(text);
+    },
+  };
+});
 import {
   FrontmatterParseError,
   getFrontmatterNumber,
@@ -78,6 +92,12 @@ slug: : :
 status: applied
 ---`;
     expect(() => parseFrontmatter(content)).toThrow(FrontmatterParseError);
+  });
+
+  it('wraps non-YAMLExceptions in FrontmatterParseError', () => {
+    expect(() => parseFrontmatter('---\nTRIGGER_GENERIC: [\n---\nbody')).toThrow(
+      FrontmatterParseError,
+    );
   });
 
   it('throws when frontmatter is a YAML array', () => {

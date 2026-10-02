@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { mkdir } from 'node:fs/promises';
 import * as clack from '@clack/prompts';
 import * as pathsModule from '../../../lib/paths.js';
 import type * as PathsModule from '../../../lib/paths.js';
@@ -92,5 +96,29 @@ describe('resolveCampaignInteractive', () => {
     await expect(resolveCampaignInteractive(undefined, { tty: true })).rejects.toBeInstanceOf(
       CampaignPickerCancelled,
     );
+  });
+
+  it('returns the cwd-inferred campaign without prompting', async () => {
+    const dataRoot = await mkdtemp(join(tmpdir(), 'jho-camp-infer-'));
+    const campaignDir = join(dataRoot, 'campaigns', 'freelance');
+    await mkdir(join(campaignDir, 'applied'), { recursive: true });
+    const origData = process.env['JHO_DATA'];
+    const origCwd = process.cwd();
+    process.env['JHO_DATA'] = dataRoot;
+    process.chdir(campaignDir);
+    try {
+      const result = await resolveCampaignInteractive(undefined, { yes: true });
+      expect(result).toBe('freelance');
+      expect(pathsModule.listCampaigns).not.toHaveBeenCalled();
+      expect(clack.select).not.toHaveBeenCalled();
+    } finally {
+      process.chdir(origCwd);
+      if (origData === undefined) {
+        delete process.env['JHO_DATA'];
+      } else {
+        process.env['JHO_DATA'] = origData;
+      }
+      await rm(dataRoot, { recursive: true, force: true });
+    }
   });
 });

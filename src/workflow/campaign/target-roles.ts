@@ -49,10 +49,10 @@ export function extractTargetRoles(body: string): TargetRole[] {
   if (!sectionMatch) {
     return [];
   }
-  const sectionStart = sectionMatch.index ?? -1;
-  if (sectionStart === -1) {
-    return [];
-  }
+  // `match` sets `index` on success (spec guarantee), so the cast is safe and
+  // adds no runtime branch. A `?? 0` fallback here would be unreachable code
+  // that silently parses the whole profile if it ever did fire.
+  const sectionStart = sectionMatch.index as number;
 
   // Find the next H2 after "## Target roles" to bound the section
   const afterSection = body.slice(sectionStart + sectionMatch[0].length);

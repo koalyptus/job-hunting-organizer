@@ -333,6 +333,27 @@ describe('doctor command', () => {
       expect(stdout).toContain('ollama.com/install.sh');
     });
 
+    it('omits the version when a backend reports none', async () => {
+      const { detectAgents } = await import('detect-local-agents');
+      vi.mocked(detectAgents).mockResolvedValue([
+        {
+          name: BACKEND_NAME_OLLAMA,
+          binary: 'ollama',
+          isConfigured: true,
+          isACPAgent: false,
+        },
+      ] as never);
+
+      const { stdout, exitCode } = await runCommand(doctorCommand, ['doctor', '--detect-agents']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain(BACKEND_NAME_OLLAMA);
+      // `b.version ?? ''` renders an empty suffix, so the line ends after the
+      // binary name with no version text.
+      expect(stdout).toMatch(/✔ ollama — ollama\s*$/m);
+      expect(stdout).not.toMatch(/ollama — ollama \S/);
+    });
+
     it('exits with error when detection fails', async () => {
       const { detectAgents } = await import('detect-local-agents');
       vi.mocked(detectAgents).mockRejectedValue(new Error('Detection error'));

@@ -203,4 +203,23 @@ describe('logs command', () => {
     expect(result.stdout).toContain('warn');
     expect(result.stdout).not.toContain('info');
   });
+
+  it('skips non-JSON lines when filtering by level', async () => {
+    await writeFile(
+      logFile,
+      `${JSON.stringify({ level: 50, msg: 'err', time: Date.now() })}\nnot-json-line\n${JSON.stringify({ level: 20, msg: 'dbg', time: Date.now() })}\n`,
+      'utf8',
+    );
+
+    const result = await runCommand(logsCommand, ['logs', '--level', 'error']);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('err');
+  });
+
+  it('skips entries without a numeric level when filtering', async () => {
+    await writeFile(logFile, `${JSON.stringify({ msg: 'no-level', time: Date.now() })}\n`, 'utf8');
+
+    const result = await runCommand(logsCommand, ['logs', '--level', 'info']);
+    expect(result.exitCode).toBe(0);
+  });
 });

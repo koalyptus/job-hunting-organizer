@@ -86,4 +86,11 @@ describe('locks release failure branches', () => {
     await release!();
     expect(mockReleaseOk).toHaveBeenCalled();
   });
+
+  it('tryAcquireLock: release thunk returns early when lock resolved undefined', async () => {
+    mockLock.mockResolvedValueOnce(undefined);
+    const release = await tryAcquireLock(target);
+    expect(release).not.toBeNull();
+    await expect(release!()).resolves.toBeUndefined();
+  });
 });

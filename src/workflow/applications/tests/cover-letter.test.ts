@@ -10,6 +10,30 @@ import {
 } from '../cover-letter.js';
 import { EM_DASH } from '../../../core/humanize.js';
 import * as fsModule from '../../../lib/fs.js';
+import type * as FsPromises from 'node:fs/promises';
+
+let throwStringOnceFor: string | null = null;
+let throwPathSuffix: string | null = null;
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof FsPromises>();
+  return {
+    ...actual,
+    readFile: async (...args: Parameters<typeof actual.readFile>) => {
+      const p = String(args[0]);
+      if (
+        throwStringOnceFor !== null &&
+        (throwPathSuffix === null || p.endsWith(throwPathSuffix))
+      ) {
+        const v = throwStringOnceFor;
+        throwStringOnceFor = null;
+        throwPathSuffix = null;
+        throw v;
+      }
+      return actual.readFile(...args);
+    },
+  };
+});
 
 const mockChatComplete = vi.fn();
 
@@ -103,6 +127,10 @@ describe('generateCoverLetter', () => {
       delete process.env['JHO_DATA'];
     }
     await rm(workDir, { recursive: true, force: true });
+    // Reset the readFile throw-harness so an armed value cannot leak into
+    // the next test if this one failed before consuming it.
+    throwStringOnceFor = null;
+    throwPathSuffix = null;
   });
 
   async function setupApp(slug: string, opts?: { targetRole?: string }) {
@@ -684,6 +712,60 @@ describe('generateCoverLetter', () => {
     const userMessage = messages.find((m) => m.role === 'user')?.content ?? '';
     expect(userMessage).toContain('## Additional instructions');
     expect(userMessage).toContain('Existing steer from file');
+  });
+
+  it('wraps non-Error application read failures', async () => {
+    const apps = await import('../applications.js');
+    vi.spyOn(apps, 'readApplication').mockRejectedValueOnce('string-fail');
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    await expect(
+      generateCoverLetter({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+    ).rejects.toThrow('Failed to read application: string-fail');
+  });
+
+  it('wraps non-Error JD read failures', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    throwStringOnceFor = 'jd-string-fail';
+    throwPathSuffix = 'jd.md';
+    await expect(
+      generateCoverLetter({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+    ).rejects.toThrow('Failed to read JD: jd-string-fail');
+  });
+
+  it('wraps non-Error profile read failures', async () => {
+    const profileRead = await import('../../campaign/profile-read.js');
+    vi.spyOn(profileRead, 'readProfile').mockRejectedValueOnce('prof-fail' as never);
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    await expect(
+      generateCoverLetter({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+    ).rejects.toThrow('Failed to read profile: prof-fail');
+  });
+
+  it('wraps non-Error LLM failures', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    mockChatComplete.mockRejectedValueOnce('llm-string-fail');
+    await expect(
+      generateCoverLetter({ slug: '2026-Jun-01-SE-Test-Corp', campaign: 'test-campaign' }),
+    ).rejects.toThrow('LLM call failed: llm-string-fail');
+  });
+
+  it('logs completion when a logger is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Logged letter.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+      durationMs: 50,
+    });
+    const log = { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() };
+    const result = await generateCoverLetter({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      log: log as never,
+    });
+    expect(result.content).toBe('Logged letter.');
+    expect(log.info).toHaveBeenCalledWith(expect.anything(), 'cover-letter.generated');
   });
 
   it('does not write cover-letter.md when noSave is set (L224)', async () => {

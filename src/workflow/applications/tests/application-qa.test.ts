@@ -6,6 +6,30 @@ import { answerQuestion, readQa, AnswerError, QaReadError } from '../application
 import { EM_DASH } from '../../../core/humanize.js';
 import * as fsModule from '../../../lib/fs.js';
 import { JHO_DATA } from '../../../workflow/init/constants.js';
+import type * as FsPromises from 'node:fs/promises';
+
+let throwStringOnceFor: string | null = null;
+let throwPathSuffix: string | null = null;
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof FsPromises>();
+  return {
+    ...actual,
+    readFile: async (...args: Parameters<typeof actual.readFile>) => {
+      const p = String(args[0]);
+      if (
+        throwStringOnceFor !== null &&
+        (throwPathSuffix === null || p.endsWith(throwPathSuffix))
+      ) {
+        const v = throwStringOnceFor;
+        throwStringOnceFor = null;
+        throwPathSuffix = null;
+        throw v;
+      }
+      return actual.readFile(...args);
+    },
+  };
+});
 
 const mockChatComplete = vi.fn();
 
@@ -732,6 +756,79 @@ describe('answerQuestion', () => {
       readFile(join(appliedDir, '2026-Jun-01-SE-Test-Corp', 'qa.md'), 'utf8'),
     ).rejects.toThrow();
   });
+
+  it('wraps non-Error application read failures', async () => {
+    const apps = await import('../applications.js');
+    vi.spyOn(apps, 'readApplication').mockRejectedValueOnce('qa-string-fail');
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    await expect(
+      answerQuestion({
+        slug: '2026-Jun-01-SE-Test-Corp',
+        campaign: 'test-campaign',
+        question: 'Why you?',
+      }),
+    ).rejects.toThrow('Failed to read application: qa-string-fail');
+  });
+
+  it('wraps non-Error JD read failures', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    throwStringOnceFor = 'qa-jd-fail';
+    throwPathSuffix = 'jd.md';
+    await expect(
+      answerQuestion({
+        slug: '2026-Jun-01-SE-Test-Corp',
+        campaign: 'test-campaign',
+        question: 'Why you?',
+      }),
+    ).rejects.toThrow('Failed to read JD: qa-jd-fail');
+  });
+
+  it('wraps non-Error profile read failures', async () => {
+    const profileRead = await import('../../campaign/profile-read.js');
+    vi.spyOn(profileRead, 'readProfile').mockRejectedValueOnce('qa-prof-fail' as never);
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    await expect(
+      answerQuestion({
+        slug: '2026-Jun-01-SE-Test-Corp',
+        campaign: 'test-campaign',
+        question: 'Why you?',
+      }),
+    ).rejects.toThrow('Failed to read profile: qa-prof-fail');
+  });
+
+  it('wraps non-Error image read failures', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    throwStringOnceFor = 'img-string-fail';
+    throwPathSuffix = 'fail.png';
+    await expect(
+      answerQuestion({
+        slug: '2026-Jun-01-SE-Test-Corp',
+        campaign: 'test-campaign',
+        question: 'Describe this.',
+        imagePath: join(workDir, 'fail.png'),
+      }),
+    ).rejects.toThrow('Failed to read image: img-string-fail');
+  });
+
+  it('logs completion when a logger is provided', async () => {
+    await setupApp('2026-Jun-01-SE-Test-Corp');
+    mockChatComplete.mockResolvedValueOnce({
+      content: 'Logged answer.',
+      model: 'gpt-4o',
+      finishReason: 'stop',
+      usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+      durationMs: 50,
+    });
+    const log = { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() };
+    const result = await answerQuestion({
+      slug: '2026-Jun-01-SE-Test-Corp',
+      campaign: 'test-campaign',
+      question: 'Why you?',
+      log: log as never,
+    });
+    expect(result.answer).toBe('Logged answer.');
+    expect(log.info).toHaveBeenCalledWith(expect.anything(), 'qa.answered');
+  });
 });
 
 describe('readQa', () => {
@@ -756,6 +853,10 @@ describe('readQa', () => {
       delete process.env[JHO_DATA];
     }
     await rm(workDir, { recursive: true, force: true });
+    // Reset the readFile throw-harness so an armed value cannot leak into
+    // the next test if this one failed before consuming it.
+    throwStringOnceFor = null;
+    throwPathSuffix = null;
   });
 
   it('reads existing Q&A file', async () => {

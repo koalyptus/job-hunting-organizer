@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { GithubUser, GithubRepo } from '../../types.js';
 import { buildProfileMarkdown } from '../../../workflow/campaign/profile-build.js';
+import * as kbContext from '../../../workflow/campaign/kb-context.js';
 
 vi.mock('../../../lib/cv.js', () => ({
   readCv: vi.fn(),
@@ -195,6 +196,26 @@ describe('buildProfileMarkdown', () => {
     const call = mockChatComplete.mock.calls[0]!;
     const systemMessage = (call[0][0] as { role: string; content: string }).content;
     expect(systemMessage).toContain('career-profile assistant');
+  });
+
+  it('appends knowledge-base context when present', async () => {
+    const spy = vi
+      .spyOn(kbContext, 'loadKnowledgeBaseContext')
+      .mockResolvedValueOnce('KB DOCS HERE');
+    try {
+      await buildProfileMarkdown({
+        cvPath: '/tmp/cv.txt',
+        githubUser: 'testuser',
+        llmConfig: testLlmConfig,
+        campaignRoot: '/tmp/campaign',
+      });
+
+      const call = mockChatComplete.mock.calls[0]!;
+      const userMessage = (call[0][1] as { role: string; content: string }).content;
+      expect(userMessage).toContain('KB DOCS HERE');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('passes signal to chatComplete', async () => {

@@ -8,6 +8,7 @@ import {
   green,
   red,
   yellow,
+  blue,
   statusColor,
   interviewStatusColor,
   interviewTypeColor,
@@ -120,11 +121,19 @@ describe('color functions', () => {
     expect(hasAnsi(red('test'))).toBe(true);
   });
 
+  it('blue wraps text', () => {
+    expect(hasAnsi(blue('test'))).toBe(true);
+  });
+
   it('returns plain text when color disabled', () => {
     initColors(false);
     expect(dim('test')).toBe('test');
     expect(bold('test')).toBe('test');
     expect(cyan('test')).toBe('test');
+    expect(green('test')).toBe('test');
+    expect(yellow('test')).toBe('test');
+    expect(red('test')).toBe('test');
+    expect(blue('test')).toBe('test');
   });
 });
 

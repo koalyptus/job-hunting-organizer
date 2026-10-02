@@ -381,4 +381,28 @@ describe('logError', () => {
     const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
     expect((args.error as Record<string, unknown>).code).toBeUndefined();
   });
+
+  it('falls back to constructor name when an Error has no name', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = new Error('nameless');
+    (err as { name: unknown }).name = undefined;
+
+    logError(log, err, 'no name');
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect((args.error as Record<string, unknown>).type).toBe('Error');
+    expect((args.error as Record<string, unknown>).message).toBe('nameless');
+  });
+
+  it('falls back to String(err) when an error-like has no message', () => {
+    const log = createLogger({ level: 'info', redactPaths: [] });
+    const spy = vi.spyOn(log, 'error');
+    const err = { name: 'Nameless' };
+
+    logError(log, err, 'no message');
+
+    const [args] = spy.mock.calls[0] as [Record<string, unknown>, string];
+    expect((args.error as Record<string, unknown>).message).toBe('[object Object]');
+  });
 });

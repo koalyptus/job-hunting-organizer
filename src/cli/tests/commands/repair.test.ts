@@ -166,4 +166,12 @@ describe('repair command', () => {
       expect(helpOutput).toContain('repair');
     });
   });
+
+  describe('unexpected errors', () => {
+    it('rethrows unexpected repair errors', async () => {
+      vi.mocked(repairCore.repairAll).mockRejectedValueOnce(new Error('repair-boom'));
+
+      await expect(runCommand(repairCommand, ['repair'])).rejects.toThrow('repair-boom');
+    });
+  });
 });
