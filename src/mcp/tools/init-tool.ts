@@ -7,7 +7,7 @@ import { mcpLogger } from '../logger.js';
 
 /**
  * Register the `init` tool on the MCP server.
- * Initialize a new campaign with optional CV, GitHub, and LinkedIn.
+ * Initialize a new campaign with optional CV, GitHub, LinkedIn, and LLM config.
  *
  * @param server - The MCP server instance.
  */
@@ -15,7 +15,7 @@ export function registerInit(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'init',
     {
-      description: 'Initialize a new campaign with optional CV, GitHub, and LinkedIn',
+      description: 'Initialize a new campaign with optional CV, GitHub, LinkedIn, and LLM config',
       inputSchema: InitInput,
     },
     async (args) => {
@@ -26,6 +26,7 @@ export function registerInit(server: McpServer, _store: FileStore): void {
           cv: args.cvPath,
           github: args.githubUser,
           linkedin: args.linkedinUrl,
+          llm: args.llm,
           yes: true,
         });
         mcpLogger.debug({ campaign: args.campaign }, 'tool.init.done');

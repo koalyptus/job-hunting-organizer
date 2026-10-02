@@ -244,8 +244,27 @@ describe('MCP schemas', () => {
         cvPath: '/path/to/cv.pdf',
         githubUser: 'octocat',
         linkedinUrl: 'https://linkedin.com/in/octocat',
+        llm: {
+          baseUrl: 'https://api.openai.com/v1',
+          apiKey: 'sk-test',
+          model: 'gpt-4o-mini',
+        },
       });
       expect(result.campaign).toBe('freelance');
+      expect(result.llm).toEqual({
+        baseUrl: 'https://api.openai.com/v1',
+        apiKey: 'sk-test',
+        model: 'gpt-4o-mini',
+      });
+    });
+
+    it('accepts a partial llm object', () => {
+      const result = InitInput.parse({ llm: { model: 'llama3.1' } });
+      expect(result.llm).toEqual({ model: 'llama3.1' });
+    });
+
+    it('rejects a malformed llm baseUrl', () => {
+      expect(() => InitInput.parse({ llm: { baseUrl: 'not-a-url' } })).toThrow();
     });
   });
 

@@ -148,6 +148,27 @@ export async function promptLlm(
 }
 
 /**
+ * Merge explicit LLM settings (the MCP `init` tool arguments) over the values
+ * resolved by the init prompts. Supplied fields win; omitted fields fall back
+ * to `resolved`, so a caller can override just the model without restating the
+ * endpoint.
+ * @param resolved - Prefs resolved from the existing config, env vars, and defaults.
+ * @param explicit - Prefs supplied by the caller, if any.
+ * @returns The merged prefs; `resolved` unchanged when `explicit` is undefined.
+ */
+export function mergeLlmPrefs(resolved: LlmPrefs, explicit: LlmPrefs | undefined): LlmPrefs {
+  if (!explicit) {
+    return resolved;
+  }
+
+  return {
+    baseUrl: explicit.baseUrl ?? resolved.baseUrl,
+    apiKey: explicit.apiKey ?? resolved.apiKey,
+    model: explicit.model ?? resolved.model,
+  };
+}
+
+/**
  * Detect a local OpenAI-compatible backend (Ollama or LM Studio) and return a
  * suggested baseUrl/model, or undefined when none is detected. Uses binary
  * presence, not just installation.

@@ -23,6 +23,13 @@ vi.mock('../../schemas.js', () => ({
     cvPath: z.string().optional(),
     githubUser: z.string().optional(),
     linkedinUrl: z.string().optional(),
+    llm: z
+      .object({
+        baseUrl: z.string().optional(),
+        apiKey: z.string().optional(),
+        model: z.string().optional(),
+      })
+      .optional(),
   }),
 }));
 
@@ -50,6 +57,7 @@ describe('init tool', () => {
       cv: undefined,
       github: undefined,
       linkedin: undefined,
+      llm: undefined,
       yes: true,
     });
     const parsed = JSON.parse(getTextContent(result));
@@ -75,6 +83,40 @@ describe('init tool', () => {
       cv: '/path/to/cv.pdf',
       github: 'maxgu',
       linkedin: 'https://linkedin.com/in/maxgu',
+      llm: undefined,
+      yes: true,
+    });
+    const parsed = JSON.parse(getTextContent(result));
+    expect(parsed.status).toBe('ok');
+  });
+
+  it('passes explicit LLM settings through to runInit', async () => {
+    vi.mocked(runInit).mockResolvedValue(undefined);
+
+    const { client } = await createTestServer((srv) => registerInit(srv, createStore()));
+
+    const result = await client.callTool({
+      name: 'init',
+      arguments: {
+        campaign: 'freelance',
+        llm: {
+          baseUrl: 'https://api.openai.com/v1',
+          apiKey: 'sk-test',
+          model: 'gpt-4o-mini',
+        },
+      },
+    });
+
+    expect(runInit).toHaveBeenCalledWith({
+      name: 'freelance',
+      cv: undefined,
+      github: undefined,
+      linkedin: undefined,
+      llm: {
+        baseUrl: 'https://api.openai.com/v1',
+        apiKey: 'sk-test',
+        model: 'gpt-4o-mini',
+      },
       yes: true,
     });
     const parsed = JSON.parse(getTextContent(result));

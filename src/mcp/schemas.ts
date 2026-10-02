@@ -136,12 +136,30 @@ export const UpdateConfigInput = z.object({
   patch: z.record(z.string(), z.unknown()).describe('Partial config patch to merge'),
 });
 
+/** Zod schema for optional LLM settings on the `init` tool. */
+export const InitLlmParam = z
+  .object({
+    baseUrl: z
+      .string()
+      .url()
+      .optional()
+      .describe('OpenAI-compatible endpoint base URL (e.g. "http://localhost:11434/v1")'),
+    apiKey: z
+      .string()
+      .optional()
+      .describe('API key for the endpoint; omit or leave empty for local providers'),
+    model: z.string().optional().describe('Model identifier (e.g. "llama3.1")'),
+  })
+  .optional()
+  .describe('LLM endpoint settings; overrides the values already in config.json');
+
 /** Zod schema for `init` tool input. */
 export const InitInput = z.object({
   campaign: z.string().optional().describe('Campaign name (default: "default")'),
   cvPath: z.string().optional().describe('Path to CV file (PDF, DOCX, MD)'),
   githubUser: z.string().optional().describe('GitHub username'),
   linkedinUrl: z.string().optional().describe('LinkedIn profile URL'),
+  llm: InitLlmParam,
 });
 
 /** Zod schema for `post_mortem` tool input. */
