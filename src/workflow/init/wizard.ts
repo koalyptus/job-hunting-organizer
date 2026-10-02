@@ -86,11 +86,11 @@ export async function runInit(opts: InitOptions): Promise<void> {
     opts.yes || opts.llm?.baseUrl ? undefined : await detectLocalBackend(log);
 
   // --- Step 6: LLM config ---
-  const promptedLlm = await promptLlm(opts.yes ?? false, existingConfig, detectedLlmSuggestion);
+  const promptedPrefs = await promptLlm(opts.yes ?? false, existingConfig, detectedLlmSuggestion);
 
   // Explicit LLM settings (the MCP `init` tool arguments) win over everything
   // resolved above — a caller can configure the endpoint without a config file.
-  const llm = mergeLlmPrefs(promptedLlm, opts.llm);
+  const llm = mergeLlmPrefs(promptedPrefs, opts.llm);
 
   const llmConfig = buildLlmConfig(llm, existingConfig);
 
