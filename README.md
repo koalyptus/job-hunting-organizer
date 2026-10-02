@@ -2,8 +2,6 @@
 
 A local-first CLI and MCP server for running a job-hunting campaign.
 
-> **Status:** v0.1.0 — first public release. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for progress.
-
 ## What it does
 
 1. **Builds your profile** from a CV (PDF / DOCX / Markdown) and your GitHub repos — including a structured list of target roles (level, domain, stack, comp floor, priority) you can refine.
@@ -31,19 +29,6 @@ npm install -g job-hunting-organizer
 ```
 
 Then run `jho init` to set up your first campaign.
-
-For MCP clients (Claude Desktop, Cursor, etc.):
-
-```json
-{
-  "mcpServers": {
-    "jho": {
-      "command": "npx",
-      "args": ["-y", "--package=job-hunting-organizer", "jho-mcp"]
-    }
-  }
-}
-```
 
 ### From source
 
