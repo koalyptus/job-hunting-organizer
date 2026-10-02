@@ -15,7 +15,8 @@ export function registerInit(server: McpServer, _store: FileStore): void {
   server.registerTool(
     'init',
     {
-      description: 'Initialize a new campaign with optional CV, GitHub, LinkedIn, and LLM config',
+      description:
+        'Initialize a new campaign with optional CV, GitHub, and LinkedIn. Pass `llm` to set the global LLM endpoint (baseUrl/apiKey/model), shared across all campaigns.',
       inputSchema: InitInput,
     },
     async (args) => {

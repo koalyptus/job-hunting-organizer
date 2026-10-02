@@ -1018,7 +1018,11 @@ describe('MCP tool handlers: init (real core)', () => {
     expect(JSON.parse(getTextContent(result))).toEqual({ status: 'ok' });
 
     const written = JSON.parse(await readFile(join(env.configHome, 'config.json'), 'utf8'));
-    expect(written.llm).toMatchObject({ model: 'test-model' });
+    expect(written.llm).toMatchObject({
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: 'test-key',
+      model: 'test-model',
+    });
   });
 
   it('init tool merges partial LLM settings over the existing config', async () => {
@@ -1035,7 +1039,29 @@ describe('MCP tool handlers: init (real core)', () => {
     const written = JSON.parse(await readFile(join(env.configHome, 'config.json'), 'utf8'));
     expect(written.llm).toMatchObject({
       baseUrl: 'http://localhost:11434/v1',
+      apiKey: 'test-key',
       model: 'gpt-4o-mini',
+    });
+  });
+
+  it('init tool keeps a stored apiKey when llm.apiKey is an empty string', async () => {
+    mockProfileBuildLlm();
+    const { client } = await createTestServer(registerInit);
+
+    const result = await client.callTool({
+      name: 'init',
+      arguments: {
+        campaign: 'empty-key-campaign',
+        llm: { baseUrl: 'https://api.openai.com/v1', apiKey: '' },
+      },
+    });
+
+    expect(JSON.parse(getTextContent(result))).toEqual({ status: 'ok' });
+
+    const written = JSON.parse(await readFile(join(env.configHome, 'config.json'), 'utf8'));
+    expect(written.llm).toMatchObject({
+      baseUrl: 'https://api.openai.com/v1',
+      apiKey: 'test-key',
     });
   });
 });

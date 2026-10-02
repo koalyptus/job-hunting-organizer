@@ -151,7 +151,9 @@ export const InitLlmParam = z
     model: z.string().optional().describe('Model identifier (e.g. "llama3.1")'),
   })
   .optional()
-  .describe('LLM endpoint settings; overrides the values already in config.json');
+  .describe(
+    'Global LLM endpoint settings, shared across all campaigns; each field overrides the value already in config.json. Omitted fields keep their configured value.',
+  );
 
 /** Zod schema for `init` tool input. */
 export const InitInput = z.object({

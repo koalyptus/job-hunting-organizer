@@ -80,7 +80,10 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const github = await promptGithub(opts.github, opts.yes ?? false, existingConfig);
 
   // --- Step 5: Detect local OpenAI-compatible backends ---
-  const detectedLlmSuggestion = opts.yes ? undefined : await detectLocalBackend(log);
+  // Skip detection when the caller supplied an endpoint — probing binaries and
+  // suggesting a backend would be discarded by the merge below anyway.
+  const detectedLlmSuggestion =
+    opts.yes || opts.llm?.baseUrl ? undefined : await detectLocalBackend(log);
 
   // --- Step 6: LLM config ---
   const promptedLlm = await promptLlm(opts.yes ?? false, existingConfig, detectedLlmSuggestion);

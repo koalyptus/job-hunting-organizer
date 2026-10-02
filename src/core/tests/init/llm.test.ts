@@ -547,6 +547,28 @@ describe('mergeLlmPrefs', () => {
       model: 'gpt-4o-mini',
     });
   });
+
+  it('treats an empty string as not supplied, keeping the stored value', () => {
+    const result = mergeLlmPrefs(
+      { baseUrl: 'https://api.openai.com/v1', apiKey: 'sk-stored', model: 'gpt-4o-mini' },
+      { baseUrl: '', apiKey: '', model: '' },
+    );
+    expect(result).toEqual({
+      baseUrl: 'https://api.openai.com/v1',
+      apiKey: 'sk-stored',
+      model: 'gpt-4o-mini',
+    });
+  });
+
+  it('does not let an empty apiKey downgrade a remote endpoint to the placeholder', () => {
+    // Regression: `??` treated '' as explicit, so `apiKey: ''` erased a stored
+    // key and write.ts coerced it to 'no-key' on a remote endpoint.
+    const result = mergeLlmPrefs(
+      { baseUrl: 'https://api.openai.com/v1', apiKey: 'sk-stored', model: 'gpt-4o-mini' },
+      { apiKey: '' },
+    );
+    expect(result.apiKey).toBe('sk-stored');
+  });
 });
 
 describe('getBackendBaseUrl / getBackendModel', () => {

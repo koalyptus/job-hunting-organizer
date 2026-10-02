@@ -148,10 +148,16 @@ export async function promptLlm(
 }
 
 /**
- * Merge explicit LLM settings (the MCP `init` tool arguments) over the values
- * resolved by the init prompts. Supplied fields win; omitted fields fall back
- * to `resolved`, so a caller can override just the model without restating the
- * endpoint.
+ * Merge explicit LLM settings (e.g. the MCP `init` tool's `llm` argument) over
+ * the values resolved by the init prompts. Supplied fields win; omitted fields
+ * fall back to `resolved`, so a caller can override just the model without
+ * restating the endpoint.
+ *
+ * An empty string counts as "not supplied" — matching {@link promptLlm}, which
+ * treats an empty prompt answer as "keep the existing value". Without this, an
+ * `apiKey: ''` would be read as an explicit erase and silently downgrade a
+ * remote endpoint's stored key to the `'no-key'` placeholder.
+ *
  * @param resolved - Prefs resolved from the existing config, env vars, and defaults.
  * @param explicit - Prefs supplied by the caller, if any.
  * @returns The merged prefs; `resolved` unchanged when `explicit` is undefined.
@@ -162,9 +168,9 @@ export function mergeLlmPrefs(resolved: LlmPrefs, explicit: LlmPrefs | undefined
   }
 
   return {
-    baseUrl: explicit.baseUrl ?? resolved.baseUrl,
-    apiKey: explicit.apiKey ?? resolved.apiKey,
-    model: explicit.model ?? resolved.model,
+    baseUrl: explicit.baseUrl || resolved.baseUrl,
+    apiKey: explicit.apiKey || resolved.apiKey,
+    model: explicit.model || resolved.model,
   };
 }
 

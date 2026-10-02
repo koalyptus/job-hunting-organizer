@@ -176,7 +176,7 @@ Check your harness documentation for correct configuration, as an example:
 > **Note:** MCP client configs are not standardized — each client uses its own schema and key names.
 > To set a custom data location, add `"JHO_DATA": "/path/to/data"` to the `env` block (Claude Desktop, Cursor, Copilot) or `environment` block (Opencode).
 
-The `init` tool accepts an optional `llm` object, so a campaign's LLM endpoint can be configured over MCP without hand-editing `config.json`:
+The `init` tool accepts an optional `llm` object, so the LLM endpoint can be configured over MCP without hand-editing `config.json`:
 
 ```json
 {
@@ -190,6 +190,8 @@ The `init` tool accepts an optional `llm` object, so a campaign's LLM endpoint c
 ```
 
 All three fields are optional; any you omit keep the value already in `config.json` (or the built-in default).
+
+> **Note:** the LLM endpoint is **global**, not per-campaign — it is shared across every campaign. Initializing campaign B with a different `llm` changes the endpoint campaign A uses too.
 
 ## LLM configuration
 
