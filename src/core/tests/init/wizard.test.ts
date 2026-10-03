@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { text, password, confirm } from '@clack/prompts';
 import { detectAgents } from 'detect-local-agents';
-import { runInit } from './wizard.js';
-import { clearConfigCache } from '../../lib/config/config.js';
+import { runInit } from '../../../workflow/init/wizard.js';
+import { clearConfigCache } from '../../../lib/config/config.js';
 
 vi.mock('@clack/prompts', () => ({
   text: vi.fn(),
@@ -21,12 +21,12 @@ vi.mock('detect-local-agents', () => ({
 
 // Keep the wizard hermetic: the profile build would otherwise fetch GitHub and
 // call the LLM over the network.
-vi.mock('../../core/github.js', () => ({
+vi.mock('../../../core/github.js', () => ({
   fetchGithubUser: vi.fn(async (user: string) => ({ login: user, name: 'Test User' })),
   fetchGithubRepos: vi.fn(async () => []),
 }));
 
-vi.mock('../../core/llm.js', async (importOriginal) => {
+vi.mock('../../../core/llm.js', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
