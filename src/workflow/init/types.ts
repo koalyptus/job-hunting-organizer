@@ -17,6 +17,11 @@ export interface InitOptions {
   readonly profile?: string;
   /** Optional path to a knowledge-base file or folder to ingest at init. */
   readonly kb?: string;
+  /**
+   * Explicit LLM settings (the MCP `init` tool arguments). Take precedence over
+   * the values resolved from the existing config, env vars, and defaults.
+   */
+  readonly llm?: LlmPrefs;
   /** Non-interactive mode: use env vars/defaults, skip all prompts. */
   readonly yes?: boolean;
   /** Optional pino logger. */

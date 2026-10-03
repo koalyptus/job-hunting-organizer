@@ -19,7 +19,13 @@ import {
   loadExistingCampaignValues,
 } from './inputs.js';
 import { promptGithub } from './github.js';
-import { promptLlm, loadExistingConfig, detectLocalBackend, buildLlmConfig } from './llm.js';
+import {
+  promptLlm,
+  loadExistingConfig,
+  detectLocalBackend,
+  buildLlmConfig,
+  mergeLlmPrefs,
+} from './llm.js';
 import { runLockedInitSteps, printInitSummary } from './write.js';
 import { InitCancelled, InitInvalidNameError } from './errors.js';
 import { childLogger } from '../../lib/logger/logger.js';
@@ -74,10 +80,17 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const github = await promptGithub(opts.github, opts.yes ?? false, existingConfig);
 
   // --- Step 5: Detect local OpenAI-compatible backends ---
-  const detectedLlmSuggestion = opts.yes ? undefined : await detectLocalBackend(log);
+  // Skip detection when the caller supplied an endpoint — probing binaries and
+  // suggesting a backend would be discarded by the merge below anyway.
+  const detectedLlmSuggestion =
+    opts.yes || opts.llm?.baseUrl ? undefined : await detectLocalBackend(log);
 
   // --- Step 6: LLM config ---
-  const llm = await promptLlm(opts.yes ?? false, existingConfig, detectedLlmSuggestion);
+  const promptedPrefs = await promptLlm(opts.yes ?? false, existingConfig, detectedLlmSuggestion);
+
+  // Explicit LLM settings (the MCP `init` tool arguments) win over everything
+  // resolved above — a caller can configure the endpoint without a config file.
+  const llm = mergeLlmPrefs(promptedPrefs, opts.llm);
 
   const llmConfig = buildLlmConfig(llm, existingConfig);
 

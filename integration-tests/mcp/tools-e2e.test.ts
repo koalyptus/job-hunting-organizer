@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { createTestServer, getTextContent } from '../../src/mcp/tests/tools/helpers.js';
 import { registerTrackApplication } from '../../src/mcp/tools/track-application.js';
 import { registerListApplications } from '../../src/mcp/tools/list-applications.js';
@@ -74,6 +74,28 @@ vi.mock('../../src/workflow/prompts.js', () => ({
     body: 'You are a job-hunting coach.',
     temperature: 0.6,
   })),
+}));
+
+// The init tool builds a profile, which fetches the GitHub API. Stub the
+// client so the suite never reaches the network (the fixture's placeholder
+// user does not exist, and a real request would be flaky and non-hermetic).
+vi.mock('../../src/core/github.js', () => ({
+  fetchGithubUser: vi.fn(async (user: string) => ({
+    login: user,
+    name: 'Test User',
+    bio: 'Test bio',
+    public_repos: 1,
+  })),
+  fetchGithubRepos: vi.fn(async () => [
+    {
+      name: 'sample-repo',
+      description: 'A sample repo',
+      language: 'TypeScript',
+      stargazers_count: 1,
+      fork: false,
+      archived: false,
+    },
+  ]),
 }));
 
 vi.mock('../../src/lib/logger/logger.js', async (importOriginal) => {
@@ -941,7 +963,13 @@ describe('MCP tool handlers: init (real core)', () => {
     await cleanupTestDir(env.testHome);
   });
 
+  /** Give the profile build a deterministic LLM response. */
+  function mockProfileBuildLlm(): void {
+    mockLlmResponse(mockChatComplete, '# Profile — Test User\n\n## Target roles\n');
+  }
+
   it('init tool returns a result for a new campaign', async () => {
+    mockProfileBuildLlm();
     const { client } = await createTestServer(registerInit);
 
     const result = await client.callTool({
@@ -949,8 +977,92 @@ describe('MCP tool handlers: init (real core)', () => {
       arguments: { campaign: 'new-campaign' },
     });
 
-    const text = getTextContent(result);
-    expect(text).toBeDefined();
+    expect(JSON.parse(getTextContent(result))).toEqual({ status: 'ok' });
+  });
+
+  it('init tool writes the supplied LLM settings into the global config', async () => {
+    mockProfileBuildLlm();
+    const { client } = await createTestServer(registerInit);
+
+    const result = await client.callTool({
+      name: 'init',
+      arguments: {
+        campaign: 'llm-campaign',
+        llm: {
+          baseUrl: 'https://api.openai.com/v1',
+          apiKey: 'sk-integration',
+          model: 'gpt-4o-mini',
+        },
+      },
+    });
+
+    expect(JSON.parse(getTextContent(result))).toEqual({ status: 'ok' });
+
+    const written = JSON.parse(await readFile(join(env.configHome, 'config.json'), 'utf8'));
+    expect(written.llm).toMatchObject({
+      baseUrl: 'https://api.openai.com/v1',
+      apiKey: 'sk-integration',
+      model: 'gpt-4o-mini',
+    });
+  });
+
+  it('init tool keeps the pre-configured LLM when no llm argument is given', async () => {
+    mockProfileBuildLlm();
+    const { client } = await createTestServer(registerInit);
+
+    const result = await client.callTool({
+      name: 'init',
+      arguments: { campaign: 'no-llm-campaign' },
+    });
+
+    expect(JSON.parse(getTextContent(result))).toEqual({ status: 'ok' });
+
+    const written = JSON.parse(await readFile(join(env.configHome, 'config.json'), 'utf8'));
+    expect(written.llm).toMatchObject({
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: 'test-key',
+      model: 'test-model',
+    });
+  });
+
+  it('init tool merges partial LLM settings over the existing config', async () => {
+    mockProfileBuildLlm();
+    const { client } = await createTestServer(registerInit);
+
+    const result = await client.callTool({
+      name: 'init',
+      arguments: { campaign: 'partial-llm-campaign', llm: { model: 'gpt-4o-mini' } },
+    });
+
+    expect(JSON.parse(getTextContent(result))).toEqual({ status: 'ok' });
+
+    const written = JSON.parse(await readFile(join(env.configHome, 'config.json'), 'utf8'));
+    expect(written.llm).toMatchObject({
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: 'test-key',
+      model: 'gpt-4o-mini',
+    });
+  });
+
+  it('init tool keeps a stored apiKey when llm.apiKey is an empty string', async () => {
+    mockProfileBuildLlm();
+    const { client } = await createTestServer(registerInit);
+
+    const result = await client.callTool({
+      name: 'init',
+      arguments: {
+        campaign: 'empty-key-campaign',
+        llm: { baseUrl: 'https://api.openai.com/v1', apiKey: '' },
+      },
+    });
+
+    expect(JSON.parse(getTextContent(result))).toEqual({ status: 'ok' });
+
+    const written = JSON.parse(await readFile(join(env.configHome, 'config.json'), 'utf8'));
+    expect(written.llm).toMatchObject({
+      baseUrl: 'https://api.openai.com/v1',
+      apiKey: 'test-key',
+    });
   });
 });
 
