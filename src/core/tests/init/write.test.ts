@@ -3,8 +3,12 @@ import { join } from 'node:path';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { log as clackLog } from '@clack/prompts';
-import { runLockedInitSteps, printInitSummary } from '../../../workflow/init/write.js';
-import { clearConfigCache } from '../../../lib/config/config.js';
+import {
+  runLockedInitSteps,
+  printInitSummary,
+  writeInitGlobalConfig,
+} from '../../../workflow/init/write.js';
+import { clearConfigCache, loadGlobalConfig } from '../../../lib/config/config.js';
 import { JHO_CONFIG_HOME, JHO_DATA } from '../../../workflow/init/constants.js';
 import { childLogger } from '../../../lib/logger/logger.js';
 
@@ -228,5 +232,119 @@ describe('printInitSummary', () => {
     expect(clackLog.info).toHaveBeenCalledWith(expect.stringContaining('CV: (not set)'));
     expect(clackLog.info).toHaveBeenCalledWith(expect.stringContaining('GitHub: (not set)'));
     expect(clackLog.info).toHaveBeenCalledWith(expect.stringContaining('LLM: (not configured)'));
+  });
+});
+
+describe('writeInitGlobalConfig preserves existing fields', () => {
+  let testHome: string;
+  let originalJhoConfigHome: string | undefined;
+  let originalJhoData: string | undefined;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    originalJhoConfigHome = process.env[JHO_CONFIG_HOME];
+    originalJhoData = process.env[JHO_DATA];
+    testHome = await mkdtemp(join(tmpdir(), 'jho-init-write-global-'));
+    process.env[JHO_CONFIG_HOME] = join(testHome, '.jho');
+    process.env[JHO_DATA] = join(testHome, 'data');
+    clearConfigCache();
+
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(join(testHome, '.jho'), { recursive: true });
+  });
+
+  afterEach(async () => {
+    clearConfigCache();
+    if (originalJhoConfigHome === undefined) {
+      delete process.env[JHO_CONFIG_HOME];
+    } else {
+      process.env[JHO_CONFIG_HOME] = originalJhoConfigHome;
+    }
+    if (originalJhoData === undefined) {
+      delete process.env[JHO_DATA];
+    } else {
+      process.env[JHO_DATA] = originalJhoData;
+    }
+    await rm(testHome, { recursive: true, force: true });
+  });
+
+  function seedGlobalConfig(config: Record<string, unknown>): Promise<void> {
+    return writeFile(join(testHome, '.jho', 'config.json'), JSON.stringify(config), 'utf8');
+  }
+
+  it('preserves github.token, github.repos, and llm.tags on re-init', async () => {
+    await seedGlobalConfig({
+      version: 1,
+      dataRoot: join(testHome, 'data'),
+      llm: {
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: 'test-key',
+        model: 'test-model',
+        timeoutMs: 60000,
+        tags: ['user=jho'],
+      },
+      github: { user: 'octocat', token: 'ghp_test123', repos: ['acme/widget'] },
+      logging: { level: 'info', disableFileLogging: false, redactPaths: [] },
+      fetch: { timeoutMs: 30000 },
+    });
+    clearConfigCache();
+
+    writeInitGlobalConfig(join(testHome, 'data'), {}, { user: undefined, token: undefined });
+
+    const config = loadGlobalConfig();
+    expect(config.github.token).toBe('ghp_test123');
+    expect(config.github.repos).toEqual(['acme/widget']);
+    expect(config.llm.tags).toEqual(['user=jho']);
+    expect(config.github.user).toBe('octocat');
+  });
+
+  it('preserves github.user and token when not overridden', async () => {
+    await seedGlobalConfig({
+      version: 1,
+      dataRoot: join(testHome, 'data'),
+      llm: {
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: 'test-key',
+        model: 'test-model',
+        timeoutMs: 60000,
+      },
+      github: { user: 'existing-user', token: 'ghp_existing', repos: [] },
+      logging: { level: 'info', disableFileLogging: false, redactPaths: [] },
+      fetch: { timeoutMs: 30000 },
+    });
+    clearConfigCache();
+
+    writeInitGlobalConfig(join(testHome, 'data'), {}, { user: undefined, token: undefined });
+
+    const config = loadGlobalConfig();
+    expect(config.github.user).toBe('existing-user');
+    expect(config.github.token).toBe('ghp_existing');
+  });
+
+  it('uses new values when explicitly provided', async () => {
+    await seedGlobalConfig({
+      version: 1,
+      dataRoot: join(testHome, 'data'),
+      llm: {
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: 'test-key',
+        model: 'test-model',
+        timeoutMs: 60000,
+        tags: ['user=jho'],
+      },
+      github: { user: 'old-user', token: 'ghp_old', repos: ['old/repo'] },
+      logging: { level: 'info', disableFileLogging: false, redactPaths: [] },
+      fetch: { timeoutMs: 30000 },
+    });
+    clearConfigCache();
+
+    writeInitGlobalConfig(join(testHome, 'data'), {}, { user: 'new-user', token: 'ghp_new' });
+
+    const config = loadGlobalConfig();
+    expect(config.github.user).toBe('new-user');
+    expect(config.github.token).toBe('ghp_new');
+    // repos and tags are still preserved from existing config
+    expect(config.github.repos).toEqual(['old/repo']);
+    expect(config.llm.tags).toEqual(['user=jho']);
   });
 });

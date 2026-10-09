@@ -139,7 +139,7 @@ export function writeInitGlobalConfig(dataRoot: string, llm: LlmPrefs, github: G
     github: {
       user: github.user ?? currentConfig.github.user ?? '',
       token: github.token ?? currentConfig.github.token ?? '',
-      repos: currentConfig.github.repos ?? [],
+      repos: currentConfig.github.repos,
     },
     logging: {
       ...currentConfig.logging,

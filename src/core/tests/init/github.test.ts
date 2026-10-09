@@ -122,4 +122,24 @@ describe('promptGithub', () => {
 
     await expect(promptGithub(undefined, false, null)).rejects.toThrow(InitCancelled);
   });
+
+  it('preserves existing token in non-interactive mode', async () => {
+    const config = {
+      github: { user: 'octocat', token: 'ghp_existing', repos: ['acme/widget'] },
+    } as unknown as GlobalConfig;
+
+    const result = await promptGithub(undefined, true, config);
+
+    expect(result).toEqual({ user: 'octocat', token: 'ghp_existing' });
+  });
+
+  it('uses defaultUser override in non-interactive mode', async () => {
+    const config = {
+      github: { user: 'octocat', token: 'ghp_existing', repos: [] },
+    } as unknown as GlobalConfig;
+
+    const result = await promptGithub('override-user', true, config);
+
+    expect(result).toEqual({ user: 'override-user', token: 'ghp_existing' });
+  });
 });
