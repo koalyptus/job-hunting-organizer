@@ -124,7 +124,7 @@ export async function scaffoldVoiceGuide(campaignRoot: string): Promise<void> {
  * Write the global config, deep-merging logging to preserve user-customised
  * values on re-init.
  */
-function writeInitGlobalConfig(dataRoot: string, llm: LlmPrefs, github: GithubPrefs): void {
+export function writeInitGlobalConfig(dataRoot: string, llm: LlmPrefs, github: GithubPrefs): void {
   const currentConfig = loadGlobalConfig();
   updateGlobalConfig({
     version: 1,
@@ -134,11 +134,12 @@ function writeInitGlobalConfig(dataRoot: string, llm: LlmPrefs, github: GithubPr
       apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
       model: llm.model || DEFAULT_LLM_MODEL,
       timeoutMs: currentConfig.llm.timeoutMs,
+      tags: currentConfig.llm.tags,
     },
     github: {
-      user: github.user ?? '',
-      token: github.token ?? '',
-      repos: [],
+      user: github.user ?? currentConfig.github.user ?? '',
+      token: github.token ?? currentConfig.github.token ?? '',
+      repos: currentConfig.github.repos ?? [],
     },
     logging: {
       ...currentConfig.logging,

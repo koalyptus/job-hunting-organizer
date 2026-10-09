@@ -17,7 +17,7 @@ export async function promptGithub(
   const prefill = defaultUser ?? existingConfig?.github?.user;
 
   if (nonInteractive) {
-    return { user: prefill, token: undefined };
+    return { user: prefill, token: existingConfig?.github?.token };
   }
 
   const input = await text({
