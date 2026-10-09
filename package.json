@@ -1,6 +1,6 @@
 {
   "name": "job-hunting-organizer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Local-first CLI and MCP server for running a job-hunting campaign: profile from CV + GitHub, tailored cover letters, application Q&A, and interview tracking.",
   "type": "module",
   "license": "MIT",
