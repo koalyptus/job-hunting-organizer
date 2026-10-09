@@ -2,7 +2,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mkdtemp, rm, mkdir } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import * as writeModule from './write.js';
 import * as kbContextModule from '../../workflow/campaign/kb-context.js';
 import * as cvModule from '../../lib/cv.js';
