@@ -68,6 +68,13 @@ describe('renderFullStats', () => {
     expect(out).toContain('(40%)');
   });
 
+  it('labels an empty employment type as (unspecified)', () => {
+    const stats = { ...baseStats, byEmploymentType: { permanent: 3, '': 2 } };
+    const out = renderFullStats('default', stats);
+    expect(out).toContain('(unspecified)');
+    expect(out).toContain('permanent');
+  });
+
   it('renders sites', () => {
     const out = renderFullStats('default', baseStats);
     expect(out).toContain('Seek');

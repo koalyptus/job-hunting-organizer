@@ -624,15 +624,27 @@ describe('generatePrep', () => {
     );
   });
 
-  it('wraps non-Error profile read failures in PrepError', async () => {
+  it('wraps Error readApplication failures in PrepError using the message', async () => {
     const slug = '2026-Jun-01-SE-Test-Corp';
     await setupApp(slug);
 
-    const profileMod = ProfileReadModule;
-    const spy = vi.spyOn(profileMod, 'readProfile').mockRejectedValueOnce(42);
+    vi.spyOn(AppModule, 'readApplication').mockRejectedValueOnce(new Error('read exploded'));
 
     await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
-      'Failed to read profile: 42',
+      'Failed to read application: read exploded',
+    );
+  });
+
+  it('wraps Error profile read failures in PrepError using the message', async () => {
+    const slug = '2026-Jun-01-SE-Test-Corp';
+    await setupApp(slug);
+
+    const spy = vi
+      .spyOn(ProfileReadModule, 'readProfile')
+      .mockRejectedValueOnce(new Error('profile exploded'));
+
+    await expect(generatePrep({ slug, campaign: 'test-campaign' })).rejects.toThrow(
+      'Failed to read profile: profile exploded',
     );
 
     spy.mockRestore();

@@ -131,6 +131,24 @@ describe('prepare command', () => {
       expect(prepareCore.generatePrep).toHaveBeenCalledWith(expect.objectContaining({ days: 14 }));
     });
 
+    it('falls back to 7 days when --days is not a number', async () => {
+      vi.mocked(prepareCore.generatePrep).mockResolvedValue({
+        content: 'Prep plan content',
+        wordCount: 10,
+        model: 'test-model',
+        durationMs: 100,
+      });
+
+      const slug = '2026-Jun-29-SE-Test-Corp';
+      const campaignDir = join(testHome, 'data', 'campaigns', 'default');
+      await mkdir(join(campaignDir, 'applied', slug), { recursive: true });
+
+      const { exitCode } = await runCommand(prepareCommand, ['prepare', slug, '--days', 'soon']);
+
+      expect(exitCode).toBe(0);
+      expect(prepareCore.generatePrep).toHaveBeenCalledWith(expect.objectContaining({ days: 7 }));
+    });
+
     it('outputs JSON with --json flag', async () => {
       vi.mocked(prepareCore.generatePrep).mockResolvedValue({
         content: 'Prep plan content',
