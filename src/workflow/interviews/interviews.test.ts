@@ -152,6 +152,30 @@ describe('interviews branch coverage (97,604)', () => {
     ).rejects.toThrow(/invalid interview status/);
   });
 
+  it('ignores an unrecognised Status line when parsing (line 223 false branch)', async () => {
+    const slug = await createApplication({
+      appliedDir,
+      title: 'Eng',
+      company: 'Acme',
+      appliedOn: '2026-06-01',
+    });
+    await addInterview(appliedDir, slug, { when: '2026-06-15 10:00', type: 'hr' });
+
+    // Rewrite only the Status line, leaving the code-generated section heading
+    // intact, so the parser meets a status outside INTERVIEW_STATUSES.
+    const file = join(appliedDir, slug, 'interviews.md');
+    const written = await readFile(file, 'utf8');
+    expect(written).toContain('- Status: scheduled');
+    await writeFile(
+      file,
+      written.replace('- Status: scheduled', '- Status: not-a-real-status'),
+      'utf8',
+    );
+
+    const entries = await listInterviews(appliedDir, slug);
+    expect(entries[0]!.status).toBe('scheduled');
+  });
+
   it('addInterview validates when branch (empty when)', async () => {
     const slug = await createApplication({
       appliedDir,

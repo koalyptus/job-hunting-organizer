@@ -745,6 +745,22 @@ describe('appendNote', () => {
     expect(content.endsWith('my note\n')).toBe(true);
   });
 
+  it('recreates jd.md when it is missing at append time', async () => {
+    const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
+    const jdPath = join(appliedDir, slug, 'jd.md');
+
+    // createApplication always writes jd.md, so remove it to reach the
+    // `existsSync(jdPath)` false branch.
+    await rm(jdPath);
+    expect(existsSync(jdPath)).toBe(false);
+
+    await appendNote(appliedDir, slug, 'note without existing jd');
+
+    const content = await readFile(jdPath, 'utf8');
+    expect(content).toContain(USER_NOTES_COMMENT);
+    expect(content).toContain('note without existing jd');
+  });
+
   it('appends note below marker when jd.md already has content', async () => {
     const slug = await createApplication({ appliedDir, title: 'Eng', company: 'X' });
     const jdPath = join(appliedDir, slug, 'jd.md');

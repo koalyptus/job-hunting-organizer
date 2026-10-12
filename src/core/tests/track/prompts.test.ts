@@ -46,6 +46,28 @@ describe('confirmTrackSummary', () => {
     expect(result).toBe(true);
   });
 
+  it('omits the location line when the JD has no location', async () => {
+    vi.mocked(confirm).mockResolvedValue(true);
+    vi.mocked(isCancel).mockReturnValue(false);
+
+    const jd: ExtractedJd = {
+      title: 'Senior Engineer',
+      company: 'TestCo',
+      description: 'Job description',
+    };
+
+    const result = await confirmTrackSummary(
+      jd,
+      { roleSlug: '', confidence: 0, reasoning: '' },
+      [],
+      'my-campaign',
+    );
+
+    expect(result).toBe(true);
+    expect(mockStdout).toHaveBeenCalledWith(expect.stringContaining('Title:'));
+    expect(mockStdout).not.toHaveBeenCalledWith(expect.stringContaining('Location:'));
+  });
+
   it('returns false when user cancels', async () => {
     vi.mocked(confirm).mockResolvedValue(false);
     vi.mocked(isCancel).mockReturnValue(false);

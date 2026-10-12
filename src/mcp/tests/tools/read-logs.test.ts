@@ -61,6 +61,19 @@ describe('read_logs tool', () => {
     expect(data).toContain('warning log');
   });
 
+  it('reads only the CLI log when the MCP log is missing', async () => {
+    // existsSync is called for the CLI log first, then the MCP log.
+    vi.mocked(existsSync).mockReturnValueOnce(true).mockReturnValueOnce(false);
+    vi.mocked(readFileSync).mockReturnValue(
+      '{"level": 30, "time": "2026-07-17T14:05:03Z", "msg": "cli only"}\n',
+    );
+
+    const { client } = await createTestServer((srv) => registerReadLogs(srv, createStore()));
+
+    const result = await client.callTool({ name: 'read_logs', arguments: {} });
+    expect(getTextContent(result)).toContain('cli only');
+  });
+
   it('returns error when log file does not exist', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
 

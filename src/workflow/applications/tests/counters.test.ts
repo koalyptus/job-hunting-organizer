@@ -88,6 +88,22 @@ describe('readCountersAsync', () => {
     await writeFile(join(workDir, '.counters.json'), '[1, 2, 3]', 'utf8');
     expect(await readCountersAsync(workDir)).toEqual({});
   });
+
+  it('drops entries that are not non-negative integers', async () => {
+    await writeFile(
+      join(workDir, '.counters.json'),
+      JSON.stringify({
+        good: 3,
+        'also-good': 0,
+        bad: -1,
+        'bad-float': 1.5,
+        'bad-string': 'x',
+        'bad-null': null,
+      }),
+      'utf8',
+    );
+    expect(await readCountersAsync(workDir)).toEqual({ good: 3, 'also-good': 0 });
+  });
 });
 
 describe('writeCountersAsync', () => {

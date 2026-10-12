@@ -7,10 +7,15 @@ const mockGetText = vi.fn();
 const mockDestroy = vi.fn();
 
 vi.mock('pdf-parse', () => ({
-  PDFParse: vi.fn().mockImplementation(() => ({
-    getText: mockGetText,
-    destroy: mockDestroy,
-  })),
+  // A `class` implementation (not an arrow function) keeps the mock
+  // constructible: `readCv` calls `new PDFParse(...)`, and Vitest 5 no longer
+  // supports `new` on a mock whose implementation is an arrow function.
+  PDFParse: vi.fn(
+    class {
+      getText = mockGetText;
+      destroy = mockDestroy;
+    },
+  ),
 }));
 
 vi.mock('mammoth', () => ({
