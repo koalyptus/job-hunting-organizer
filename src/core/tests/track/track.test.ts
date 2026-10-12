@@ -441,7 +441,11 @@ describe('runTrack', () => {
 
   describe('update errors', () => {
     afterEach(() => {
-      vi.restoreAllMocks();
+      // resetAllMocks (not restoreAllMocks): Vitest 5's restoreAllMocks only
+      // restores vi.spyOn spies and leaves plain vi.fn() mocks untouched, so the
+      // mockRejectedValue set in this describe would leak into later describes.
+      // resetAllMocks clears it.
+      vi.resetAllMocks();
     });
 
     it('propagates readApplication errors without wrapping', async () => {

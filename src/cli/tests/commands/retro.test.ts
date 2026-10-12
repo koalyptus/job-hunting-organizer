@@ -74,7 +74,11 @@ describe('retro command', () => {
 
   afterEach(async () => {
     clearConfigCache();
-    vi.restoreAllMocks();
+    // resetAllMocks (not restoreAllMocks): Vitest 5's restoreAllMocks only
+    // restores vi.spyOn spies and leaves plain vi.fn() mocks untouched, so
+    // per-test mockResolvedValue/mockReturnValue overrides would leak into
+    // later tests. resetAllMocks clears those overrides.
+    vi.resetAllMocks();
     if (originalJhoConfigHome === undefined) {
       delete process.env['JHO_CONFIG_HOME'];
     } else {

@@ -3,13 +3,18 @@ import type { EventEmitter } from 'node:events';
 import { createServer, startServer, safeLogFatal } from '../server.js';
 
 vi.mock('@modelcontextprotocol/server/stdio', () => ({
-  StdioServerTransport: vi.fn().mockImplementation(() => ({
-    start: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn().mockResolvedValue(undefined),
-    onmessage: null,
-    onerror: null,
-    onclose: null,
-  })),
+  // A `class` implementation (not an arrow function) keeps the mock
+  // constructible: `startServer` calls `new StdioServerTransport()`, and Vitest 5
+  // no longer supports `new` on a mock whose implementation is an arrow function.
+  StdioServerTransport: vi.fn(
+    class {
+      start = vi.fn().mockResolvedValue(undefined);
+      close = vi.fn().mockResolvedValue(undefined);
+      onmessage = null;
+      onerror = null;
+      onclose = null;
+    },
+  ),
 }));
 
 const mockAppendFileSync = vi.fn();
