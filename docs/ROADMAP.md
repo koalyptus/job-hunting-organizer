@@ -1332,6 +1332,20 @@ Sketch only:
 
 Not started, not committed, no timeline. Pick up only if/when the CLI/MCP UX is no longer enough.
 
+#### MCP over HTTP — validated path (spike #103)
+
+The "HTTP MCP transport" deferred item above has been **validated** (spike #103):
+jho's full MCP surface (37 tools/resources/prompts) is servable over MCP **v2
+Streamable HTTP** and callable from a browser extension. The v1 `SSEServerTransport`
+premise is obsolete — `@modelcontextprotocol/server@2.0.0` ships no `./sse` export;
+serve with `WebStandardStreamableHTTPServerTransport` (or the `createMcpHandler`
+factory) and connect with `StreamableHTTPClientTransport`. CORS was confirmed on
+the wire, and the stdio surface is unaffected.
+
+Full evidence plus the implementation reference (bridge pattern, wiring direction for
+a future `startServer({ transport: 'http', port })`, open questions):
+[`docs/mcp-http-transport.md`](mcp-http-transport.md). Tracked by #107.
+
 ### Other deferred items
 
 - Multi-user / auth (local-first stays)
