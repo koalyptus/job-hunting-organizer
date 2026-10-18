@@ -18,11 +18,13 @@ v2's replacement is **Streamable HTTP** (the `2026-07-28` spec). A Streamable HT
 **Bootstrap (throwaway bridge):** `createStore()` → `createServer()` → `registerTools/Resources/Prompts` → `server.connect(transport)` on `WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: () => crypto.randomUUID() })`; a Node `http.createServer` adapter adds CORS and converts `IncomingMessage` ↔ Web `Request`/`Response` (hand-rolled, since `@modelcontextprotocol/node` is not installed).
 
 **HTTP round-trip** (via `StreamableHTTPClientTransport`, 10s connect timeout):
+
 - `HTTP_OK=1`, **37 tools listed**.
 - `list_campaigns` → seeded `default` (`applicationCount: 0`).
 - `get_root {campaign:"default"}` → resolved campaign root under `$JHO_DATA/campaigns/default`.
 
 **CORS on the wire** (fetch probe):
+
 - `OPTIONS` → `204`, `access-control-allow-origin: *`, `access-control-allow-methods: GET, POST, OPTIONS`, `access-control-allow-headers: Content-Type, mcp-protocol, mcp-session-id, authorization`.
 - `POST initialize` → `406` + `access-control-allow-origin: *` + `content-type: application/json` (the `406` is the bare-fetch probe missing client protocol-negotiation headers; a real v2 client gets `200`).
 
@@ -35,6 +37,7 @@ v2's replacement is **Streamable HTTP** (the `2026-07-28` spec). A Streamable HT
 ## Installed API (verified)
 
 `@modelcontextprotocol/server@2.0.0`:
+
 - `WebStandardStreamableHTTPServerTransport` (class, main index export) — connects to an `McpServer`; uses Web-standard `Request`/`Response` (Node ≥ 18).
   - `constructor(options?: WebStandardStreamableHTTPServerTransportOptions)` where `sessionIdGenerator?: (() => string) | undefined` (omit or `undefined` for stateless).
   - `handleRequest(req: Request, options?: HandleRequestOptions): Promise<Response>` — handles both `GET` (SSE stream) and `POST`.
@@ -42,6 +45,7 @@ v2's replacement is **Streamable HTTP** (the `2026-07-28` spec). A Streamable HT
 - `StdioServerTransport` from `@modelcontextprotocol/server/stdio` — used by the current stdio entry.
 
 `@modelcontextprotocol/client@2.0.0`:
+
 - `StreamableHTTPClientTransport` (class, main index export) — `constructor(url: URL, opts?)`. The preferred v2 client transport.
 - `StdioClientTransport` from `@modelcontextprotocol/client/stdio`.
 - `@modelcontextprotocol/node` is **not** installed (no `toNodeHandler`/`toWebRequest` helpers); Node↔Web `Request`/`Response` conversion must be hand-rolled (or use `createMcpHandler` + `handler.fetch`).
@@ -65,33 +69,51 @@ const transport = new WebStandardStreamableHTTPServerTransport({
 await server.connect(transport);
 
 // 3) Node http adapter with CORS + Node<->Web conversion
-http.createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-protocol, mcp-session-id, authorization');
-  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+http
+  .createServer(async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, mcp-protocol, mcp-session-id, authorization',
+    );
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
 
-  const headers = new Headers();
-  for (const [k, v] of Object.entries(req.headers)) {
-    if (!v) continue;
-    if (k === 'host' || k === 'connection' || k === 'content-length' || k === 'transfer-encoding') continue;
-    headers.set(k, Array.isArray(v) ? v.join(', ') : v);
-  }
-  let body: BodyInit | undefined;
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    const chunks: Buffer[] = [];
-    for await (const c of req) chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
-    body = Buffer.concat(chunks);
-  }
-  const webReq = new Request(`http://localhost:${PORT}${req.url ?? '/'}`, { method: req.method, headers, body });
-  const resp = await transport.handleRequest(webReq);
-  res.writeHead(resp.status, Object.fromEntries(resp.headers.entries()));
-  if (resp.body) {
-    const reader = resp.body.getReader();
-    while (true) { const { done, value } = await reader.read(); if (done) break; res.write(value); }
-  }
-  res.end();
-}).listen(PORT);
+    const headers = new Headers();
+    for (const [k, v] of Object.entries(req.headers)) {
+      if (!v) continue;
+      if (k === 'host' || k === 'connection' || k === 'content-length' || k === 'transfer-encoding')
+        continue;
+      headers.set(k, Array.isArray(v) ? v.join(', ') : v);
+    }
+    let body: BodyInit | undefined;
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      const chunks: Buffer[] = [];
+      for await (const c of req) chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
+      body = Buffer.concat(chunks);
+    }
+    const webReq = new Request(`http://localhost:${PORT}${req.url ?? '/'}`, {
+      method: req.method,
+      headers,
+      body,
+    });
+    const resp = await transport.handleRequest(webReq);
+    res.writeHead(resp.status, Object.fromEntries(resp.headers.entries()));
+    if (resp.body) {
+      const reader = resp.body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
+    }
+    res.end();
+  })
+  .listen(PORT);
 ```
 
 ## Wiring direction (`--http` / `--port N`)
@@ -115,12 +137,15 @@ const handler = createMcpHandler(() => {
   return server;
 });
 http.createServer(async (req, res) => {
-  const resp = await handler.fetch(new Request(`http://localhost:${PORT}${req.url}`, { method: req.method, body, headers }));
+  const resp = await handler.fetch(
+    new Request(`http://localhost:${PORT}${req.url}`, { method: req.method, body, headers }),
+  );
   // write resp with CORS headers
 });
 ```
 
 ## Open questions for implementation
+
 1. **Server lifetime:** single shared `McpServer` + `WebStandardStreamableHTTPServerTransport` (reuse #103 pattern) vs. `createMcpHandler`'s per-request factory (simpler, re-registers 37 tools per request — cheap but wasteful under load).
 2. **Session/Cookie echo:** stateful sessions need `sessionIdGenerator` + correct `set-cookie` echoing through the Node adapter; the shared-server pattern is stateful.
 3. **Protocol era:** confirm which client era the browser extension target speaks; `createMcpHandler` and `WebStandardStreamableHTTPServerTransport` both handle modern/`2026-07-28` negotiation.
