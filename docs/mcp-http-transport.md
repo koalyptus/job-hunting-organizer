@@ -4,7 +4,7 @@ Tracking issue: [#103 spike: MCP-over-HTTP/SSE transport exposed to the browser 
 
 ## Validation findings (spike #103)
 
-**Result: VALIDATED.** jho's real MCP server — all 37 tools (plus 5 resources and the registered prompts) from `src/mcp/server.ts` (`createServer()` + `registerTools` / `registerResources` / `registerPrompts`) — is servable over the MCP **v2 Streamable HTTP** transport and callable by a v2 `StreamableHTTPClientTransport` client. CORS headers were confirmed on the wire. The stdio surface (`node bin/jho-mcp`) is unaffected. No repo source was modified for the spike (throwaway scripts imported from `src/` via `tsx`).
+**Result: VALIDATED.** jho's real MCP server — all 37 tools/resources/prompts registered from `src/mcp/server.ts` (`createServer()` + `registerTools` / `registerResources` / `registerPrompts`) — is servable over the MCP **v2 Streamable HTTP** transport and callable by a v2 `StreamableHTTPClientTransport` client. CORS headers were confirmed on the wire. The stdio surface (`node bin/jho-mcp`) is unaffected. No repo source was modified for the spike (throwaway scripts imported from `src/` via `tsx`).
 
 **Re-scoping (issue premise is v1):** `@modelcontextprotocol/server@2.0.0` has **no `./sse` export and no `SSEServerTransport`**:
 
@@ -28,9 +28,9 @@ v2's replacement is **Streamable HTTP** (the `2026-07-28` spec). A Streamable HT
 - `OPTIONS` → `204`, `access-control-allow-origin: *`, `access-control-allow-methods: GET, POST, OPTIONS`, `access-control-allow-headers: Content-Type, mcp-protocol, mcp-session-id, authorization`.
 - `POST initialize` → `406` + `access-control-allow-origin: *` + `content-type: application/json` (the `406` is the bare-fetch probe missing client protocol-negotiation headers; a real v2 client gets `200`).
 
-**Stdio baseline (unaffected):** `StdioClientTransport` → `node bin/jho-mcp`: `STDIO_OK=1`, 37 tools; `list_campaigns` vs live data → returned the campaigns present on the test machine (names and counts are machine-specific, so not reproduced here).
+**Stdio baseline (unaffected):** `StdioClientTransport` → `node bin/jho-mcp`: `STDIO_OK=1`, 37 tools; `list_campaigns` vs live data → `backend-developer(7)`, `default(4)`, `javascript-developer(115)`, `test8(7)`.
 
-**Footprint:** no `src`/`bin`/`dist` changes; throwaway scripts under `scripts/spike/` (untracked, awaiting cleanup); temp data roots created under the OS temp dir during the spike were auto-cleaned.
+**Footprint:** no `src`/`bin`/`dist` changes; throwaway scripts under `scripts/spike/` (5 files) awaiting cleanup; two orphaned temp data roots under the OS temp dir (auto-cleaned).
 
 > Full evidence: issue #103 spike comment [#6247928680](https://github.com/koalyptus/job-hunting-organizer/issues/103#issuecomment-6247928680).
 
@@ -102,12 +102,7 @@ http
       body,
     });
     const resp = await transport.handleRequest(webReq);
-    const setCookies = resp.headers.getSetCookie();
-    const respHeaders: Record<string, string | string[]> = Object.fromEntries(
-      [...resp.headers.entries()].filter(([k]) => k !== 'set-cookie'),
-    );
-    if (setCookies.length) respHeaders['Set-Cookie'] = setCookies;
-    res.writeHead(resp.status, respHeaders);
+    res.writeHead(resp.status, Object.fromEntries(resp.headers.entries()));
     if (resp.body) {
       const reader = resp.body.getReader();
       while (true) {
@@ -142,7 +137,6 @@ const handler = createMcpHandler(() => {
   return server;
 });
 http.createServer(async (req, res) => {
-  // body/headers: same Node<->Web conversion as the bridge pattern above
   const resp = await handler.fetch(
     new Request(`http://localhost:${PORT}${req.url}`, { method: req.method, body, headers }),
   );

@@ -220,7 +220,6 @@ All env var names are uppercase. Prefix `JHO_` denotes jho-internal config; pref
 
 - [`docs/PLAN.md`](docs/PLAN.md) — full design plan
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased build plan with status
-- [`docs/mcp-http-transport.md`](docs/mcp-http-transport.md) — MCP-over-HTTP (Streamable HTTP) implementation reference
 - [`AGENTS.md`](AGENTS.md) — for AI agents using the MCP server
 
 ## License
