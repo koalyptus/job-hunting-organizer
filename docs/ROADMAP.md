@@ -1332,19 +1332,27 @@ Sketch only:
 
 Not started, not committed, no timeline. Pick up only if/when the CLI/MCP UX is no longer enough.
 
-#### MCP over HTTP — validated path (spike #103)
+#### MCP over HTTP — implemented (spike #103, issue #104)
 
-The "HTTP MCP transport" deferred item above has been **validated** (spike #103):
-jho's full MCP surface (37 tools/resources/prompts) is servable over MCP **v2
-Streamable HTTP** and callable from a browser extension. The v1 `SSEServerTransport`
-premise is obsolete — `@modelcontextprotocol/server@2.0.0` ships no `./sse` export;
-serve with `WebStandardStreamableHTTPServerTransport` (or the `createMcpHandler`
-factory) and connect with `StreamableHTTPClientTransport`. CORS was confirmed on
-the wire, and the stdio surface is unaffected.
+The "HTTP MCP transport" deferred item above has been **implemented and shipped**
+(commit `c14e8d8`). jho's full MCP surface (37 tools/resources/prompts) is servable
+over MCP **v2 Streamable HTTP** and callable from a browser extension. Run
+`jho-mcp --http [--port N]` (or `jho mcp --http [--port N]`) to start the HTTP
+transport; default port is **7331**. The stdio surface is unaffected.
 
-Full evidence plus the implementation reference (bridge pattern, wiring direction for
-a future `startServer({ transport: 'http', port })`, open questions):
-[`docs/mcp-http-transport.md`](mcp-http-transport.md). Tracked by #107.
+**Security note:** the HTTP transport is intended for local development. It
+binds `0.0.0.0` (all interfaces) by default, serves `Access-Control-Allow-Origin: *`,
+and performs no `Origin`/`Host` validation or authentication — do not expose it
+to untrusted networks. See [`docs/mcp-http-transport.md`](mcp-http-transport.md)
+for full caveats and secure-default guidance.
+
+Implementation: `src/mcp/http-server.ts` (Node `http` adapter with CORS, OPTIONS
+preflight, Node↔Web Request/Response conversion, duplicate `Set-Cookie` preservation),
+`startServer({ transport: 'http', port })` in `src/mcp/server.ts`, `--http`/`--port`
+flags in `bin/jho-mcp` and `src/cli/commands/mcp.ts`.
+
+Full evidence, spike findings, and design decisions:
+[`docs/mcp-http-transport.md`](mcp-http-transport.md). Tracked by #104.
 
 ### Other deferred items
 

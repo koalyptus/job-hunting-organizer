@@ -121,12 +121,25 @@ http
   .listen(PORT);
 ```
 
-## Wiring direction (`--http` / `--port N`)
+## Implementation status (issue #104, commit `c14e8d8`)
 
-- `src/mcp/server.ts`: parametrize `startServer({ transport?: 'stdio' | 'http'; port?: number })`. On `http`, run the pattern above; on `stdio` (default), keep current behavior (no regression). The store/server/registration bootstrap is shared.
-- `bin/jho-mcp`: parse `--http` and `--port N` from `process.argv` and pass to `startServer`.
-- `src/cli/commands/mcp.ts`: add `jho mcp --http [--port N]` commander options.
-- Keep CORS as in the reference (browser-extension origin is localhost; `*` is fine for loopback-only, no auth). For a production web client, scope origins and add bearer auth (see PLAN §20 / ROADMAP "Web client").
+**Implemented and shipped.** The wiring described in the spike has landed:
+
+- `src/mcp/http-server.ts` (new): Node `http` adapter with CORS, `OPTIONS` preflight, Node↔Web `Request`/`Response` conversion, duplicate `Set-Cookie` preservation. Exports `createHttpTransport()`, `startHttpServer()`, and `DEFAULT_HTTP_PORT` (7331).
+- `src/mcp/server.ts`: `startServer({ transport?: 'stdio' | 'http'; port?: number })` — on `http`, creates the transport and starts the HTTP server; on `stdio` (default), keeps the current behavior (no regression). The store/server/registration bootstrap is shared.
+- `bin/jho-mcp`: parses `--http` and `--port N` from `process.argv` and passes them to `startServer`.
+- `src/cli/commands/mcp.ts`: `jho mcp --http [--port N]` commander options with help text and examples.
+- `src/mcp/tests/http-server.test.ts`: 3 integration tests covering the HTTP round-trip.
+
+Usage:
+
+```
+jho mcp                     # stdio (default, no regression)
+jho mcp --http              # Streamable HTTP on port 7331
+jho mcp --http --port 8080  # Streamable HTTP on a custom port
+```
+
+**Unsafe by default — local/dev use only.** `startHttpServer` calls `server.listen(port)` with no host argument, so the server binds `0.0.0.0` (all interfaces). Combined with `Access-Control-Allow-Origin: *` and no `Origin`/`Host` validation, the full unauthenticated MCP tool surface (including write tools like `track_application`/`update_profile`) is reachable from the local network and from arbitrary web origins via DNS rebinding. Do not expose this port beyond loopback. Secure defaults for any non-local use: bind to `127.0.0.1` (or `::1`), enforce `Origin` and `Host` allowlists, and require bearer auth (see PLAN §20 / ROADMAP "Web client").
 
 ## `createMcpHandler` alternative (less plumbing)
 
@@ -152,7 +165,7 @@ http.createServer(async (req, res) => {
 
 ## Open questions for implementation
 
-1. **Server lifetime:** single shared `McpServer` + `WebStandardStreamableHTTPServerTransport` (reuse #103 pattern) vs. `createMcpHandler`'s per-request factory (simpler, re-registers 37 tools per request — cheap but wasteful under load).
-2. **Session/Cookie echo:** stateful sessions need `sessionIdGenerator` + correct `set-cookie` echoing through the Node adapter; the shared-server pattern is stateful.
+1. **Server lifetime:** ~~single shared `McpServer` vs. per-request~~ **Resolved** — chose the shared `McpServer` + `WebStandardStreamableHTTPServerTransport` (stateful sessions, single registration). The `createMcpHandler` alternative was rejected to avoid re-registering 37 tools per request.
+2. **Session/Cookie echo:** stateful sessions need `sessionIdGenerator` + correct `set-cookie` echoing through the Node adapter; the shared-server pattern is stateful. **Resolved** — `createHttpTransport()` uses `randomUUID()` for session IDs, and `writeWebResponse()` preserves duplicate `Set-Cookie` headers via `resp.headers.getSetCookie()`.
 3. **Protocol era:** confirm which client era the browser extension target speaks; `createMcpHandler` and `WebStandardStreamableHTTPServerTransport` both handle modern/`2026-07-28` negotiation.
-4. **Port default / config:** pick a default port and decide whether it lives in global `config.json` (note: the `webServer.{port,host}` placeholder was removed per PLAN §20; re-add only when this lands).
+4. **Port default / config:** ~~pick a default port and decide whether it lives in global `config.json`~~ **Resolved** — default port is **7331** (`DEFAULT_HTTP_PORT` in `src/mcp/http-server.ts`). Not added to `config.json` yet; the `webServer.{port,host}` placeholder was removed per PLAN §20 and will be re-added when the web client lands.
