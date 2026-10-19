@@ -140,8 +140,6 @@ Global flags work too: `jho --yes "list apps"`. Lower-confidence parses are echo
 This package ships an MCP server via the `jho-mcp` binary.
 Check your harness documentation for correct configuration, as an example:
 
-> **Browser-extension clients:** use `jho mcp --http [--port N]` to serve the MCP v2 Streamable HTTP transport (default port 7331). The stdio transport is unchanged.
-
 **GitHub Copilot** (`.vscode/mcp.json`):
 
 ```json

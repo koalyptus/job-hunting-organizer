@@ -139,7 +139,7 @@ jho mcp --http              # Streamable HTTP on port 7331
 jho mcp --http --port 8080  # Streamable HTTP on a custom port
 ```
 
-CORS is as in the reference (`Access-Control-Allow-Origin: *`, loopback-only, no auth). For a production web client, scope origins and add bearer auth (see PLAN §20 / ROADMAP "Web client").
+CORS is `Access-Control-Allow-Origin: *` with no auth. **Security note:** `startHttpServer` calls `server.listen(port)` with no host argument, so the server binds `0.0.0.0` (all interfaces), not loopback. Combined with wildcard CORS and no `Origin`/`Host` validation, the unauthenticated MCP tool surface is reachable from the local network and from arbitrary web origins (DNS rebinding). For any non-local use, bind explicitly to `127.0.0.1` (or `::1`), validate `Origin`/`Host` headers against an allowlist, and require bearer auth (see PLAN §20 / ROADMAP "Web client").
 
 ## `createMcpHandler` alternative (less plumbing)
 
