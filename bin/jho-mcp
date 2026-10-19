@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 import { startServer } from '../dist/mcp/server.js';
 
-startServer().catch((err) => {
+const args = process.argv.slice(2);
+const useHttp = args.includes('--http');
+const portIdx = args.indexOf('--port');
+const portArg = portIdx !== -1 ? args[portIdx + 1] : undefined;
+const port = portArg !== undefined ? Number.parseInt(portArg, 10) : undefined;
+
+startServer({ transport: useHttp ? 'http' : 'stdio', port }).catch((err) => {
   process.stderr.write(`jho-mcp: ${err instanceof Error ? err.message : String(err)}\n`);
   process.exit(1);
 });
