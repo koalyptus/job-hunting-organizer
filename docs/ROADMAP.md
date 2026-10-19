@@ -1340,6 +1340,12 @@ over MCP **v2 Streamable HTTP** and callable from a browser extension. Run
 `jho-mcp --http [--port N]` (or `jho mcp --http [--port N]`) to start the HTTP
 transport; default port is **7331**. The stdio surface is unaffected.
 
+**Security note:** the HTTP transport is intended for local development. It
+binds `0.0.0.0` (all interfaces) by default, serves `Access-Control-Allow-Origin: *`,
+and performs no `Origin`/`Host` validation or authentication — do not expose it
+to untrusted networks. See [`docs/mcp-http-transport.md`](mcp-http-transport.md)
+for full caveats and secure-default guidance.
+
 Implementation: `src/mcp/http-server.ts` (Node `http` adapter with CORS, OPTIONS
 preflight, Node↔Web Request/Response conversion, duplicate `Set-Cookie` preservation),
 `startServer({ transport: 'http', port })` in `src/mcp/server.ts`, `--http`/`--port`
