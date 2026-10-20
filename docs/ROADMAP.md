@@ -1346,6 +1346,42 @@ Full evidence plus the implementation reference (bridge pattern, wiring directio
 a future `startServer({ transport: 'http', port })`, open questions):
 [`docs/mcp-http-transport.md`](mcp-http-transport.md). Tracked by #107.
 
+#### Browser extension — code location (decision, spike #113)
+
+The extension codebase lives in this repository at **`extension/`** (Option A: project
+folder, **no** `workspaces`, **no** shared `@jho/core` package). Decided and approved
+2026-10-20; full pros/cons and migration-cost analysis in [#113](https://github.com/koalyptus/job-hunting-organizer/issues/113).
+
+The **MCP tool set is the contract**. The extension talks to `jho mcp --http` over
+Streamable HTTP and never touches the filesystem, so it does not import `src/core/`
+and does not need a workspace package. The only surface it could want to share is the
+status/employment-type unions (`APPLICATION_STATUSES`, `EMPLOYMENT_TYPES` in
+`src/workflow/applications/types.ts`) — type-only, cheap to duplicate or vendor, and
+not worth extracting a package out of the I/O-free `src/core/` for.
+
+Rejected: a multi-package workspace with no shared code (plumbing, no benefit), and a
+true monorepo with an extracted `@jho/core` (the shared surface is too small to pay for
+it). **Revisit if `jho web` (above) is ever started** — that is the consumer that would
+justify the shared package, not the extension.
+
+Deferred, not rejected: a separate `job-hunting-organizer-extension` repository. Its
+real win is CI/toolchain isolation (the extension's WXT/Vite/React toolchain vs. the
+CLI's Node-only install and the 6-build CI matrix). Because `extension/` splits out with
+a plain `git mv` + subtree split, the reversible option was chosen; split out when the
+extension surface grows enough that the shared CI cost is measurable.
+
+Scaffolding constraints that follow from this decision:
+
+- Root `tsconfig.json` `include` must **not** gain `extension/**` — the extension has
+  its own WXT tsconfig, and root `tsc --noEmit` must not typecheck browser code
+  against Node libs.
+- `vitest.config.ts` `include` is `src/**` only; extension tests run under WXT's own
+  vitest unless deliberately extended.
+- `package.json` `files` (`bin`, `dist`, `prompts`) and `scripts/pre-publish-check.ts`
+  must keep `extension/` out of the published tarball.
+- `release.yml`'s tag↔version check stays on the CLI `package.json`; the extension zip
+  artifact is a separate release concern.
+
 ### Other deferred items
 
 - Multi-user / auth (local-first stays)
