@@ -50,6 +50,16 @@ export class McpHttpError extends Error {
 }
 
 /**
+ * MCP protocol version this client speaks.
+ *
+ * Transcribed from `LATEST_PROTOCOL_VERSION` in `@modelcontextprotocol/core`
+ * (the transport the bridge's server side uses), not chosen by hand. The server
+ * may negotiate an older version from `SUPPORTED_PROTOCOL_VERSIONS`
+ * (`2025-11-25`, `2025-06-18`, `2025-03-26`, `2024-11-05`, `2024-10-07`).
+ */
+const PROTOCOL_VERSION = '2025-11-25';
+
+/**
  * Minimal MCP client for the jho Streamable HTTP bridge (`jho mcp --http`).
  *
  * Speaks just enough of the protocol for the extension's use case:
@@ -89,7 +99,9 @@ export class McpBridgeClient {
    */
   async initialize(): Promise<void> {
     const result = await this.request('initialize', {
-      protocolVersion: '2025-06-18',
+      // LATEST_PROTOCOL_VERSION from @modelcontextprotocol/core, which is what
+      // the bridge's server transport speaks. Not a value picked by hand.
+      protocolVersion: PROTOCOL_VERSION,
       capabilities: {},
       clientInfo: { name: 'jho-browser-extension', version: '0.1.0' },
     });
@@ -136,22 +148,6 @@ export class McpBridgeClient {
     return decodeToolResult(result.result);
   }
 
-  /**
-   * Send a GET to terminate the server-side session, if one is open.
-   * Failures are ignored: the session is server-side state we no longer need.
-   */
-  async close(): Promise<void> {
-    if (this.sessionId === undefined) {
-      return;
-    }
-
-    try {
-      await this.rawFetch('GET', undefined, true);
-    } catch {
-      // Best-effort cleanup only.
-    }
-  }
-
   private async request(
     method: string,
     params: Record<string, unknown>,
@@ -172,16 +168,10 @@ export class McpBridgeClient {
   }
 
   private async post(payload: unknown): Promise<{ contentType: string; body: string }> {
-    const response = await this.rawFetch('POST', JSON.stringify(payload), false);
-
-    return { contentType: response.contentType, body: response.body };
+    return this.rawFetch(JSON.stringify(payload));
   }
 
-  private async rawFetch(
-    method: 'GET' | 'POST',
-    body: string | undefined,
-    ignoreErrors: boolean,
-  ): Promise<{ status: number; contentType: string; body: string }> {
+  private async rawFetch(body: string): Promise<{ contentType: string; body: string }> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       // Streamable HTTP requires the client to accept both content types.
@@ -199,7 +189,7 @@ export class McpBridgeClient {
 
     try {
       response = await this.fetchImpl(this.url, {
-        method,
+        method: 'POST',
         headers,
         body,
         signal: controller.signal,
@@ -208,20 +198,17 @@ export class McpBridgeClient {
       clearTimeout(timer);
     }
 
-    if (response.status === 404 && method === 'GET' && ignoreErrors) {
-      // Session already gone.
-    } else if (response.status < 200 || response.status >= 300) {
+    if (response.status < 200 || response.status >= 300) {
       throw new McpHttpError(response.status, `HTTP ${response.status} from MCP bridge`);
     }
 
     const contentType = response.headers.get('content-type') ?? 'application/json';
-    const text = await response.text();
 
-    if (method === 'POST' && response.status === 200) {
-      this.sessionId ??= readSessionId(response.headers);
-    }
+    // The session id is assigned by the initialize response and must be echoed
+    // on every later request.
+    this.sessionId ??= readSessionId(response.headers);
 
-    return { status: response.status, contentType, body: text };
+    return { contentType, body: await response.text() };
   }
 }
 

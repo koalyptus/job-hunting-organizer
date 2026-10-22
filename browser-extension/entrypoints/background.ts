@@ -31,7 +31,6 @@ async function getClient(): Promise<McpBridgeClient> {
   const url = await getBridgeUrl();
 
   if (client === undefined || clientUrl !== url) {
-    void client?.close();
     const next = new McpBridgeClient({ url });
     // Only cache the client once the handshake succeeds, so a failed
     // initialize() is retried on the next message instead of reusing a
@@ -189,8 +188,9 @@ async function handleMessage(request: BridgeRequest): Promise<BridgeResponse> {
 /**
  * Coerce a decoded tool payload into an array of rows.
  *
- * `list_applications` returns `{ entries: [...] }`; `list_campaigns` returns a
- * bare array.
+ * `list_applications` returns `{ entries: [...] }` and `list_campaigns` returns
+ * `{ campaigns: [...] }` — both wrap the array in a named field. A bare array is
+ * accepted too, so a bridge that changes shape degrades instead of throwing.
  *
  * @param payload - Decoded JSON payload.
  * @returns The row array (empty when the payload has none).

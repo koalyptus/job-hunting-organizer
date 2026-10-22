@@ -1,34 +1,38 @@
 /**
  * Shared shapes for the extension's view of the jho MCP tool surface.
  *
- * These mirror the server-side unions in
- * `src/workflow/applications/types.ts` (`APPLICATION_STATUSES`,
- * `EMPLOYMENT_TYPES`). They are duplicated deliberately: the #113 location
- * decision made the MCP tool set the contract, so the extension never imports
- * `src/core/` or `src/workflow/`.
+ * These mirror the server-side types in `src/workflow/applications/types.ts`
+ * (`APPLICATION_STATUSES`, `EMPLOYMENT_TYPES`, `ApplicationEntry`). They are
+ * duplicated deliberately: the #113 location decision made the MCP tool set the
+ * contract, so the extension never imports `src/core/` or `src/workflow/`.
+ *
+ * The values below are transcribed from that file, not invented. Note that `''`
+ * in `EMPLOYMENT_TYPES` means "unspecified" and the server emits it.
  */
 
 /** Application status values, as returned by `list_applications`. */
 export const APPLICATION_STATUSES = [
-  'wishlist',
   'applied',
-  'screening',
   'interview',
   'offer',
   'rejected',
+  'withdrawn',
   'abandoned',
+  'ghosted',
+  'accepted',
 ] as const;
 
 /** Union of {@link APPLICATION_STATUSES}. */
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
-/** Employment types, as returned by `list_applications`. */
+/** Employment types, as returned by `list_applications`. `''` = unspecified. */
 export const EMPLOYMENT_TYPES = [
   'permanent',
   'temp',
   'contract',
   'casual',
   'part-time',
+  '',
 ] as const;
 
 /** Union of {@link EMPLOYMENT_TYPES}. */
@@ -40,18 +44,22 @@ export interface ApplicationEntry {
   slug: string;
   /** Current application status. */
   status: ApplicationStatus;
-  /** Normalised job title. */
+  /** Job title. */
   title: string;
-  /** Normalised company name. */
+  /** Company name. */
   company: string;
-  /** Source URL the application was tracked from. */
-  url: string;
-  /** Suggested target role slug, if any. */
-  targetRole?: string;
-  /** Employment type, if set. */
-  employmentType?: EmploymentType;
-  /** Free-form tags. */
-  tags?: string[];
+  /** Job board or source site. */
+  site: string;
+  /** Freeform location text. */
+  location: string;
+  /** Slug of the target role (empty string if unassigned). */
+  targetRole: string;
+  /** Application date as an ISO date string. */
+  appliedOn: string;
+  /** Classification tags. */
+  tags: string[];
+  /** Employment type (empty string if unspecified). */
+  employmentType: EmploymentType;
 }
 
 /** Campaign summary returned by `list_campaigns`. */

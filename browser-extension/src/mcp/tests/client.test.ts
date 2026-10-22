@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { McpBridgeClient, McpHttpError } from '../client';
 import type { FetchLike } from '../client';
 
@@ -174,12 +174,15 @@ describe('McpBridgeClient', () => {
     await expect(client.callTool('x', {})).rejects.toThrow('bad params');
   });
 
-  it('does not call fetch on close() before initialize', async () => {
-    const fetch = vi.fn() as unknown as FetchLike;
+  it('does not send a session id before initialize', async () => {
+    const { fetch, calls } = stubFetch([
+      { status: 200, contentType: 'application/json', body: '{"jsonrpc":"2.0","id":1,"result":{}}' },
+      { status: 202, contentType: 'application/json', body: '' },
+    ]);
+
     const client = new McpBridgeClient({ url: 'http://127.0.0.1:7331/mcp', fetch });
+    await client.initialize();
 
-    await client.close();
-
-    expect(fetch).not.toHaveBeenCalled();
+    expect(calls[0]?.headers['Mcp-Session-Id']).toBeUndefined();
   });
 });

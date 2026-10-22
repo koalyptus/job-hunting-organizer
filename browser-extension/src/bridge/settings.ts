@@ -7,8 +7,21 @@
  * be changed with `--port`.
  */
 
+/** Host the local jho MCP bridge listens on. */
+export const DEFAULT_BRIDGE_HOST = 'http://127.0.0.1:7331';
+
+/**
+ * URL path the bridge serves MCP on.
+ *
+ * **Not pinned by this repo.** The transport is implemented by #111, which does
+ * not exist yet, so no committed code fixes the path — the #103 spike used a
+ * hand-rolled Node server with an arbitrary one. This is the single constant to
+ * change once #111 lands.
+ */
+export const BRIDGE_PATH = '/mcp';
+
 /** Default Streamable HTTP endpoint of the local jho MCP bridge. */
-export const DEFAULT_BRIDGE_URL = 'http://127.0.0.1:7331/mcp';
+export const DEFAULT_BRIDGE_URL = `${DEFAULT_BRIDGE_HOST}${BRIDGE_PATH}`;
 
 /** Campaign used when the user has not picked one. */
 export const DEFAULT_CAMPAIGN = 'default';
