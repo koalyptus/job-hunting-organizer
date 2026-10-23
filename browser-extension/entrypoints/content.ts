@@ -11,7 +11,14 @@
 import '@/src/content.css';
 import { getCampaign } from '@/src/bridge/settings';
 
-/** Selectors tried, in order, to place the action next to the job title. */
+/**
+ * Selectors tried, in order, to place the action next to the job title.
+ *
+ * **Unverified.** These are best-effort guesses at each job board's markup; none
+ * has been checked against a live page. `h1` then `document.body` are the
+ * fallbacks, so a wrong guess degrades to a worse position rather than a missing
+ * button. Revisit against a real page before relying on them.
+ */
 const JOB_TITLE_SELECTORS = [
   'h1.top-card-layout__title', // LinkedIn (legacy)
   'h1.jobs-unified-top-card__job-title', // LinkedIn (current)
@@ -110,6 +117,9 @@ function buildButton(url: string): (container: HTMLElement) => void {
 }
 
 export default defineContentScript({
+  // **Unverified.** Best-effort guesses at which URLs are job postings; not
+  // checked against the live boards. `matches` also drives `host_permissions`
+  // and the CSS web-accessible-resource scope, so tighten these once known.
   matches: [
     '*://www.linkedin.com/jobs/*',
     '*://www.seek.com.au/job/*',

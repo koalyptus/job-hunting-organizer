@@ -1,12 +1,9 @@
-import type { ToolResult } from '@/src/mcp/types';
-
 /** Message sent from the popup or content script to the background worker. */
 export type BridgeRequest =
   | { type: 'bridge/status' }
   | { type: 'bridge/campaigns' }
   | { type: 'bridge/applications'; campaign: string }
   | { type: 'bridge/track'; campaign: string; url: string }
-  | { type: 'bridge/extract'; campaign: string; url: string }
   | { type: 'bridge/setBridgeUrl'; url: string }
   | { type: 'bridge/setCampaign'; campaign: string };
 
@@ -19,6 +16,4 @@ export type BridgeResponse =
   | { type: 'bridge/applications'; ok: false; error: string }
   | { type: 'bridge/track'; ok: true; slug: string }
   | { type: 'bridge/track'; ok: false; error: string }
-  | { type: 'bridge/extract'; ok: true; result: ToolResult }
-  | { type: 'bridge/extract'; ok: false; error: string }
   | { type: 'bridge/setting'; ok: true };

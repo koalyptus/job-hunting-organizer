@@ -147,28 +147,6 @@ async function handleMessage(request: BridgeRequest): Promise<BridgeResponse> {
       }
     }
 
-    case 'bridge/extract': {
-      try {
-        const mcp = await getClient();
-        const result = await mcp.callTool('extract_jd', {
-          campaign: request.campaign,
-          url: request.url,
-        });
-
-        if (result.isError) {
-          return {
-            type: 'bridge/extract',
-            ok: false,
-            error: result.text.join('\n') || 'extract_jd failed',
-          };
-        }
-
-        return { type: 'bridge/extract', ok: true, result };
-      } catch (err) {
-        return { type: 'bridge/extract', ok: false, error: errorMessage(err) };
-      }
-    }
-
     case 'bridge/setBridgeUrl': {
       await setBridgeUrl(request.url);
       client = undefined;
