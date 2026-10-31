@@ -112,7 +112,7 @@ async function handleMessage(request: BridgeRequest): Promise<BridgeResponse> {
       try {
         const text = await callToolText(await getClient(), 'list_campaigns', {});
 
-        return { type: 'bridge/campaigns', ok: true, campaigns: asArray(parsePayload(text)) };
+        return { type: 'bridge/campaigns', ok: true, campaigns: asArray(parsePayload(text), 'campaigns') };
       } catch (err) {
         return { type: 'bridge/campaigns', ok: false, error: errorMessage(err) };
       }
@@ -160,6 +160,9 @@ async function handleMessage(request: BridgeRequest): Promise<BridgeResponse> {
 
       return { type: 'bridge/setting', ok: true };
     }
+
+    default:
+      return { type: request.type, ok: false, error: `unknown message type: ${request.type}` };
   }
 }
 
@@ -173,14 +176,14 @@ async function handleMessage(request: BridgeRequest): Promise<BridgeResponse> {
  * @param payload - Decoded JSON payload.
  * @returns The row array (empty when the payload has none).
  */
-function asArray(payload: unknown): unknown[] {
+function asArray(payload: unknown, field = 'entries'): unknown[] {
   if (Array.isArray(payload)) {
     return payload;
   }
 
-  const entries = (payload as { entries?: unknown[] } | undefined)?.entries;
+  const value = (payload as Record<string, unknown> | undefined)?.[field];
 
-  return Array.isArray(entries) ? entries : [];
+  return Array.isArray(value) ? value : [];
 }
 
 /** Pull the application slug out of a `track_application` payload. */
