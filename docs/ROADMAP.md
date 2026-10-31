@@ -1332,27 +1332,30 @@ Sketch only:
 
 Not started, not committed, no timeline. Pick up only if/when the CLI/MCP UX is no longer enough.
 
-#### MCP over HTTP — implemented (spike #103, issue #104)
+#### MCP over HTTP — implemented on an unmerged branch (spike #103, issue #111)
 
-The "HTTP MCP transport" deferred item above has been **implemented and shipped**
-(commit `c14e8d8`). jho's full MCP surface (37 tools/resources/prompts) is servable
-over MCP **v2 Streamable HTTP** and callable from a browser extension. Run
-`jho-mcp --http [--port N]` (or `jho mcp --http [--port N]`) to start the HTTP
-transport; default port is **7331**. The stdio surface is unaffected.
+The "HTTP MCP transport" deferred item above has a working implementation in
+commit `c14e8d8`, but it is **not merged to `main`**: `src/mcp/http-server.ts`
+does not exist on `main`, and `jho-mcp --http` is not runnable from a `main`
+checkout. Once #111 lands it, jho's full MCP surface (37
+tools/resources/prompts) will be servable over MCP **v2 Streamable HTTP** and
+callable from a browser extension.
 
-**Security note:** the HTTP transport is intended for local development. It
-binds `0.0.0.0` (all interfaces) by default, serves `Access-Control-Allow-Origin: *`,
-and performs no `Origin`/`Host` validation or authentication — do not expose it
-to untrusted networks. See [`docs/mcp-http-transport.md`](mcp-http-transport.md)
-for full caveats and secure-default guidance.
+**Security note:** the transport binds `0.0.0.0` (all interfaces) by default,
+serves `Access-Control-Allow-Origin: *`, and performs no `Origin`/`Host`
+validation or authentication — do not expose it to untrusted networks. #111
+adds the required guard (`JHO_MCP_UNSAFE_HTTP=1` opt-in). See
+[`docs/mcp-http-transport.md`](mcp-http-transport.md) for full caveats and
+secure-default guidance.
 
-Implementation: `src/mcp/http-server.ts` (Node `http` adapter with CORS, OPTIONS
-preflight, Node↔Web Request/Response conversion, duplicate `Set-Cookie` preservation),
-`startServer({ transport: 'http', port })` in `src/mcp/server.ts`, `--http`/`--port`
-flags in `bin/jho-mcp` and `src/cli/commands/mcp.ts`.
+Implementation (on branch, commit `c14e8d8`): `src/mcp/http-server.ts` (Node
+`http` adapter with CORS, OPTIONS preflight, Node↔Web Request/Response
+conversion, duplicate `Set-Cookie` preservation), `startServer({ transport:
+'http', port })` in `src/mcp/server.ts`, `--http`/`--port` flags in
+`bin/jho-mcp` and `src/cli/commands/mcp.ts`.
 
 Full evidence, spike findings, and design decisions:
-[`docs/mcp-http-transport.md`](mcp-http-transport.md). Tracked by #104.
+[`docs/mcp-http-transport.md`](mcp-http-transport.md). Tracked by #111.
 
 #### Browser extension — code location (decision, spike #113)
 
