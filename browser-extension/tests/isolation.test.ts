@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
  * into the CLI's typecheck/lint/format/test/publish surface.
  */
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** Read a repo-root file as text. */
 function readRootFile(relativePath: string): string {
