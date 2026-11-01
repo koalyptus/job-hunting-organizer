@@ -6,7 +6,7 @@ export default defineConfig({
     // Pin the test timezone so local-calendar assertions are deterministic
     // on every runner (CI default is UTC). See date.test.ts regression tests.
     env: { TZ: 'Australia/Brisbane' },
-    include: ['src/**/*.{test,spec}.ts'],
+    include: ['src/**/*.{test,spec}.ts', 'browser-extension/tests/**/*.test.ts'],
     setupFiles: ['./tests/setup.ts'],
     passWithNoTests: true,
     coverage: {
