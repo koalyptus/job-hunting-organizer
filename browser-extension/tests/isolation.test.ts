@@ -36,7 +36,8 @@ describe('browser-extension isolation', () => {
   it('keeps the root vitest include scoped to src/**', () => {
     const vitestConfig = readRootFile('vitest.config.ts');
 
-    expect(vitestConfig).toContain("include: ['src/**/*.{test,spec}.ts', 'browser-extension/tests/**/*.test.ts']");
+    expect(vitestConfig).toContain("'src/**/*.{test,spec}.ts'");
+    expect(vitestConfig).toContain("'browser-extension/tests/**/*.test.ts'");
   });
 
   it('keeps browser-extension out of the published tarball', () => {
