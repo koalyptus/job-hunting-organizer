@@ -8,6 +8,7 @@ import {
 } from 'openai';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { z } from 'zod';
+import type { Logger } from 'pino';
 import { chatComplete, defaultLlmConfig, parseJsonResult, extractJson } from '../llm.js';
 
 const testConfig = {
@@ -391,8 +392,7 @@ describe('chatComplete', () => {
         [{ role: 'user', content: 'Hi' }],
         testConfig,
         { ...testChatOpts },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        log as any,
+        log as unknown as Logger,
       );
 
       expect(log.info).toHaveBeenCalledTimes(2);

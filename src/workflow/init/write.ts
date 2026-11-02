@@ -133,8 +133,8 @@ export function writeInitGlobalConfig(dataRoot: string, llm: LlmPrefs, github: G
       baseUrl: llm.baseUrl || DEFAULT_LLM_BASE_URL,
       apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
       model: llm.model || DEFAULT_LLM_MODEL,
-      timeoutMs: currentConfig.llm.timeoutMs,
-      tags: currentConfig.llm.tags,
+      timeoutMs: (currentConfig.llm as unknown as LlmConfig).timeoutMs,
+      tags: (currentConfig.llm as unknown as LlmConfig).tags,
     },
     github: {
       user: github.user ?? currentConfig.github.user ?? '',

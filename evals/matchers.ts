@@ -12,6 +12,7 @@ import { expect } from 'vitest';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { getConfig } from '../src/lib/config/config.js';
 import { chatComplete } from '../src/core/llm.js';
+import type { LlmConfig } from '../src/core/types.js';
 
 /**
  * Timeout for eval tests that make LLM calls. Centralized so you only
@@ -39,7 +40,7 @@ async function resolveLlmConfig(): Promise<{
 }> {
   try {
     const cfg = getConfig();
-    const llm = cfg.global.llm;
+    const llm = cfg.global.llm as unknown as LlmConfig;
     if (llm?.baseUrl && llm?.model) {
       return {
         baseUrl: llm.baseUrl,

@@ -231,23 +231,7 @@ export interface GlobalConfig {
    */
   dataRoot: string;
   /** LLM provider settings (OpenAI-compatible). */
-  llm: {
-    /** Base URL of the API, e.g. `https://api.openai.com/v1`. */
-    baseUrl: string;
-    /** API key. Prefer setting the `LLM_API_KEY` env var instead. */
-    apiKey: string;
-    /** Model identifier, e.g. `gpt-4o-mini`. */
-    model: string;
-    /** Per-request timeout in milliseconds for LLM calls (default 20min). */
-    timeoutMs: number;
-    /**
-     * Optional tags array sent as a top-level field on every chat completion
-     * request. Some providers (e.g. Nous Research's inference gateway) require
-     * a `user=<value>` entry; others ignore it. Format: array of "key=value"
-     * strings (e.g. `["user=jho"]`). Set via `LLM_TAGS` env var or in config.
-     */
-    tags?: readonly string[];
-  };
+  llm: LlmConfig | LlmConfig[];
   /** Optional GitHub integration for `jho campaign init` profile building. */
   github: {
     /** GitHub username. */
