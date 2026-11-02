@@ -21,6 +21,7 @@ const llmSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+/** Zod schema for `<configHome>/config.json`. */
 export const GlobalConfigSchema = z.object({
   version: z
     .number()
@@ -30,7 +31,7 @@ export const GlobalConfigSchema = z.object({
     })
     .default(CURRENT_GLOBAL_CONFIG_VERSION),
   dataRoot: z.string().default(() => resolveDataRoot()),
-  llm: z.union([llmSchema, z.array(llmSchema)]).default({
+  llm: z.union([llmSchema, z.array(llmSchema).min(1)]).default({
     baseUrl: 'http://localhost:11434/v1',
     apiKey: 'no-key',
     model: 'llama3.1',
@@ -80,6 +81,7 @@ export const GlobalConfigSchema = z.object({
     }),
 });
 
+/** Zod schema for `<dataRoot>/campaigns/<name>/config.json`. */
 export const CampaignConfigSchema = z.object({
   version: z
     .number()

@@ -90,7 +90,7 @@ async function loadPrompt(): Promise<{ systemPrompt: string; temperature: number
 export async function suggestTargetRole(
   jd: ExtractedJd,
   targetRoles: TargetRole[],
-  llmConfig: LlmConfig,
+  llmConfig: LlmConfig | LlmConfig[],
   log?: Logger,
 ): Promise<RoleSuggestion> {
   if (targetRoles.length === 0) {
@@ -126,7 +126,7 @@ export async function suggestTargetRole(
       {
         jsonMode: true,
         temperature,
-        timeout: llmConfig.timeoutMs,
+        timeout: (Array.isArray(llmConfig) ? llmConfig[0]! : llmConfig).timeoutMs,
       },
       log,
     );

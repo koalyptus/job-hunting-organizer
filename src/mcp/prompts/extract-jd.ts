@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { getConfig } from '../../lib/config/config.js';
-import { defaultLlmConfig } from '../../core/llm.js';
+import { defaultLlmConfigs } from '../../core/llm.js';
 import { extractJdFromUrl, extractJdFromText } from '../../core/jobs/extract.js';
 import { mcpLogger } from '../logger.js';
 
@@ -20,7 +20,7 @@ export function registerExtractJdPrompt(server: McpServer): void {
       try {
         mcpLogger.debug({ campaign, url, text }, 'prompt.extract_jd.start');
         const { global } = getConfig(campaign);
-        const llmConfig = defaultLlmConfig(global);
+        const llmConfig = defaultLlmConfigs(global);
 
         if (!url && !text) {
           throw new Error('Either url or text must be provided');

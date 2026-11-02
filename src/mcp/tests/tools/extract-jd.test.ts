@@ -42,7 +42,7 @@ vi.mock('../../../lib/config/config.js', () => ({
 }));
 
 vi.mock('../../../core/llm.js', () => ({
-  defaultLlmConfig: vi.fn(() => ({
+  defaultLlmConfigs: vi.fn(() => ({
     baseUrl: 'http://localhost:11434',
     apiKey: 'key',
     model: 'gpt-4',

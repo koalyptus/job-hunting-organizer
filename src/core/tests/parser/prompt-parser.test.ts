@@ -15,7 +15,7 @@ const parseJsonResultMock = vi.fn((raw: string) => JSON.parse(raw));
 
 vi.mock('../../llm.js', () => ({
   chatComplete: (...args: unknown[]) => chatCompleteMock(...args),
-  defaultLlmConfig: () => ({
+  defaultLlmConfigs: () => ({
     baseUrl: 'http://localhost:11434/v1',
     apiKey: 'test',
     model: 'test-model',

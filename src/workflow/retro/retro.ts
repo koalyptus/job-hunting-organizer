@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { getConfig } from '../../lib/config/config.js';
-import { defaultLlmConfig, chatComplete } from '../../core/llm.js';
+import { defaultLlmConfigs, chatComplete } from '../../core/llm.js';
 import { loadPromptTemplate } from '../prompts.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { readApplication } from '../../workflow/applications/applications.js';
@@ -351,7 +351,7 @@ async function generateLearningPlan(
   let result;
   try {
     const { global } = getConfig(campaign);
-    const llmConfig = defaultLlmConfig(global);
+    const llmConfig = defaultLlmConfigs(global);
     result = await chatComplete(
       [
         { role: 'system', content: systemPrompt },

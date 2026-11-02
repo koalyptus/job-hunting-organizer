@@ -667,7 +667,7 @@ describe('llm.ts', () => {
     vi.restoreAllMocks();
   });
 
-  it('defaultLlmConfig with explicit global skips loadGlobalConfig (branch true for ??)', () => {
+  it('defaultLlmConfigs with explicit global skips loadGlobalConfig (branch true for ??)', () => {
     const global = {
       version: 1 as const,
       dataRoot: '/tmp',
@@ -686,12 +686,11 @@ describe('llm.ts', () => {
     expect(result.model).toBe('explicit-model');
   });
 
-  it('defaultLlmConfig fallback when global is undefined (line 40)', async () => {
+  it('defaultLlmConfigs fallback when global is undefined (line 40)', async () => {
     // Use a fresh import with mocked config to cover loadGlobalConfig path
     // Instead of mocking the module, just call with undefined and rely on global config file fallback
     // If no config file exists, it should return defaults (ollama)
     const result = defaultLlmConfig(undefined);
-    // Should have some baseUrl (default is http://localhost:11434/v1 or similar)
     expect(result.baseUrl).toBeTruthy();
   });
 

@@ -81,7 +81,7 @@ async function loadPrompt(): Promise<{ systemPrompt: string; temperature: number
  */
 export async function extractJdFromText(
   text: string,
-  llmConfig: LlmConfig,
+  llmConfig: LlmConfig | LlmConfig[],
   log?: Logger,
 ): Promise<ExtractedJd> {
   const { systemPrompt, temperature } = await loadPrompt();
@@ -111,7 +111,7 @@ export async function extractJdFromText(
       {
         jsonMode: true,
         temperature,
-        timeout: llmConfig.timeoutMs,
+        timeout: (Array.isArray(llmConfig) ? llmConfig[0]! : llmConfig).timeoutMs,
       },
       log,
     );
@@ -139,7 +139,7 @@ export async function extractJdFromText(
  */
 export async function extractJdFromUrl(
   url: string,
-  llmConfig: LlmConfig,
+  llmConfig: LlmConfig | LlmConfig[],
   log?: Logger,
   timeoutMs?: number,
 ): Promise<ExtractedJd> {

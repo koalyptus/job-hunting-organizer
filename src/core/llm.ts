@@ -69,6 +69,21 @@ export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
   };
 }
 
+export function defaultLlmConfigs(global?: GlobalConfig): LlmConfig[] {
+  const config = global ?? loadGlobalConfig();
+  const raw = Array.isArray(config.llm as unknown) ? (config.llm as unknown as LlmConfig[]) : [config.llm as unknown as LlmConfig];
+  return raw.map((entry, i) => {
+    const isFirst = i === 0;
+    return {
+      baseUrl: (isFirst ? process.env['LLM_BASE_URL'] : undefined) ?? entry.baseUrl,
+      apiKey: (isFirst ? process.env['LLM_API_KEY'] : undefined) ?? entry.apiKey,
+      model: (isFirst ? process.env['LLM_MODEL'] : undefined) ?? entry.model,
+      timeoutMs: entry.timeoutMs,
+      tags: resolveLlmTags(entry.tags),
+    };
+  });
+}
+
 async function chatCompleteSingle(
   messages: OpenAI.Chat.ChatCompletionMessageParam[],
   config: LlmConfig,
