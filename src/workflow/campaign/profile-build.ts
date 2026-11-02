@@ -35,7 +35,7 @@ interface BuildProfileMarkdownOptions {
   /** LinkedIn profile URL (optional, included in the generated profile). */
   linkedinUrl?: string;
   /** LLM configuration (baseUrl, apiKey, model). */
-  llmConfig: LlmConfig | LlmConfig[],
+  llmConfig: LlmConfig | LlmConfig[];
   /**
    * Optional character cap for knowledge-base context fed into the
    * profile build. When omitted, no limit is applied.
@@ -176,7 +176,11 @@ Generate the profile markdown following the template above.`;
       { role: 'user', content: userMessage },
     ],
     llmConfig,
-    { temperature, signal, timeout: (Array.isArray(llmConfig) ? llmConfig[0]! : llmConfig).timeoutMs },
+    {
+      temperature,
+      signal,
+      timeout: (Array.isArray(llmConfig) ? llmConfig[0]! : llmConfig).timeoutMs,
+    },
     log,
   );
 

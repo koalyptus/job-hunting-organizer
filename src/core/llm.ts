@@ -71,7 +71,9 @@ export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
 
 export function defaultLlmConfigs(global?: GlobalConfig): LlmConfig[] {
   const config = global ?? loadGlobalConfig();
-  const raw = Array.isArray(config.llm as unknown) ? (config.llm as unknown as LlmConfig[]) : [config.llm as unknown as LlmConfig];
+  const raw = Array.isArray(config.llm as unknown)
+    ? (config.llm as unknown as LlmConfig[])
+    : [config.llm as unknown as LlmConfig];
   return raw.map((entry, i) => {
     const isFirst = i === 0;
     return {

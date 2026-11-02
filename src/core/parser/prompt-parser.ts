@@ -134,7 +134,10 @@ export async function parseNaturalLanguage(
   }
 
   logger.info(
-    { model: (Array.isArray(llmConfig) ? llmConfig[0]! : llmConfig).model, tokens: result.usage.totalTokens },
+    {
+      model: (Array.isArray(llmConfig) ? llmConfig[0]! : llmConfig).model,
+      tokens: result.usage.totalTokens,
+    },
     'prompt-parser.llm.completed',
   );
 
