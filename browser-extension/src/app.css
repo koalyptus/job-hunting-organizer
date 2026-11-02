@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --color-jho-bg: #f8fafc;
+  --color-jho-text: #0f172a;
+}

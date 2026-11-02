@@ -121,9 +121,12 @@ http
   .listen(PORT);
 ```
 
-## Implementation status (issue #104, commit `c14e8d8`)
+## Implementation status (issue #111, commit `c14e8d8`)
 
-**Implemented and shipped.** The wiring described in the spike has landed:
+**Implemented on an unmerged branch, not yet on `main`.** The wiring described
+in the spike exists in commit `c14e8d8`, but it is **not merged**: `src/mcp/http-server.ts`
+does not exist on `main`, and `jho-mcp --http` is not runnable from a `main`
+checkout. Tracked by #111. The code on that commit:
 
 - `src/mcp/http-server.ts` (new): Node `http` adapter with CORS, `OPTIONS` preflight, Node↔Web `Request`/`Response` conversion, duplicate `Set-Cookie` preservation. Exports `createHttpTransport()`, `startHttpServer()`, and `DEFAULT_HTTP_PORT` (7331).
 - `src/mcp/server.ts`: `startServer({ transport?: 'stdio' | 'http'; port?: number })` — on `http`, creates the transport and starts the HTTP server; on `stdio` (default), keeps the current behavior (no regression). The store/server/registration bootstrap is shared.
@@ -131,7 +134,7 @@ http
 - `src/cli/commands/mcp.ts`: `jho mcp --http [--port N]` commander options with help text and examples.
 - `src/mcp/tests/http-server.test.ts`: 3 integration tests covering the HTTP round-trip.
 
-Usage:
+Usage (requires the #111 branch, commit `c14e8d8`; not available on `main`):
 
 ```
 jho mcp                     # stdio (default, no regression)

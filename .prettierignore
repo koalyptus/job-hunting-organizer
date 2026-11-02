@@ -5,3 +5,8 @@ coverage/
 package-lock.json
 .lavish/
 prompts/humanize-voice.md
+
+# The browser extension is a self-contained WXT project with its own
+# toolchain (Tailwind v4, shadcn/ui, its own vitest). Root prettier must not
+# reformat it. See docs/ROADMAP.md "Browser extension — code location".
+browser-extension/
