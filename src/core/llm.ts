@@ -254,6 +254,9 @@ export async function chatComplete(
       }
       return result;
     } catch (err) {
+      if (err instanceof Error && /abort/i.test(err.message)) {
+        throw err;
+      }
       lastError = err;
       log?.warn(
         {

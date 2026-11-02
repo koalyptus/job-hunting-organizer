@@ -778,3 +778,61 @@ describe('llm.ts', () => {
     expect(result.content).toBe('custom');
   });
 });
+
+describe('chatComplete fallback chain', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('uses first provider on success', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockResolvedValueOnce(okJson(successBody));
+    const configs = [
+      { baseUrl: 'https://a.com/v1', apiKey: 'k1', model: 'm1', timeoutMs: 300000 },
+      { baseUrl: 'https://b.com/v1', apiKey: 'k2', model: 'm2', timeoutMs: 300000 },
+    ];
+    const result = await chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts);
+    expect(result.content).toBe('Hello!');
+  });
+
+  it('falls back to second provider when first fails', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+    fetch.mockResolvedValueOnce(okJson(successBody));
+    const configs = [
+      { baseUrl: 'https://a.com/v1', apiKey: 'k1', model: 'm1', timeoutMs: 300000 },
+      { baseUrl: 'https://b.com/v1', apiKey: 'k2', model: 'm2', timeoutMs: 300000 },
+    ];
+    const result = await chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts);
+    expect(result.content).toBe('Hello!');
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws last error when all providers fail', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValueOnce(new TypeError('first fail'));
+    fetch.mockRejectedValueOnce(new TypeError('second fail'));
+    const configs = [
+      { baseUrl: 'https://a.com/v1', apiKey: 'k1', model: 'm1', timeoutMs: 300000 },
+      { baseUrl: 'https://b.com/v1', apiKey: 'k2', model: 'm2', timeoutMs: 300000 },
+    ];
+    await expect(
+      chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts),
+    ).rejects.toThrow();
+  });
+
+  it('rethrows abort errors without fallback', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+    const configs = [
+      { baseUrl: 'https://a.com/v1', apiKey: 'k1', model: 'm1', timeoutMs: 300000 },
+      { baseUrl: 'https://b.com/v1', apiKey: 'k2', model: 'm2', timeoutMs: 300000 },
+    ];
+    await expect(
+      chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts),
+    ).rejects.toThrow();
+  });
+});
