@@ -9,7 +9,13 @@ import {
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { z } from 'zod';
 import type { Logger } from 'pino';
-import { chatComplete, defaultLlmConfig, parseJsonResult, extractJson } from '../llm.js';
+import {
+  chatComplete,
+  defaultLlmConfig,
+  isAbortError,
+  parseJsonResult,
+  extractJson,
+} from '../llm.js';
 
 const testConfig = {
   baseUrl: 'https://api.test.com/v1',
@@ -834,5 +840,20 @@ describe('chatComplete fallback chain', () => {
     await expect(
       chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts),
     ).rejects.toThrow();
+  });
+});
+
+describe('isAbortError', () => {
+  it('returns true for AbortError by name', () => {
+    const err = new Error('signal is aborted without reason');
+    err.name = 'AbortError';
+    expect(isAbortError(err)).toBe(true);
+  });
+  it('returns true when message contains abort', () => {
+    expect(isAbortError(new Error('The operation was aborted'))).toBe(true);
+  });
+  it('returns false for other errors', () => {
+    expect(isAbortError(new Error('network failure'))).toBe(false);
+    expect(isAbortError('string')).toBe(false);
   });
 });

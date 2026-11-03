@@ -254,7 +254,7 @@ export async function chatComplete(
       }
       return result;
     } catch (err) {
-      if (err instanceof Error && (err.name === 'AbortError' || /abort/i.test(err.message))) {
+      if (isAbortError(err)) {
         throw err;
       }
       lastError = err;
@@ -281,4 +281,8 @@ export async function chatComplete(
     }
   }
   throw lastError;
+}
+
+export function isAbortError(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'AbortError' || /abort/i.test(err.message));
 }
