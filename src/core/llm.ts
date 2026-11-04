@@ -74,6 +74,17 @@ export function defaultLlmConfigs(global?: GlobalConfig): LlmConfig[] {
   const raw = Array.isArray(config.llm as unknown)
     ? (config.llm as unknown as LlmConfig[])
     : [config.llm as unknown as LlmConfig];
+  if (raw.length === 0) {
+    return [
+      {
+        baseUrl: 'http://localhost:11434/v1',
+        apiKey: '',
+        model: 'llama3.1',
+        timeoutMs: 1_200_000,
+        tags: ['user=jho'],
+      },
+    ];
+  }
   return raw.map((entry, i) => {
     const isFirst = i === 0;
     return {

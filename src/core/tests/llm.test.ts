@@ -12,6 +12,7 @@ import type { Logger } from 'pino';
 import {
   chatComplete,
   defaultLlmConfig,
+  defaultLlmConfigs,
   isAbortError,
   parseJsonResult,
   extractJson,
@@ -855,5 +856,22 @@ describe('isAbortError', () => {
   it('returns false for other errors', () => {
     expect(isAbortError(new Error('network failure'))).toBe(false);
     expect(isAbortError('string')).toBe(false);
+  });
+});
+
+describe('defaultLlmConfigs edge cases', () => {
+  it('normalizes empty array to default provider', () => {
+    const global = {
+      version: 1 as const,
+      dataRoot: '/tmp',
+      llm: [],
+      github: { user: '', token: '', repos: [] },
+      logging: { level: 'info' as const, file: '', redactPaths: [] },
+      fetch: { timeoutMs: 30000 },
+    };
+    const result = defaultLlmConfigs(global);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.baseUrl).toBe('http://localhost:11434/v1');
+    expect(result[0]!.model).toBe('llama3.1');
   });
 });
