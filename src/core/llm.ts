@@ -55,21 +55,29 @@ function normalizeBaseUrl(url: string): string {
  * rather than relying on the file-system fallback.
  */
 
+export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
+  const config = global ?? loadGlobalConfig();
+  const raw = Array.isArray(config.llm as unknown)
+    ? (config.llm as unknown as LlmConfig[])
+    : [config.llm as unknown as LlmConfig];
+  const llm = raw[0]!;
+
+  return {
+    baseUrl: process.env['LLM_BASE_URL'] ?? llm.baseUrl,
+    apiKey: process.env['LLM_API_KEY'] ?? llm.apiKey,
+    model: process.env['LLM_MODEL'] ?? llm.model,
+    timeoutMs: llm.timeoutMs,
+    tags: resolveLlmTags(llm.tags),
+  };
+}
+
 export function defaultLlmConfigs(global?: GlobalConfig): LlmConfig[] {
   const config = global ?? loadGlobalConfig();
   const raw = Array.isArray(config.llm as unknown)
     ? (config.llm as unknown as LlmConfig[])
     : [config.llm as unknown as LlmConfig];
   if (raw.length === 0) {
-    return [
-      {
-        baseUrl: 'http://localhost:11434/v1',
-        apiKey: '',
-        model: 'llama3.1',
-        timeoutMs: 1_200_000,
-        tags: ['user=jho'],
-      },
-    ];
+    return [];
   }
   return raw.map((entry, i) => {
     const isFirst = i === 0;
