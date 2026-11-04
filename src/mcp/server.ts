@@ -11,12 +11,31 @@ import { createHttpTransport, startHttpServer, DEFAULT_HTTP_PORT } from './http-
 
 const SERVER_NAME = 'jho-mcp';
 
+/**
+ * Environment variable that must be set to `1` to opt into HTTP transport mode.
+ *
+ * HTTP mode serves the full unauthenticated MCP tool surface (including write
+ * tools) on all interfaces with permissive CORS, so it is disabled unless the
+ * user explicitly acknowledges that exposure.
+ */
+export const UNSAFE_HTTP_ENV_VAR = 'JHO_MCP_UNSAFE_HTTP';
+
 /** Options for {@link startServer}. */
 export interface StartServerOptions {
   /** Transport to use: 'stdio' (default) or 'http'. */
   transport?: 'stdio' | 'http';
   /** Port for the HTTP transport (default: 7331). */
   port?: number;
+}
+
+/**
+ * Whether HTTP transport mode has been explicitly opted into via
+ * {@link UNSAFE_HTTP_ENV_VAR}.
+ *
+ * @returns `true` only when `JHO_MCP_UNSAFE_HTTP=1` is set in the environment.
+ */
+export function isHttpTransportAllowed(): boolean {
+  return process.env[UNSAFE_HTTP_ENV_VAR] === '1';
 }
 
 /**
@@ -59,11 +78,21 @@ export function createServer(): McpServer {
  * Start the MCP server with the chosen transport and register all tools,
  * resources, and prompts.
  *
+ * HTTP mode is refused unless {@link UNSAFE_HTTP_ENV_VAR} is set to `1`;
+ * stdio mode is unaffected.
+ *
  * @param options - Transport selection and HTTP port. Defaults to stdio.
  * @returns Resolves when the server is connected and listening.
  */
 export async function startServer(options: StartServerOptions = {}): Promise<void> {
   const { transport = 'stdio', port = DEFAULT_HTTP_PORT } = options;
+
+  if (transport === 'http' && !isHttpTransportAllowed()) {
+    throw new Error(
+      `Refusing to start MCP over HTTP: ${UNSAFE_HTTP_ENV_VAR}=1 must be set. ` +
+        'The HTTP transport is unauthenticated and binds all interfaces.',
+    );
+  }
 
   process.on('uncaughtException', (err) => {
     safeLogFatal('uncaughtException', err);

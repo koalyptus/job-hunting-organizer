@@ -1,6 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
 import type { EventEmitter } from 'node:events';
-import { createServer, startServer, safeLogFatal } from '../server.js';
+import { McpServer } from '@modelcontextprotocol/server';
+import {
+  createServer,
+  startServer,
+  safeLogFatal,
+  isHttpTransportAllowed,
+  UNSAFE_HTTP_ENV_VAR,
+} from '../server.js';
+import { createHttpTransport, startHttpServer, DEFAULT_HTTP_PORT } from '../http-server.js';
 
 vi.mock('@modelcontextprotocol/server/stdio', () => ({
   // A `class` implementation (not an arrow function) keeps the mock
@@ -15,6 +23,12 @@ vi.mock('@modelcontextprotocol/server/stdio', () => ({
       onclose = null;
     },
   ),
+}));
+
+vi.mock('../http-server.js', () => ({
+  DEFAULT_HTTP_PORT: 7331,
+  createHttpTransport: vi.fn(() => ({})),
+  startHttpServer: vi.fn(async () => ({})),
 }));
 
 const mockAppendFileSync = vi.fn();
@@ -112,4 +126,53 @@ describe('startServer', () => {
     const entry = JSON.parse(mockAppendFileSync.mock.calls[0]![1] as string);
     expect(entry.msg).toBe('unhandledRejection');
   }, 30_000);
+});
+
+describe('HTTP transport opt-in guard', () => {
+  const originalFlag = process.env[UNSAFE_HTTP_ENV_VAR];
+  const connectSpy = vi.spyOn(McpServer.prototype, 'connect').mockResolvedValue(undefined);
+
+  afterEach(() => {
+    if (originalFlag === undefined) {
+      delete process.env[UNSAFE_HTTP_ENV_VAR];
+    } else {
+      process.env[UNSAFE_HTTP_ENV_VAR] = originalFlag;
+    }
+    vi.clearAllMocks();
+  });
+
+  afterAll(() => {
+    connectSpy.mockRestore();
+  });
+
+  it('is denied unless the env var is exactly "1"', () => {
+    delete process.env[UNSAFE_HTTP_ENV_VAR];
+    expect(isHttpTransportAllowed()).toBe(false);
+
+    process.env[UNSAFE_HTTP_ENV_VAR] = 'true';
+    expect(isHttpTransportAllowed()).toBe(false);
+
+    process.env[UNSAFE_HTTP_ENV_VAR] = '1';
+    expect(isHttpTransportAllowed()).toBe(true);
+  });
+
+  it('refuses HTTP transport without the opt-in flag', async () => {
+    delete process.env[UNSAFE_HTTP_ENV_VAR];
+    await expect(startServer({ transport: 'http' })).rejects.toThrow(UNSAFE_HTTP_ENV_VAR);
+    expect(startHttpServer).not.toHaveBeenCalled();
+  });
+
+  it('starts HTTP transport when opted in', async () => {
+    process.env[UNSAFE_HTTP_ENV_VAR] = '1';
+    await startServer({ transport: 'http', port: DEFAULT_HTTP_PORT });
+    expect(createHttpTransport).toHaveBeenCalledTimes(1);
+    expect(startHttpServer).toHaveBeenCalledWith(expect.anything(), DEFAULT_HTTP_PORT);
+  });
+
+  it('leaves stdio transport unaffected by the guard', async () => {
+    delete process.env[UNSAFE_HTTP_ENV_VAR];
+    await expect(startServer()).resolves.toBeUndefined();
+    expect(createHttpTransport).not.toHaveBeenCalled();
+    expect(startHttpServer).not.toHaveBeenCalled();
+  });
 });

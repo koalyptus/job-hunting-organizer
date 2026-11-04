@@ -181,10 +181,12 @@ Options:
 exports[`command --help output > mcp has consistent help output 1`] = `
 "Usage: mcp [options]
 
-Start the MCP server (stdio transport)
+Start the MCP server
 
 Options:
-  -h, --help  display help for command
+  --http         Serve MCP over Streamable HTTP instead of stdio
+  --port <port>  HTTP port (default: 7331)
+  -h, --help     display help for command
 "
 `;
 

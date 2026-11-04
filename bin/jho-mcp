@@ -1,11 +1,19 @@
 #!/usr/bin/env node
-import { startServer } from '../dist/mcp/server.js';
+import { startServer, isHttpTransportAllowed, UNSAFE_HTTP_ENV_VAR } from '../dist/mcp/server.js';
 
 const args = process.argv.slice(2);
 const useHttp = args.includes('--http');
 const portIdx = args.indexOf('--port');
 const portArg = portIdx !== -1 ? args[portIdx + 1] : undefined;
 const port = portArg !== undefined ? Number.parseInt(portArg, 10) : undefined;
+
+if (useHttp && !isHttpTransportAllowed()) {
+  process.stderr.write(
+    `jho-mcp: refusing to start over HTTP unless ${UNSAFE_HTTP_ENV_VAR}=1 is set ` +
+      '(the HTTP transport is unauthenticated and binds all interfaces).\n',
+  );
+  process.exit(1);
+}
 
 startServer({ transport: useHttp ? 'http' : 'stdio', port }).catch((err) => {
   process.stderr.write(`jho-mcp: ${err instanceof Error ? err.message : String(err)}\n`);

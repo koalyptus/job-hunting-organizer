@@ -40,11 +40,13 @@ async function startTestHttpServer(): Promise<{ client: Client; server: Server; 
 describe('MCP Streamable HTTP transport', () => {
   let client: Client;
   let httpServer: Server;
+  let port: number;
 
   beforeAll(async () => {
     const started = await startTestHttpServer();
     client = started.client;
     httpServer = started.server;
+    port = started.port;
   }, 15_000);
 
   afterAll(async () => {
@@ -71,7 +73,7 @@ describe('MCP Streamable HTTP transport', () => {
   }, 15_000);
 
   it('responds to CORS preflight with 204', async () => {
-    const resp = await fetch(`http://localhost:${httpServer.address()?.port ?? 0}/`, {
+    const resp = await fetch(`http://localhost:${port}/`, {
       method: 'OPTIONS',
     });
     expect(resp.status).toBe(204);

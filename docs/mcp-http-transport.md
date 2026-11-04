@@ -137,10 +137,13 @@ checkout. Tracked by #111. The code on that commit:
 Usage (requires the #111 branch, commit `c14e8d8`; not available on `main`):
 
 ```
-jho mcp                     # stdio (default, no regression)
-jho mcp --http              # Streamable HTTP on port 7331
-jho mcp --http --port 8080  # Streamable HTTP on a custom port
+jho mcp                              # stdio (default, no regression)
+JHO_MCP_UNSAFE_HTTP=1 jho mcp --http            # Streamable HTTP on port 7331
+JHO_MCP_UNSAFE_HTTP=1 jho mcp --http --port 8080  # Streamable HTTP on a custom port
 ```
+
+`--http` refuses to start unless `JHO_MCP_UNSAFE_HTTP=1` is set; `bin/jho-mcp`
+and `jho mcp` both enforce the same opt-in.
 
 **Unsafe by default — local/dev use only.** `startHttpServer` calls `server.listen(port)` with no host argument, so the server binds `0.0.0.0` (all interfaces). Combined with `Access-Control-Allow-Origin: *` and no `Origin`/`Host` validation, the full unauthenticated MCP tool surface (including write tools like `track_application`/`update_profile`) is reachable from the local network and from arbitrary web origins via DNS rebinding. Do not expose this port beyond loopback. Secure defaults for any non-local use: bind to `127.0.0.1` (or `::1`), enforce `Origin` and `Host` allowlists, and require bearer auth (see PLAN §20 / ROADMAP "Web client").
 
