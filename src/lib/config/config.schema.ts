@@ -31,7 +31,7 @@ export const GlobalConfigSchema = z.object({
     })
     .default(CURRENT_GLOBAL_CONFIG_VERSION),
   dataRoot: z.string().default(() => resolveDataRoot()),
-  llm: z.union([llmSchema, z.array(llmSchema).min(1)]).default({
+  llm: z.union([llmSchema, z.array(llmSchema)]).default({
     baseUrl: 'http://localhost:11434/v1',
     apiKey: 'no-key',
     model: 'llama3.1',

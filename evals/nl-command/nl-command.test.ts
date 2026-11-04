@@ -14,7 +14,7 @@ describe('nl-command parsing', () => {
   beforeAll(() => {
     try {
       const cfg = defaultLlmConfigs();
-      hasLlm = Boolean((cfg[0]!.baseUrl) && (cfg[0]!.model));
+      hasLlm = Boolean(cfg[0]!.baseUrl && cfg[0]!.model);
     } catch {
       hasLlm = false;
     }
