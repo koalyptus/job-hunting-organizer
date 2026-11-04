@@ -10,7 +10,7 @@ import { existsSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { getConfig } from '../../lib/config/config.js';
-import { defaultLlmConfig, chatComplete } from '../../core/llm.js';
+import { defaultLlmConfigs, chatComplete } from '../../core/llm.js';
 import { loadPromptTemplateWithVoice } from '../../workflow/prompts.js';
 import { humanize } from '../../core/humanize.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
@@ -204,7 +204,7 @@ export async function answerQuestion(opts: AnswerOptions): Promise<AnswerResult>
   let result;
   try {
     const { global } = getConfig(campaign);
-    const llmConfig = defaultLlmConfig(global);
+    const llmConfig = defaultLlmConfigs(global);
     result = await chatComplete(messages, llmConfig, { temperature }, log);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

@@ -14,7 +14,7 @@ import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { loadCases } from './cases.js';
 import { loadPromptTemplateWithVoice } from '../../src/workflow/prompts.js';
 import { humanize } from '../../src/core/humanize.js';
-import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
+import { chatComplete, defaultLlmConfigs } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';
 import { BANNED_PHRASES, PROFILE_ITEMS } from '../shared.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
@@ -45,7 +45,7 @@ async function generate(opts: {
     { role: 'user', content: userMessage },
   ];
 
-  const config = defaultLlmConfig();
+  const config = defaultLlmConfigs();
   const result = await chatComplete(messages, config, { temperature: 0.3 });
 
   // Mirror the shipped pipeline: the humanize pass runs on the raw output

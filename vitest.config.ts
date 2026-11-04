@@ -18,6 +18,7 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/**/index.ts',
         'src/**/types.ts',
+        'src/**/spinner.ts',
         'src/mcp/tests/**',
       ],
     },

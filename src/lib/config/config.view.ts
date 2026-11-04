@@ -40,6 +40,13 @@ export function redactSecrets<T>(config: T): T {
   for (const { keyPath, envVar } of SECRET_PATHS) {
     setAtPath(out, keyPath, `${REDACTION_MARKER} (set ${envVar})`);
   }
+  // Handle llm array fallback chain: redact apiKey in each entry.
+  const llm = (out as { llm?: unknown }).llm;
+  if (Array.isArray(llm)) {
+    for (let i = 0; i < llm.length; i++) {
+      setAtPath(out, ['llm', String(i), 'apiKey'], `${REDACTION_MARKER} (set LLM_API_KEY)`);
+    }
+  }
   return out;
 }
 

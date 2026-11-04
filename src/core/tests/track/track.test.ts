@@ -31,7 +31,7 @@ vi.mock('../../config.js', () => ({
 }));
 
 vi.mock('../../llm.js', () => ({
-  defaultLlmConfig: vi.fn(() => ({ baseUrl: 'http://test', apiKey: 'key', model: 'model' })),
+  defaultLlmConfigs: vi.fn(() => ({ baseUrl: 'http://test', apiKey: 'key', model: 'model' })),
 }));
 
 vi.mock('../../../workflow/campaign/profile-read.js', () => ({

@@ -1,4 +1,4 @@
-import { defaultLlmConfig, chatComplete, parseJsonResult } from '../llm.js';
+import { defaultLlmConfigs, chatComplete, parseJsonResult } from '../llm.js';
 import { loadPromptTemplate } from '../../workflow/prompts.js';
 import { getRootLogger } from '../../lib/logger/logger.js';
 import { SLUG_PATTERN } from './slug.js';
@@ -105,7 +105,7 @@ export async function parseNaturalLanguage(
 ): Promise<ParsedCommand> {
   const logger = log ?? getRootLogger().child({ module: 'prompt-parser' });
 
-  const llmConfig = defaultLlmConfig();
+  const llmConfig = defaultLlmConfigs();
   const { body: systemPrompt } = await loadPromptTemplate('nl-command');
 
   const userMessage = `User input: "${input}"\n\nGlobal options parsed from CLI: ${JSON.stringify(globals)}`;
@@ -134,7 +134,10 @@ export async function parseNaturalLanguage(
   }
 
   logger.info(
-    { model: llmConfig.model, tokens: result.usage.totalTokens },
+    {
+      model: (Array.isArray(llmConfig) ? llmConfig[0]! : llmConfig).model,
+      tokens: result.usage.totalTokens,
+    },
     'prompt-parser.llm.completed',
   );
 

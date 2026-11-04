@@ -17,7 +17,7 @@ vi.mock('../../../lib/config/config.js', () => ({
 }));
 
 vi.mock('../../../core/llm.js', () => ({
-  defaultLlmConfig: vi.fn().mockReturnValue({}),
+  defaultLlmConfigs: vi.fn().mockReturnValue({}),
 }));
 
 vi.mock('../../../core/jobs/extract.js', () => ({

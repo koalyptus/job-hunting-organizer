@@ -3,7 +3,7 @@ import type { FileStore } from '../../storage/types.js';
 import { ExtractJdInput } from '../schemas.js';
 import { handleToolError } from '../error-handler.js';
 import { getConfig } from '../../lib/config/config.js';
-import { defaultLlmConfig } from '../../core/llm.js';
+import { defaultLlmConfigs } from '../../core/llm.js';
 import { extractJdFromUrl, extractJdFromText } from '../../core/jobs/extract.js';
 import { mcpLogger } from '../logger.js';
 
@@ -27,7 +27,7 @@ export function registerExtractJd(server: McpServer, _store: FileStore): void {
           'tool.extract_jd.start',
         );
         const { global } = getConfig(args.campaign);
-        const llmConfig = defaultLlmConfig(global);
+        const llmConfig = defaultLlmConfigs(global);
 
         const { url, text } = args;
         if (!url && !text) {

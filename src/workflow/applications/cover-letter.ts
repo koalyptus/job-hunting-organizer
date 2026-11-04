@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { getConfig } from '../../lib/config/config.js';
-import { defaultLlmConfig, chatComplete } from '../../core/llm.js';
+import { defaultLlmConfigs, chatComplete } from '../../core/llm.js';
 import { loadPromptTemplateWithVoice } from '../../workflow/prompts.js';
 import { humanize } from '../../core/humanize.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
@@ -172,7 +172,7 @@ export async function generateCoverLetter(opts: CoverLetterOptions): Promise<Cov
   let result;
   try {
     const { global } = getConfig(campaign);
-    const llmConfig = defaultLlmConfig(global);
+    const llmConfig = defaultLlmConfigs(global);
     result = await chatComplete(
       [
         { role: 'system', content: systemPrompt },

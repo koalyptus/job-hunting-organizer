@@ -65,16 +65,20 @@ export async function promptLlm(
   detectedSuggestion?: DetectedLlmSuggestion,
 ): Promise<LlmPrefs> {
   const defaultBaseUrl = getConfigValue(
-    existingConfig?.llm?.baseUrl,
+    (existingConfig?.llm as unknown as LlmConfig)?.baseUrl,
     'LLM_BASE_URL',
     DEFAULT_LLM_BASE_URL,
   );
   const defaultApiKey = getConfigValue(
-    existingConfig?.llm?.apiKey,
+    (existingConfig?.llm as unknown as LlmConfig)?.apiKey,
     'LLM_API_KEY',
     DEFAULT_LLM_API_KEY,
   );
-  const defaultModel = getConfigValue(existingConfig?.llm?.model, 'LLM_MODEL', DEFAULT_LLM_MODEL);
+  const defaultModel = getConfigValue(
+    (existingConfig?.llm as unknown as LlmConfig)?.model,
+    'LLM_MODEL',
+    DEFAULT_LLM_MODEL,
+  );
 
   // Use detected suggestion as defaults if available
   const suggestedBaseUrl = detectedSuggestion?.baseUrl ?? defaultBaseUrl;
@@ -89,7 +93,7 @@ export async function promptLlm(
 
   const baseInput = await text({
     message: `LLM base URL? (optional, press Enter to skip)`,
-    initialValue: existingConfig?.llm?.baseUrl || undefined,
+    initialValue: (existingConfig?.llm as unknown as LlmConfig)?.baseUrl || undefined,
     placeholder: suggestedBaseUrl,
     defaultValue: suggestedBaseUrl,
   });
@@ -108,7 +112,7 @@ export async function promptLlm(
   if (isLocalUrl(llmBaseUrl)) {
     const modelInput = await text({
       message: 'LLM model?',
-      initialValue: existingConfig?.llm?.model || undefined,
+      initialValue: (existingConfig?.llm as unknown as LlmConfig)?.model || undefined,
       placeholder: suggestedModel,
       defaultValue: suggestedModel,
     });
@@ -121,7 +125,7 @@ export async function promptLlm(
     return { baseUrl: llmBaseUrl, apiKey: undefined, model: llmModel };
   }
 
-  const hasExistingKey = Boolean(existingConfig?.llm?.apiKey);
+  const hasExistingKey = Boolean((existingConfig?.llm as unknown as LlmConfig)?.apiKey);
   const keyInput = await password({
     message: hasExistingKey ? 'LLM API key? (press Enter to keep existing)' : 'LLM API key?',
   });
@@ -130,11 +134,11 @@ export async function promptLlm(
     throw new InitCancelled();
   }
 
-  const llmApiKey = keyInput || existingConfig?.llm?.apiKey || undefined;
+  const llmApiKey = keyInput || (existingConfig?.llm as unknown as LlmConfig)?.apiKey || undefined;
 
   const modelInput = await text({
     message: 'LLM model?',
-    initialValue: existingConfig?.llm?.model || undefined,
+    initialValue: (existingConfig?.llm as unknown as LlmConfig)?.model || undefined,
     placeholder: suggestedModel,
     defaultValue: suggestedModel,
   });
@@ -244,6 +248,6 @@ export function buildLlmConfig(
     baseUrl: llm.baseUrl!,
     apiKey: llm.apiKey || DEFAULT_LLM_API_KEY,
     model: llm.model!,
-    timeoutMs: existingConfig?.llm.timeoutMs ?? DEFAULT_LLM_TIMEOUT_MS,
+    timeoutMs: (existingConfig?.llm as unknown as LlmConfig)?.timeoutMs ?? DEFAULT_LLM_TIMEOUT_MS,
   };
 }

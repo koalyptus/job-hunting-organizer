@@ -1,3 +1,4 @@
+import type { LlmConfig } from '../../../core/types.js';
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import {
   loadGlobalConfig,
@@ -68,10 +69,10 @@ describe('config', () => {
   it('loads global config with defaults', () => {
     const config = loadGlobalConfig();
     expect(config.version).toBe(1);
-    expect(config.llm.baseUrl).toBe('http://localhost:11434/v1');
-    expect(config.llm.model).toBe('llama3.1');
-    expect(config.llm.apiKey).toBe('no-key');
-    expect(config.llm.tags).toBeUndefined();
+    expect((config.llm as unknown as LlmConfig).baseUrl).toBe('http://localhost:11434/v1');
+    expect((config.llm as unknown as LlmConfig).model).toBe('llama3.1');
+    expect((config.llm as unknown as LlmConfig).apiKey).toBe('no-key');
+    expect((config.llm as unknown as LlmConfig).tags).toBeUndefined();
   });
 
   it('respects JHO_DATA environment variable', () => {
@@ -151,7 +152,7 @@ describe('config', () => {
     clearConfigCache();
     const config = loadGlobalConfig();
     expect(config.version).toBe(1);
-    expect(config.llm.model).toBe('llama3.1');
+    expect((config.llm as unknown as LlmConfig).model).toBe('llama3.1');
   });
 
   it('falls back to defaults and warns on corrupted campaign config JSON (non-ENOENT)', async () => {
@@ -178,6 +179,6 @@ describe('config', () => {
     );
     clearConfigCache();
     const second = loadGlobalConfig();
-    expect(second.llm.model).toBe('custom-model');
+    expect((second.llm as unknown as LlmConfig).model).toBe('custom-model');
   });
 });

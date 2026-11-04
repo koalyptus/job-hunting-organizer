@@ -42,7 +42,7 @@ vi.mock('../../../core/llm.js', async (importOriginal) => {
   return {
     ...actual,
     chatComplete: (...args: unknown[]) => mockChatComplete(...args),
-    defaultLlmConfig: vi.fn(() => ({
+    defaultLlmConfigs: vi.fn(() => ({
       baseUrl: 'https://api.test.com/v1',
       apiKey: 'sk-test',
       model: 'gpt-4o',

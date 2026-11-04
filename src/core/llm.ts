@@ -54,19 +54,28 @@ function normalizeBaseUrl(url: string): string {
  * Callers that already hold a `GlobalConfig` should pass it explicitly
  * rather than relying on the file-system fallback.
  */
-export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
-  const config = global ?? loadGlobalConfig();
 
-  return {
-    baseUrl: process.env['LLM_BASE_URL'] ?? config.llm.baseUrl,
-    apiKey: process.env['LLM_API_KEY'] ?? config.llm.apiKey,
-    model: process.env['LLM_MODEL'] ?? config.llm.model,
-    timeoutMs: config.llm.timeoutMs,
-    tags: resolveLlmTags(config.llm.tags),
-  };
+export function defaultLlmConfigs(global?: GlobalConfig): LlmConfig[] {
+  const config = global ?? loadGlobalConfig();
+  const raw = Array.isArray(config.llm as unknown)
+    ? (config.llm as unknown as LlmConfig[])
+    : [config.llm as unknown as LlmConfig];
+  if (raw.length === 0) {
+    return [];
+  }
+  return raw.map((entry, i) => {
+    const isFirst = i === 0;
+    return {
+      baseUrl: (isFirst ? process.env['LLM_BASE_URL'] : undefined) ?? entry.baseUrl,
+      apiKey: (isFirst ? process.env['LLM_API_KEY'] : undefined) ?? entry.apiKey,
+      model: (isFirst ? process.env['LLM_MODEL'] : undefined) ?? entry.model,
+      timeoutMs: entry.timeoutMs,
+      tags: resolveLlmTags(entry.tags),
+    };
+  });
 }
 
-export async function chatComplete(
+async function chatCompleteSingle(
   messages: OpenAI.Chat.ChatCompletionMessageParam[],
   config: LlmConfig,
   options: ChatCompleteOptions = {},
@@ -202,4 +211,67 @@ export function parseJsonResult<T>(content: string, schema?: z.ZodType<T>): T {
     return schema.parse(parsed);
   }
   return parsed as T;
+}
+
+export async function chatComplete(
+  messages: OpenAI.Chat.ChatCompletionMessageParam[],
+  config: LlmConfig | readonly LlmConfig[],
+  options: ChatCompleteOptions = {},
+  log?: Logger,
+): Promise<ChatCompleteResult> {
+  const configs = Array.isArray(config) ? [...config] : [config];
+  if (configs.length === 0) {
+    throw new Error('No LLM config provided');
+  }
+
+  let lastError: unknown;
+  for (let i = 0; i < configs.length; i++) {
+    const cfg = configs[i]!;
+    try {
+      if (configs.length > 1) {
+        log?.info(
+          { providerIndex: i, model: cfg.model, baseUrl: cfg.baseUrl },
+          'llm.fallback.attempt',
+        );
+      }
+      const result = await chatCompleteSingle(messages, cfg, options, log);
+      if (configs.length > 1 && i > 0) {
+        log?.info(
+          { providerIndex: i, model: cfg.model, baseUrl: cfg.baseUrl },
+          'llm.fallback.succeeded',
+        );
+      }
+      return result;
+    } catch (err) {
+      if (isAbortError(err)) {
+        throw err;
+      }
+      lastError = err;
+      log?.warn(
+        {
+          providerIndex: i,
+          model: cfg.model,
+          baseUrl: cfg.baseUrl,
+          error: err instanceof Error ? err.message : String(err),
+        },
+        'llm.fallback.failed',
+      );
+      if (i === configs.length - 1) {
+        log?.error(
+          {
+            providerIndex: i,
+            model: cfg.model,
+            baseUrl: cfg.baseUrl,
+            error: err instanceof Error ? err.message : String(err),
+          },
+          'llm.fallback.exhausted',
+        );
+      }
+    }
+  }
+  throw lastError;
+}
+
+export function isAbortError(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'AbortError' || /abort/i.test(err.message));
 }

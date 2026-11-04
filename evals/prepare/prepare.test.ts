@@ -14,7 +14,7 @@ import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { BANNED_PHRASES, PROFILE_ITEMS, isRealResource } from '../shared.js';
 import { loadCases } from './cases.js';
 import { loadPromptTemplate } from '../../src/workflow/prompts.js';
-import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
+import { chatComplete, defaultLlmConfigs } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';
 import { PrepPlanSchema } from '../../src/workflow/prepare/index.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
@@ -48,7 +48,7 @@ async function generate(opts: {
     { role: 'user', content: userMessage },
   ];
 
-  const result = await chatComplete(messages, defaultLlmConfig(), { temperature: 0.6 });
+  const result = await chatComplete(messages, defaultLlmConfigs(), { temperature: 0.6 });
   return result.content;
 }
 

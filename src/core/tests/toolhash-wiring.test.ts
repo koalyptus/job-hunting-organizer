@@ -44,7 +44,7 @@ vi.mock('../../lib/logger/logger.js', () => ({
 }));
 
 vi.mock('../llm.js', () => ({
-  defaultLlmConfig: vi.fn(() => ({})),
+  defaultLlmConfigs: vi.fn(() => ({})),
   chatComplete: vi.fn(async () => ({
     content: JSON.stringify({
       topics: [

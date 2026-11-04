@@ -1,3 +1,4 @@
+import type { LlmConfig } from '../../../core/types.js';
 import { describe, expect, it } from 'vitest';
 import { redactSecrets, setAtPath } from '../../config/config.view.js';
 import type { GlobalConfig } from '../../../core/types.js';
@@ -23,8 +24,8 @@ const SAMPLE_GLOBAL: GlobalConfig = {
 describe('redactSecrets', () => {
   it('replaces the LLM API key', () => {
     const redacted = redactSecrets(SAMPLE_GLOBAL);
-    expect(redacted.llm.apiKey).toContain('***');
-    expect(redacted.llm.apiKey).toContain('LLM_API_KEY');
+    expect((redacted.llm as unknown as LlmConfig).apiKey).toContain('***');
+    expect((redacted.llm as unknown as LlmConfig).apiKey).toContain('LLM_API_KEY');
   });
 
   it('replaces the GitHub token', () => {
@@ -35,13 +36,13 @@ describe('redactSecrets', () => {
 
   it('preserves non-secret fields', () => {
     const redacted = redactSecrets(SAMPLE_GLOBAL);
-    expect(redacted.llm.model).toBe('gpt-x');
+    expect((redacted.llm as unknown as LlmConfig).model).toBe('gpt-x');
     expect(redacted.github.user).toBe('me');
   });
 
   it('does not mutate the input', () => {
     redactSecrets(SAMPLE_GLOBAL);
-    expect(SAMPLE_GLOBAL.llm.apiKey).toBe('sk-secret-abc');
+    expect((SAMPLE_GLOBAL.llm as unknown as LlmConfig).apiKey).toBe('sk-secret-abc');
     expect(SAMPLE_GLOBAL.github.token).toBe('ghp-secret-xyz');
   });
 

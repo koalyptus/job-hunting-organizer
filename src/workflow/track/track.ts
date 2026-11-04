@@ -11,7 +11,7 @@ import { readFile } from 'node:fs/promises';
 import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { isUrl } from '../../core/parser/url.js';
 import { getConfig } from '../../lib/config/config.js';
-import { defaultLlmConfig } from '../../core/llm.js';
+import { defaultLlmConfigs } from '../../core/llm.js';
 import { moduleLogger } from '../../lib/logger/logger.js';
 import { readProfile } from '../../workflow/campaign/profile-read.js';
 import { extractTargetRoles } from '../../workflow/campaign/target-roles.js';
@@ -294,7 +294,7 @@ export async function prepareTrack(opts: TrackOptions): Promise<TrackSummary> {
 
   // Load LLM config
   const { global } = getConfig(campaign);
-  const llmConfig = defaultLlmConfig(global);
+  const llmConfig = defaultLlmConfigs(global);
 
   // Load target roles for role suggestion
   let targetRoles: TargetRole[] = [];
@@ -427,7 +427,7 @@ export async function runTrackCreate(opts: TrackOptions): Promise<string> {
 
   // Load LLM config
   const { global } = getConfig(campaign);
-  const llmConfig = defaultLlmConfig(global);
+  const llmConfig = defaultLlmConfigs(global);
 
   // Load target roles for role suggestion
   let targetRoles: TargetRole[] = [];
@@ -639,7 +639,7 @@ export async function runTrackRefresh(opts: TrackOptions): Promise<TrackResult> 
 
   // Load LLM config
   const { global } = getConfig(campaign);
-  const llmConfig = defaultLlmConfig(global);
+  const llmConfig = defaultLlmConfigs(global);
 
   // Extract JD from URL or provided text
   let jd: ExtractedJd;

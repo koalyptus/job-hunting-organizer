@@ -8,7 +8,14 @@ import {
 } from 'openai';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { z } from 'zod';
-import { chatComplete, defaultLlmConfig, parseJsonResult, extractJson } from '../llm.js';
+import type { Logger } from 'pino';
+import {
+  chatComplete,
+  defaultLlmConfigs,
+  isAbortError,
+  parseJsonResult,
+  extractJson,
+} from '../llm.js';
 
 const testConfig = {
   baseUrl: 'https://api.test.com/v1',
@@ -391,8 +398,7 @@ describe('chatComplete', () => {
         [{ role: 'user', content: 'Hi' }],
         testConfig,
         { ...testChatOpts },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        log as any,
+        log as unknown as Logger,
       );
 
       expect(log.info).toHaveBeenCalledTimes(2);
@@ -518,12 +524,12 @@ describe('chatComplete', () => {
   });
 });
 
-describe('defaultLlmConfig', () => {
+describe('defaultLlmConfigs', () => {
   it('reads settings from global config', () => {
-    const cfg = defaultLlmConfig(testGlobalConfig);
-    expect(cfg.baseUrl).toBe('https://config.com/v1');
-    expect(cfg.apiKey).toBe('sk-config');
-    expect(cfg.model).toBe('gpt-4');
+    const cfg = defaultLlmConfigs(testGlobalConfig);
+    expect(cfg[0]!.baseUrl).toBe('https://config.com/v1');
+    expect(cfg[0]!.apiKey).toBe('sk-config');
+    expect(cfg[0]!.model).toBe('gpt-4');
   });
 
   describe('env var overrides', () => {
@@ -552,46 +558,46 @@ describe('defaultLlmConfig', () => {
 
     it('LLM_API_KEY overrides config', () => {
       process.env['LLM_API_KEY'] = 'env-key';
-      expect(defaultLlmConfig(testGlobalConfig).apiKey).toBe('env-key');
+      expect(defaultLlmConfigs(testGlobalConfig)[0]!.apiKey).toBe('env-key');
     });
 
     it('LLM_BASE_URL overrides config', () => {
       process.env['LLM_BASE_URL'] = 'https://env.com/v1';
-      expect(defaultLlmConfig(testGlobalConfig).baseUrl).toBe('https://env.com/v1');
+      expect(defaultLlmConfigs(testGlobalConfig)[0]!.baseUrl).toBe('https://env.com/v1');
     });
 
     it('LLM_MODEL overrides config', () => {
       process.env['LLM_MODEL'] = 'env-model';
-      expect(defaultLlmConfig(testGlobalConfig).model).toBe('env-model');
+      expect(defaultLlmConfigs(testGlobalConfig)[0]!.model).toBe('env-model');
     });
 
     it('LLM_TAGS overrides config tags', () => {
       process.env['LLM_TAGS'] = 'user=env,app=jho';
       expect(
-        defaultLlmConfig({
+        defaultLlmConfigs({
           ...testGlobalConfig,
           llm: {
             ...testGlobalConfig.llm,
             tags: ['user=config'],
           },
-        }).tags,
+        })[0]!.tags,
       ).toEqual(['user=env', 'app=jho']);
     });
   });
 
   it('uses default tags when config tags are absent', () => {
-    expect(defaultLlmConfig(testGlobalConfig).tags).toEqual(['user=jho']);
+    expect(defaultLlmConfigs(testGlobalConfig)[0]!.tags).toEqual(['user=jho']);
   });
 
   it('preserves explicit empty config tags as an opt-out', () => {
     expect(
-      defaultLlmConfig({
+      defaultLlmConfigs({
         ...testGlobalConfig,
         llm: {
           ...testGlobalConfig.llm,
           tags: [],
         },
-      }).tags,
+      })[0]!.tags,
     ).toEqual([]);
   });
 });
@@ -667,7 +673,7 @@ describe('llm.ts', () => {
     vi.restoreAllMocks();
   });
 
-  it('defaultLlmConfig with explicit global skips loadGlobalConfig (branch true for ??)', () => {
+  it('defaultLlmConfigs with explicit global skips loadGlobalConfig (branch true for ??)', () => {
     const global = {
       version: 1 as const,
       dataRoot: '/tmp',
@@ -681,18 +687,17 @@ describe('llm.ts', () => {
       logging: { level: 'info' as const, file: '', redactPaths: [] },
       fetch: { timeoutMs: 30000 },
     };
-    const result = defaultLlmConfig(global);
-    expect(result.baseUrl).toBe('https://explicit.com/v1');
-    expect(result.model).toBe('explicit-model');
+    const result = defaultLlmConfigs(global);
+    expect(result[0]!.baseUrl).toBe('https://explicit.com/v1');
+    expect(result[0]!.model).toBe('explicit-model');
   });
 
-  it('defaultLlmConfig fallback when global is undefined (line 40)', async () => {
+  it('defaultLlmConfigs fallback when global is undefined (line 40)', async () => {
     // Use a fresh import with mocked config to cover loadGlobalConfig path
     // Instead of mocking the module, just call with undefined and rely on global config file fallback
     // If no config file exists, it should return defaults (ollama)
-    const result = defaultLlmConfig(undefined);
-    // Should have some baseUrl (default is http://localhost:11434/v1 or similar)
-    expect(result.baseUrl).toBeTruthy();
+    const result = defaultLlmConfigs(undefined);
+    expect(result[0]!.baseUrl).toBeTruthy();
   });
 
   it('chatComplete falls back to createLlmFetch when options.fetch is undefined (line 76)', async () => {
@@ -777,5 +782,93 @@ describe('llm.ts', () => {
     });
     expect(customFetch).toHaveBeenCalled();
     expect(result.content).toBe('custom');
+  });
+});
+
+describe('chatComplete fallback chain', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('uses first provider on success', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockResolvedValueOnce(okJson(successBody));
+    const configs = [
+      { baseUrl: 'https://a.com/v1', apiKey: 'k1', model: 'm1', timeoutMs: 300000 },
+      { baseUrl: 'https://b.com/v1', apiKey: 'k2', model: 'm2', timeoutMs: 300000 },
+    ];
+    const result = await chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts);
+    expect(result.content).toBe('Hello!');
+  });
+
+  it('falls back to second provider when first fails', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+    fetch.mockResolvedValueOnce(okJson(successBody));
+    const configs = [
+      { baseUrl: 'https://a.com/v1', apiKey: 'k1', model: 'm1', timeoutMs: 300000 },
+      { baseUrl: 'https://b.com/v1', apiKey: 'k2', model: 'm2', timeoutMs: 300000 },
+    ];
+    const result = await chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts);
+    expect(result.content).toBe('Hello!');
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws last error when all providers fail', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValueOnce(new TypeError('first fail'));
+    fetch.mockRejectedValueOnce(new TypeError('second fail'));
+    const configs = [
+      { baseUrl: 'https://a.com/v1', apiKey: 'k1', model: 'm1', timeoutMs: 300000 },
+      { baseUrl: 'https://b.com/v1', apiKey: 'k2', model: 'm2', timeoutMs: 300000 },
+    ];
+    await expect(
+      chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts),
+    ).rejects.toThrow();
+  });
+
+  it('rethrows abort errors without fallback', async () => {
+    const fetch = vi.mocked(globalThis.fetch);
+    fetch.mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+    const configs = [
+      { baseUrl: 'https://a.com/v1', apiKey: 'k1', model: 'm1', timeoutMs: 300000 },
+      { baseUrl: 'https://b.com/v1', apiKey: 'k2', model: 'm2', timeoutMs: 300000 },
+    ];
+    await expect(
+      chatComplete([{ role: 'user', content: 'Hi' }], configs, testChatOpts),
+    ).rejects.toThrow();
+  });
+});
+
+describe('isAbortError', () => {
+  it('returns true for AbortError by name', () => {
+    const err = new Error('signal is aborted without reason');
+    err.name = 'AbortError';
+    expect(isAbortError(err)).toBe(true);
+  });
+  it('returns true when message contains abort', () => {
+    expect(isAbortError(new Error('The operation was aborted'))).toBe(true);
+  });
+  it('returns false for other errors', () => {
+    expect(isAbortError(new Error('network failure'))).toBe(false);
+    expect(isAbortError('string')).toBe(false);
+  });
+});
+
+describe('defaultLlmConfigs edge cases', () => {
+  it('returns empty array for empty llm config', () => {
+    const global = {
+      version: 1 as const,
+      dataRoot: '/tmp',
+      llm: [],
+      github: { user: '', token: '', repos: [] },
+      logging: { level: 'info' as const, file: '', redactPaths: [] },
+      fetch: { timeoutMs: 30000 },
+    };
+    const result = defaultLlmConfigs(global);
+    expect(result).toHaveLength(0);
   });
 });

@@ -4,7 +4,7 @@ import { resolveCampaignRoot, resolveAppliedDir } from '../../lib/paths.js';
 import { resolveSlug, SlugMissingError } from '../slug.js';
 import { isUrl } from '../../core/parser/url.js';
 import { extractJdFromUrl } from '../../core/jobs/extract.js';
-import { defaultLlmConfig } from '../../core/llm.js';
+import { defaultLlmConfigs } from '../../core/llm.js';
 import { getConfig } from '../../lib/config/config.js';
 import {
   generatePrep,
@@ -107,7 +107,7 @@ export const prepareCommand = new Command('prepare')
       // URL mode — ad-hoc from URL
       if (slugOrUrl && isUrl(slugOrUrl)) {
         const { global } = getConfig(campaign);
-        const llmConfig = defaultLlmConfig(global);
+        const llmConfig = defaultLlmConfigs(global);
 
         const extracted = await withSpinner(
           'Fetching job posting...',

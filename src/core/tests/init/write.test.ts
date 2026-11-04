@@ -1,3 +1,4 @@
+import type { LlmConfig } from '../../../core/types.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -294,7 +295,7 @@ describe('writeInitGlobalConfig preserves existing fields', () => {
     const config = loadGlobalConfig();
     expect(config.github.token).toBe('ghp_test123');
     expect(config.github.repos).toEqual(['acme/widget']);
-    expect(config.llm.tags).toEqual(['user=jho']);
+    expect((config.llm as unknown as LlmConfig).tags).toEqual(['user=jho']);
     expect(config.github.user).toBe('octocat');
   });
 
@@ -345,6 +346,6 @@ describe('writeInitGlobalConfig preserves existing fields', () => {
     expect(config.github.token).toBe('ghp_new');
     // repos and tags are still preserved from existing config
     expect(config.github.repos).toEqual(['old/repo']);
-    expect(config.llm.tags).toEqual(['user=jho']);
+    expect((config.llm as unknown as LlmConfig).tags).toEqual(['user=jho']);
   });
 });
