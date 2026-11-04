@@ -55,22 +55,6 @@ function normalizeBaseUrl(url: string): string {
  * rather than relying on the file-system fallback.
  */
 
-export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
-  const config = global ?? loadGlobalConfig();
-  const raw = Array.isArray(config.llm as unknown)
-    ? (config.llm as unknown as LlmConfig[])
-    : [config.llm as unknown as LlmConfig];
-  const llm = raw[0]!;
-
-  return {
-    baseUrl: process.env['LLM_BASE_URL'] ?? llm.baseUrl,
-    apiKey: process.env['LLM_API_KEY'] ?? llm.apiKey,
-    model: process.env['LLM_MODEL'] ?? llm.model,
-    timeoutMs: llm.timeoutMs,
-    tags: resolveLlmTags(llm.tags),
-  };
-}
-
 export function defaultLlmConfigs(global?: GlobalConfig): LlmConfig[] {
   const config = global ?? loadGlobalConfig();
   const raw = Array.isArray(config.llm as unknown)
