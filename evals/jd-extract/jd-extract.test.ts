@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { loadCases } from './cases.js';
 import { loadPromptTemplate } from '../../src/workflow/prompts.js';
-import { chatComplete, defaultLlmConfig } from '../../src/core/llm.js';
+import { chatComplete, defaultLlmConfigs } from '../../src/core/llm.js';
 import { isRefusal } from '../../src/core/generation-utils.js';
 import { ExtractedJdSchema } from '../../src/core/jobs/jd-schema.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
@@ -25,7 +25,7 @@ async function generate(opts: { jdText: string }): Promise<string> {
     { role: 'user', content: opts.jdText },
   ];
 
-  const result = await chatComplete(messages, defaultLlmConfig(), { temperature: 0.1 });
+  const result = await chatComplete(messages, defaultLlmConfigs(), { temperature: 0.1 });
   return result.content;
 }
 

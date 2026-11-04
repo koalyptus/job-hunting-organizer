@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { installEvalMatchers, EVAL_TIMEOUT_MS } from '../matchers.js';
 import { parseNaturalLanguage } from '../../src/core/parser/prompt-parser.js';
-import { defaultLlmConfig } from '../../src/core/llm.js';
+import { defaultLlmConfigs } from '../../src/core/llm.js';
 import { loadCases } from './cases.js';
 
 installEvalMatchers();
@@ -13,8 +13,8 @@ describe('nl-command parsing', () => {
 
   beforeAll(() => {
     try {
-      const cfg = defaultLlmConfig();
-      hasLlm = Boolean(cfg.baseUrl && cfg.model);
+      const cfg = defaultLlmConfigs();
+      hasLlm = Boolean((cfg[0]!.baseUrl) && (cfg[0]!.model));
     } catch {
       hasLlm = false;
     }

@@ -11,7 +11,6 @@ import { z } from 'zod';
 import type { Logger } from 'pino';
 import {
   chatComplete,
-  defaultLlmConfig,
   defaultLlmConfigs,
   isAbortError,
   parseJsonResult,
@@ -525,12 +524,12 @@ describe('chatComplete', () => {
   });
 });
 
-describe('defaultLlmConfig', () => {
+describe('defaultLlmConfigs', () => {
   it('reads settings from global config', () => {
-    const cfg = defaultLlmConfig(testGlobalConfig);
-    expect(cfg.baseUrl).toBe('https://config.com/v1');
-    expect(cfg.apiKey).toBe('sk-config');
-    expect(cfg.model).toBe('gpt-4');
+    const cfg = defaultLlmConfigs(testGlobalConfig);
+    expect(cfg[0]!.baseUrl).toBe('https://config.com/v1');
+    expect(cfg[0]!.apiKey).toBe('sk-config');
+    expect(cfg[0]!.model).toBe('gpt-4');
   });
 
   describe('env var overrides', () => {
@@ -559,46 +558,46 @@ describe('defaultLlmConfig', () => {
 
     it('LLM_API_KEY overrides config', () => {
       process.env['LLM_API_KEY'] = 'env-key';
-      expect(defaultLlmConfig(testGlobalConfig).apiKey).toBe('env-key');
+      expect(defaultLlmConfigs(testGlobalConfig)[0]!.apiKey).toBe('env-key');
     });
 
     it('LLM_BASE_URL overrides config', () => {
       process.env['LLM_BASE_URL'] = 'https://env.com/v1';
-      expect(defaultLlmConfig(testGlobalConfig).baseUrl).toBe('https://env.com/v1');
+      expect(defaultLlmConfigs(testGlobalConfig)[0]!.baseUrl).toBe('https://env.com/v1');
     });
 
     it('LLM_MODEL overrides config', () => {
       process.env['LLM_MODEL'] = 'env-model';
-      expect(defaultLlmConfig(testGlobalConfig).model).toBe('env-model');
+      expect(defaultLlmConfigs(testGlobalConfig)[0]!.model).toBe('env-model');
     });
 
     it('LLM_TAGS overrides config tags', () => {
       process.env['LLM_TAGS'] = 'user=env,app=jho';
       expect(
-        defaultLlmConfig({
+        defaultLlmConfigs({
           ...testGlobalConfig,
           llm: {
             ...testGlobalConfig.llm,
             tags: ['user=config'],
           },
-        }).tags,
+        })[0]!.tags,
       ).toEqual(['user=env', 'app=jho']);
     });
   });
 
   it('uses default tags when config tags are absent', () => {
-    expect(defaultLlmConfig(testGlobalConfig).tags).toEqual(['user=jho']);
+    expect(defaultLlmConfigs(testGlobalConfig)[0]!.tags).toEqual(['user=jho']);
   });
 
   it('preserves explicit empty config tags as an opt-out', () => {
     expect(
-      defaultLlmConfig({
+      defaultLlmConfigs({
         ...testGlobalConfig,
         llm: {
           ...testGlobalConfig.llm,
           tags: [],
         },
-      }).tags,
+      })[0]!.tags,
     ).toEqual([]);
   });
 });
@@ -688,17 +687,17 @@ describe('llm.ts', () => {
       logging: { level: 'info' as const, file: '', redactPaths: [] },
       fetch: { timeoutMs: 30000 },
     };
-    const result = defaultLlmConfig(global);
-    expect(result.baseUrl).toBe('https://explicit.com/v1');
-    expect(result.model).toBe('explicit-model');
+    const result = defaultLlmConfigs(global);
+    expect(result[0]!.baseUrl).toBe('https://explicit.com/v1');
+    expect(result[0]!.model).toBe('explicit-model');
   });
 
   it('defaultLlmConfigs fallback when global is undefined (line 40)', async () => {
     // Use a fresh import with mocked config to cover loadGlobalConfig path
     // Instead of mocking the module, just call with undefined and rely on global config file fallback
     // If no config file exists, it should return defaults (ollama)
-    const result = defaultLlmConfig(undefined);
-    expect(result.baseUrl).toBeTruthy();
+    const result = defaultLlmConfigs(undefined);
+    expect(result[0]!.baseUrl).toBeTruthy();
   });
 
   it('chatComplete falls back to createLlmFetch when options.fetch is undefined (line 76)', async () => {

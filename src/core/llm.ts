@@ -54,20 +54,6 @@ function normalizeBaseUrl(url: string): string {
  * Callers that already hold a `GlobalConfig` should pass it explicitly
  * rather than relying on the file-system fallback.
  */
-export function defaultLlmConfig(global?: GlobalConfig): LlmConfig {
-  const config = global ?? loadGlobalConfig();
-
-  const rawLlm = config.llm as LlmConfig | LlmConfig[];
-  const llm = Array.isArray(rawLlm) ? rawLlm[0]! : rawLlm;
-
-  return {
-    baseUrl: process.env['LLM_BASE_URL'] ?? llm.baseUrl,
-    apiKey: process.env['LLM_API_KEY'] ?? llm.apiKey,
-    model: process.env['LLM_MODEL'] ?? llm.model,
-    timeoutMs: llm.timeoutMs,
-    tags: resolveLlmTags(llm.tags),
-  };
-}
 
 export function defaultLlmConfigs(global?: GlobalConfig): LlmConfig[] {
   const config = global ?? loadGlobalConfig();
