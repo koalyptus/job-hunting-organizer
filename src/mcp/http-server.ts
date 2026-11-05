@@ -1,6 +1,5 @@
 import { createServer, type Server } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { randomUUID } from 'node:crypto';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/server';
 
 /** Default port for the MCP HTTP server. */
@@ -19,12 +18,27 @@ export const HTTP_HOST_ENV_VAR = 'JHO_MCP_HOST';
 
 /** CORS methods and headers exposed to browser-extension clients. */
 const CORS_HEADERS: Record<string, string> = {
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, mcp-protocol, mcp-session-id, authorization',
+  // No DELETE: this transport is stateless, so there is no session to
+  // terminate (the SDK would otherwise close the shared transport for good).
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  // The MCP v2 client sends these on non-safelisted requests. `mcp-protocol` is
+  // the obsolete v1 name and is deliberately absent.
+  'Access-Control-Allow-Headers': [
+    'Content-Type',
+    'Authorization',
+    'mcp-protocol-version',
+    'mcp-session-id',
+    'mcp-method',
+    'mcp-name',
+    'last-event-id',
+  ].join(', '),
 };
 
 /** Hostnames that may legitimately appear in a loopback request's `Host` header. */
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+
+/** Bind hosts that mean "every interface"; the Host allowlist cannot apply to them. */
+const WILDCARD_HOSTS = new Set(['', '0.0.0.0', '::', '::0']);
 
 /** Hop-by-hop headers that must not be forwarded to the Web Request. */
 const HOP_BY_HOP = new Set(['host', 'connection', 'content-length', 'transfer-encoding']);
@@ -100,6 +114,13 @@ function isAllowedOrigin(origin: string | undefined): boolean {
  * @returns `true` when the header names loopback or the bound host.
  */
 function isAllowedHost(host: string | undefined, boundHost: string): boolean {
+  // A wildcard bind means the user deliberately exposed the port beyond
+  // loopback; remote clients legitimately send their own host, so the
+  // DNS-rebinding defence cannot apply.
+  if (WILDCARD_HOSTS.has(boundHost.toLowerCase())) {
+    return true;
+  }
+
   if (!host) {
     return false;
   }
@@ -148,6 +169,10 @@ async function writeWebResponse(res: ServerResponse, resp: Response): Promise<vo
     respHeaders['Set-Cookie'] = setCookies;
   }
   res.writeHead(resp.status, respHeaders);
+  // Send the headers now rather than on the first body write: a GET SSE stream
+  // may produce no body until the keepalive fires, and the client should not
+  // sit on a pending request until then.
+  res.flushHeaders();
   if (!resp.body) {
     res.end();
     return;
@@ -215,13 +240,11 @@ export async function startHttpServer(
 
       // Echo a permissive CORS policy only for trusted origins; everyone else
       // gets no Access-Control-Allow-Origin and is blocked by the browser.
+      // `Vary` is unconditional because the response differs by Origin either way.
+      res.setHeader('Vary', 'Origin');
       const origin = req.headers.origin;
       if (typeof origin === 'string' && isAllowedOrigin(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
-        // `mcp-session-id` is not a CORS-safelisted response header, so without
-        // this browser clients cannot read it for stateful follow-up requests.
-        res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id');
-        res.setHeader('Vary', 'Origin');
       }
       for (const [k, v] of Object.entries(CORS_HEADERS)) {
         res.setHeader(k, v);
@@ -230,6 +253,15 @@ export async function startHttpServer(
       if (req.method === 'OPTIONS') {
         res.writeHead(204);
         res.end();
+        return;
+      }
+
+      if (req.method === 'DELETE') {
+        // Stateless mode has no session to terminate. The SDK's DELETE handler
+        // calls `transport.close()` unconditionally, which would permanently
+        // disable this shared transport for every client.
+        res.writeHead(405, { 'Content-Type': 'text/plain' });
+        res.end('Method Not Allowed: this transport is stateless\n');
         return;
       }
 
@@ -269,13 +301,21 @@ export async function startHttpServer(
 }
 
 /**
- * Create a stateful MCP Streamable HTTP transport with a random session ID
- * generator.
+ * Create a stateless MCP Streamable HTTP transport.
  *
- * @returns A new transport ready to connect to an McpServer.
+ * No `sessionIdGenerator` means the SDK neither assigns nor requires a session
+ * id. A single shared *stateful* transport serves exactly one session for the
+ * life of the process: the SDK rejects a second `initialize` with
+ * `400 Server already initialized`, and any `DELETE` closes the transport for
+ * every client. Chrome suspends and restarts the extension's MV3 background
+ * worker constantly, so it re-initializes on every resume and would be locked
+ * out permanently. jho's tools are stateless file operations, so nothing is
+ * lost by dropping sessions.
+ *
+ * @returns A new stateless transport ready to connect to an McpServer.
  */
 export function createHttpTransport(): WebStandardStreamableHTTPServerTransport {
   return new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: () => randomUUID(),
+    sessionIdGenerator: undefined,
   });
 }

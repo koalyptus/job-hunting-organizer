@@ -3,14 +3,28 @@ import { startServer, isHttpTransportAllowed, UNSAFE_HTTP_ENV_VAR } from '../dis
 
 const args = process.argv.slice(2);
 const useHttp = args.includes('--http');
-const portIdx = args.indexOf('--port');
-const portArg = portIdx !== -1 ? args[portIdx + 1] : undefined;
-const port = portArg !== undefined ? Number(portArg) : undefined;
+
+let port;
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+
+  if (arg === '--port') {
+    const value = args[i + 1];
+    if (value === undefined || value.startsWith('--')) {
+      process.stderr.write('jho-mcp: --port requires a value\n');
+      process.exit(1);
+    }
+    port = Number(value);
+    i++;
+  } else if (arg.startsWith('--port=')) {
+    port = Number(arg.slice('--port='.length));
+  }
+}
 
 if (useHttp && !isHttpTransportAllowed()) {
   process.stderr.write(
     `jho-mcp: refusing to start over HTTP unless ${UNSAFE_HTTP_ENV_VAR}=1 is set ` +
-      '(the HTTP transport is unauthenticated and binds all interfaces).\n',
+      '(the HTTP transport is unauthenticated and binds loopback by default).\n',
   );
   process.exit(1);
 }

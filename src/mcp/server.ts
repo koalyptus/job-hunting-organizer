@@ -15,8 +15,8 @@ const SERVER_NAME = 'jho-mcp';
  * Environment variable that must be set to `1` to opt into HTTP transport mode.
  *
  * HTTP mode serves the full unauthenticated MCP tool surface (including write
- * tools) on all interfaces with permissive CORS, so it is disabled unless the
- * user explicitly acknowledges that exposure.
+ * tools) with selective CORS, so it is disabled unless the user explicitly
+ * acknowledges that exposure.
  */
 export const UNSAFE_HTTP_ENV_VAR = 'JHO_MCP_UNSAFE_HTTP';
 
@@ -94,7 +94,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
   if (transport === 'http' && !isHttpTransportAllowed()) {
     throw new Error(
       `Refusing to start MCP over HTTP: ${UNSAFE_HTTP_ENV_VAR}=1 must be set. ` +
-        'The HTTP transport is unauthenticated and binds all interfaces.',
+        'The HTTP transport is unauthenticated and binds loopback by default.',
     );
   }
 

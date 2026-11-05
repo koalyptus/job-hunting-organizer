@@ -75,6 +75,62 @@ function rawRequest(
   });
 }
 
+/**
+ * Start a throwaway MCP-over-HTTP server with no client attached.
+ *
+ * The SDK allows only one standalone SSE stream per transport, so tests that
+ * need to open their own GET stream must not share the main fixture's server.
+ *
+ * @returns The HTTP server handle and its port.
+ */
+async function startIsolatedHttpServer(): Promise<{ server: Server; port: number }> {
+  const transport = createHttpTransport();
+  const server = createServer();
+  registerTools(server, createStore());
+  registerResources(server);
+  registerPrompts(server);
+  await server.connect(transport);
+
+  const httpServer = await startHttpServer(transport, 0);
+  const addr = httpServer.address();
+  if (!addr || typeof addr === 'string') {
+    throw new Error('Expected port address');
+  }
+
+  return { server: httpServer, port: addr.port };
+}
+
+/**
+ * Open a standalone SSE stream and resolve once its response headers arrive.
+ *
+ * @param port - The port the test server listens on.
+ * @returns The response status, content type, and a handle that destroys the socket.
+ */
+function openSseStream(
+  port: number,
+): Promise<{ status: number; contentType: string; destroy: () => void }> {
+  return new Promise((resolve) => {
+    const req = httpRequest(
+      {
+        host: '127.0.0.1',
+        port,
+        path: '/',
+        method: 'GET',
+        headers: { Accept: 'text/event-stream' },
+      },
+      (res) => {
+        resolve({
+          status: res.statusCode ?? 0,
+          contentType: res.headers['content-type'] ?? '',
+          destroy: () => req.destroy(),
+        });
+      },
+    );
+    req.on('error', () => {});
+    req.end();
+  });
+}
+
 describe('MCP Streamable HTTP transport', () => {
   let client: Client;
   let httpServer: Server;
@@ -124,11 +180,11 @@ describe('MCP Streamable HTTP transport', () => {
     expect(headers['access-control-allow-methods']).toContain('POST');
   }, 15_000);
 
-  it('exposes mcp-session-id to allowed browser origins', async () => {
+  it('exposes no session header (stateless transport)', async () => {
     const { headers } = await rawRequest(port, 'OPTIONS', {
       Origin: 'http://localhost:5173',
     });
-    expect(headers['access-control-expose-headers']).toContain('mcp-session-id');
+    expect(headers['access-control-expose-headers']).toBeUndefined();
   }, 15_000);
 
   it('accepts a bracketed IPv6 loopback origin', async () => {
@@ -148,28 +204,60 @@ describe('MCP Streamable HTTP transport', () => {
     expect(status).not.toBe(500);
   }, 15_000);
 
-  it('keeps serving after a client aborts an SSE stream', async () => {
-    await new Promise<void>((resolve) => {
-      const req = httpRequest(
-        {
-          host: '127.0.0.1',
-          port,
-          path: '/',
-          method: 'GET',
-          headers: { Accept: 'text/event-stream' },
-        },
-        () => {},
-      );
-      req.on('error', () => {});
-      req.end();
-      setTimeout(() => {
-        req.destroy();
-        resolve();
-      }, 100);
-    });
+  it('accepts a second concurrent initialize (no single-session lock)', async () => {
+    const second = new Client({ name: 'second-client', version: '1.0.0' });
+    try {
+      await second.connect(new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/`)));
+      const result = await second.listTools();
+      expect(result.tools.length).toBeGreaterThanOrEqual(37);
+    } finally {
+      await second.close();
+    }
+  }, 15_000);
 
-    const { status } = await rawRequest(port, 'OPTIONS', {});
-    expect(status).toBe(204);
+  it('does not let a DELETE disable the shared transport', async () => {
+    const { status } = await rawRequest(port, 'DELETE', {});
+    expect(status).toBe(405);
+
+    const result = await client.listTools();
+    expect(result.tools.length).toBeGreaterThanOrEqual(37);
+  }, 15_000);
+
+  it('allows the MCP v2 request headers through preflight', async () => {
+    const { headers } = await rawRequest(port, 'OPTIONS', { Origin: 'http://localhost:5173' });
+    const allowed = (headers['access-control-allow-headers'] ?? '').toLowerCase();
+    const tokens = allowed.split(',').map((token) => token.trim());
+
+    for (const name of [
+      'mcp-protocol-version',
+      'mcp-session-id',
+      'mcp-method',
+      'mcp-name',
+      'last-event-id',
+    ]) {
+      expect(tokens).toContain(name);
+    }
+
+    // The obsolete v1 name must not be advertised.
+    expect(tokens).not.toContain('mcp-protocol');
+    expect((headers['access-control-allow-methods'] ?? '').toLowerCase()).not.toContain('delete');
+  }, 15_000);
+
+  it('keeps serving after a client aborts an SSE stream', async () => {
+    const isolated = await startIsolatedHttpServer();
+    try {
+      const sse = await openSseStream(isolated.port);
+      // Reaching the SSE path is the point: without a session id the old
+      // stateful transport answered 400 before creating any stream.
+      expect(sse.status).toBe(200);
+      expect(sse.contentType).toContain('text/event-stream');
+      sse.destroy();
+
+      const { status } = await rawRequest(isolated.port, 'OPTIONS', {});
+      expect(status).toBe(204);
+    } finally {
+      await new Promise<void>((resolve) => isolated.server.close(() => resolve()));
+    }
   }, 15_000);
 
   it('withholds CORS headers from untrusted origins', async () => {
