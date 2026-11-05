@@ -88,8 +88,9 @@ JHO_MCP_UNSAFE_HTTP=1 jho mcp --http            # port 7331
 JHO_MCP_UNSAFE_HTTP=1 jho mcp --http --port N   # custom port
 ```
 
-> The HTTP transport is intended for local development: it binds `0.0.0.0` and
-> performs no authentication, so `jho mcp --http` refuses to start unless
+> The HTTP transport is intended for local development: it binds `127.0.0.1`
+> by default, performs no authentication, and rejects non-loopback `Host`
+> headers. `jho mcp --http` additionally refuses to start unless
 > `JHO_MCP_UNSAFE_HTTP=1` is set. Do not expose it to untrusted networks. The
 > extension's `host_permissions` are scoped to loopback.
 

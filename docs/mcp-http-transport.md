@@ -143,9 +143,10 @@ JHO_MCP_UNSAFE_HTTP=1 jho mcp --http --port 8080  # Streamable HTTP on a custom 
 ```
 
 `--http` refuses to start unless `JHO_MCP_UNSAFE_HTTP=1` is set; `bin/jho-mcp`
-and `jho mcp` both enforce the same opt-in.
+and `jho mcp` both enforce the same opt-in. The bind host defaults to
+`127.0.0.1`; override it with `JHO_MCP_HOST`.
 
-**Unsafe by default — local/dev use only.** `startHttpServer` calls `server.listen(port)` with no host argument, so the server binds `0.0.0.0` (all interfaces). Combined with `Access-Control-Allow-Origin: *` and no `Origin`/`Host` validation, the full unauthenticated MCP tool surface (including write tools like `track_application`/`update_profile`) is reachable from the local network and from arbitrary web origins via DNS rebinding. Do not expose this port beyond loopback. Secure defaults for any non-local use: bind to `127.0.0.1` (or `::1`), enforce `Origin` and `Host` allowlists, and require bearer auth (see PLAN §20 / ROADMAP "Web client").
+**Still unauthenticated — local/dev use only.** HTTP mode requires `JHO_MCP_UNSAFE_HTTP=1`, binds `127.0.0.1` by default (override with `JHO_MCP_HOST`), rejects any request whose `Host` header is not loopback (defeats DNS rebinding), and echoes `Access-Control-Allow-Origin` only for loopback and browser-extension origins. There is still no authentication, so any process on the machine can invoke write tools like `track_application`/`update_profile`. To expose the transport beyond loopback, set `JHO_MCP_HOST` explicitly and add bearer auth plus a strict Origin allowlist (see PLAN §20 / ROADMAP "Web client").
 
 ## `createMcpHandler` alternative (less plumbing)
 

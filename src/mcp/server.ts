@@ -79,13 +79,17 @@ export function createServer(): McpServer {
  * resources, and prompts.
  *
  * HTTP mode is refused unless {@link UNSAFE_HTTP_ENV_VAR} is set to `1`;
- * stdio mode is unaffected.
+ * stdio mode is unaffected. A port outside 1–65535 is rejected for both.
  *
  * @param options - Transport selection and HTTP port. Defaults to stdio.
  * @returns Resolves when the server is connected and listening.
  */
 export async function startServer(options: StartServerOptions = {}): Promise<void> {
   const { transport = 'stdio', port = DEFAULT_HTTP_PORT } = options;
+
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`invalid port ${String(port)} (expected an integer between 1 and 65535)`);
+  }
 
   if (transport === 'http' && !isHttpTransportAllowed()) {
     throw new Error(

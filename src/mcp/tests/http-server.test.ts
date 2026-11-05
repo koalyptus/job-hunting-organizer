@@ -1,9 +1,16 @@
-import { describe, it, expect, afterAll, beforeAll } from 'vitest';
+import { describe, it, expect, afterAll, beforeAll, afterEach } from 'vitest';
 import { Client } from '@modelcontextprotocol/client';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import type { Server } from 'node:http';
+import { request as httpRequest } from 'node:http';
 import { createServer } from '../server.js';
-import { createHttpTransport, startHttpServer } from '../http-server.js';
+import {
+  createHttpTransport,
+  startHttpServer,
+  resolveHttpHost,
+  DEFAULT_HTTP_HOST,
+  HTTP_HOST_ENV_VAR,
+} from '../http-server.js';
 import { registerTools } from '../tools.js';
 import { registerResources } from '../resources/index.js';
 import { registerPrompts } from '../prompts/index.js';
@@ -31,10 +38,36 @@ async function startTestHttpServer(): Promise<{ client: Client; server: Server; 
 
   const client = new Client({ name: 'test-client', version: '1.0.0' });
   await client.connect(
-    new StreamableHTTPClientTransport(new URL(`http://localhost:${addr.port}/`)),
+    new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${addr.port}/`)),
   );
 
   return { client, server: httpServer, port: addr.port };
+}
+
+/**
+ * Send a raw HTTP request so the test controls the `Host` and `Origin`
+ * headers exactly (undici normalises both).
+ *
+ * @param port - The port the test server listens on.
+ * @param method - The HTTP method to send.
+ * @param headers - Extra headers to send.
+ * @returns The response status code and headers.
+ */
+function rawRequest(
+  port: number,
+  method: string,
+  headers: Record<string, string>,
+): Promise<{ status: number; headers: Record<string, string> }> {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest({ host: '127.0.0.1', port, path: '/', method, headers }, (res) => {
+      res.resume();
+      res.on('end', () => {
+        resolve({ status: res.statusCode ?? 0, headers: res.headers as Record<string, string> });
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
 }
 
 describe('MCP Streamable HTTP transport', () => {
@@ -72,12 +105,62 @@ describe('MCP Streamable HTTP transport', () => {
     expect(Array.isArray(data.campaigns)).toBe(true);
   }, 15_000);
 
-  it('responds to CORS preflight with 204', async () => {
-    const resp = await fetch(`http://localhost:${port}/`, {
-      method: 'OPTIONS',
+  it('binds loopback by default', () => {
+    const addr = httpServer.address();
+    expect(addr && typeof addr !== 'string' && addr.address).toBe(DEFAULT_HTTP_HOST);
+  });
+
+  it('responds to a loopback CORS preflight and echoes the origin', async () => {
+    const { status, headers } = await rawRequest(port, 'OPTIONS', {
+      Origin: 'http://localhost:5173',
     });
-    expect(resp.status).toBe(204);
-    expect(resp.headers.get('access-control-allow-origin')).toBe('*');
-    expect(resp.headers.get('access-control-allow-methods')).toContain('POST');
+    expect(status).toBe(204);
+    expect(headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(headers['access-control-allow-methods']).toContain('POST');
   }, 15_000);
+
+  it('withholds CORS headers from untrusted origins', async () => {
+    const { status, headers } = await rawRequest(port, 'OPTIONS', {
+      Origin: 'https://evil.example.com',
+    });
+    expect(status).toBe(204);
+    expect(headers['access-control-allow-origin']).toBeUndefined();
+  }, 15_000);
+
+  it('rejects a Host header that is not loopback (DNS rebinding)', async () => {
+    const { status } = await rawRequest(port, 'GET', { Host: 'evil.example.com' });
+    expect(status).toBe(403);
+  }, 15_000);
+
+  it('accepts a localhost Host header', async () => {
+    const { status } = await rawRequest(port, 'GET', { Host: `localhost:${port}` });
+    expect(status).not.toBe(403);
+  }, 15_000);
+});
+
+describe('resolveHttpHost', () => {
+  const originalHost = process.env[HTTP_HOST_ENV_VAR];
+
+  afterEach(() => {
+    if (originalHost === undefined) {
+      delete process.env[HTTP_HOST_ENV_VAR];
+    } else {
+      process.env[HTTP_HOST_ENV_VAR] = originalHost;
+    }
+  });
+
+  it('defaults to loopback', () => {
+    delete process.env[HTTP_HOST_ENV_VAR];
+    expect(resolveHttpHost()).toBe(DEFAULT_HTTP_HOST);
+  });
+
+  it('honours the host override', () => {
+    process.env[HTTP_HOST_ENV_VAR] = '192.0.2.10';
+    expect(resolveHttpHost()).toBe('192.0.2.10');
+  });
+
+  it('ignores a blank override', () => {
+    process.env[HTTP_HOST_ENV_VAR] = '   ';
+    expect(resolveHttpHost()).toBe(DEFAULT_HTTP_HOST);
+  });
 });

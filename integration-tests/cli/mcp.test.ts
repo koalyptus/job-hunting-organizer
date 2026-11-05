@@ -55,6 +55,15 @@ describe('CLI: mcp command', () => {
     expect(stderr).toContain(UNSAFE_HTTP_ENV_VAR);
   });
 
+  it('rejects an invalid --port value', async () => {
+    startServerSpy.mockRestore();
+
+    const { stderr, exitCode } = await runCommand(mcpCommand, ['mcp', '--port', 'abc']);
+
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('invalid port');
+  });
+
   it('passes HTTP transport options through when opted in', async () => {
     process.env[UNSAFE_HTTP_ENV_VAR] = '1';
 

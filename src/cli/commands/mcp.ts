@@ -14,7 +14,7 @@ import { DEFAULT_HTTP_PORT } from '../../mcp/http-server.js';
 export const mcpCommand = new Command('mcp')
   .description('Start the MCP server')
   .option('--http', 'Serve MCP over Streamable HTTP instead of stdio')
-  .option('--port <port>', 'HTTP port (default: 7331)', Number.parseInt)
+  .option('--port <port>', 'HTTP port (default: 7331)', Number)
   .action(async (opts) => {
     try {
       await startServer({

@@ -5,7 +5,7 @@ const args = process.argv.slice(2);
 const useHttp = args.includes('--http');
 const portIdx = args.indexOf('--port');
 const portArg = portIdx !== -1 ? args[portIdx + 1] : undefined;
-const port = portArg !== undefined ? Number.parseInt(portArg, 10) : undefined;
+const port = portArg !== undefined ? Number(portArg) : undefined;
 
 if (useHttp && !isHttpTransportAllowed()) {
   process.stderr.write(

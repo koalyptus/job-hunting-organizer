@@ -45,6 +45,12 @@ vi.mock('../logger.js', () => ({
   getMcpLogPath: () => '/tmp/test-mcp.log',
 }));
 
+/**
+ * Short-circuit `McpServer.connect` for the lifetime of this file so transport
+ * startup never touches a real stdio/HTTP transport.
+ */
+const connectSpy = vi.spyOn(McpServer.prototype, 'connect').mockResolvedValue(undefined);
+
 describe('createServer', () => {
   it('returns an McpServer instance', async () => {
     const server = createServer();
@@ -130,7 +136,6 @@ describe('startServer', () => {
 
 describe('HTTP transport opt-in guard', () => {
   const originalFlag = process.env[UNSAFE_HTTP_ENV_VAR];
-  const connectSpy = vi.spyOn(McpServer.prototype, 'connect').mockResolvedValue(undefined);
 
   afterEach(() => {
     if (originalFlag === undefined) {
@@ -139,10 +144,6 @@ describe('HTTP transport opt-in guard', () => {
       process.env[UNSAFE_HTTP_ENV_VAR] = originalFlag;
     }
     vi.clearAllMocks();
-  });
-
-  afterAll(() => {
-    connectSpy.mockRestore();
   });
 
   it('is denied unless the env var is exactly "1"', () => {
@@ -175,4 +176,36 @@ describe('HTTP transport opt-in guard', () => {
     expect(createHttpTransport).not.toHaveBeenCalled();
     expect(startHttpServer).not.toHaveBeenCalled();
   });
+});
+
+describe('port validation', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rejects a non-integer port', async () => {
+    await expect(startServer({ port: Number.NaN })).rejects.toThrow(/invalid port/);
+    await expect(startServer({ port: 8080.5 })).rejects.toThrow(/invalid port/);
+  });
+
+  it('rejects a port outside 1-65535', async () => {
+    await expect(startServer({ port: 0 })).rejects.toThrow(/invalid port/);
+    await expect(startServer({ port: 65536 })).rejects.toThrow(/invalid port/);
+    await expect(startServer({ port: -1 })).rejects.toThrow(/invalid port/);
+  });
+
+  it('rejects an invalid port before the HTTP opt-in guard', async () => {
+    delete process.env[UNSAFE_HTTP_ENV_VAR];
+    await expect(startServer({ transport: 'http', port: Number.NaN })).rejects.toThrow(
+      /invalid port/,
+    );
+  });
+
+  it('accepts a valid port', async () => {
+    await expect(startServer({ port: 8080 })).resolves.toBeUndefined();
+  });
+});
+
+afterAll(() => {
+  connectSpy.mockRestore();
 });
