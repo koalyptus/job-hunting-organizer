@@ -1,6 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
 import type { EventEmitter } from 'node:events';
-import { createServer, startServer, safeLogFatal } from '../server.js';
+import { McpServer } from '@modelcontextprotocol/server';
+import {
+  createServer,
+  startServer,
+  safeLogFatal,
+  isHttpTransportAllowed,
+  UNSAFE_HTTP_ENV_VAR,
+} from '../server.js';
+import { createHttpTransport, startHttpServer, DEFAULT_HTTP_PORT } from '../http-server.js';
 
 vi.mock('@modelcontextprotocol/server/stdio', () => ({
   // A `class` implementation (not an arrow function) keeps the mock
@@ -17,6 +25,12 @@ vi.mock('@modelcontextprotocol/server/stdio', () => ({
   ),
 }));
 
+vi.mock('../http-server.js', () => ({
+  DEFAULT_HTTP_PORT: 7331,
+  createHttpTransport: vi.fn(() => ({})),
+  startHttpServer: vi.fn(async () => ({})),
+}));
+
 const mockAppendFileSync = vi.fn();
 vi.mock('node:fs', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -30,6 +44,12 @@ vi.mock('../logger.js', () => ({
   mcpLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   getMcpLogPath: () => '/tmp/test-mcp.log',
 }));
+
+/**
+ * Short-circuit `McpServer.connect` for the lifetime of this file so transport
+ * startup never touches a real stdio/HTTP transport.
+ */
+const connectSpy = vi.spyOn(McpServer.prototype, 'connect').mockResolvedValue(undefined);
 
 describe('createServer', () => {
   it('returns an McpServer instance', async () => {
@@ -112,4 +132,80 @@ describe('startServer', () => {
     const entry = JSON.parse(mockAppendFileSync.mock.calls[0]![1] as string);
     expect(entry.msg).toBe('unhandledRejection');
   }, 30_000);
+});
+
+describe('HTTP transport opt-in guard', () => {
+  const originalFlag = process.env[UNSAFE_HTTP_ENV_VAR];
+
+  afterEach(() => {
+    if (originalFlag === undefined) {
+      delete process.env[UNSAFE_HTTP_ENV_VAR];
+    } else {
+      process.env[UNSAFE_HTTP_ENV_VAR] = originalFlag;
+    }
+    vi.clearAllMocks();
+  });
+
+  it('is denied unless the env var is exactly "1"', () => {
+    delete process.env[UNSAFE_HTTP_ENV_VAR];
+    expect(isHttpTransportAllowed()).toBe(false);
+
+    process.env[UNSAFE_HTTP_ENV_VAR] = 'true';
+    expect(isHttpTransportAllowed()).toBe(false);
+
+    process.env[UNSAFE_HTTP_ENV_VAR] = '1';
+    expect(isHttpTransportAllowed()).toBe(true);
+  });
+
+  it('refuses HTTP transport without the opt-in flag', async () => {
+    delete process.env[UNSAFE_HTTP_ENV_VAR];
+    await expect(startServer({ transport: 'http' })).rejects.toThrow(UNSAFE_HTTP_ENV_VAR);
+    expect(startHttpServer).not.toHaveBeenCalled();
+  });
+
+  it('starts HTTP transport when opted in', async () => {
+    process.env[UNSAFE_HTTP_ENV_VAR] = '1';
+    await startServer({ transport: 'http', port: DEFAULT_HTTP_PORT });
+    expect(createHttpTransport).toHaveBeenCalledTimes(1);
+    expect(startHttpServer).toHaveBeenCalledWith(expect.anything(), DEFAULT_HTTP_PORT);
+  });
+
+  it('leaves stdio transport unaffected by the guard', async () => {
+    delete process.env[UNSAFE_HTTP_ENV_VAR];
+    await expect(startServer()).resolves.toBeUndefined();
+    expect(createHttpTransport).not.toHaveBeenCalled();
+    expect(startHttpServer).not.toHaveBeenCalled();
+  });
+});
+
+describe('port validation', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rejects a non-integer port', async () => {
+    await expect(startServer({ port: Number.NaN })).rejects.toThrow(/invalid port/);
+    await expect(startServer({ port: 8080.5 })).rejects.toThrow(/invalid port/);
+  });
+
+  it('rejects a port outside 1-65535', async () => {
+    await expect(startServer({ port: 0 })).rejects.toThrow(/invalid port/);
+    await expect(startServer({ port: 65536 })).rejects.toThrow(/invalid port/);
+    await expect(startServer({ port: -1 })).rejects.toThrow(/invalid port/);
+  });
+
+  it('rejects an invalid port before the HTTP opt-in guard', async () => {
+    delete process.env[UNSAFE_HTTP_ENV_VAR];
+    await expect(startServer({ transport: 'http', port: Number.NaN })).rejects.toThrow(
+      /invalid port/,
+    );
+  });
+
+  it('accepts a valid port', async () => {
+    await expect(startServer({ port: 8080 })).resolves.toBeUndefined();
+  });
+});
+
+afterAll(() => {
+  connectSpy.mockRestore();
 });

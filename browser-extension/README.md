@@ -80,15 +80,18 @@ The extension calls `jho mcp --http` over MCP **Streamable HTTP** at
 [`docs/mcp-http-transport.md`](../docs/mcp-http-transport.md)). The URL is
 editable in the popup.
 
-Start the bridge before using the extension:
+Start the bridge before using the extension (HTTP mode is disabled unless you
+opt in, because the transport is unauthenticated):
 
 ```sh
-jho mcp --http            # port 7331
-jho mcp --http --port N   # custom port
+JHO_MCP_UNSAFE_HTTP=1 jho mcp --http            # port 7331
+JHO_MCP_UNSAFE_HTTP=1 jho mcp --http --port N   # custom port
 ```
 
-> The HTTP transport is intended for local development: it binds `0.0.0.0` and
-> performs no authentication. Do not expose it to untrusted networks. The
+> The HTTP transport is intended for local development: it binds `127.0.0.1`
+> by default, performs no authentication, and rejects non-loopback `Host`
+> headers. `jho mcp --http` additionally refuses to start unless
+> `JHO_MCP_UNSAFE_HTTP=1` is set. Do not expose it to untrusted networks. The
 > extension's `host_permissions` are scoped to loopback.
 
 ## Repo constraints

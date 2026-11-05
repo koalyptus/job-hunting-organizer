@@ -121,28 +121,76 @@ http
   .listen(PORT);
 ```
 
-## Implementation status (issue #111, commit `c14e8d8`)
+## Implementation status (issue #111, merged in #131)
 
-**Implemented on an unmerged branch, not yet on `main`.** The wiring described
-in the spike exists in commit `c14e8d8`, but it is **not merged**: `src/mcp/http-server.ts`
-does not exist on `main`, and `jho-mcp --http` is not runnable from a `main`
-checkout. Tracked by #111. The code on that commit:
+Implemented and merged: `src/mcp/http-server.ts` provides the Node `http`
+adapter, `startServer({ transport: 'http', port })` serves the full MCP
+surface, and `jho mcp --http` / `bin/jho-mcp --http` are the two entry points.
+The components:
 
-- `src/mcp/http-server.ts` (new): Node `http` adapter with CORS, `OPTIONS` preflight, Node↔Web `Request`/`Response` conversion, duplicate `Set-Cookie` preservation. Exports `createHttpTransport()`, `startHttpServer()`, and `DEFAULT_HTTP_PORT` (7331).
-- `src/mcp/server.ts`: `startServer({ transport?: 'stdio' | 'http'; port?: number })` — on `http`, creates the transport and starts the HTTP server; on `stdio` (default), keeps the current behavior (no regression). The store/server/registration bootstrap is shared.
-- `bin/jho-mcp`: parses `--http` and `--port N` from `process.argv` and passes them to `startServer`.
-- `src/cli/commands/mcp.ts`: `jho mcp --http [--port N]` commander options with help text and examples.
-- `src/mcp/tests/http-server.test.ts`: 3 integration tests covering the HTTP round-trip.
+- `src/mcp/http-server.ts`: Node `http` adapter — loopback bind by default
+  (`JHO_MCP_HOST` overrides), a `Host` allowlist that defeats DNS rebinding,
+  selective CORS, `OPTIONS` preflight, `DELETE` rejected with 405, Node↔Web
+  `Request`/`Response` conversion, and duplicate `Set-Cookie` preservation.
+  Exports `createHttpTransport()`, `startHttpServer()`, `DEFAULT_HTTP_PORT`
+  (7331), `DEFAULT_HTTP_HOST` (`127.0.0.1`), and `HTTP_HOST_ENV_VAR`.
+- `src/mcp/server.ts`: `startServer({ transport?: 'stdio' | 'http'; port?: number })`
+  — on `http`, creates the transport and starts the HTTP server; on `stdio`
+  (default), keeps the current behavior (no regression). The store/server/
+  registration bootstrap is shared. Ports outside 1–65535 are rejected.
+- `bin/jho-mcp`: parses `--http` and `--port N` (both `--port N` and
+  `--port=N`) and passes them to `startServer`.
+- `src/cli/commands/mcp.ts`: `jho mcp --http [--port N]` commander options with
+  help text and examples.
+- `src/mcp/tests/http-server.test.ts`: 18 integration tests covering the HTTP
+  round-trip, binding, `Host`/CORS rules, stateless re-initialize, `DELETE`
+  isolation, and SSE abort cleanup.
 
-Usage (requires the #111 branch, commit `c14e8d8`; not available on `main`):
+### Stateless by design
+
+`createHttpTransport()` omits `sessionIdGenerator`, so the transport is
+**stateless**: no `mcp-session-id` is issued and none is required. This
+reverses the earlier "stateful sessions" resolution (spike #103, issue #111),
+which was made to avoid re-registering 37 tools per request.
+
+The reason to reverse it: a single shared _stateful_ transport serves exactly
+one session for the life of the process. The SDK rejects a second `initialize`
+with `400 Server already initialized`, and any `DELETE` calls `transport.close()`,
+after which every request gets `404 Session not found`. Chrome suspends and
+restarts the extension's MV3 background worker constantly, so it re-initializes
+on every resume and would be locked out until `jho mcp` was restarted. jho's
+tools are stateless file operations, so no server-side session state is needed.
+
+Consequences worth knowing:
+
+- A client that never receives a session id (like this one) must not require
+  one. The bundled extension client already tolerates that (`??=`).
+- The SDK permits only **one standalone SSE stream per transport**, so with a
+  shared stateless transport a second concurrent client's `GET` stream gets
+  `409 Conflict`. The bundled client does not use server-initiated SSE, and the
+  SDK treats a failed standalone stream as non-fatal (`onerror`), so this does
+  not affect it. It would matter for a client that relies on server→client
+  messages over SSE.
+- `DELETE` returns `405 Method Not Allowed`, which the MCP spec permits for
+  servers that do not allow session termination and the SDK's own client
+  explicitly tolerates (it skips `terminateSession` entirely when it has no
+  session id).
+
+Usage:
 
 ```
-jho mcp                     # stdio (default, no regression)
-jho mcp --http              # Streamable HTTP on port 7331
-jho mcp --http --port 8080  # Streamable HTTP on a custom port
+jho mcp                              # stdio (default, no regression)
+JHO_MCP_UNSAFE_HTTP=1 jho mcp --http            # Streamable HTTP on port 7331
+JHO_MCP_UNSAFE_HTTP=1 jho mcp --http --port 8080  # Streamable HTTP on a custom port
 ```
 
-**Unsafe by default — local/dev use only.** `startHttpServer` calls `server.listen(port)` with no host argument, so the server binds `0.0.0.0` (all interfaces). Combined with `Access-Control-Allow-Origin: *` and no `Origin`/`Host` validation, the full unauthenticated MCP tool surface (including write tools like `track_application`/`update_profile`) is reachable from the local network and from arbitrary web origins via DNS rebinding. Do not expose this port beyond loopback. Secure defaults for any non-local use: bind to `127.0.0.1` (or `::1`), enforce `Origin` and `Host` allowlists, and require bearer auth (see PLAN §20 / ROADMAP "Web client").
+`--http` refuses to start unless `JHO_MCP_UNSAFE_HTTP=1` is set; `bin/jho-mcp`
+and `jho mcp` both enforce the same opt-in. The bind host defaults to
+`127.0.0.1`; override it with `JHO_MCP_HOST`. A wildcard bind (`0.0.0.0` or
+`::`) skips the `Host` allowlist, because remote clients legitimately send
+their own host.
+
+**Still unauthenticated — local/dev use only.** HTTP mode requires `JHO_MCP_UNSAFE_HTTP=1`, binds `127.0.0.1` by default (override with `JHO_MCP_HOST`), rejects any request whose `Host` header is not loopback (defeats DNS rebinding), and echoes `Access-Control-Allow-Origin` only for loopback and browser-extension origins. There is still no authentication, so any process on the machine can invoke write tools like `track_application`/`update_profile`. To expose the transport beyond loopback, set `JHO_MCP_HOST` explicitly and add bearer auth plus a strict Origin allowlist (see PLAN §20 / ROADMAP "Web client").
 
 ## `createMcpHandler` alternative (less plumbing)
 
