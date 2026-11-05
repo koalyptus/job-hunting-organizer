@@ -51,12 +51,14 @@ async function startTestHttpServer(): Promise<{ client: Client; server: Server; 
  * @param port - The port the test server listens on.
  * @param method - The HTTP method to send.
  * @param headers - Extra headers to send.
+ * @param body - Optional request body.
  * @returns The response status code and headers.
  */
 function rawRequest(
   port: number,
   method: string,
   headers: Record<string, string>,
+  body?: string,
 ): Promise<{ status: number; headers: Record<string, string> }> {
   return new Promise((resolve, reject) => {
     const req = httpRequest({ host: '127.0.0.1', port, path: '/', method, headers }, (res) => {
@@ -66,6 +68,9 @@ function rawRequest(
       });
     });
     req.on('error', reject);
+    if (body !== undefined) {
+      req.write(body);
+    }
     req.end();
   });
 }
@@ -117,6 +122,54 @@ describe('MCP Streamable HTTP transport', () => {
     expect(status).toBe(204);
     expect(headers['access-control-allow-origin']).toBe('http://localhost:5173');
     expect(headers['access-control-allow-methods']).toContain('POST');
+  }, 15_000);
+
+  it('exposes mcp-session-id to allowed browser origins', async () => {
+    const { headers } = await rawRequest(port, 'OPTIONS', {
+      Origin: 'http://localhost:5173',
+    });
+    expect(headers['access-control-expose-headers']).toContain('mcp-session-id');
+  }, 15_000);
+
+  it('accepts a bracketed IPv6 loopback origin', async () => {
+    const { headers } = await rawRequest(port, 'OPTIONS', {
+      Origin: 'http://[::1]:5173',
+    });
+    expect(headers['access-control-allow-origin']).toBe('http://[::1]:5173');
+  }, 15_000);
+
+  it('accepts a bracketed IPv6 loopback Host header', async () => {
+    const { status } = await rawRequest(port, 'GET', { Host: `[::1]:${port}` });
+    expect(status).not.toBe(403);
+  }, 15_000);
+
+  it('handles a GET that carries a body without hanging or 500ing', async () => {
+    const { status } = await rawRequest(port, 'GET', {}, 'payload');
+    expect(status).not.toBe(500);
+  }, 15_000);
+
+  it('keeps serving after a client aborts an SSE stream', async () => {
+    await new Promise<void>((resolve) => {
+      const req = httpRequest(
+        {
+          host: '127.0.0.1',
+          port,
+          path: '/',
+          method: 'GET',
+          headers: { Accept: 'text/event-stream' },
+        },
+        () => {},
+      );
+      req.on('error', () => {});
+      req.end();
+      setTimeout(() => {
+        req.destroy();
+        resolve();
+      }, 100);
+    });
+
+    const { status } = await rawRequest(port, 'OPTIONS', {});
+    expect(status).toBe(204);
   }, 15_000);
 
   it('withholds CORS headers from untrusted origins', async () => {

@@ -82,7 +82,8 @@ function isAllowedOrigin(origin: string | undefined): boolean {
   return (
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
-    hostname === '::1' ||
+    // WHATWG `URL.hostname` keeps the brackets on IPv6 literals.
+    hostname === '[::1]' ||
     url.protocol === 'chrome-extension:' ||
     url.protocol === 'moz-extension:'
   );
@@ -147,17 +148,39 @@ async function writeWebResponse(res: ServerResponse, resp: Response): Promise<vo
     respHeaders['Set-Cookie'] = setCookies;
   }
   res.writeHead(resp.status, respHeaders);
-  if (resp.body) {
-    const reader = resp.body.getReader();
+  if (!resp.body) {
+    res.end();
+    return;
+  }
+
+  const reader = resp.body.getReader();
+
+  // A GET opens a long-lived SSE stream. If the client disconnects mid-stream,
+  // cancel the upstream reader so the transport is not left waiting forever.
+  const cancelOnDisconnect = (): void => {
+    void reader.cancel().catch(() => {});
+  };
+  res.once('close', cancelOnDisconnect);
+
+  try {
     for (;;) {
       const { done, value } = await reader.read();
-      if (done) {
+      if (done || res.writableEnded || res.destroyed) {
         break;
       }
       res.write(value);
     }
+  } finally {
+    res.removeListener('close', cancelOnDisconnect);
+    // Cancelling also releases the reader lock; releaseLock() covers the case
+    // where cancel() has not run yet.
+    void reader.cancel().catch(() => {});
+    reader.releaseLock();
   }
-  res.end();
+
+  if (!res.writableEnded && !res.destroyed) {
+    res.end();
+  }
 }
 
 /**
@@ -181,40 +204,59 @@ export async function startHttpServer(
   host: string = resolveHttpHost(),
 ): Promise<Server> {
   const server = createServer(async (req, res) => {
-    // Reject DNS rebinding: only loopback (or the explicitly bound host) may
-    // address this server.
-    if (!isAllowedHost(req.headers.host, host)) {
-      res.writeHead(403, { 'Content-Type': 'text/plain' });
-      res.end('Forbidden: invalid Host header\n');
-      return;
-    }
+    try {
+      // Reject DNS rebinding: only loopback (or the explicitly bound host) may
+      // address this server.
+      if (!isAllowedHost(req.headers.host, host)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('Forbidden: invalid Host header\n');
+        return;
+      }
 
-    // Echo a permissive CORS policy only for trusted origins; everyone else
-    // gets no Access-Control-Allow-Origin and is blocked by the browser.
-    const origin = req.headers.origin;
-    if (typeof origin === 'string' && isAllowedOrigin(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Vary', 'Origin');
-    }
-    for (const [k, v] of Object.entries(CORS_HEADERS)) {
-      res.setHeader(k, v);
-    }
+      // Echo a permissive CORS policy only for trusted origins; everyone else
+      // gets no Access-Control-Allow-Origin and is blocked by the browser.
+      const origin = req.headers.origin;
+      if (typeof origin === 'string' && isAllowedOrigin(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        // `mcp-session-id` is not a CORS-safelisted response header, so without
+        // this browser clients cannot read it for stateful follow-up requests.
+        res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id');
+        res.setHeader('Vary', 'Origin');
+      }
+      for (const [k, v] of Object.entries(CORS_HEADERS)) {
+        res.setHeader(k, v);
+      }
 
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+      }
 
-    const chunks: Buffer[] = [];
-    for await (const c of req) {
-      chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
-    }
-    const body = chunks.length > 0 ? Buffer.concat(chunks) : undefined;
+      // GET/HEAD must not carry a body — `new Request` rejects one.
+      const method = req.method ?? 'GET';
+      let body: Buffer | undefined;
+      if (method !== 'GET' && method !== 'HEAD') {
+        const chunks: Buffer[] = [];
+        for await (const c of req) {
+          chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
+        }
+        body = chunks.length > 0 ? Buffer.concat(chunks) : undefined;
+      }
 
-    const webReq = toWebRequest(req, port, body);
-    const resp = await transport.handleRequest(webReq);
-    await writeWebResponse(res, resp);
+      const webReq = toWebRequest(req, port, body);
+      const resp = await transport.handleRequest(webReq);
+      await writeWebResponse(res, resp);
+    } catch (err) {
+      // Never leave the socket open: an unhandled rejection here would hang the
+      // client instead of reporting the failure.
+      if (res.headersSent || res.writableEnded) {
+        res.destroy();
+        return;
+      }
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end(`Internal error: ${err instanceof Error ? err.message : String(err)}\n`);
+    }
   });
 
   return new Promise((resolve, reject) => {
