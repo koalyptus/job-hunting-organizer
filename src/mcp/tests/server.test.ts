@@ -29,6 +29,7 @@ vi.mock('../http-server.js', () => ({
   DEFAULT_HTTP_PORT: 7331,
   createHttpTransport: vi.fn(() => ({})),
   startHttpServer: vi.fn(async () => ({})),
+  resolveHttpHost: vi.fn(() => '127.0.0.1'),
 }));
 
 const mockAppendFileSync = vi.fn();
@@ -136,6 +137,8 @@ describe('startServer', () => {
 
 describe('HTTP transport opt-in guard', () => {
   const originalFlag = process.env[UNSAFE_HTTP_ENV_VAR];
+  // Silence the readiness line startServer writes to stderr.
+  const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
   afterEach(() => {
     if (originalFlag === undefined) {
@@ -144,6 +147,10 @@ describe('HTTP transport opt-in guard', () => {
       process.env[UNSAFE_HTTP_ENV_VAR] = originalFlag;
     }
     vi.clearAllMocks();
+  });
+
+  afterAll(() => {
+    stderrSpy.mockRestore();
   });
 
   it('is denied unless the env var is exactly "1"', () => {
@@ -168,6 +175,16 @@ describe('HTTP transport opt-in guard', () => {
     await startServer({ transport: 'http', port: DEFAULT_HTTP_PORT });
     expect(createHttpTransport).toHaveBeenCalledTimes(1);
     expect(startHttpServer).toHaveBeenCalledWith(expect.anything(), DEFAULT_HTTP_PORT);
+  });
+
+  it('announces the HTTP endpoint on stderr', async () => {
+    process.env[UNSAFE_HTTP_ENV_VAR] = '1';
+    await startServer({ transport: 'http', port: DEFAULT_HTTP_PORT });
+    expect(stderrSpy).toHaveBeenCalledWith(
+      expect.stringMatching(
+        new RegExp(`^jho-mcp: MCP over HTTP listening on http://.+:${DEFAULT_HTTP_PORT} `),
+      ),
+    );
   });
 
   it('leaves stdio transport unaffected by the guard', async () => {

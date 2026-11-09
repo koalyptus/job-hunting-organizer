@@ -7,7 +7,12 @@ import { registerTools } from './tools.js';
 import { registerResources } from './resources/index.js';
 import { registerPrompts } from './prompts/index.js';
 import { createStore } from '../storage/index.js';
-import { createHttpTransport, startHttpServer, DEFAULT_HTTP_PORT } from './http-server.js';
+import {
+  createHttpTransport,
+  startHttpServer,
+  resolveHttpHost,
+  DEFAULT_HTTP_PORT,
+} from './http-server.js';
 
 const SERVER_NAME = 'jho-mcp';
 
@@ -120,6 +125,15 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
     const httpTransport = createHttpTransport();
     await server.connect(httpTransport);
     await startHttpServer(httpTransport, port);
+
+    // The log line below goes to the file; the terminal is the only place a
+    // human sees readiness, and without this the user has no signal that the
+    // port is actually open.
+    process.stderr.write(
+      `jho-mcp: MCP over HTTP listening on http://${resolveHttpHost()}:${port} ` +
+        '(unauthenticated, local use only)\n',
+    );
+
     mcpLogger.info(`jho-mcp started (http, port ${port})`);
     return;
   }
