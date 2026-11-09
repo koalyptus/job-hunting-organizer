@@ -13,10 +13,10 @@ export const DEFAULT_BRIDGE_HOST = 'http://127.0.0.1:7331';
 /**
  * URL path the bridge serves MCP on.
  *
- * **Not pinned by this repo.** The transport is implemented by #111, which does
- * not exist yet, so no committed code fixes the path — the #103 spike used a
- * hand-rolled Node server with an arbitrary one. This is the single constant to
- * change once #111 lands.
+ * A convention, not a server requirement: `src/mcp/http-server.ts` forwards the
+ * request path to the MCP transport, which ignores it, so the transport answers
+ * on any path (verified with both `/` and `/mcp`). Kept as `/mcp` to match the
+ * extension's `host_permissions` and the README.
  */
 export const BRIDGE_PATH = '/mcp';
 
