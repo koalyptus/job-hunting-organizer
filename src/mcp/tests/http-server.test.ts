@@ -1,11 +1,11 @@
 import { describe, it, expect, afterAll, beforeAll, afterEach } from 'vitest';
 import { Client } from '@modelcontextprotocol/client';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+import type { McpServer } from '@modelcontextprotocol/server';
 import type { Server } from 'node:http';
 import { request as httpRequest } from 'node:http';
 import { createServer } from '../server.js';
 import {
-  createHttpTransport,
   startHttpServer,
   resolveHttpHost,
   DEFAULT_HTTP_HOST,
@@ -17,20 +17,29 @@ import { registerPrompts } from '../prompts/index.js';
 import { createStore } from '../../storage/index.js';
 
 /**
+ * Build a fully-registered MCP server for one HTTP request.
+ *
+ * The SDK serves one connection per server instance and a stateless transport
+ * serves one request, so the HTTP server builds both per request.
+ *
+ * @returns A fresh server with tools, resources and prompts registered.
+ */
+function buildServer(): McpServer {
+  const server = createServer();
+  registerTools(server, createStore());
+  registerResources(server);
+  registerPrompts(server);
+  return server;
+}
+
+/**
  * Start a real MCP server with the Streamable HTTP transport on an
  * ephemeral port and connect a v2 client to it.
  *
  * @returns The connected client, the HTTP server handle, and the port.
  */
 async function startTestHttpServer(): Promise<{ client: Client; server: Server; port: number }> {
-  const transport = createHttpTransport();
-  const server = createServer();
-  registerTools(server, createStore());
-  registerResources(server);
-  registerPrompts(server);
-  await server.connect(transport);
-
-  const httpServer = await startHttpServer(transport, 0);
+  const httpServer = await startHttpServer(buildServer, 0);
   const addr = httpServer.address();
   if (!addr || typeof addr === 'string') {
     throw new Error('Expected port address');
@@ -78,20 +87,14 @@ function rawRequest(
 /**
  * Start a throwaway MCP-over-HTTP server with no client attached.
  *
- * The SDK allows only one standalone SSE stream per transport, so tests that
- * need to open their own GET stream must not share the main fixture's server.
+ * The SDK allows only one standalone SSE stream per transport, and a transport
+ * now serves a single request, so tests that need to open their own GET stream
+ * must not share the main fixture's server.
  *
  * @returns The HTTP server handle and its port.
  */
 async function startIsolatedHttpServer(): Promise<{ server: Server; port: number }> {
-  const transport = createHttpTransport();
-  const server = createServer();
-  registerTools(server, createStore());
-  registerResources(server);
-  registerPrompts(server);
-  await server.connect(transport);
-
-  const httpServer = await startHttpServer(transport, 0);
+  const httpServer = await startHttpServer(buildServer, 0);
   const addr = httpServer.address();
   if (!addr || typeof addr === 'string') {
     throw new Error('Expected port address');
