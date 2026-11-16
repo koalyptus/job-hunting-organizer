@@ -1,6 +1,7 @@
 import { createServer, type Server } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/server';
+import type { McpServer } from '@modelcontextprotocol/server';
 
 /** Default port for the MCP HTTP server. */
 export const DEFAULT_HTTP_PORT = 7331;
@@ -218,17 +219,25 @@ async function writeWebResponse(res: ServerResponse, resp: Response): Promise<vo
  * origins, handles `OPTIONS` preflights, and converts between Node and Web
  * request/response objects.
  *
- * @param transport - The MCP Streamable HTTP transport to bridge to.
+ * @param buildServer - Factory that builds a fresh, fully-registered MCP
+ *   server. Called once per HTTP request: the SDK serves one connection per
+ *   server instance, so a long-lived HTTP server must not share one.
  * @param port - The port to listen on.
  * @param host - The interface to bind. Defaults to {@link resolveHttpHost}.
  * @returns Resolves with the underlying Node server once it is listening.
  */
 export async function startHttpServer(
-  transport: WebStandardStreamableHTTPServerTransport,
+  buildServer: () => McpServer,
   port: number,
   host: string = resolveHttpHost(),
 ): Promise<Server> {
   const server = createServer(async (req, res) => {
+    // One server and one transport per request. The SDK refuses a second
+    // `connect()` on a connected server and a second `handleRequest()` on a
+    // stateless transport, so neither may outlive the exchange it serves.
+    let mcpServer: McpServer | undefined;
+    let transport: WebStandardStreamableHTTPServerTransport | undefined;
+
     try {
       // Reject DNS rebinding: only loopback (or the explicitly bound host) may
       // address this server.
@@ -276,6 +285,10 @@ export async function startHttpServer(
         body = chunks.length > 0 ? Buffer.concat(chunks) : undefined;
       }
 
+      mcpServer = buildServer();
+      transport = createHttpTransport();
+      await mcpServer.connect(transport);
+
       const webReq = toWebRequest(req, port, body);
       const resp = await transport.handleRequest(webReq);
       await writeWebResponse(res, resp);
@@ -288,6 +301,10 @@ export async function startHttpServer(
       }
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end(`Internal error: ${err instanceof Error ? err.message : String(err)}\n`);
+    } finally {
+      // The transport and the server exist for this exchange only. Closing the
+      // server releases the transport's connection to it.
+      await mcpServer?.close().catch(() => {});
     }
   });
 
@@ -304,13 +321,11 @@ export async function startHttpServer(
  * Create a stateless MCP Streamable HTTP transport.
  *
  * No `sessionIdGenerator` means the SDK neither assigns nor requires a session
- * id. A single shared *stateful* transport serves exactly one session for the
- * life of the process: the SDK rejects a second `initialize` with
- * `400 Server already initialized`, and any `DELETE` closes the transport for
- * every client. Chrome suspends and restarts the extension's MV3 background
- * worker constantly, so it re-initializes on every resume and would be locked
- * out permanently. jho's tools are stateless file operations, so nothing is
- * lost by dropping sessions.
+ * id, so any number of independent clients can use the server. The transport
+ * is strictly single-use: the SDK rejects a second `handleRequest()` with
+ * `Stateless transport cannot be reused across requests`. A long-lived HTTP
+ * server therefore builds a new transport (and a new server) for every request
+ * — see {@link startHttpServer}.
  *
  * @returns A new stateless transport ready to connect to an McpServer.
  */

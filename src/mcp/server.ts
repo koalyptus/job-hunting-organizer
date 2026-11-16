@@ -7,12 +7,7 @@ import { registerTools } from './tools.js';
 import { registerResources } from './resources/index.js';
 import { registerPrompts } from './prompts/index.js';
 import { createStore } from '../storage/index.js';
-import {
-  createHttpTransport,
-  startHttpServer,
-  resolveHttpHost,
-  DEFAULT_HTTP_PORT,
-} from './http-server.js';
+import { startHttpServer, resolveHttpHost, DEFAULT_HTTP_PORT } from './http-server.js';
 
 const SERVER_NAME = 'jho-mcp';
 
@@ -115,16 +110,14 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
   // it yet — wiring only; core domains switch to the store later.
   const store = createStore();
 
-  const server = createServer();
-
-  registerTools(server, store);
-  registerResources(server);
-  registerPrompts(server);
-
   if (transport === 'http') {
-    const httpTransport = createHttpTransport();
-    await server.connect(httpTransport);
-    await startHttpServer(httpTransport, port);
+    await startHttpServer(() => {
+      const httpServer = createServer();
+      registerTools(httpServer, store);
+      registerResources(httpServer);
+      registerPrompts(httpServer);
+      return httpServer;
+    }, port);
 
     // The log line below goes to the file; the terminal is the only place a
     // human sees readiness, and without this the user has no signal that the
@@ -139,6 +132,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<voi
   }
 
   const stdioTransport = new StdioServerTransport();
+  const server = createServer();
+  registerTools(server, store);
+  registerResources(server);
+  registerPrompts(server);
   await server.connect(stdioTransport);
   mcpLogger.info('jho-mcp started (stdio)');
 }

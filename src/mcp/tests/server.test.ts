@@ -8,7 +8,7 @@ import {
   isHttpTransportAllowed,
   UNSAFE_HTTP_ENV_VAR,
 } from '../server.js';
-import { createHttpTransport, startHttpServer, DEFAULT_HTTP_PORT } from '../http-server.js';
+import { startHttpServer, DEFAULT_HTTP_PORT } from '../http-server.js';
 
 vi.mock('@modelcontextprotocol/server/stdio', () => ({
   // A `class` implementation (not an arrow function) keeps the mock
@@ -27,7 +27,6 @@ vi.mock('@modelcontextprotocol/server/stdio', () => ({
 
 vi.mock('../http-server.js', () => ({
   DEFAULT_HTTP_PORT: 7331,
-  createHttpTransport: vi.fn(() => ({})),
   startHttpServer: vi.fn(async () => ({})),
   resolveHttpHost: vi.fn(() => '127.0.0.1'),
 }));
@@ -173,8 +172,7 @@ describe('HTTP transport opt-in guard', () => {
   it('starts HTTP transport when opted in', async () => {
     process.env[UNSAFE_HTTP_ENV_VAR] = '1';
     await startServer({ transport: 'http', port: DEFAULT_HTTP_PORT });
-    expect(createHttpTransport).toHaveBeenCalledTimes(1);
-    expect(startHttpServer).toHaveBeenCalledWith(expect.anything(), DEFAULT_HTTP_PORT);
+    expect(startHttpServer).toHaveBeenCalledWith(expect.any(Function), DEFAULT_HTTP_PORT);
   });
 
   it('announces the HTTP endpoint on stderr', async () => {
@@ -190,7 +188,6 @@ describe('HTTP transport opt-in guard', () => {
   it('leaves stdio transport unaffected by the guard', async () => {
     delete process.env[UNSAFE_HTTP_ENV_VAR];
     await expect(startServer()).resolves.toBeUndefined();
-    expect(createHttpTransport).not.toHaveBeenCalled();
     expect(startHttpServer).not.toHaveBeenCalled();
   });
 });
