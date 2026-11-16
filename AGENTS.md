@@ -101,7 +101,10 @@ npm run format:check # prettier
 npm test             # vitest (unit tests)
 npm run test:integration  # vitest (integration tests)
 npm run eval         # lightweight LLM eval suite (manual)
+npm run verify       # npm ci, then typecheck + lint + format:check + test + test:integration
 ```
+
+`npm run verify` starts with `npm ci` so it tests the same dependency tree CI installs. Running the checks without it (against a stale `node_modules`) can pass locally while CI fails on a dependency bump.
 
 ## Integration tests
 
